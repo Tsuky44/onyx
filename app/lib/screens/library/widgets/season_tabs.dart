@@ -5,18 +5,22 @@ import '../../../models/models.dart';
 import '../../../services/api_client.dart';
 import '../../../utils/poster_url.dart';
 import '../../../widgets/global/season_bubbles.dart';
+import '../../../widgets/global/season_hover_preview.dart';
 import '../../../l10n/tr.dart';
 import 'season_preview.dart';
 
 /// « Saison 1 », « Saison 2 »… tel que la fiche l'écrit partout.
 String seasonLabel(Media season) {
   final number = season.effectiveSeasonNumber;
-  return number != null && number > 0 ? tr('Saison {0}', [number]) : season.title;
+  return number != null && number > 0
+      ? tr('Saison {0}', [number])
+      : season.title;
 }
 
 /// Les saisons d'une série, en bulles ([SeasonBubbleRow]) comme sur la fiche
 /// d'une demande. Une saison demandée porte un sablier orange, une saison là
-/// ne porte rien. Une saison absente se reconnaît à son numéro effacé, et se
+/// ne porte rien, sinon le tour de son rond se remplit en blanc de ce qui en est
+/// vu. Une saison absente se reconnaît à son numéro effacé, et se
 /// demande en la dépliant.
 ///
 /// Sur un téléviseur, la rangée se souvient de la bulle où était la
@@ -51,16 +55,19 @@ class SeasonTabs extends StatelessWidget {
     final selectedIndex = seasons.indexWhere((s) => identical(s, selected));
     return SeasonBubbleRow(
       entries: [
-        for (var i = 0; i < seasons.length; i++)
-          _entry(i, seasons[i], baseUrl),
+        for (var i = 0; i < seasons.length; i++) _entry(i, seasons[i], baseUrl),
       ],
       selected: selectedIndex < 0 ? null : selectedIndex,
       onTap: (index) => onSelected(seasons[index]),
       wrap: open == null
           ? null
           : (entry, bubble) => SeasonHoverPreview(
-                season: seasons[entry.id],
-                fallbackPosterUrl: fallbackPosterUrl,
+                info: seasonPreviewInfo(
+                  seasons[entry.id],
+                  serverBaseUrl: baseUrl,
+                  fallbackPosterUrl: fallbackPosterUrl,
+                ),
+                openLabel: tr('Voir la saison'),
                 onOpen: () => open(seasons[entry.id]),
                 child: bubble,
               ),
@@ -73,7 +80,9 @@ class SeasonTabs extends StatelessWidget {
     final count = season.episodeCount;
     final poster = season.posterUrl;
     final state = season.isAvailable
-        ? label
+        ? season.isFullyWatched
+            ? tr('{0} · vue', [label])
+            : label
         : season.isRequested
             ? tr('{0} · demandée', [label])
             : '$label · manquante';
@@ -90,6 +99,7 @@ class SeasonTabs extends StatelessWidget {
       ),
       requested: season.isRequested,
       missing: !season.isAvailable && !season.isRequested,
+      watched: season.watchedFraction,
       // L'aperçu au survol dit déjà tout ça, quand la rangée en a un.
       tooltip: onOpen != null ? null : state,
     );

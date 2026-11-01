@@ -127,8 +127,16 @@ class RequestSeason {
   /// Date de première diffusion (AAAA-MM-JJ), quand TMDB la donne.
   final String? airDate;
 
+  /// Le résumé de la saison, vide quand TMDB n'en a pas.
+  final String overview;
+
   /// Les épisodes que la bibliothèque détient déjà.
   final int availableEpisodes;
+
+  /// MediaHub suit déjà la saison : « partielle » ne veut alors pas dire
+  /// qu'il reste à la demander (une saison qui sort reçoit ses épisodes
+  /// d'elle-même).
+  final bool requested;
 
   const RequestSeason({
     required this.number,
@@ -137,7 +145,9 @@ class RequestSeason {
     required this.posterPath,
     required this.status,
     this.airDate,
+    this.overview = '',
     this.availableEpisodes = 0,
+    this.requested = false,
   });
 
   factory RequestSeason.fromJson(Map<String, dynamic> json) {
@@ -148,7 +158,9 @@ class RequestSeason {
       posterPath: json['posterPath'] as String?,
       status: _statusFromJson(json['status'] as String?),
       airDate: json['airDate'] as String?,
+      overview: json['overview'] as String? ?? '',
       availableEpisodes: json['availableEpisodes'] as int? ?? 0,
+      requested: json['requested'] as bool? ?? false,
     );
   }
 
@@ -233,6 +245,45 @@ class RequestCastMember {
       character: json['character'] as String? ?? '',
       profileUrl: json['profileUrl'] as String?,
     );
+  }
+}
+
+/// Ce que la fiche d'un titre propose d'envoyer à MediaHub.
+enum RequestOffer {
+  /// Rien à demander : tout est là, demandé, ou le compte ne peut pas.
+  none,
+
+  /// Rien n'est encore demandé : « Demander ».
+  request,
+
+  /// Une série déjà là ou demandée en partie, dont des saisons manquent
+  /// encore : « Compléter », à côté de « Lire ».
+  complete,
+}
+
+extension RequestMediaDetailsOffer on RequestMediaDetails {
+  /// Les saisons qu'une demande peut encore viser : celles que personne n'a
+  /// demandées, et celles que la bibliothèque n'a qu'à moitié sans que
+  /// MediaHub les suive (une saison qui sort, déjà demandée, est « partielle »
+  /// aussi : [RequestSeason.requested] la retire). Les épisodes spéciaux
+  /// (saison 0) ne comptent pas : MediaHub ne les télécharge pas d'office.
+  List<RequestSeason> get requestableSeasons => [
+        for (final season in seasons)
+          if (season.number > 0 &&
+              (season.status.canRequest ||
+                  (season.status == RequestMediaStatus.partial &&
+                      !season.requested)))
+            season,
+      ];
+
+  RequestOffer get offer {
+    final touched = status != RequestMediaStatus.unknown ||
+        seasons.any((season) => season.status != RequestMediaStatus.unknown);
+    if (!touched) return RequestOffer.request;
+    if (mediaType == RequestMediaType.movie) return RequestOffer.none;
+    return requestableSeasons.isEmpty
+        ? RequestOffer.none
+        : RequestOffer.complete;
   }
 }
 

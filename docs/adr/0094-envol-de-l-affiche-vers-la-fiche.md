@@ -35,8 +35,11 @@ puissante.
   `AppNetworkImage.precache`) l'affiche et le fond à la largeur exacte où la carte et la fiche les
   décodent. L'envol ne télécharge rien qu'il n'ait déjà.
 - **Le fond reste à l'écran pendant le chargement** de la fiche : la carte le connaît avant le réseau.
-- **Les textes de la fiche tombent à l'atterrissage** (`FlightDrop`, ressort `easeOutBack`), sans effet
-  hors envol.
+- **Les textes de la fiche montent du bas quand l'image s'efface** (`FlightDrop`, décélération sans
+  rebond, fondu plus court que la montée), sans effet hors envol. Ils tombaient d'abord dès
+  l'atterrissage, mais sous l'image qui s'écrase : on ne voyait rien, et la fiche surgissait d'un coup
+  quand l'image s'effaçait. La montée a sa phase (`PosterFlight.rise`, 360 ms) et part du début de
+  l'effacement.
 - **Au survol** : l'image grossit de 5 % en 700 ms (une échelle de l'image déjà décodée) et les lignes
   du cartouche montent l'une après l'autre (`HoverLine`, 75 ms d'écart, une part de durée plutôt qu'une
   minuterie).
@@ -46,7 +49,7 @@ puissante.
 
 ## Conséquences
 
-- Le trajet dure 1,37 s en mode complet, hors de la plage de l'ADR-0086 et d'`AppMotion`. Il reste le
+- Le trajet dure 1,73 s en mode complet, hors de la plage de l'ADR-0086 et d'`AppMotion`. Il reste le
   seul : le survol, lui, respecte la plage hors le zoom lent de l'image (700 ms, comme `AppMotion.ambient`).
 - Tant que la route est en transition, l'ancienne page est encore dessinée dessous (0,6 de voile).
   Passé l'atterrissage, Flutter la masque.

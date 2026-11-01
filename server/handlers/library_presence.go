@@ -152,6 +152,14 @@ func seasonPresence(status string, held, total int) string {
 	}
 }
 
+// hubFollowsSeason dit si le statut d'une saison côté MediaHub (donc Sorraa)
+// est celui d'une saison déjà demandée : tout sauf « inconnue ». MediaHub ne
+// laisse demander que les saisons inconnues, et seasonPresence réécrit ce
+// statut d'après la bibliothèque, d'où ce relevé avant la réécriture.
+func hubFollowsSeason(status string) bool {
+	return status != "" && status != requestStatusUnknown
+}
+
 // showStatusFor : le statut d'une série d'après ses saisons. held dit si le
 // serveur a au moins un épisode. « available » seulement si chaque saison
 // l'est ; un statut de demande ou d'import d'OnyxHub (demandé, en cours) reste.

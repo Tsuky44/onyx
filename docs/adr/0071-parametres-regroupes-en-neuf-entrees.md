@@ -1,6 +1,6 @@
 # ADR-0071 — Les paramètres regroupés en neuf entrées
 
-- **Statut :** accepté
+- **Statut :** accepté. La liste des entrées, le §2 et le §5 sont remplacés par l'ADR-0100.
 - **Date :** 2026-10-19
 - **Portée :** l'app (`app/lib/screens/settings/settings_categories.dart`,
   `app/lib/screens/settings/settings_sections.dart`, `app/lib/screens/settings/settings_screen.dart`,

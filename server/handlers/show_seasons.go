@@ -36,6 +36,12 @@ type showSeasonPayload struct {
 	RequestStatus string `json:"request_status"`
 	EpisodeCount  int    `json:"episode_count,omitempty"`
 	CanRequest    bool   `json:"can_request"`
+
+	// The caller's progress on the episodes held locally, same meaning as on a
+	// show row (showLibraryItem). Zero for a season the server does not hold.
+	AvailableEpisodeCount int `json:"available_episode_count"`
+	WatchedEpisodeCount   int `json:"watched_episode_count"`
+	StartedEpisodeCount   int `json:"started_episode_count"`
 }
 
 // seasonTitleNumber pulls a season number out of a folder-derived title such as
@@ -61,7 +67,7 @@ func seasonNumberFromTitle(title string) int {
 // TMDB and MediaHub are consulted on a short timeout with a cache in front. If
 // either is unreachable the response degrades gracefully: seasons still list,
 // but nothing is announced as requestable.
-func GetShowSeasons(w http.ResponseWriter, r *http.Request, ps httprouter.Params, _ int) {
+func GetShowSeasons(w http.ResponseWriter, r *http.Request, ps httprouter.Params, userID int) {
 	w.Header().Set("Content-Type", "application/json")
 
 	showID, err := strconv.Atoi(ps.ByName("id"))
@@ -77,6 +83,13 @@ func GetShowSeasons(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
 		return
 	}
+
+	// Losing the roll-up costs the bubble ring, not the season list.
+	stats, err := loadSeasonWatchStats(showID, userID)
+	if err != nil {
+		log.Printf("Seasons: watch stats unavailable: %v", err)
+	}
+	applySeasonWatchStats(local, stats)
 
 	seasons := mergeMissingSeasons(showID, local, languageOf(r))
 	_ = json.NewEncoder(w).Encode(seasons)

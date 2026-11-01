@@ -25,6 +25,7 @@ import 'widgets/request_detail_hero.dart';
 import 'widgets/request_info_table.dart';
 import 'widgets/request_media_card.dart';
 import 'widgets/request_progress_panel.dart';
+import 'widgets/request_season_picker_sheet.dart';
 import 'widgets/request_season_list.dart';
 import 'widgets/request_status_badge.dart';
 import '../../theme/app_icons.dart';
@@ -59,16 +60,35 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     });
   }
 
-  /// Un film se demande d'ici. Une saison se demande en la dépliant, dans la
-  /// liste des saisons ([RequestSeasonList]).
-  Future<void> _request(RequestMediaDetails details) async {
+  /// « Demander » envoie le titre entier (un film, ou toutes les saisons d'une
+  /// série encore vierge) et referme la fiche. « Compléter » ouvre la liste des
+  /// saisons pas encore demandées ([RequestSeasonPickerSheet]) et n'envoie que
+  /// celles qu'on coche, puis recharge la fiche pour que « Lire » reste là.
+  /// Une saison seule se demande aussi en la dépliant ([RequestSeasonList]).
+  Future<void> _request(RequestMediaDetails details,
+      {bool complete = false}) async {
+    List<int>? seasons;
+    if (complete) {
+      seasons = await RequestSeasonPickerSheet.show(context, details);
+      if (seasons == null || seasons.isEmpty || !mounted) return;
+    } else if (details.mediaType == RequestMediaType.tv) {
+      final all = [for (final s in details.requestableSeasons) s.number];
+      seasons = all.isEmpty ? null : all;
+    }
     setState(() => _submitting = true);
     try {
-      await context.read<MediaRequestsProvider>().request(details);
+      await context
+          .read<MediaRequestsProvider>()
+          .request(details, seasons: seasons);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(tr('Demande envoyée à MediaHub.'))));
-      Navigator.of(context).pop();
+      if (complete) {
+        setState(() => _submitting = false);
+        _retry();
+      } else {
+        Navigator.of(context).pop();
+      }
     } catch (error) {
       if (mounted) {
         // MediaHub dit pourquoi il refuse (droit, quota, déjà demandé) :
@@ -154,6 +174,30 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     final tracked = details.status != RequestMediaStatus.available &&
         details.status != RequestMediaStatus.unknown;
 
+    final hasSeasons = isTv && details.seasons.isNotEmpty;
+    final credits = [
+      if (details.director != null && details.director!.isNotEmpty)
+        (label: tr('Réalisateur'), value: details.director!),
+      for (final writer in details.writers)
+        (label: tr('Scénario'), value: writer),
+      for (final editor in details.editors)
+        (label: tr('Montage'), value: editor),
+    ];
+    Widget cast() => CastSection(
+          horizontalPadding: 0,
+          cast: [
+            for (final member in details.cast.take(25))
+              CastMember(
+                tmdbId: member.tmdbId,
+                name: member.name,
+                character: member.character,
+                profileUrl: member.profileUrl,
+              ),
+          ],
+          onTapMember: (member) =>
+              openPerson(context, member.tmdbId, name: member.name),
+        );
+
     return CustomScrollView(
       scrollCacheExtent: AppLayout.imageCacheExtent(context),
       slivers: [
@@ -182,7 +226,8 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
         ),
         // Sous l'en-tête et non dedans : sa hauteur est fixe, et le suivi d'une
         // demande a la taille qu'il veut.
-        if ((waiting != null && details.status != RequestMediaStatus.available) ||
+        if ((waiting != null &&
+                details.status != RequestMediaStatus.available) ||
             tracked)
           SliverToBoxAdapter(
             child: Padding(
@@ -203,21 +248,11 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
               ),
             ),
           ),
-        SliverToBoxAdapter(
-          child: DetailSummarySection(
-            credits: [
-              if (details.director != null && details.director!.isNotEmpty)
-                (label: tr('Réalisateur'), value: details.director!),
-              for (final writer in details.writers)
-                (label: tr('Scénario'), value: writer),
-              for (final editor in details.editors)
-                (label: tr('Montage'), value: editor),
-            ],
-            keywords: details.keywords,
-            infoTable: RequestInfoTable(details: details),
-          ),
-        ),
-        if (isTv && details.seasons.isNotEmpty)
+        // Même ordre que les fiches de la bibliothèque. Une série passe par
+        // ses saisons — c'est là qu'on demande. Dans les deux cas, le casting
+        // ouvre la colonne de gauche, les crédits et les tags dessous, à côté
+        // de la card d'infos : plus de vide sous les crédits.
+        if (hasSeasons)
           SliverToBoxAdapter(
             child: Padding(
               padding: AppLayout.pageInsets(context, top: 48),
@@ -228,25 +263,18 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
               ),
             ),
           ),
-        if (details.cast.isNotEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 40),
-              child: CastSection(
-                cast: [
-                  for (final member in details.cast.take(25))
-                    CastMember(
-                      tmdbId: member.tmdbId,
-                      name: member.name,
-                      character: member.character,
-                      profileUrl: member.profileUrl,
-                    ),
-                ],
-                onTapMember: (member) =>
-                    openPerson(context, member.tmdbId, name: member.name),
-              ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(top: hasSeasons ? 32 : 0),
+            child: DetailSummarySection(
+              credits: credits,
+              keywords: details.keywords,
+              infoTable: RequestInfoTable(details: details),
+              mainTitle: tr('Informations'),
+              extra: details.cast.isEmpty ? null : cast(),
             ),
           ),
+        ),
         for (final (title, items) in [
           (tr('Recommandations'), details.recommendations),
           (tr('Titres similaires'), details.similar),
@@ -314,7 +342,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   /// Les pastilles de statut d'OnyxHub (`RequestStatusButton`).
   List<Widget> _requestActions(RequestMediaDetails details) {
     final status = details.status;
-    final isTv = details.mediaType == RequestMediaType.tv;
+    final offer = details.offer;
 
     // Disponible, même en partie : le bouton lance le média. Le statut se
     // lit dans le surtitre au-dessus du titre (RequestAvailabilityBadge).
@@ -326,9 +354,22 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
           onPressed: _launching ? null : () => _play(details),
         );
 
+    Widget requestButton(String label, {bool complete = false}) => HeroPill(
+          label: _submitting ? tr('Envoi de la demande') : label,
+          icon: AppIcons.download,
+          style: HeroPillStyle.glass,
+          loading: _submitting,
+          onPressed:
+              _submitting ? null : () => _request(details, complete: complete),
+        );
+
+    final complete = offer == RequestOffer.complete
+        ? requestButton(tr('Compléter'), complete: true)
+        : null;
+
     if (status == RequestMediaStatus.partial ||
         status == RequestMediaStatus.available) {
-      return [playButton()];
+      return [playButton(), if (complete != null) complete];
     }
 
     if (status == RequestMediaStatus.pending ||
@@ -349,20 +390,13 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
                 style: HeroPillStyle.status,
                 track: true,
               ),
+        if (complete != null) complete,
       ];
     }
 
-    // Une série se demande saison par saison, en dépliant celle qu'on veut.
-    if (isTv || !status.canRequest) return const [];
-
-    return [
-      HeroPill(
-        label: _submitting ? tr('Envoi de la demande') : tr('Demander'),
-        icon: AppIcons.download,
-        style: HeroPillStyle.glass,
-        loading: _submitting,
-        onPressed: _submitting ? null : () => _request(details),
-      ),
-    ];
+    // Une série à moitié demandée sans statut global : elle se complète.
+    if (complete != null) return [complete];
+    if (offer != RequestOffer.request) return const [];
+    return [requestButton(tr('Demander'))];
   }
 }

@@ -11,6 +11,7 @@ import '../services/api_client.dart';
 import '../services/media_details_cache.dart';
 import '../theme/lite_mode.dart';
 import '../utils/poster_url.dart';
+import '../widgets/global/app_network_image.dart';
 import '../widgets/global/detail_backdrop_header.dart';
 import '../widgets/global/detail_hero.dart';
 import '../widgets/global/poster_card.dart';
@@ -125,6 +126,14 @@ Future<void> openMediaDetail(
     _opening = false;
   }
   if (!cardContext.mounted) return;
+  if (details != null) {
+    // Le logo se charge pendant le vol : il est décodé quand les textes
+    // montent, et n'arrive pas après eux.
+    unawaited(AppNetworkImage.precache(
+      logoImageUrl(details.logoUrl, serverBaseUrl: api.baseUrl),
+      devicePixelRatio: MediaQuery.devicePixelRatioOf(cardContext),
+    ));
+  }
 
   return pushDetailFlight(
     cardContext,

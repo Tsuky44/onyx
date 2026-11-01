@@ -7,6 +7,7 @@ import '../../../services/api_client.dart';
 import '../../../theme/app_colors.dart';
 import '../user_admin_sections.dart' show promptPassword;
 import '../widgets/device_tile.dart';
+import '../widgets/other_devices_group.dart';
 import '../widgets/otp_security_group.dart';
 import '../widgets/settings_ui.dart';
 import '../../../l10n/tr.dart';
@@ -175,8 +176,8 @@ class _AccountPageState extends State<AccountPage> {
     return SettingsPage(
       title: tr('Mon compte'),
       description:
-          tr('Votre profil sur {0}, votre activité et les appareils où vous '
-              'êtes connecté.', [auth.activeServer?.displayName ?? tr('ce serveur')]),
+          tr('Votre profil sur {0}, votre activité, et les appareils où vous '
+              'êtes connecté ou que vous voulez y ajouter.', [auth.activeServer?.displayName ?? tr('ce serveur')]),
       onRefresh: _load,
       children: [
         if (stats != null) ...[
@@ -274,6 +275,7 @@ class _AccountPageState extends State<AccountPage> {
                 ),
           ],
         ),
+        const OtherDevicesGroup(),
         SettingsGroup(
           children: [
             SettingsTile(

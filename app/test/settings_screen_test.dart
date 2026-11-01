@@ -197,7 +197,7 @@ void main() {
       (tester) async {
     await pump(tester, width: 1100, permissions: const Permissions());
 
-    await tester.tap(find.text('Serveurs et partage'));
+    await tester.tap(find.text('Liens de partage'));
     await tester.pumpAndSettle();
     expect(find.text('Actifs'), findsNothing);
     expect(find.byTooltip('Actualiser'), findsNothing);
@@ -219,15 +219,18 @@ void main() {
     await pump(tester,
         width: 1100,
         permissions: const Permissions(),
-        initialSection: SettingsSections.device);
+        initialSection: SettingsSections.account);
     expect(find.text(install), findsOneWidget);
 
     StoreBuild.overrideForTest(true);
     addTearDown(() => StoreBuild.overrideForTest(null));
+    // Le drapeau est fixé au démarrage : la ligne constante n'est pas
+    // reconstruite à chaud, on repart d'un arbre vide.
+    await tester.pumpWidget(const SizedBox());
     await pump(tester,
         width: 1100,
         permissions: const Permissions(),
-        initialSection: SettingsSections.device);
+        initialSection: SettingsSections.account);
     expect(find.text(install), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -255,18 +258,59 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('les pages empilées se lisent sur un seul défilement',
-      (tester) async {
+  // Le compte réunit ce qui le suit d'un appareil à l'autre : l'adresse d'une
+  // page (ici la synchro Emby) ouvre « Mon compte » sur son onglet.
+  testWidgets('la synchro Emby est un onglet de Mon compte', (tester) async {
     await pump(tester,
         width: 1100,
         permissions: const Permissions(),
         initialSection: SettingsSections.emby);
 
-    expect(find.text('Serveurs et partage'), findsWidgets);
-    expect(find.text('Serveur actif'), findsOneWidget);
-    await tester.ensureVisible(find.text('Synchro Emby').last);
-    await tester.pumpAndSettle();
+    expect(find.text('Mon compte'), findsWidgets);
+    expect(find.text('Profil'), findsOneWidget);
+    expect(find.text('Liens de partage'), findsOneWidget);
+    expect(find.text('Reprenez vos films et vos séries là où vous les avez '
+        'laissés', findRichText: true, skipOffstage: false), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  // Chaque réglage vit sous la question « ça concerne qui ? » (ADR-0100) :
+  // le compte, cet appareil, ou le serveur. Ce test refuse qu'un réglage du
+  // serveur retourne dans une page d'utilisateur ou de bibliothèque.
+  test('les réglages du serveur sont réunis dans l’entrée Serveur', () {
+    final categories = settingsCategoriesFor(Permissions.all);
+    final server =
+        categories.firstWhere((c) => c.id == SettingsSections.server);
+
+    for (final id in [
+      SettingsSections.integrations,
+      SettingsSections.security,
+      SettingsSections.serverLogs,
+      SettingsSections.announcement,
+      SettingsSections.linkedServers,
+    ]) {
+      expect(server.opens(id), isTrue, reason: id);
+      expect(
+          categories.where((c) => c.opens(id)).map((c) => c.id), [server.id],
+          reason: '$id ne doit se trouver que dans l’entrée Serveur');
+    }
+    expect(server.admin, isTrue);
+  });
+
+  test('un membre n’a ni l’entrée Serveur ni les réglages du serveur', () {
+    final categories = settingsCategoriesFor(const Permissions());
+    expect(categories.any((c) => c.id == SettingsSections.server), isFalse);
+    expect(categories.every((c) => !c.admin), isTrue);
+  });
+
+  test('les appareils, Emby et le partage sont dans Mon compte', () {
+    final categories = settingsCategoriesFor(const Permissions());
+    final account =
+        categories.firstWhere((c) => c.id == SettingsSections.account);
+    expect(account.opens(SettingsSections.emby), isTrue);
+    expect(account.opens(SettingsSections.shares), isTrue);
+    expect(categories.where((c) => c.opens(SettingsSections.servers)).length,
+        1);
   });
 
   // Exigé par les magasins de toute app où l'on peut créer un compte.

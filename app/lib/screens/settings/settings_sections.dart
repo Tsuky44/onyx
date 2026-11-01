@@ -22,4 +22,7 @@ abstract final class SettingsSections {
   static const integrations = 'integrations';
   static const linkedServers = 'linked-servers';
   static const announcement = 'announcement';
+  static const server = 'server';
+  static const security = 'security';
+  static const serverLogs = 'server-logs';
 }

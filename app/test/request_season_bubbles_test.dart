@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/media_request.dart';
@@ -8,6 +9,7 @@ import 'package:onyx/widgets/global/season_liquid.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/theme/app_colors.dart';
 import 'package:onyx/theme/app_icons.dart';
+import 'package:onyx/widgets/global/season_hover_preview.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -76,6 +78,7 @@ Future<_Api> _pump(WidgetTester tester) async {
                 posterPath: null,
                 status: RequestMediaStatus.unknown,
                 airDate: '2021-03-04',
+                overview: 'Tout commence ici.',
               ),
               RequestSeason(
                 number: 2,
@@ -277,6 +280,31 @@ void main() {
         tester.getSize(_bubble('Saison 1, 10 épisodes')), const Size(48, 48));
   });
 
+  testWidgets(
+      'une bulle qui se gonfle reste ronde aux deux bouts, jamais coupée net',
+      (tester) async {
+    await _pump(tester);
+
+    await tester.tap(find.text('1'));
+    // Mi-course du gonflement : la largeur est entre le rond et la pilule.
+    await tester.pump(const Duration(milliseconds: 120));
+
+    final bubble = _bubble('Saison 1, 10 épisodes');
+    final width = tester.getSize(bubble).width;
+    expect(width, inInclusiveRange(48, 400));
+    // Le clip qui découvre le contenu a la largeur du moment et le rayon d'une
+    // pilule : avec le clip carré d'`AnimatedSize`, la pilule, posée d'emblée
+    // à sa largeur finale, était tronquée à angle droit.
+    final clip = find.descendant(of: bubble, matching: find.byType(ClipRRect));
+    expect(clip, findsOneWidget);
+    expect(tester.getSize(clip).width, closeTo(width, 0.5));
+    expect(tester.widget<ClipRRect>(clip).borderRadius,
+        const BorderRadius.all(Radius.circular(24)));
+    final animated =
+        find.descendant(of: bubble, matching: find.byType(AnimatedSize));
+    expect(tester.widget<AnimatedSize>(animated).clipBehavior, Clip.none);
+  });
+
   testWidgets('sans animation, pas de goutte : la bulle s’ouvre d’emblée',
       (tester) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
@@ -314,5 +342,37 @@ void main() {
         find.ancestor(
             of: find.text('Épisode pilote S1'), matching: find.byType(Opacity)),
         findsNothing);
+  });
+
+  testWidgets(
+      'la souris laissée sur une bulle ouvre la fiche de la saison, un clic '
+      'dessus déplie ses épisodes', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _pump(tester);
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(find.text('1')));
+    await tester.pump();
+    expect(find.byType(SeasonPreviewCard), findsNothing,
+        reason: 'un curseur qui traverse la rangée n’ouvre rien');
+
+    await tester.pump(SeasonHoverPreview.openDelay);
+    await tester.pumpAndSettle();
+    expect(find.byType(SeasonPreviewCard), findsOneWidget);
+    expect(find.text('Tout commence ici.'), findsOneWidget);
+    expect(find.text('2021 · 10 épisodes · manquante'), findsOneWidget);
+    expect(find.text('Voir les épisodes'), findsOneWidget);
+    expect(find.textContaining('Épisode pilote'), findsNothing);
+
+    await mouse.moveTo(tester.getCenter(find.text('Voir les épisodes')));
+    await mouse.down(tester.getCenter(find.text('Voir les épisodes')));
+    await mouse.up();
+    await tester.pumpAndSettle();
+    expect(find.byType(SeasonPreviewCard), findsNothing);
+    expect(find.textContaining('Épisode pilote S1'), findsOneWidget);
   });
 }

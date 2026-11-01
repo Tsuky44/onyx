@@ -114,3 +114,18 @@ func TestAvailableMeansOnyxSeesIt(t *testing.T) {
 		t.Errorf("série dont une saison s'importe : %q", got)
 	}
 }
+
+// Une saison que MediaHub suit déjà (même « disponible » alors qu'elle sort
+// encore) n'est plus à demander ; seule une saison qu'il ne connaît pas l'est.
+func TestHubFollowsSeasonOnlyWhenMediaHubKnowsIt(t *testing.T) {
+	for _, status := range []string{"available", "partial", "pending", "processing"} {
+		if !hubFollowsSeason(status) {
+			t.Errorf("%q : MediaHub suit la saison", status)
+		}
+	}
+	for _, status := range []string{"", "unknown"} {
+		if hubFollowsSeason(status) {
+			t.Errorf("%q : MediaHub ne connaît pas la saison", status)
+		}
+	}
+}

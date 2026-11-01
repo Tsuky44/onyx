@@ -193,10 +193,11 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
     final settings = _settings;
 
     return SettingsPage(
-      title: tr('Métadonnées'),
+      title: tr('Services'),
       description:
-          tr('Les services qui donnent au catalogue ses affiches et ses '
-              'résumés, et qui reçoivent les demandes de médias.'),
+          tr('Les services extérieurs auxquels le serveur se connecte : ceux '
+              'qui donnent au catalogue ses affiches et ses résumés, et celui '
+              'qui reçoit les demandes de médias.'),
       children: [
         if (_error != null) SettingsBanner(_error!, tone: BannerTone.error),
         if (settings == null && _error == null) const SettingsLoading(),

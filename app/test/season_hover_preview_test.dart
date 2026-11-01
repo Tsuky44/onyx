@@ -2,9 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/models.dart';
-import 'package:onyx/screens/library/widgets/season_preview.dart';
 import 'package:onyx/screens/library/widgets/season_tabs.dart';
 import 'package:onyx/services/api_client.dart';
+import 'package:onyx/widgets/global/season_hover_preview.dart';
 import 'package:provider/provider.dart';
 
 /// La souris laissée sur l'onglet d'une saison ouvre sa fiche ; un clic sur

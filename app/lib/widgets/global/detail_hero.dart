@@ -155,10 +155,27 @@ class DetailHero extends StatelessWidget {
   static const double _posterBottom = 36;
   static const double _posterTop = 116;
 
+  /// L'air entre le bouton retour et l'affiche.
+  static const double _backGap = 12;
+
   /// Sur grand écran l'affiche monte jusque sous le bouton retour, avec un
   /// peu d'air : collée en haut, elle passait dessous.
   static const double posterHeight =
       DetailBackdrop.heightDesktop - _posterBottom - _posterTop;
+
+  /// La hauteur de l'affiche sous ce bouton retour. Le bouton suit la marge
+  /// du haut de la page (barre de verre, traffic lights macOS) : sur macOS
+  /// elle descend à 100 px et le bouton recouvrait le coin de l'affiche, qui
+  /// ne démarrait qu'à 116 px. L'affiche perd donc de la hauteur plutôt que de
+  /// passer sous lui.
+  double _posterHeightFor(BuildContext context, double wide) {
+    if (onBack == null) return wide;
+    final clearance =
+        OverlayBackButton.toolbarHeightFor(context) + 4 + _backGap;
+    final room = DetailBackdrop.heightDesktop - _posterBottom - clearance;
+    return room.clamp(posterHeightMedium, wide);
+  }
+
   static const double posterWidth = posterHeight * 2 / 3;
 
   /// Sur tablette, la grande affiche ne laisserait pas sa largeur au texte.
@@ -180,30 +197,38 @@ class DetailHero extends StatelessWidget {
           left: pad,
           right: pad,
           bottom: compact ? 20 : _posterBottom,
-          child: FlightDrop(
-            delay: const Duration(milliseconds: 170),
-            child: compact
-                ? info
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _Poster(
+          // Sans borne en haut, un logo haut poussait le texte vers le haut
+          // jusque sous la barre, et le surtitre (FILM / SÉRIE) passait
+          // dessous. Le texte reste dans l'espace sous la barre ; c'est le logo
+          // qui rétrécit (voir [_info]).
+          top: OverlayBackButton.toolbarHeightFor(context) + _backGap,
+          // Chaque bloc monte à son tour (voir [_info]) : l'affiche d'abord.
+          child: compact
+              ? Align(alignment: Alignment.bottomLeft, child: info)
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    FlightDrop(
+                      child: _Poster(
                         url: posterUrl,
                         height: AppLayout.isWide(context)
-                            ? posterHeight
+                            ? _posterHeightFor(context, posterHeight)
                             : posterHeightMedium,
                       ),
-                      const SizedBox(width: 36),
-                      Expanded(child: info),
-                    ],
-                  ),
-          ),
+                    ),
+                    const SizedBox(width: 36),
+                    Expanded(child: info),
+                  ],
+                ),
         ),
         if (onBack != null)
           Positioned(
             top: 4,
-            left: 8,
-            child: FlightDrop(child: OverlayBackButton(onPressed: onBack)),
+            left: pad - OverlayBackButton.discInset,
+            child: FlightDrop(
+              distance: 24,
+              child: OverlayBackButton(onPressed: onBack),
+            ),
           ),
       ],
     );
@@ -220,7 +245,8 @@ class DetailHero extends StatelessWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(pad, 4, pad, 8),
           child: FlightDrop(
-            delay: const Duration(milliseconds: 170),
+            delay: const Duration(milliseconds: 120),
+            distance: 48,
             child: actions!,
           ),
         ),
@@ -232,103 +258,122 @@ class DetailHero extends StatelessWidget {
     final overview = this.overview;
     return StaggeredEntranceScope(
       playKey: playKey,
-      maxAnimated: 4,
+      // Dans un envol, la cascade jouerait cachée sous l'image : ce sont les
+      // [FlightDrop] qui font arriver les blocs.
+      maxAnimated: PosterFlight.arriving(context) ? 0 : 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           StaggeredEntrance(
             index: 0,
-            child: eyebrow == null
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: eyebrow,
-                  ),
+            child: FlightDrop(
+              child: eyebrow == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: eyebrow,
+                    ),
+            ),
           ),
-          StaggeredEntrance(
-            index: 1,
-            child: MediaLogoDisplay(
-              title: title,
-              logoUrl: logoUrl,
-              maxHeight: compact ? 72 : 160,
-              maxWidth: compact ? double.infinity : 420,
-              textStyle: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    height: 1.05,
-                    fontSize: compact ? 26 : null,
-                  ),
+          // Flexible : le logo prend sa hauteur voulue tant qu'il y a la place,
+          // et cède le reste quand les autres blocs la remplissent.
+          Flexible(
+            child: StaggeredEntrance(
+              index: 1,
+              child: FlightDrop(
+                delay: const Duration(milliseconds: 30),
+                child: MediaLogoDisplay(
+                  title: title,
+                  logoUrl: logoUrl,
+                  maxHeight: compact ? 72 : 160,
+                  maxWidth: compact ? double.infinity : 420,
+                  textStyle:
+                      Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            height: 1.05,
+                            fontSize: compact ? 26 : null,
+                          ),
+                ),
+              ),
             ),
           ),
           StaggeredEntrance(
             index: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (tagline != null && tagline!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    tagline!,
-                    maxLines: compact ? 2 : 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: AppType.body,
-                      fontStyle: FontStyle.italic,
+            child: FlightDrop(
+              delay: const Duration(milliseconds: 90),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (tagline != null && tagline!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      tagline!,
+                      maxLines: compact ? 2 : 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: AppType.body,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
-                  ),
-                ],
-                if (metadata.isNotEmpty || badges.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      for (var i = 0; i < metadata.length; i++) ...[
-                        if (i > 0) const MetadataDot(),
-                        metadata[i],
+                  ],
+                  if (metadata.isNotEmpty || badges.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        for (var i = 0; i < metadata.length; i++) ...[
+                          if (i > 0) const MetadataDot(),
+                          metadata[i],
+                        ],
+                        if (badges.isNotEmpty) ...[
+                          if (metadata.isNotEmpty) const SizedBox(width: 4),
+                          for (final badge in badges) TechBadge(badge),
+                        ],
                       ],
-                      if (badges.isNotEmpty) ...[
-                        if (metadata.isNotEmpty) const SizedBox(width: 4),
-                        for (final badge in badges) TechBadge(badge),
-                      ],
-                    ],
-                  ),
-                ],
-                if (overview != null && overview.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                        maxWidth: compact ? double.infinity : overviewMaxWidth),
-                    child: DetailSynopsis(
-                      title: title,
-                      overview: overview,
-                      maxLines: compact ? 4 : 3,
                     ),
-                  ),
-                ] else if (emptyOverviewLabel != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    emptyOverviewLabel!,
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: AppType.body,
+                  ],
+                  if (overview != null && overview.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                          maxWidth:
+                              compact ? double.infinity : overviewMaxWidth),
+                      child: DetailSynopsis(
+                        title: title,
+                        overview: overview,
+                        maxLines: compact ? 4 : 3,
+                      ),
                     ),
-                  ),
+                  ] else if (emptyOverviewLabel != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      emptyOverviewLabel!,
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: AppType.body,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           StaggeredEntrance(
             index: 3,
-            child: actions == null || compact
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.only(top: 22),
-                    child: actions,
-                  ),
+            child: FlightDrop(
+              delay: const Duration(milliseconds: 160),
+              child: actions == null || compact
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 22),
+                      child: actions,
+                    ),
+            ),
           ),
         ],
       ),

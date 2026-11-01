@@ -245,7 +245,7 @@ class _CollectionHeader extends StatelessWidget {
           ),
           Positioned(
             top: 4,
-            left: 8,
+            left: AppLayout.pagePadding(context) - OverlayBackButton.discInset,
             child: OverlayBackButton(onPressed: onBack),
           ),
         ],

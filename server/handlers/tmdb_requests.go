@@ -301,11 +301,18 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		EpisodeCount int    `json:"episodeCount"`
 		PosterPath   string `json:"posterPath,omitempty"`
 		AirDate      string `json:"airDate,omitempty"`
+		Overview     string `json:"overview,omitempty"`
 		Status       string `json:"status"`
 
 		// AvailableEpisodes : les épisodes que la bibliothèque détient, pour
 		// dire combien il en reste à venir.
 		AvailableEpisodes int `json:"availableEpisodes,omitempty"`
+
+		// Requested : MediaHub suit déjà la saison (demandée, en cours, en
+		// partie là). Le statut final peut dire « partielle » sans que rien
+		// reste à demander : une saison qui sort, dont les épisodes à venir
+		// arrivent d'eux-mêmes.
+		Requested bool `json:"requested,omitempty"`
 	}
 
 	// Fetch seasons for TV shows
@@ -322,6 +329,7 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 					Seasons []struct {
 						SeasonNumber int     `json:"season_number"`
 						Name         string  `json:"name"`
+						Overview     string  `json:"overview"`
 						EpisodeCount int     `json:"episode_count"`
 						PosterPath   *string `json:"poster_path"`
 						AirDate      string  `json:"air_date"`
@@ -342,6 +350,7 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 							EpisodeCount: s.EpisodeCount,
 							PosterPath:   poster,
 							AirDate:      s.AirDate,
+							Overview:     strings.TrimSpace(s.Overview),
 							Status:       "unknown",
 						})
 					}
@@ -391,6 +400,7 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 			for i := range seasons {
 				if st, ok := byNumber[seasons[i].Number]; ok {
 					seasons[i].Status = st
+					seasons[i].Requested = hubFollowsSeason(st)
 				}
 			}
 		}

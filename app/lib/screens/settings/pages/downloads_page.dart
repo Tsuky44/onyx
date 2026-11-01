@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../../services/download_manager.dart';
 import '../../../services/download_preferences.dart';
 import '../../../services/network_status.dart';
+import '../../../utils/app_platform.dart';
 import '../../../utils/format.dart';
+import '../widgets/image_cache_group.dart';
 import '../widgets/settings_ui.dart';
 import '../../../l10n/tr.dart';
 
@@ -22,12 +24,17 @@ class DownloadsPage extends StatelessWidget {
     final network = context.watch<NetworkStatus>();
 
     return SettingsPage(
-      title: tr('Téléchargements'),
-      description:
-          tr('Ce que cet appareil garde hors ligne, et quand il a le droit '
-              'de l’aller chercher. Ces réglages ne changent rien sur vos '
-              'autres appareils.'),
+      title: tr('Téléchargements et stockage'),
+      description: AppPlatform.isTvOS
+          ? tr('Ce que cet appareil garde pour s’afficher plus vite. Cela '
+              'ne change rien sur vos autres appareils.')
+          : tr('Ce que cet appareil garde hors ligne, quand il a le droit '
+              'de l’aller chercher, et la place que cela prend. Ces réglages '
+              'ne changent rien sur vos autres appareils.'),
       children: [
+        // Une Apple TV n'a pas de dossier privé où garder un film : seul le
+        // cache des images y reste à gérer.
+        if (!AppPlatform.isTvOS) ...[
         SettingsGroup(
           title: tr('Épisodes suivants'),
           footer: switch (preferences.mode) {
@@ -122,6 +129,8 @@ class DownloadsPage extends StatelessWidget {
             ),
           ],
         ),
+        ],
+        const ImageCacheGroup(),
       ],
     );
   }

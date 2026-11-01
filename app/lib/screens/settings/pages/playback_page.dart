@@ -7,6 +7,7 @@ import '../../player/display_frame_rate.dart';
 import '../../player/playback/auto_quality.dart';
 import '../../player/hardware_decoding.dart';
 import '../widgets/settings_dropdown_label.dart';
+import '../widgets/settings_scope.dart';
 import '../widgets/settings_ui.dart';
 import 'playback_still_watching_group.dart';
 import '../../../l10n/tr.dart';
@@ -69,8 +70,9 @@ class _PlaybackPageState extends State<PlaybackPage> {
       description:
           tr('Comment les films et les séries se lisent. Vos préférences '
               'suivent votre compte sur tous vos appareils ; seuls les '
-              'réglages vidéo restent propres à celui-ci.'),
+              'réglages du lecteur restent propres à celui-ci.'),
       children: [
+        const SettingsScopeHeading(SettingsScope.account),
         SettingsGroup(
           title: tr('Audio'),
           children: [
@@ -113,6 +115,50 @@ class _PlaybackPageState extends State<PlaybackPage> {
             ),
           ],
         ),
+        SettingsGroup(
+          title: tr('Séries'),
+          footer:
+              tr('Un épisode enchaîne déjà sur le suivant au bout de 5 '
+                  'secondes. Le récap et l’intro peuvent faire pareil.'),
+          children: [
+            SettingsSwitchTile(
+              icon: Icons.history_rounded,
+              title: tr('Passer le récap automatiquement'),
+              subtitle:
+                  tr('Quand le bouton « Passer le récap » apparaît, le récap '
+                      'de l’épisode précédent est sauté au bout de 5 '
+                      'secondes. Le moindre mouvement de souris ou appui sur '
+                      'une touche annule le saut.'),
+              value: PlaybackPreferencesStorage.autoSkipRecap,
+              onChanged: (value) async {
+                await PlaybackPreferencesStorage.setAutoSkipRecap(value);
+                if (mounted) setState(() {});
+              },
+            ),
+            SettingsSwitchTile(
+              icon: Icons.fast_forward_rounded,
+              title: tr('Passer l’intro automatiquement'),
+              subtitle:
+                  tr('Quand le bouton « Passer l’intro » apparaît, l’intro '
+                      'est sautée au bout de 5 secondes. Le moindre '
+                      'mouvement de souris ou appui sur une touche annule le '
+                      'saut.'),
+              value: PlaybackPreferencesStorage.autoSkipIntro,
+              onChanged: (value) async {
+                await PlaybackPreferencesStorage.setAutoSkipIntro(value);
+                if (mounted) setState(() {});
+              },
+            ),
+          ],
+        ),
+        StillWatchingSettingsGroup(
+          value: PlaybackPreferencesStorage.stillWatching,
+          onChanged: (value) async {
+            await PlaybackPreferencesStorage.setStillWatching(value);
+            if (mounted) setState(() {});
+          },
+        ),
+        const SettingsScopeHeading(SettingsScope.device),
         // AetherEngine, sur les appareils Apple, choisit seul entre décodeur
         // matériel et FFmpeg : le groupe n'aurait rien à y proposer.
         if (!AppPlatform.isApple)
@@ -180,49 +226,6 @@ class _PlaybackPageState extends State<PlaybackPage> {
               },
             ),
           ],
-        ),
-        SettingsGroup(
-          title: tr('Séries'),
-          footer:
-              tr('Un épisode enchaîne déjà sur le suivant au bout de 5 '
-                  'secondes. Le récap et l’intro peuvent faire pareil.'),
-          children: [
-            SettingsSwitchTile(
-              icon: Icons.history_rounded,
-              title: tr('Passer le récap automatiquement'),
-              subtitle:
-                  tr('Quand le bouton « Passer le récap » apparaît, le récap '
-                      'de l’épisode précédent est sauté au bout de 5 '
-                      'secondes. Le moindre mouvement de souris ou appui sur '
-                      'une touche annule le saut.'),
-              value: PlaybackPreferencesStorage.autoSkipRecap,
-              onChanged: (value) async {
-                await PlaybackPreferencesStorage.setAutoSkipRecap(value);
-                if (mounted) setState(() {});
-              },
-            ),
-            SettingsSwitchTile(
-              icon: Icons.fast_forward_rounded,
-              title: tr('Passer l’intro automatiquement'),
-              subtitle:
-                  tr('Quand le bouton « Passer l’intro » apparaît, l’intro '
-                      'est sautée au bout de 5 secondes. Le moindre '
-                      'mouvement de souris ou appui sur une touche annule le '
-                      'saut.'),
-              value: PlaybackPreferencesStorage.autoSkipIntro,
-              onChanged: (value) async {
-                await PlaybackPreferencesStorage.setAutoSkipIntro(value);
-                if (mounted) setState(() {});
-              },
-            ),
-          ],
-        ),
-        StillWatchingSettingsGroup(
-          value: PlaybackPreferencesStorage.stillWatching,
-          onChanged: (value) async {
-            await PlaybackPreferencesStorage.setStillWatching(value);
-            if (mounted) setState(() {});
-          },
         ),
       ],
     );

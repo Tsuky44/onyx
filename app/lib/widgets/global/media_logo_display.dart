@@ -70,10 +70,13 @@ class MediaLogoDisplay extends StatelessWidget {
           // heights. An unconstrained decode keeps one entry in the memory
           // cache that all of them hit, instead of one per slot size.
           decodeAtSourceSize: true,
-          // The title holds the slot while the logo is in flight — the spinner
-          // that used to sit here was a second layout state on a header that
-          // already had one, and it flashed on every cached hit.
-          placeholder: fallback,
+          // Le logo attendu tient sa place vide, à sa hauteur : poser le titre
+          // en attendant le faisait paraître, puis disparaître quand le logo
+          // arrivait, et décalait l'en-tête de la différence de hauteur.
+          // Seul un logo en échec laisse le titre (errorWidget). Le spinner
+          // d'avant était un second état de mise en page, et clignotait à
+          // chaque lecture du cache.
+          placeholder: SizedBox(width: width, height: maxHeight),
           errorWidget: fallback,
         ),
       ),

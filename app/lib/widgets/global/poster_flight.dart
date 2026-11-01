@@ -18,7 +18,7 @@ import 'app_network_image.dart';
 ///   flou, aucun `saveLayer` sauf le fondu final de cet élément ;
 /// * **la fiche n'est pas dessinée** tant que l'image n'a pas atterri
 ///   (opacité nulle : Flutter saute sa peinture), puis posée sans fondu plein
-///   écran ;
+///   écran. Ses blocs montent ensuite du bas ([FlightDrop]) ;
 /// * **les images sont celles de la carte et de la fiche** : même URL, même
 ///   largeur de décodage, donc déjà dans le cache mémoire (préchauffé au
 ///   survol, voir [PosterFlight.warm]) ;
@@ -36,11 +36,27 @@ class PosterFlight {
   static const Duration flight = Duration(milliseconds: 430);
   static const Duration squash = Duration(milliseconds: 520);
 
+  /// La montée des textes de la fiche, une fois l'image posée. Elle a sa
+  /// propre phase : sous l'image qui s'écrase, les textes montaient sans qu'on
+  /// les voie, et la fiche apparaissait d'un coup quand l'image s'effaçait.
+  static const Duration rise = Duration(milliseconds: 460);
+
+  /// L'écart le plus grand que [FlightDrop] accepte entre le départ de deux
+  /// blocs : les blocs montent l'un après l'autre sur cet écart, et chacun met
+  /// le même temps, quel que soit son rang.
+  static const Duration dropSpread = Duration(milliseconds: 160);
+
   /// Le fond cadré par le haut, comme celui de la fiche (`DetailBackdrop`).
   static const Alignment focus = Alignment.topCenter;
 
   /// La part du fond que la fiche laisse voir : tout, ses voiles sont dessus.
   static const double backdropOpacity = 1;
+
+  /// Si la page où on se trouve est la fiche d'un envol, dont les blocs
+  /// montent à l'arrivée ([FlightDrop]). Ses autres arrivées, la cascade des
+  /// cartes par exemple, se tairaient alors : elles joueraient sous l'image.
+  static bool arriving(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_Arrival>() != null;
 
   /// Charge dans le cache mémoire ce que l'envol dessinera : l'affiche et le
   /// fond, à la largeur exacte où la carte et la fiche les décodent.
@@ -115,7 +131,7 @@ class PosterFlightRoute<T> extends PageRoute<T> {
   Widget buildTransitions(BuildContext context, Animation<double> animation,
       Animation<double> secondaryAnimation, Widget child) {
     final arrival = _arrival ??= animation.drive(
-      CurveTween(curve: Interval(_timeline.landing, 1)),
+      CurveTween(curve: Interval(_timeline.fadeStart, 1)),
     );
     return AnimatedBuilder(
       animation: animation,
@@ -125,7 +141,7 @@ class PosterFlightRoute<T> extends PageRoute<T> {
         final a = animation.value;
         final reversing = animation.status == AnimationStatus.reverse;
         final landed = reversing || a >= t.landing;
-        final flying = !reversing && a < 1;
+        final flying = !reversing && a < t.settled;
         // Même arbre du début à la fin, la page toujours en première place :
         // la reparenter perdrait son état (chargement, défilement).
         return LayoutBuilder(
@@ -138,7 +154,11 @@ class PosterFlightRoute<T> extends PageRoute<T> {
                 ignoring: !landed,
                 child: Opacity(
                   opacity: reversing ? (lite ? 1 : a) : (landed ? 1 : 0),
-                  child: _Arrival(progress: arrival, child: child!),
+                  child: _Arrival(
+                    progress: arrival,
+                    window: t.arrivalWindow,
+                    child: child!,
+                  ),
                 ),
               ),
               if (flying && !landed) _Scrim(opacity: t.scrim(a)),
@@ -164,7 +184,8 @@ class PosterFlightRoute<T> extends PageRoute<T> {
     );
   }
 
-  /// L'avancement de l'arrivée de la fiche (0 à l'atterrissage, 1 à la fin).
+  /// L'avancement de l'arrivée des textes (0 quand l'image commence à
+  /// s'effacer, 1 à la fin).
   Animation<double>? _arrival;
 }
 
@@ -173,18 +194,33 @@ class _Timeline {
   _Timeline({required bool lite})
       : turnMs = lite ? 0 : PosterFlight.turn.inMilliseconds,
         flightMs = PosterFlight.flight.inMilliseconds,
-        squashMs = lite ? 140 : PosterFlight.squash.inMilliseconds;
+        squashMs = lite ? 140 : PosterFlight.squash.inMilliseconds,
+        riseMs = lite ? 220 : PosterFlight.rise.inMilliseconds;
 
   final int turnMs;
   final int flightMs;
   final int squashMs;
+  final int riseMs;
 
-  int get totalMs => turnMs + flightMs + squashMs;
+  /// Part de l'écrasement où l'image commence à s'effacer sur la vraie fiche,
+  /// et où les textes commencent à monter.
+  static const double fadeAt = 0.6;
+
+  int get totalMs => turnMs + flightMs + squashMs + riseMs;
   Duration get total => Duration(milliseconds: totalMs);
 
-  /// Fin du retournement, puis atterrissage.
+  /// Fin du retournement, puis atterrissage, puis fin de l'écrasement : l'image
+  /// est effacée et plus rien ne vole.
   double get turnEnd => turnMs / totalMs;
   double get landing => (turnMs + flightMs) / totalMs;
+  double get settled => (turnMs + flightMs + squashMs) / totalMs;
+
+  /// Le début de l'effacement de l'image, qui est aussi celui de la montée.
+  double get fadeStart => landing + fadeAt * (settled - landing);
+
+  /// Ce que dure l'arrivée des textes, de l'effacement à la fin.
+  Duration get arrivalWindow =>
+      Duration(milliseconds: ((1 - fadeStart) * totalMs).round());
 
   /// Le fond de la page quittée s'assombrit jusqu'à l'atterrissage.
   double scrim(double a) =>
@@ -202,44 +238,72 @@ class _Scrim extends StatelessWidget {
       );
 }
 
-/// Ce que la fiche lit pour faire tomber ses textes quand l'image a atterri.
+/// Ce que la fiche lit pour faire monter ses textes quand l'image s'efface.
 class _Arrival extends InheritedWidget {
-  const _Arrival({required this.progress, required super.child});
+  const _Arrival({
+    required this.progress,
+    required this.window,
+    required super.child,
+  });
 
   final Animation<double> progress;
 
+  /// La durée que [progress] met à aller de 0 à 1.
+  final Duration window;
+
   @override
-  bool updateShouldNotify(_Arrival old) => progress != old.progress;
+  bool updateShouldNotify(_Arrival old) =>
+      progress != old.progress || window != old.window;
 }
 
-/// Un bloc de la fiche qui tombe en place à l'atterrissage, avec un petit
-/// rebond (`onyx-hero-drop`, `--ease-spring`). Sans envol, il est posé tel
-/// quel.
+/// Un bloc de la fiche qui monte du bas à sa place quand l'image s'efface,
+/// en fondu, sans rebond : il décélère jusqu'à sa position. Sans envol, il est
+/// posé tel quel.
+///
+/// [distance] est la hauteur dont il part, sous sa place. La fiche coupe ce
+/// qui dépasse de l'en-tête : un bloc haut semble sortir du bas de l'image.
+/// [delay] (au plus [PosterFlight.dropSpread]) fait partir les blocs l'un
+/// après l'autre ; tous mettent le même temps à monter.
 class FlightDrop extends StatelessWidget {
-  const FlightDrop(
-      {super.key, this.delay = Duration.zero, required this.child});
+  const FlightDrop({
+    super.key,
+    this.delay = Duration.zero,
+    this.distance = 96,
+    required this.child,
+  });
 
   final Duration delay;
+  final double distance;
   final Widget child;
+
+  /// Une décélération longue : le bloc part vite et se pose doucement, sans
+  /// dépasser sa place.
+  static const Curve _rise = Cubic(0.16, 1, 0.3, 1);
 
   @override
   Widget build(BuildContext context) {
-    final progress =
-        context.dependOnInheritedWidgetOfExactType<_Arrival>()?.progress;
-    if (progress == null) return child;
-    final start = delay.inMilliseconds / PosterFlight.squash.inMilliseconds;
+    final arrival = context.dependOnInheritedWidgetOfExactType<_Arrival>();
+    if (arrival == null) return child;
+    final progress = arrival.progress;
+    final windowMs = arrival.window.inMilliseconds;
+    final spreadMs = PosterFlight.dropSpread.inMilliseconds;
+    final delayMs = delay.inMilliseconds.clamp(0, spreadMs);
+    // Une fenêtre trop courte pour l'écart (mode léger) le réduit d'autant.
+    final spare = (windowMs - spreadMs).clamp(windowMs ~/ 2, windowMs);
     return AnimatedBuilder(
       animation: progress,
       child: child,
       builder: (context, child) {
-        final t = Interval(start.clamp(0.0, 0.9), 1, curve: Curves.easeOutBack)
-            .transform(progress.value);
         if (progress.value >= 1) return child!;
-        final fade = Curves.easeOut.transform(t.clamp(0.0, 1.0));
+        final local =
+            ((progress.value * windowMs - delayMs) / spare).clamp(0.0, 1.0);
+        // Le fondu finit avant la montée : le bloc est net bien avant d'être
+        // posé.
+        final fade = Curves.easeOut.transform((local / 0.5).clamp(0.0, 1.0));
         return Opacity(
           opacity: fade,
           child: Transform.translate(
-            offset: Offset(0, -18 * (1 - t)),
+            offset: Offset(0, distance * (1 - _rise.transform(local))),
             child: child,
           ),
         );
@@ -385,14 +449,14 @@ class _FlightLayer extends StatelessWidget {
     final r = radius * (1 - p);
 
     // Étirée par la vitesse en route, écrasée à l'arrivée, un rebond, posée.
-    final since = ((a - t.landing) / (1 - t.landing)).clamp(0.0, 1.0);
+    final since = ((a - t.landing) / (t.settled - t.landing)).clamp(0.0, 1.0);
     final (sx, sy) = lite ? (1.0, 1.0) : _squash(flightP, since);
 
     // Le fond finit à l'opacité qu'il a sur la fiche.
     final opacity = 1 - (1 - PosterFlight.backdropOpacity) * p;
     // Le fondu final sur l'image réelle de la fiche, identique dessous.
     final out = Curves.easeOut.transform(
-      ((since - 0.8) / 0.2).clamp(0.0, 1.0),
+      ((since - _Timeline.fadeAt) / (1 - _Timeline.fadeAt)).clamp(0.0, 1.0),
     );
 
     Widget image = ColoredBox(

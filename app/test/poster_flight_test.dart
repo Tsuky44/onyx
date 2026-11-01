@@ -130,6 +130,35 @@ void main() {
     expect(find.text('Fiche'), findsNothing);
   });
 
+  testWidgets('les textes de la fiche montent du bas, sans jamais dépasser',
+      (tester) async {
+    final nav = await _pump(tester);
+    nav.push(_route());
+    await tester.pump();
+    // Juste après l’atterrissage, l’image cache encore la fiche : rien n’a
+    // commencé à monter.
+    await tester.pump(const Duration(milliseconds: 900));
+    final start = tester.getTopLeft(find.text('Fiche')).dy;
+
+    var previous = double.infinity;
+    var risen = false;
+    for (var ms = 0; ms < 700; ms += 20) {
+      await tester.pump(const Duration(milliseconds: 20));
+      final y = tester.getTopLeft(find.text('Fiche')).dy;
+      // Il monte (y décroît) et ne passe jamais au-dessus de sa place.
+      expect(y, lessThanOrEqualTo(previous));
+      previous = y;
+      if (y < start) risen = true;
+    }
+    expect(risen, isTrue);
+
+    await tester.pumpAndSettle();
+    final end = tester.getTopLeft(find.text('Fiche')).dy;
+    // Posé : il ne bouge plus, et n'est jamais passé sous cette place.
+    expect(end, lessThanOrEqualTo(previous));
+    expect(end, lessThan(start));
+  });
+
   testWidgets('FlightDrop pose son enfant tel quel hors envol', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: FlightDrop(child: Text('Titre')),

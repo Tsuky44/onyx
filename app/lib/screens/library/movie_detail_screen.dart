@@ -250,8 +250,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen>
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(tr('Impossible de mettre à jour le statut'))),
+          SnackBar(content: Text(tr('Impossible de mettre à jour le statut'))),
         );
       }
     } finally {
@@ -466,25 +465,27 @@ class _MovieDetailScreenState extends State<MovieDetailScreen>
                 ),
               ),
             ),
+          // Le casting ouvre la colonne et les crédits le suivent : il comble
+          // le vide que la fiche TMDB, plus haute, laisse sous eux.
           SliverToBoxAdapter(
-            child: DetailSummarySection.forDetails(details: _details),
+            child: DetailSummarySection.forDetails(
+              details: _details,
+              mainTitle: tr('Informations'),
+              extra: _details == null || _details!.cast.isEmpty
+                  ? null
+                  : CastSection(
+                      cast: _details!.cast,
+                      horizontalPadding: 0,
+                      onTapMember: (member) =>
+                          openPerson(context, member.tmdbId, name: member.name),
+                    ),
+            ),
           ),
           if (_details?.collection != null)
             SliverToBoxAdapter(
               child: CollectionSection(
                 collection: _details!.collection!,
                 onTap: () => openCollection(context, _details!.collection!),
-              ),
-            ),
-          if (_details?.cast.isNotEmpty ?? false)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: CastSection(
-                  cast: _details!.cast,
-                  onTapMember: (member) =>
-                      openPerson(context, member.tmdbId, name: member.name),
-                ),
               ),
             ),
           if (_details?.similarTitles.isNotEmpty ?? false)

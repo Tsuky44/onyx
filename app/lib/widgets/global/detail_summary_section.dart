@@ -64,6 +64,9 @@ class DetailSummarySection extends StatelessWidget {
     );
   }
 
+  /// Largeur à partir de laquelle [infoTable] passe à droite du corps.
+  static const double wideBreakpoint = 1100;
+
   /// La colonne d'informations à droite : un quart de l'écran, assez pour
   /// les studios sur une ligne, jamais au point d'écraser le texte.
   static double _sidebarWidth(double width) =>
@@ -81,24 +84,13 @@ class DetailSummarySection extends StatelessWidget {
           extra!,
           if (hasMain) const SizedBox(height: 28),
         ],
-        if (hasMain && mainTitle != null) ...[
-          Text(mainTitle!, style: detailSectionTitleStyle(context)),
-          const SizedBox(height: 16),
-        ],
-        if (credits.isNotEmpty) _CreditsGrid(credits: credits),
-        if (credits.isNotEmpty && keywords.isNotEmpty)
-          const SizedBox(height: 24),
-        if (keywords.isNotEmpty)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [for (final word in keywords) _KeywordTag(word)],
-          ),
+        if (hasMain)
+          _CreditsBlock(credits: credits, keywords: keywords, title: mainTitle),
       ],
     );
     return Padding(
       padding: AppLayout.pageInsets(context, top: 28, bottom: 8),
-      child: width >= 1100
+      child: width >= wideBreakpoint
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -114,6 +106,41 @@ class DetailSummarySection extends StatelessWidget {
                 infoTable,
               ],
             ),
+    );
+  }
+}
+
+/// Les crédits puis les mots-clés, sous un [title] facultatif.
+class _CreditsBlock extends StatelessWidget {
+  final List<DetailCredit> credits;
+  final List<String> keywords;
+  final String? title;
+
+  const _CreditsBlock({
+    required this.credits,
+    this.keywords = const [],
+    this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (title != null) ...[
+          Text(title!, style: detailSectionTitleStyle(context)),
+          const SizedBox(height: 16),
+        ],
+        if (credits.isNotEmpty) _CreditsGrid(credits: credits),
+        if (credits.isNotEmpty && keywords.isNotEmpty)
+          const SizedBox(height: 24),
+        if (keywords.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [for (final word in keywords) _KeywordTag(word)],
+          ),
+      ],
     );
   }
 }

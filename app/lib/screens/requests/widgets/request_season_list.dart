@@ -3,6 +3,7 @@ import '../../../models/media_request.dart';
 import '../../../theme/app_motion.dart';
 import '../../../theme/app_type.dart';
 import '../../../widgets/global/season_bubbles.dart';
+import '../../../widgets/global/season_hover_preview.dart';
 import '../../../l10n/tr.dart';
 import 'request_season_panel.dart';
 import 'season_frame.dart';
@@ -11,6 +12,10 @@ import 'season_frame.dart';
 /// d'épisodes dessous. Toucher une bulle ouvre le panneau de sa saison, une
 /// seule à la fois ; retoucher la saison ouverte replie le tout. C'est dans ce
 /// panneau, et seulement là, qu'une saison se demande.
+///
+/// À la souris, laisser le curseur sur une bulle ouvre la fiche de la saison
+/// ([SeasonHoverPreview]), comme sur la fiche d'une série de la bibliothèque ;
+/// un clic dessus déplie le panneau de la saison.
 class RequestSeasonList extends StatefulWidget {
   final int tmdbId;
   final RequestMediaItem showItem;
@@ -59,6 +64,12 @@ class _RequestSeasonListState extends State<RequestSeasonList> {
     });
   }
 
+  /// Ouvrir depuis la fiche au survol ne replie jamais : la saison déjà ouverte
+  /// reste ouverte, contrairement au second toucher sur sa bulle.
+  void _open(int number) {
+    if (_selected != number) _select(number);
+  }
+
   /// Tout ce que MediaHub attend encore, même en partie : le sablier.
   static bool _isRequested(RequestMediaStatus status) =>
       status == RequestMediaStatus.pending ||
@@ -79,7 +90,30 @@ class _RequestSeasonListState extends State<RequestSeasonList> {
       requested: _isRequested(season.status),
       missing: season.status.canRequest,
       missingBadge: true,
-      tooltip: '$title · $count',
+      // La fiche au survol dit déjà tout ça.
+      tooltip: null,
+    );
+  }
+
+  /// « 2021 · 10 épisodes · manquante », dans le même ordre que la fiche d'une
+  /// saison de la bibliothèque.
+  SeasonPreviewInfo _preview(RequestSeason season) {
+    final year = season.year;
+    return SeasonPreviewInfo(
+      title: seasonTitle(season),
+      facts: [
+        if (year != null) '$year',
+        if (season.episodeCount > 0)
+          season.episodeCount > 1
+              ? tr('{0} épisodes', [season.episodeCount])
+              : tr('1 épisode'),
+        if (_isRequested(season.status))
+          tr('demandée')
+        else if (season.status.canRequest)
+          tr('manquante'),
+      ],
+      overview: season.overview,
+      posterUrl: season.posterUrl,
     );
   }
 
@@ -106,6 +140,15 @@ class _RequestSeasonListState extends State<RequestSeasonList> {
           onTap: _select,
           frameKey: _frameKey,
           beamX: _beamX,
+          wrap: (entry, bubble) {
+            final season = sorted.firstWhere((s) => s.number == entry.id);
+            return SeasonHoverPreview(
+              info: _preview(season),
+              openLabel: tr('Voir les épisodes'),
+              onOpen: () => _open(season.number),
+              child: bubble,
+            );
+          },
         ),
         const SizedBox(height: 4),
         SeasonSizeTween(

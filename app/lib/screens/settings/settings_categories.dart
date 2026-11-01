@@ -15,6 +15,8 @@ import 'pages/integrations_page.dart';
 import 'pages/library_page.dart';
 import 'pages/linked_servers_page.dart';
 import 'pages/playback_page.dart';
+import 'pages/security_page.dart';
+import 'pages/server_logs_page.dart';
 import 'pages/servers_page.dart';
 import 'pages/shares_page.dart';
 import 'pages/stats_page.dart';
@@ -67,92 +69,36 @@ class SettingsCategory {
 /// utiliser n'est pas grisée, elle est absente, et une catégorie vidée
 /// disparaît. Ce qui n'est pas dessiné ne produit pas de 403.
 ///
-/// « Mon espace » va du plus personnel (le compte) au plus technique (les
-/// serveurs) ; « Administration » du plus consulté (l'activité) au plus rare.
+/// Les entrées se rangent selon à qui le réglage s'applique (ADR-0100).
+/// « Mon espace » : le compte (Mon compte, Lecture), puis ce qui reste sur cet
+/// appareil (Cet appareil, Téléchargements et stockage, Serveurs).
+/// « Administration » : l'activité, les comptes, le catalogue, puis les
+/// réglages du serveur lui-même.
 List<SettingsCategory> settingsCategoriesFor(Permissions p) {
-  final anyAdmin = p.manageSettings || p.manageLibrary || p.manageUsers;
   // Ouvrir un lien reçu ne demande aucun droit (ADR-0037 §11) ; seul un
   // téléviseur, sans presse-papiers où le recevoir, n'a rien à y faire tant
   // que le compte n'a pas de liens à lui.
   final shares = p.shareMedia || !TvMode.isTv;
+  final anyAdmin = p.manageSettings || p.manageLibrary || p.manageUsers;
 
   final categories = [
+    // Le compte réunit ce qui le suit d'un appareil à l'autre : son profil,
+    // ses appareils, la progression qu'il reprend d'Emby et les liens qu'il a
+    // partagés.
     SettingsCategory(
       id: SettingsSections.account,
       label: tr('Mon compte'),
       icon: Icons.person_rounded,
-      hint: tr('Profil, mot de passe, appareils connectés'),
+      hint: shares
+          ? tr('Profil, appareils, synchro Emby, liens de partage')
+          : tr('Profil, appareils, synchro Emby'),
       admin: false,
+      layout: SettingsSectionsLayout.tabbed,
       sections: [
         SettingsSection(
           id: SettingsSections.account,
-          label: tr('Mon compte'),
+          label: tr('Profil'),
           builder: (_) => const AccountPage(),
-        ),
-      ],
-    ),
-    SettingsCategory(
-      id: SettingsSections.device,
-      label: tr('Général'),
-      icon: Icons.tune_rounded,
-      hint: tr('Langue, affichage, notifications, aide'),
-      admin: false,
-      sections: [
-        SettingsSection(
-          id: SettingsSections.device,
-          label: tr('Général'),
-          builder: (_) => const DevicePage(),
-        ),
-      ],
-    ),
-    SettingsCategory(
-      id: SettingsSections.playback,
-      label: tr('Lecture'),
-      icon: Icons.play_circle_outline_rounded,
-      hint: tr('Langue audio, décodage, interface du lecteur'),
-      admin: false,
-      sections: [
-        SettingsSection(
-          id: SettingsSections.playback,
-          label: tr('Lecture'),
-          builder: (_) => const PlaybackPage(),
-        ),
-      ],
-    ),
-    // Un navigateur n'a pas de dossier privé où garder un film, une Apple TV
-    // n'en a qu'un que le système vide à sa guise : la catégorie n'aurait que
-    // des réglages sans effet à proposer.
-    if (!AppPlatform.isWeb && !AppPlatform.isTvOS)
-      SettingsCategory(
-        id: SettingsSections.downloads,
-        label: tr('Téléchargements'),
-        icon: Icons.download_rounded,
-        hint: tr('Épisodes d’avance, réseau autorisé, place occupée'),
-        admin: false,
-        sections: [
-          SettingsSection(
-            id: SettingsSections.downloads,
-            label: tr('Téléchargements'),
-            builder: (_) => const DownloadsPage(),
-          ),
-        ],
-      ),
-    // Les serveurs Onyx, le serveur Emby dont on reprend la progression, et
-    // les liens qui ouvrent un média d'un serveur sans compte : tout ce qui
-    // relie cet appareil à un serveur.
-    SettingsCategory(
-      id: SettingsSections.servers,
-      label: tr('Serveurs et partage'),
-      icon: Icons.dns_rounded,
-      hint: shares
-          ? tr('Vos serveurs, synchro Emby, liens de partage')
-          : tr('Vos serveurs et la synchro Emby'),
-      admin: false,
-      sections: [
-        SettingsSection(
-          id: SettingsSections.servers,
-          label: tr('Serveurs'),
-          builder: (_) => const ServersPage(),
         ),
         SettingsSection(
           id: SettingsSections.emby,
@@ -165,6 +111,68 @@ List<SettingsCategory> settingsCategoriesFor(Permissions p) {
             label: tr('Liens de partage'),
             builder: (_) => const SharesPage(),
           ),
+      ],
+    ),
+    SettingsCategory(
+      id: SettingsSections.playback,
+      label: tr('Lecture'),
+      icon: Icons.play_circle_outline_rounded,
+      hint: tr('Langue audio, intros, décodage, qualité'),
+      admin: false,
+      sections: [
+        SettingsSection(
+          id: SettingsSections.playback,
+          label: tr('Lecture'),
+          builder: (_) => const PlaybackPage(),
+        ),
+      ],
+    ),
+    SettingsCategory(
+      id: SettingsSections.device,
+      label: tr('Cet appareil'),
+      icon: Icons.tune_rounded,
+      hint: tr('Langue, affichage, notifications, aide'),
+      admin: false,
+      sections: [
+        SettingsSection(
+          id: SettingsSections.device,
+          label: tr('Cet appareil'),
+          builder: (_) => const DevicePage(),
+        ),
+      ],
+    ),
+    // Un navigateur garde ses images et n'a pas de dossier privé où garder un
+    // film. Une Apple TV n'en a qu'un que le système vide à sa guise : la
+    // page n'y propose que le cache des images.
+    if (!AppPlatform.isWeb)
+      SettingsCategory(
+        id: SettingsSections.downloads,
+        label: tr('Téléchargements et stockage'),
+        icon: Icons.download_rounded,
+        hint: AppPlatform.isTvOS
+            ? tr('Cache des images')
+            : tr('Épisodes d’avance, réseau autorisé, place occupée'),
+        admin: false,
+        sections: [
+          SettingsSection(
+            id: SettingsSections.downloads,
+            label: tr('Téléchargements et stockage'),
+            builder: (_) => const DownloadsPage(),
+          ),
+        ],
+      ),
+    SettingsCategory(
+      id: SettingsSections.servers,
+      label: tr('Serveurs'),
+      icon: Icons.dns_rounded,
+      hint: tr('Serveur actif, adresse, vos autres serveurs'),
+      admin: false,
+      sections: [
+        SettingsSection(
+          id: SettingsSections.servers,
+          label: tr('Serveurs'),
+          builder: (_) => const ServersPage(),
+        ),
       ],
     ),
     if (anyAdmin)
@@ -201,7 +209,7 @@ List<SettingsCategory> settingsCategoriesFor(Permissions p) {
       id: SettingsSections.users,
       label: tr('Utilisateurs'),
       icon: Icons.group_rounded,
-      hint: tr('Comptes, invitations, appareils, message à tous'),
+      hint: tr('Comptes, demandes d’accès, invitations, appareils'),
       admin: true,
       layout: SettingsSectionsLayout.tabbed,
       sections: [
@@ -217,12 +225,6 @@ List<SettingsCategory> settingsCategoriesFor(Permissions p) {
             label: tr('Appareils'),
             builder: (_) => const AdminDevicesPage(),
           ),
-        if (p.manageSettings)
-          SettingsSection(
-            id: SettingsSections.announcement,
-            label: tr('Message à tous'),
-            builder: (_) => const AnnouncementPage(),
-          ),
       ],
     ),
     SettingsCategory(
@@ -230,7 +232,7 @@ List<SettingsCategory> settingsCategoriesFor(Permissions p) {
       label: tr('Bibliothèque'),
       icon: Icons.video_library_rounded,
       hint: p.manageSettings
-          ? tr('Dossiers, analyse, métadonnées')
+          ? tr('Dossiers, analyse, maintenance')
           : tr('Analyse, maintenance'),
       admin: true,
       sections: [
@@ -240,22 +242,40 @@ List<SettingsCategory> settingsCategoriesFor(Permissions p) {
             label: tr('Bibliothèque'),
             builder: (_) => const LibraryPage(),
           ),
-        if (p.manageSettings)
-          SettingsSection(
-            id: SettingsSections.integrations,
-            label: tr('Métadonnées'),
-            builder: (_) => const IntegrationsPage(),
-          ),
       ],
     ),
+    // Tout ce que le serveur règle pour l'ensemble de ses comptes, qui
+    // traînait dans Bibliothèque (clés), Utilisateurs (sécurité, message),
+    // Général (journaux) et dans une entrée à part (serveurs liés).
     if (p.manageSettings)
       SettingsCategory(
-        id: SettingsSections.linkedServers,
-        label: tr('Serveurs liés'),
-        icon: Icons.hub_rounded,
-        hint: tr('Progression partagée entre serveurs'),
+        id: SettingsSections.server,
+        label: tr('Serveur'),
+        icon: Icons.settings_applications_rounded,
+        hint: tr('Services, sécurité, journaux, message à tous, serveurs liés'),
         admin: true,
+        layout: SettingsSectionsLayout.tabbed,
         sections: [
+          SettingsSection(
+            id: SettingsSections.integrations,
+            label: tr('Services'),
+            builder: (_) => const IntegrationsPage(),
+          ),
+          SettingsSection(
+            id: SettingsSections.security,
+            label: tr('Sécurité'),
+            builder: (_) => const SecurityPage(),
+          ),
+          SettingsSection(
+            id: SettingsSections.serverLogs,
+            label: tr('Journaux'),
+            builder: (_) => const ServerLogsPage(),
+          ),
+          SettingsSection(
+            id: SettingsSections.announcement,
+            label: tr('Message à tous'),
+            builder: (_) => const AnnouncementPage(),
+          ),
           SettingsSection(
             id: SettingsSections.linkedServers,
             label: tr('Serveurs liés'),

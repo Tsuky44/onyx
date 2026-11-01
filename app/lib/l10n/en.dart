@@ -176,6 +176,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Arabic',
   'Attendre le Wi-Fi':
       'Wait for Wi-Fi',
+  'Effacer la recherche':
+      'Clear search',
   'Aucun appareil connecté.':
       'No connected devices.',
   'Aucun appareil.':
@@ -518,6 +520,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Complete',
   'Compléter ({0})':
       'Complete ({0})',
+  'Compléter la demande':
+      'Complete the request',
   'Compléter les affiches et résumés':
       'Complete posters and summaries',
   'Compléter · {0}':
@@ -668,6 +672,14 @@ const Map<String, String> kEnglish = <String, String>{
       'Request declined',
   'Demander':
       'Request',
+  'Cochez les saisons à ajouter.':
+      'Tick the seasons to add.',
+  'Tout cocher':
+      'Select all',
+  'Tout décocher':
+      'Clear all',
+  '{0} épisodes sur {1} déjà là':
+      '{0} of {1} episodes already here',
   'Demander ({0})':
       'Request ({0})',
   'Demander cette saison':
@@ -1648,6 +1660,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Home videos, concerts, courses… Each video keeps its file name, with no poster or details lookup.',
   'Voir la saison':
       'View season',
+  'Voir les épisodes':
+      'View episodes',
   'Vos serveurs, synchro Emby, liens de partage':
       'Your servers, Emby sync, share links',
   'Vos serveurs et la synchro Emby':
@@ -1894,6 +1908,8 @@ const Map<String, String> kEnglish = <String, String>{
       'TMDB search failed',
   'Rechercher':
       'Search',
+  'Rechercher un paramètre':
+      'Search settings',
   'Rechercher un film ou une série…':
       'Search for a movie or TV show…',
   'Rechercher un titre…':
@@ -2766,6 +2782,8 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} episode(s) to watch',
   '{0} épisodes':
       '{0} episodes',
+  '{0} · vue':
+      '{0} · watched',
   '{0} épisode{1}':
       '{0} episode{1}',
   '{0} saison{1}':
@@ -3252,4 +3270,54 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} mo',
   '{0} ans':
       '{0} y',
+  'Profil, appareils, synchro Emby, liens de partage':
+      'Profile, devices, Emby sync, share links',
+  'Profil, appareils, synchro Emby':
+      'Profile, devices, Emby sync',
+  'Profil':
+      'Profile',
+  'Langue audio, intros, décodage, qualité':
+      'Audio language, intros, decoding, quality',
+  'Téléchargements et stockage':
+      'Downloads and storage',
+  'Serveur actif, adresse, vos autres serveurs':
+      'Active server, address, your other servers',
+  'Comptes, demandes d’accès, invitations, appareils':
+      'Accounts, access requests, invitations, devices',
+  'Services, sécurité, journaux, message à tous, serveurs liés':
+      'Services, security, logs, message to everyone, linked servers',
+  'Services':
+      'Services',
+  'Journaux':
+      'Logs',
+  'Journaux des lectures':
+      'Playback logs',
+  'Images':
+      'Images',
+  'Ajouter un appareil':
+      'Add a device',
+  'Suit votre compte':
+      'Follows your account',
+  'Propre à cet appareil':
+      'Specific to this device',
+  'Pour tout le serveur':
+      'For the whole server',
+  'La langue, l’affichage et les notifications de cet appareil, et de l’aide si quelque chose ne va pas. Ces réglages ne suivent pas votre compte.':
+      'This device\'s language, display and notifications, and help if something goes wrong. These settings do not follow your account.',
+  'Comment les films et les séries se lisent. Vos préférences suivent votre compte sur tous vos appareils ; seuls les réglages du lecteur restent propres à celui-ci.':
+      'How movies and shows play. Your preferences follow your account on all your devices; only the player settings stay specific to this one.',
+  'Votre profil sur {0}, votre activité, et les appareils où vous êtes connecté ou que vous voulez y ajouter.':
+      'Your profile on {0}, your activity, and the devices you are signed in on or want to add.',
+  'Ce que cet appareil garde pour s’afficher plus vite. Cela ne change rien sur vos autres appareils.':
+      'What this device keeps so it can display faster. This changes nothing on your other devices.',
+  'Ce que cet appareil garde hors ligne, quand il a le droit de l’aller chercher, et la place que cela prend. Ces réglages ne changent rien sur vos autres appareils.':
+      'What this device keeps offline, when it may fetch it, and the space it takes. These settings change nothing on your other devices.',
+  'Les services extérieurs auxquels le serveur se connecte : ceux qui donnent au catalogue ses affiches et ses résumés, et celui qui reçoit les demandes de médias.':
+      'The outside services the server connects to: those that give the catalogue its posters and summaries, and the one that receives media requests.',
+  'Ce que le serveur exige de chaque compte pour se connecter.':
+      'What the server requires of each account to sign in.',
+  'Ce que le serveur garde de chaque lecture pour comprendre une panne, quel que soit l’appareil qui lisait.':
+      'What the server keeps of each playback to understand a failure, whichever device was playing.',
+  'Chaque lecture envoie son journal et ses mesures en se terminant, et le serveur garde ceux des dix dernières. On les relit depuis l’Historique, en ouvrant une lecture — y compris celle d’un autre appareil, ce que le journal de l’app ne permet pas. Les mesures ont leur propre interrupteur : elles interrogent le lecteur toutes les cinq secondes, là où le journal ne coûte rien avant la fin.':
+      'Each playback sends its log and measurements when it ends, and the server keeps those of the last ten. Read them from History by opening a playback — including one from another device, which the app log cannot do. Measurements have their own switch: they poll the player every five seconds, whereas the log costs nothing until the end.',
 };

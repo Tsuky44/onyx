@@ -104,6 +104,14 @@ class Media {
       !isFullyWatched &&
       ((watchedEpisodeCount ?? 0) > 0 || (startedEpisodeCount ?? 0) > 0);
 
+  /// Part des épisodes disponibles déjà terminés, de 0 à 1 : le tour d'une
+  /// bulle de saison s'en remplit.
+  double get watchedFraction {
+    final available = availableEpisodeCount ?? 0;
+    if (available <= 0) return 0;
+    return ((watchedEpisodeCount ?? 0) / available).clamp(0.0, 1.0);
+  }
+
   /// Épisodes disponibles qu'il reste à voir.
   int get remainingEpisodeCount {
     final remaining = (availableEpisodeCount ?? 0) - (watchedEpisodeCount ?? 0);

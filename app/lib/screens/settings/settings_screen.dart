@@ -8,7 +8,9 @@ import '../../theme/app_motion.dart';
 import '../../tv/tv_focus_panes.dart';
 import '../../tv/tv_mode.dart';
 import 'settings_categories.dart';
+import 'settings_search.dart';
 import 'settings_sections.dart';
+import 'widgets/settings_search_field.dart';
 import 'widgets/settings_ui.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -34,8 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _selected = widget.initialSection ?? SettingsSections.account;
   bool _pushedInitial = false;
 
-  void _open(BuildContext context, List<SettingsCategory> categories,
-      String id,
+  void _open(BuildContext context, List<SettingsCategory> categories, String id,
       {required bool wide}) {
     final category = categories.where((c) => c.opens(id)).firstOrNull;
     if (category == null) return;
@@ -56,6 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final categories = settingsCategoriesFor(auth.permissions);
+    final searchIndex = buildSettingsSearchIndex(categories, auth.permissions);
 
     return LayoutBuilder(builder: (context, constraints) {
       final wide = constraints.maxWidth >= _wideBreakpoint;
@@ -75,11 +77,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return wide
           ? _WideSettings(
               categories: categories,
+              searchIndex: searchIndex,
               selected: _selected,
               onSelect: (id) => _open(context, categories, id, wide: true),
             )
           : _CompactSettings(
               categories: categories,
+              searchIndex: searchIndex,
               onSelect: (id) => _open(context, categories, id, wide: false),
             );
     });
@@ -89,11 +93,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _WideSettings extends StatelessWidget {
   const _WideSettings({
     required this.categories,
+    required this.searchIndex,
     required this.selected,
     required this.onSelect,
   });
 
   final List<SettingsCategory> categories;
+  final List<SettingsSearchEntry> searchIndex;
   final String selected;
   final ValueChanged<String> onSelect;
 
@@ -112,6 +118,7 @@ class _WideSettings extends StatelessWidget {
               TvFocusPane(
                 child: _Sidebar(
                   categories: categories,
+                  searchIndex: searchIndex,
                   selected: category.id,
                   onSelect: onSelect,
                 ),
@@ -146,8 +153,7 @@ class _WideSettings extends StatelessWidget {
                               ),
                           ],
                         ),
-                        transitionBuilder: (child, animation) =>
-                            FadeTransition(
+                        transitionBuilder: (child, animation) => FadeTransition(
                           opacity: animation,
                           child: SlideTransition(
                             position: Tween(
@@ -174,19 +180,38 @@ class _WideSettings extends StatelessWidget {
   }
 }
 
-class _Sidebar extends StatelessWidget {
+class _Sidebar extends StatefulWidget {
   const _Sidebar({
     required this.categories,
+    required this.searchIndex,
     required this.selected,
     required this.onSelect,
   });
 
   final List<SettingsCategory> categories;
+  final List<SettingsSearchEntry> searchIndex;
   final String selected;
   final ValueChanged<String> onSelect;
 
   @override
+  State<_Sidebar> createState() => _SidebarState();
+}
+
+class _SidebarState extends State<_Sidebar> {
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final categories = widget.categories;
+    final selected = widget.selected;
+    final onSelect = widget.onSelect;
+    final searching = _search.text.trim().isNotEmpty;
     final user = categories.where((c) => !c.admin).toList();
     final admin = categories.where((c) => c.admin).toList();
     final isTv = TvScope.of(context);
@@ -224,32 +249,48 @@ class _Sidebar extends StatelessWidget {
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(14, 8, 14, 10),
-            child: _AccountCard(compact: true),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
+            child: SettingsSearchField(
+              controller: _search,
+              onChanged: (_) => setState(() {}),
+            ),
           ),
+          if (!searching)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(14, 8, 14, 10),
+              child: _AccountCard(compact: true),
+            ),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 16),
               children: [
-                _NavHeader(tr('Mon espace')),
-                for (final c in user)
-                  _NavItem(
-                    category: c,
-                    selected: c.id == selected,
-                    autofocus: isTv && c.id == selected,
-                    onTap: () => onSelect(c.id),
-                  ),
-                if (admin.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  _NavHeader(tr('Administration')),
-                  for (final c in admin)
+                if (searching)
+                  SettingsSearchSidebarResults(
+                    index: widget.searchIndex,
+                    query: _search.text,
+                    onSelect: (hit) => onSelect(hit.section),
+                  )
+                else ...[
+                  _NavHeader(tr('Mon espace')),
+                  for (final c in user)
                     _NavItem(
                       category: c,
                       selected: c.id == selected,
                       autofocus: isTv && c.id == selected,
                       onTap: () => onSelect(c.id),
                     ),
+                  if (admin.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    _NavHeader(tr('Administration')),
+                    for (final c in admin)
+                      _NavItem(
+                        category: c,
+                        selected: c.id == selected,
+                        autofocus: isTv && c.id == selected,
+                        onTap: () => onSelect(c.id),
+                      ),
+                  ],
                 ],
               ],
             ),
@@ -257,9 +298,10 @@ class _Sidebar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 8, 22, 16),
             child: Text(
-              tr('Onyx {0} · {1}', [ClientIdentity.version, ClientIdentity.platform]),
-              style:
-                  const TextStyle(color: AppColors.textMuted, fontSize: AppType.footnote),
+              tr('Onyx {0} · {1}',
+                  [ClientIdentity.version, ClientIdentity.platform]),
+              style: const TextStyle(
+                  color: AppColors.textMuted, fontSize: AppType.footnote),
             ),
           ),
         ],
@@ -441,14 +483,35 @@ class _AccountCard extends StatelessWidget {
   }
 }
 
-class _CompactSettings extends StatelessWidget {
-  const _CompactSettings({required this.categories, required this.onSelect});
+class _CompactSettings extends StatefulWidget {
+  const _CompactSettings({
+    required this.categories,
+    required this.searchIndex,
+    required this.onSelect,
+  });
 
   final List<SettingsCategory> categories;
+  final List<SettingsSearchEntry> searchIndex;
   final ValueChanged<String> onSelect;
 
   @override
+  State<_CompactSettings> createState() => _CompactSettingsState();
+}
+
+class _CompactSettingsState extends State<_CompactSettings> {
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final categories = widget.categories;
+    final onSelect = widget.onSelect;
+    final searching = _search.text.trim().isNotEmpty;
     final user = categories.where((c) => !c.admin).toList();
     final admin = categories.where((c) => c.admin).toList();
 
@@ -465,21 +528,36 @@ class _CompactSettings extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
-          const _AccountCard(),
-          const SizedBox(height: 24),
-          SettingsGroup(
-            title: tr('Mon espace'),
-            children: [for (final c in user) tile(c)],
+          SettingsSearchField(
+            controller: _search,
+            onChanged: (_) => setState(() {}),
           ),
-          if (admin.isNotEmpty)
+          const SizedBox(height: 16),
+          if (searching)
+            SettingsSearchResults(
+              index: widget.searchIndex,
+              query: _search.text,
+              onSelect: (hit) => onSelect(hit.section),
+            )
+          else ...[
+            const _AccountCard(),
+            const SizedBox(height: 24),
             SettingsGroup(
-              title: tr('Administration'),
-              children: [for (final c in admin) tile(c)],
+              title: tr('Mon espace'),
+              children: [for (final c in user) tile(c)],
             ),
+            if (admin.isNotEmpty)
+              SettingsGroup(
+                title: tr('Administration'),
+                children: [for (final c in admin) tile(c)],
+              ),
+          ],
           Center(
             child: Text(
-              tr('Onyx {0} · {1}', [ClientIdentity.version, ClientIdentity.platform]),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: AppType.footnote),
+              tr('Onyx {0} · {1}',
+                  [ClientIdentity.version, ClientIdentity.platform]),
+              style: const TextStyle(
+                  color: AppColors.textMuted, fontSize: AppType.footnote),
             ),
           ),
         ],

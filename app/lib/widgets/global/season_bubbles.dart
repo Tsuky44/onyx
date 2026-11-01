@@ -8,6 +8,7 @@ import '../../tv/tv_focus.dart';
 import '../../tv/tv_focus_memory.dart';
 import 'app_network_image.dart';
 import 'season_liquid.dart';
+import 'season_progress_ring.dart';
 
 /// Diamètre d'une bulle de saison fermée, et marge entre deux bulles.
 const _bubbleSize = 48.0;
@@ -46,6 +47,10 @@ class SeasonBubbleEntry {
   /// Le message au survol, pour une rangée qui n'a pas de fiche à y ouvrir.
   final String? tooltip;
 
+  /// La part de la saison déjà vue (0 à 1) : le tour du rond se remplit en
+  /// blanc d'autant. Rien de vu laisse le filet pâle, tout vu le ferme.
+  final double watched;
+
   const SeasonBubbleEntry({
     required this.id,
     required this.code,
@@ -57,6 +62,7 @@ class SeasonBubbleEntry {
     this.missing = false,
     this.missingBadge = false,
     this.tooltip,
+    this.watched = 0,
   });
 }
 
@@ -351,6 +357,10 @@ class SeasonSizeTween extends StatelessWidget {
   final Duration duration;
   final Curve curve;
   final Alignment alignment;
+
+  /// Le clip d'`AnimatedSize`, carré par défaut : une bulle qui s'arrondit
+  /// elle-même le coupe (`Clip.none`).
+  final Clip clip;
   final Widget child;
 
   const SeasonSizeTween({
@@ -358,6 +368,7 @@ class SeasonSizeTween extends StatelessWidget {
     required this.duration,
     required this.curve,
     required this.alignment,
+    this.clip = Clip.hardEdge,
     required this.child,
   });
 
@@ -371,6 +382,7 @@ class SeasonSizeTween extends StatelessWidget {
       duration: duration,
       curve: curve,
       alignment: alignment,
+      clipBehavior: clip,
       child: child,
     );
   }
@@ -407,14 +419,19 @@ class _SeasonBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const radius = BorderRadius.all(Radius.circular(_bubbleSize / 2));
-    final bubble = SeasonSizeTween(
-      duration: duration,
-      curve: curve,
-      alignment: Alignment.centerLeft,
-      child: Stack(
-        children: [
-          AnimatedContainer(
-            height: _bubbleSize,
+    // Le contenu garde sa largeur d'arrivée, et c'est un clip arrondi, posé
+    // *autour* du `AnimatedSize`, qui le découvre à la largeur du moment (le
+    // ressort de `season_liquid.dart`). Avec le clip carré d'`AnimatedSize`,
+    // une pilule posée d'emblée à sa largeur finale montrait un bout plat,
+    // carré, pendant tout le gonflement. Le fond de verre prend la même
+    // largeur à chaque image : les deux bouts restent ronds, comme la bulle de
+    // largeur animée d'OnyxHub.
+    final bubble = Stack(
+      // La lueur de la bulle éclairée déborde de sa boîte.
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: AnimatedContainer(
             duration: AppMotion.fade(context, AppMotion.emphasis),
             curve: AppMotion.curve,
             decoration: BoxDecoration(
@@ -431,6 +448,15 @@ class _SeasonBubble extends StatelessWidget {
                   ),
               ],
             ),
+          ),
+        ),
+        ClipRRect(
+          borderRadius: radius,
+          child: SeasonSizeTween(
+            duration: duration,
+            curve: curve,
+            alignment: Alignment.centerLeft,
+            clip: Clip.none,
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -438,43 +464,51 @@ class _SeasonBubble extends StatelessWidget {
                 // Le focus est celui de [TvFocusable], autour de la bulle.
                 canRequestFocus: false,
                 customBorder: const StadiumBorder(),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(6, 0, selected ? 0 : 6, 0),
-                      child: _Lead(entry: entry, lit: lit),
+                child: SizedBox(
+                  height: _bubbleSize,
+                  // 1 px de chaque côté : l'épaisseur du filet du fond.
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 1),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding:
+                              EdgeInsets.fromLTRB(6, 0, selected ? 0 : 6, 0),
+                          child: _Lead(entry: entry, lit: lit),
+                        ),
+                        if (selected) _Label(entry: entry, lit: lit),
+                      ],
                     ),
-                    if (selected) _Label(entry: entry, lit: lit),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Le sablier ou le nuage barré reste monté : il rentre dans la
-          // bulle qui s'ouvre (échelle et fondu) et ressort quand elle se
-          // ferme.
-          if (entry.requested || (entry.missing && entry.missingBadge))
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: IgnorePointer(
-                child: AnimatedScale(
-                  scale: selected ? 0 : 1,
-                  duration: AppMotion.move(context, AppMotion.standard),
-                  curve: selected ? Curves.easeIn : Curves.easeOutBack,
-                  child: AnimatedOpacity(
-                    opacity: selected ? 0 : 1,
-                    duration: AppMotion.fade(context, AppMotion.standard),
-                    child: entry.requested
-                        ? const _RequestedPip()
-                        : const _MissingPip(),
                   ),
                 ),
               ),
             ),
-        ],
-      ),
+          ),
+        ),
+        // Le sablier ou le nuage barré reste monté : il rentre dans la
+        // bulle qui s'ouvre (échelle et fondu) et ressort quand elle se
+        // ferme.
+        if (entry.requested || (entry.missing && entry.missingBadge))
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: AnimatedScale(
+                scale: selected ? 0 : 1,
+                duration: AppMotion.move(context, AppMotion.standard),
+                curve: selected ? Curves.easeIn : Curves.easeOutBack,
+                child: AnimatedOpacity(
+                  opacity: selected ? 0 : 1,
+                  duration: AppMotion.fade(context, AppMotion.standard),
+                  child: entry.requested
+                      ? const _RequestedPip()
+                      : const _MissingPip(),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
 
     final tooltip = entry.tooltip;
@@ -511,15 +545,11 @@ class _Lead extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08),
-                width: 1.5,
-              ),
+          Positioned.fill(
+            child: SeasonProgressRing(
+              progress: entry.watched,
+              child: const SizedBox.expand(),
             ),
-            child: const SizedBox.expand(),
           ),
           AnimatedScale(
             scale: lit ? 0.5 : 1,
