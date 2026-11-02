@@ -195,6 +195,14 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   cache du titre et avance le moniteur sur ses chemins ; `request.created`, `request.status_changed`
   et `request.deleted` oublient le statut en cache ; un évènement inconnu est accepté sans effet.
   Capacité `mediahub_events`.
+* `GET /api/integrations/mediahub/users`, `/movies`, `/shows`, `GET|PUT /api/integrations/mediahub/link`
+  (sans compte, `Authorization: Bearer <mediahub_api_key>`, ADR-0102) — ce que MediaHub lisait avec
+  la session d'un administrateur Onyx. `users` → `{ "users": [{ "id", "username", "is_owner",
+  "permissions", "avatar" }] }` ; `movies` et `shows` → même forme que `/api/movies` et `/api/shows`,
+  sans progression ; `link` → `{ "mediahub_url", "mediahub_api_key_hint", "server_version" }`. `PUT`
+  prend `{ "mediahub_url"?, "mediahub_api_key"? }` (`400` adresse non http(s) ou clé de moins de 32
+  caractères) : présenter la clé actuelle suffit pour en poser une nouvelle. `401` sans la bonne clé.
+  Capacité `mediahub_directory`.
 * `POST /api/integrations/onyxhub/imported` (sans compte, `Authorization: Bearer <mediahub_api_key>`,
   ADR-0074) — l'équivalent pour OnyxHub : `{ "tmdbId", "mediaType", "paths": [...] }` (100 au plus)
   → `202 { "status": "queued" }`. Capacité `onyxhub_import_signal`.

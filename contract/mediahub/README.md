@@ -47,6 +47,19 @@ désigné par `user.id`, jamais réutilisé ; `username` ne change pas et sert d
 | `onyx_sso_redeem_request.json` | MediaHub → Onyx | `POST /api/integrations/mediahub/sso/redeem` (Bearer clé d'intégration) |
 | `onyx_sso_redeem.json` | Onyx → MediaHub | réponse `200` de la précédente |
 
+## Ce que MediaHub lit chez Onyx avec la clé (ADR-0102)
+
+Écrits par Onyx, relus par `server/handlers/mediahub_directory_test.go` (régénérés avec
+`ONYX_UPDATE_CONTRACT=1`). Aucun compte n'appelle : `Authorization: Bearer <clé d'intégration>` seul.
+
+| Fichier | Qui l'écrit → qui le lit | Route (chez Onyx) |
+|---|---|---|
+| `onyx_integration_users.json` | Onyx → MediaHub | `GET /api/integrations/mediahub/users` (import des comptes) |
+| `onyx_integration_link.json` | Onyx → MediaHub | `GET` et `PUT /api/integrations/mediahub/link` `{mediahub_url?, mediahub_api_key?}` |
+
+`GET /api/integrations/mediahub/movies` et `/shows` rendent la forme de `/api/movies` et
+`/api/shows` (« Ma médiathèque »), sans progression.
+
 Erreurs : toujours `{"error": "…"}`. Login : `401` sans clé `otp` = mauvais identifiants, `429` +
 `Retry-After`. Étape OTP : `401` « Code incorrect » (on peut redemander), `410` (on recommence au mot
 de passe). Rachat : `401` mauvaise clé, `400` corps illisible, `410` code inconnu, expiré, déjà

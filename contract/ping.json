@@ -20,6 +20,7 @@
     "avatars",
     "mediahub_requests",
     "mediahub_events",
-    "mediahub_sso"
+    "mediahub_sso",
+    "mediahub_directory"
   ]
 }

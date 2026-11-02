@@ -64,6 +64,10 @@ const (
 	// POST /api/integrations/mediahub/sso tire le code qui ouvre MediaHub
 	// déjà connecté (ADR-0090).
 	CapabilityMediaHubSSO = "mediahub_sso"
+	// GET /api/integrations/mediahub/users, /movies, /shows et /link
+	// s'ouvrent avec la clé d'intégration : MediaHub n'a plus besoin d'une
+	// session d'administrateur Onyx (ADR-0102).
+	CapabilityMediaHubDirectory = "mediahub_directory"
 )
 
 type pingResponse struct {
@@ -100,6 +104,7 @@ func pingPayload() pingResponse {
 			CapabilityMediaHubRequests,
 			CapabilityMediaHubEvents,
 			CapabilityMediaHubSSO,
+			CapabilityMediaHubDirectory,
 		},
 	}
 }

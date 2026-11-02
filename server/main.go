@@ -255,6 +255,16 @@ func main() {
 	// limité comme une connexion, puisqu'il en ouvre une chez MediaHub.
 	router.POST("/api/integrations/mediahub/sso", handlers.RequireAuth(handlers.IssueMediaHubSSO))
 	router.POST("/api/integrations/mediahub/sso/redeem", handlers.RateLimited(handlers.LoginLimiter, handlers.RedeemMediaHubSSO))
+	// Ce que MediaHub lisait avec la session d'un administrateur Onyx
+	// (ADR-0102) : la clé d'intégration suffit, puisque c'est déjà elle qui
+	// fait agir MediaHub au nom de chaque compte. Les comptes, la bibliothèque
+	// (sans progression : aucun compte n'appelle) et l'adresse de MediaHub.
+	// Limitées comme un sondage : un balayage de clés ne passe pas.
+	router.GET("/api/integrations/mediahub/users", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubAccounts)))
+	router.GET("/api/integrations/mediahub/movies", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.GetMovies)))
+	router.GET("/api/integrations/mediahub/shows", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.GetShows)))
+	router.GET("/api/integrations/mediahub/link", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.GetMediaHubLink)))
+	router.PUT("/api/integrations/mediahub/link", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.UpdateMediaHubLink)))
 
 	// Serveurs liés (ADR-0017) : la progression passe d'un serveur à l'autre
 	// sans dépendre d'une app ouverte.
