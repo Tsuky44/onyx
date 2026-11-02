@@ -21,7 +21,7 @@ import 'package:flutter/scheduler.dart';
 class FrameBudgetWatch {
   FrameBudgetWatch({
     required this.frameBudget,
-    this.window = 180,
+    this.window = 120,
     this.slowShare = 0.3,
   });
 
@@ -47,7 +47,7 @@ class FrameBudgetWatch {
   /// Le délai avant la première mesure : les premières secondes compilent
   /// leurs shaders et décodent toutes leurs affiches d'un coup, ce qui saccade
   /// sur n'importe quel appareil.
-  static const Duration warmUp = Duration(seconds: 10);
+  static const Duration warmUp = Duration(seconds: 5);
 
   /// Surveille les images de [binding] et appelle [onSustainedJank] à la
   /// première fenêtre lente. Rend de quoi arrêter.

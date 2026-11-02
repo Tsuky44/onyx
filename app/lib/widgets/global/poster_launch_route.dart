@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../theme/app_motion.dart';
 import 'app_network_image.dart';
 import 'poster_card.dart';
 
@@ -34,8 +36,9 @@ Future<T?> pushPosterLaunch<T>(
   required LaunchOrigin? origin,
   RouteSettings? settings,
 }) {
-  final reduceMotion =
-      MediaQuery.maybeDisableAnimationsOf(navigator.context) ?? false;
+  // Le mode léger compte aussi : ce zoom transforme la page entière à chaque
+  // image, ce qu'un ordinateur sans processeur graphique ne tient pas.
+  final reduceMotion = AppMotion.reduced(navigator.context);
   final navBox = navigator.context.findRenderObject();
 
   if (origin == null || reduceMotion || navBox is! RenderBox) {

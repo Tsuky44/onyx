@@ -62,6 +62,7 @@ abstract final class LiteMode {
       totalMemoryMb: DeviceHardware.totalMemoryMb,
       isLowRamDevice: DeviceHardware.isLowRamDevice,
       model: DeviceHardware.model,
+      processorCount: AppPlatform.processorCount,
     );
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -79,7 +80,8 @@ abstract final class LiteMode {
     _apply();
     debugPrint('LiteMode: ${enabled.value ? 'actif' : 'inactif'} '
         '(${_preference.name}, matériel=$_hardware, mesuré=$_measured, '
-        '${DeviceHardware.totalMemoryMb}MB, ${DeviceHardware.model})');
+        '${DeviceHardware.totalMemoryMb}MB, ${DeviceHardware.model}, '
+        '${AppPlatform.processorCount} cpu)');
     _watchIfUndecided();
   }
 
@@ -158,6 +160,11 @@ abstract final class LiteMode {
   /// - Moins de 2,5 Go de mémoire, ou un Android qui se dit `isLowRamDevice` :
   ///   les clés de streaming, les boîtiers d'entrée de gamme.
   ///
+  /// - Un ordinateur à deux processeurs logiques ou moins (Pentium ou Celeron
+  ///   double cœur, sans hyper-threading) : sans processeur graphique digne de
+  ///   ce nom, Flutter dessine l'interface sur le processeur, et c'est lui
+  ///   qui manque (ADR-0101). Un Pentium à quatre fils passe par la mesure.
+  ///
   /// Une mémoire inconnue (0) ne décide rien : la mesure des images s'en
   /// charge, et elle couvre aussi ce que la mémoire ne dit pas — un
   /// Raspberry Pi à 4 Go a beaucoup de mémoire et très peu de GPU.
@@ -170,15 +177,19 @@ abstract final class LiteMode {
     required int totalMemoryMb,
     required bool isLowRamDevice,
     required String model,
+    int processorCount = 0,
   }) {
     if (isWebOS) return true;
     if (isTvOS && model.startsWith('AppleTV5,')) return true;
-    if (!isAndroid && !isIOS && !isTvOS) return false;
+    if (!isAndroid && !isIOS && !isTvOS) {
+      return processorCount > 0 && processorCount <= _modestProcessorCount;
+    }
     if (isAndroid && isLowRamDevice) return true;
     return totalMemoryMb > 0 && totalMemoryMb < _modestMemoryMb;
   }
 
   static const int _modestMemoryMb = 2560;
+  static const int _modestProcessorCount = 2;
 
   @visibleForTesting
   static void resetForTest() {

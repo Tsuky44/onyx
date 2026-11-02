@@ -7,6 +7,7 @@ import '../../../models/models.dart';
 import '../../../models/server_activity.dart';
 import '../../../services/api_client.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_motion.dart';
 import '../../../theme/app_theme.dart';
 import '../widgets/media_thumb.dart';
 import '../widgets/settings_ui.dart';
@@ -344,7 +345,7 @@ class _DailyChartState extends State<_DailyChart> {
                                   ? 0
                                   : day.watchedSeconds / maxValue,
                             ),
-                            duration: Duration(milliseconds: 350 + i * 6),
+                            duration: AppMotion.move(context, Duration(milliseconds: 350 + i * 6)),
                             curve: Curves.easeOutCubic,
                             builder: (_, value, __) => Container(
                               height: math.max(3, 150 * value),
@@ -547,7 +548,7 @@ class _BarRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(end: ratio),
-                    duration: const Duration(milliseconds: 500),
+                    duration: AppMotion.move(context, const Duration(milliseconds: 500)),
                     curve: Curves.easeOutCubic,
                     builder: (_, v, __) => LinearProgressIndicator(
                       value: v,

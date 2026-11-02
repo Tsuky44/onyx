@@ -26,6 +26,9 @@ abstract final class AppPlatform {
   static const bool isDesktop = false;
   static const bool isMobile = false;
 
+  /// Un navigateur ne dit pas combien de processeurs il a : 0, « inconnu ».
+  static const int processorCount = 0;
+
   /// Voir `app_platform_io.dart` : le navigateur ne dit rien de plus utile.
   static const String label = 'Navigateur';
 

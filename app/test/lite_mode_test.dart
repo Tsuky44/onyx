@@ -22,6 +22,7 @@ void main() {
       int memory = 0,
       bool lowRam = false,
       String model = '',
+      int cpus = 0,
     }) =>
         LiteMode.isModestHardware(
           isAndroid: android,
@@ -31,6 +32,7 @@ void main() {
           totalMemoryMb: memory,
           isLowRamDevice: lowRam,
           model: model,
+          processorCount: cpus,
         );
 
     test('une Apple TV HD, pas une Apple TV 4K', () {
@@ -50,9 +52,22 @@ void main() {
       expect(modest(tvos: true), isFalse);
     });
 
-    test('un téléviseur LG, toujours ; un ordinateur, jamais', () {
+    test('un téléviseur LG, toujours', () {
       expect(modest(webos: true), isTrue);
-      expect(modest(memory: 1024), isFalse);
+    });
+
+    test('un ordinateur à deux processeurs ou moins, pas un ordinateur '
+        'ordinaire (ADR-0101)', () {
+      expect(modest(cpus: 2), isTrue);
+      expect(modest(cpus: 1), isTrue);
+      expect(modest(cpus: 4), isFalse);
+      expect(modest(cpus: 8), isFalse);
+      expect(modest(memory: 1024), isFalse,
+          reason: 'sur ordinateur, la mémoire ne décide pas');
+    });
+
+    test('un navigateur ou un nombre inconnu ne décide rien', () {
+      expect(modest(cpus: 0), isFalse);
     });
   });
 

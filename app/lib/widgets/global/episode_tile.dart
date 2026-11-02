@@ -150,6 +150,16 @@ class _EpisodeTileState extends State<EpisodeTile> {
     }
   }
 
+  Widget _dimIfUnavailable(Widget poster) => _isAvailable
+      ? poster
+      : ColorFiltered(
+          colorFilter: ColorFilter.mode(
+            Colors.black.withValues(alpha: 0.35),
+            BlendMode.darken,
+          ),
+          child: poster,
+        );
+
   @override
   Widget build(BuildContext context) {
     final isFinished = widget.episode.isFinished;
@@ -262,15 +272,10 @@ class _EpisodeTileState extends State<EpisodeTile> {
                   ],
                   Stack(
                     children: [
-                      ColorFiltered(
-                        colorFilter: _isAvailable
-                            ? const ColorFilter.mode(
-                                Colors.transparent, BlendMode.dst)
-                            : ColorFilter.mode(
-                                Colors.black.withValues(alpha: 0.35),
-                                BlendMode.darken,
-                              ),
-                        child: MediaPoster(
+                      // Un filtre, même neutre, ouvre un calque par ligne : seul un
+                      // épisode pas encore sorti est assombri.
+                      _dimIfUnavailable(
+                        MediaPoster(
                           media: widget.episode.media,
                           width: thumbW,
                           height: thumbH,

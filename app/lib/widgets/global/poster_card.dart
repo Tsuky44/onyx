@@ -347,19 +347,24 @@ class PosterLift extends StatelessWidget {
             curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(PosterCard.radius),
-              boxShadow: shadows
-                  ? [
+              // Au repos, aucune ombre : une ombre transparente restait une
+              // ombre floutée à dessiner pour chaque affiche d'une grille, à
+              // chaque image d'un défilement. `lerp` entre « aucune » et la
+              // liste la fait grandir depuis rien, et revenir à rien.
+              boxShadow: shadows && active
+                  ? const [
                       BoxShadow(
-                        color:
-                            Colors.black.withValues(alpha: active ? 0.55 : 0.0),
-                        blurRadius: active ? 22 : 8,
-                        spreadRadius: active ? -4 : -6,
-                        offset: Offset(0, active ? 12 : 4),
+                        color: Color(0x8C000000),
+                        blurRadius: 22,
+                        spreadRadius: -4,
+                        offset: Offset(0, 12),
                       ),
                     ]
                   : null,
             ),
-            child: child,
+            // L'ombre se redessine à chaque image du survol ; sans calque
+            // propre, l'affiche et ses voiles le feraient avec elle.
+            child: RepaintBoundary(child: child),
           ),
         );
       },

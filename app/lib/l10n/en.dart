@@ -1964,6 +1964,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Resume',
   'Reprendre la lecture':
       'Continue watching',
+  'ou lecture/pause sur la télécommande':
+      'or press play/pause on the remote',
   'Reprendre la lecture ici':
       'Resume playback here',
   'Reprendre le téléchargement':

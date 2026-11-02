@@ -37,6 +37,10 @@ abstract final class AppPlatform {
 
   static bool get isMobile => isAndroid || isIOS;
 
+  /// Le nombre de processeurs logiques. Lu par le mode léger pour reconnaître
+  /// un ordinateur trop modeste pour l'interface complète (ADR-0101).
+  static int get processorCount => io.Platform.numberOfProcessors;
+
   /// Comment cet appareil se nomme auprès d'un serveur qui ne le connaît pas
   /// encore — la ligne que lit l'administrateur d'une demande d'accès. Le nom
   /// de la machine serait plus parlant, mais le lire coûte une permission sur

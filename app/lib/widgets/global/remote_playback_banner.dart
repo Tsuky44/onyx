@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/remote_playback.dart';
@@ -13,16 +14,26 @@ import '../../utils/on_screen.dart';
 import '../../utils/poster_url.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
+import '../../tv/tv_mode.dart';
 import '../../l10n/tr.dart';
 import 'app_network_image.dart';
+import 'remote_playback_tv_card.dart';
 
 /// « Lecture en cours sur un autre appareil » : ce que le compte lit ailleurs,
 /// avec de quoi le reprendre ici là où il en est.
 ///
 /// Reprendre ouvre le lecteur, dont le premier signal met l'autre appareil en
 /// pause (voir `server/handlers/playback_handoff.go`).
+///
+/// Sur un téléviseur le bandeau n'est pas posé par-dessus l'accueil mais dans
+/// sa page ([inline]) : un élément en surimpression n'entre dans aucune rangée
+/// de la télécommande, et « Reprendre » y restait hors d'atteinte.
 class RemotePlaybackBanner extends StatefulWidget {
-  const RemotePlaybackBanner({super.key});
+  /// Dans le flux de la page, à la largeur de ses rangées, plutôt qu'en
+  /// surimpression.
+  final bool inline;
+
+  const RemotePlaybackBanner({super.key, this.inline = false});
 
   @override
   State<RemotePlaybackBanner> createState() => _RemotePlaybackBannerState();
@@ -45,7 +56,9 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
   void didChangeOnScreen(bool onScreen) {
     _timer?.cancel();
     _timer = null;
+    HardwareKeyboard.instance.removeHandler(_onMediaKey);
     if (!onScreen) return;
+    HardwareKeyboard.instance.addHandler(_onMediaKey);
     WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
     _timer = Timer.periodic(_pollInterval, (_) => _refresh());
   }
@@ -53,7 +66,29 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
   @override
   void dispose() {
     _timer?.cancel();
+    HardwareKeyboard.instance.removeHandler(_onMediaKey);
     super.dispose();
+  }
+
+  /// Lecture/pause de la télécommande : sur une télévision, c'est le geste qui
+  /// reprend ce que le compte lit ailleurs, sans avoir à viser le bouton. La
+  /// Siri Remote n'a qu'une touche pour cela, et c'est celle que l'on presse en
+  /// pensant « reprendre ».
+  ///
+  /// Seulement quand l'accueil est au premier plan : sous le lecteur ou une
+  /// fiche, la touche garde son sens habituel.
+  bool _onMediaKey(KeyEvent event) {
+    if (event is! KeyDownEvent || !TvMode.isTv) return false;
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.mediaPlayPause &&
+        key != LogicalKeyboardKey.mediaPlay) {
+      return false;
+    }
+    if (_current == null || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      return false;
+    }
+    unawaited(_resume());
+    return true;
   }
 
   Future<List<RemotePlayback>> _fetch() async {
@@ -115,7 +150,11 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
     final play = _current;
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 220),
-      child: play == null ? const SizedBox.shrink() : _card(context, play),
+      child: play == null
+          ? const SizedBox.shrink()
+          : widget.inline
+              ? _tvCard(context, play)
+              : _card(context, play),
     );
   }
 
@@ -127,7 +166,7 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
     final device =
         s.deviceName.isNotEmpty ? s.deviceName : tr('un autre appareil');
 
-    return ConstrainedBox(
+    final card = ConstrainedBox(
       key: ValueKey(_dismissKey(play)),
       constraints: const BoxConstraints(maxWidth: 560),
       child: Material(
@@ -225,6 +264,20 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
           ],
         ),
       ),
+    );
+    return card;
+  }
+
+  /// Sur un téléviseur : voir [RemotePlaybackTvCard].
+  Widget _tvCard(BuildContext context, RemotePlayback play) {
+    final baseUrl =
+        Provider.of<AuthProvider>(context, listen: false).apiClient.baseUrl;
+    return RemotePlaybackTvCard(
+      key: ValueKey(_dismissKey(play)),
+      play: play,
+      posterUrl: cardPosterUrl(play.session.posterUrl, serverBaseUrl: baseUrl),
+      enabled: !_opening,
+      onResume: _resume,
     );
   }
 }

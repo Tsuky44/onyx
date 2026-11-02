@@ -9,6 +9,7 @@ import '../../screens/library/movie_detail_screen.dart';
 import '../../screens/library/search_results_screen.dart';
 import '../../screens/library/show_detail_screen.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_motion.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/poster_url.dart';
@@ -237,7 +238,8 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
         child: CompositedTransformTarget(
           link: _link,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
+            duration:
+                AppMotion.move(context, const Duration(milliseconds: 220)),
             curve: Curves.easeOutCubic,
             width: width,
             child: GlassSearchInput(
@@ -330,7 +332,8 @@ class _SearchResultsPanel extends StatelessWidget {
               final media = results[index];
               final poster =
                   resolvePosterUrl(media.posterUrl, serverBaseUrl: baseUrl);
-              final typeLabel = media.type == MediaType.movie ? tr('Film') : tr('Série');
+              final typeLabel =
+                  media.type == MediaType.movie ? tr('Film') : tr('Série');
 
               return InkWell(
                 onTap: () => onTap(media),
@@ -368,7 +371,8 @@ class _SearchResultsPanel extends StatelessWidget {
                             Text(
                               typeLabel,
                               style: TextStyle(
-                                color: AppColors.textMuted.withValues(alpha: 0.9),
+                                color:
+                                    AppColors.textMuted.withValues(alpha: 0.9),
                                 fontSize: AppType.caption,
                               ),
                             ),
@@ -413,8 +417,7 @@ class _SearchResultsPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(AppIcons.forward,
-                    size: 15, color: AppColors.accent),
+                const Icon(AppIcons.forward, size: 15, color: AppColors.accent),
               ],
             ),
           ),

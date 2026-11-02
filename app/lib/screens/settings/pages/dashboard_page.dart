@@ -7,6 +7,7 @@ import '../../../models/server_activity.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/api_client.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_motion.dart';
 import '../../../utils/format.dart';
 import '../../../utils/on_screen.dart';
 import '../playback_logs_screen.dart';
@@ -270,7 +271,20 @@ class _LiveDotState extends State<_LiveDot>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1400),
-  )..repeat(reverse: true);
+  );
+
+  // Une pulsation sans fin redessine le point à chaque image, aussi longtemps
+  // que la page reste ouverte : arrêtée en mode léger (ADR-0086).
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.reduced(context)) {
+      _controller.stop();
+      _controller.value = 1;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
+  }
 
   @override
   void dispose() {
@@ -419,7 +433,7 @@ class _NowPlayingCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(3),
                         child: TweenAnimationBuilder<double>(
                           tween: Tween(end: session.progress),
-                          duration: const Duration(milliseconds: 600),
+                          duration: AppMotion.move(context, const Duration(milliseconds: 600)),
                           builder: (_, value, __) => LinearProgressIndicator(
                             value: value,
                             minHeight: 4,

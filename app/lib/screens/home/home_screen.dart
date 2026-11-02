@@ -237,6 +237,15 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                               ),
                             ),
+                          // Sur un téléviseur, dans la page et non par-dessus : un
+                          // élément en surimpression n'entre dans aucune rangée
+                          // de la télécommande, et « Reprendre » restait hors
+                          // d'atteinte. Sous le carrousel, où bas depuis
+                          // « Lecture » y mène.
+                          if (isTv)
+                            const SliverToBoxAdapter(
+                              child: RemotePlaybackBanner(inline: true),
+                            ),
                           if (data != null &&
                               data.continueWatching.isEmpty &&
                               data.recentMovies.isEmpty &&
@@ -320,15 +329,16 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
-                    const Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 16,
-                      child: SafeArea(
-                        top: false,
-                        child: Center(child: RemotePlaybackBanner()),
+                    if (!isTv)
+                      const Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 16,
+                        child: SafeArea(
+                          top: false,
+                          child: Center(child: RemotePlaybackBanner()),
+                        ),
                       ),
-                    ),
                   ],
                 ),
     );
