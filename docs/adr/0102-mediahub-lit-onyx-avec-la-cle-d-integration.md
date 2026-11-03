@@ -3,7 +3,7 @@
 - **Statut :** accepté
 - **Date :** 2026-11-02
 - **Portée :** `server/handlers/mediahub_directory.go`, les routes
-  `GET /api/integrations/mediahub/users`, `/movies`, `/shows`, `GET|PUT /api/integrations/mediahub/link`,
+  `GET /api/integrations/mediahub/users`, `/movies`, `/shows`, `/counts`, `GET|PUT /api/integrations/mediahub/link`,
   la capacité `mediahub_directory`, `contract/mediahub/onyx_integration_*.json`. Prolonge les
   ADR-0089 et ADR-0090.
 
@@ -22,7 +22,11 @@ changer la politique OTP, repointer une bibliothèque.
 - **La clé suffit.** Elle fait déjà agir MediaHub au nom de chaque compte. Les quatre routes
   ci-dessus la vérifient (`RequireMediaHubKey`, temps constant via `mediahub.VerifyKey`) et ne
   rendent que ce que MediaHub lit : les comptes sans gabarit d'invitation ni état OTP, la
-  bibliothèque sans progression (l'utilisateur 0 n'en a pas), l'état de la liaison.
+  bibliothèque et ses totaux, l'état de la liaison.
+- **La progression du compte qui regarde.** `X-Player-Id` (ADR-0090) nomme le compte Onyx lié à
+  l'utilisateur MediaHub : `/movies` et `/shows` portent alors sa progression (pastilles « vu »,
+  épisodes restants). Sans en-tête ou avec un id inconnu, l'utilisateur 0 : aucune progression,
+  jamais d'erreur. La clé fait déjà agir MediaHub au nom de n'importe quel compte.
 - **Pas d'écriture large.** `PUT /link` n'écrit que l'adresse de MediaHub et, pour une rotation,
   une nouvelle clé de 32 caractères au moins. Présenter l'actuelle suffit, comme pour un mot de
   passe. Rien d'autre des réglages ne s'ouvre à la clé.

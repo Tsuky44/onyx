@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
 	"project-player/server/config"
+	"project-player/server/database"
 	"project-player/server/models"
 
 	"github.com/julienschmidt/httprouter"
@@ -133,5 +135,69 @@ func TestMediaHubLinkRefusesABadAddressOrAShortKey(t *testing.T) {
 	}
 	if config.MediaHubAPIKey() != directoryKey {
 		t.Fatal("une requête refusée a changé la clé")
+	}
+}
+
+// seedWatchedShow : une série de trois épisodes sur le disque (plus un
+// manquant), dont le compte a fini le premier et commencé le deuxième.
+func seedWatchedShow(t *testing.T, userID int) {
+	t.Helper()
+	show := insertMediaRow(t, "show", "Dark", "", 0)
+	season := insertMediaRow(t, "season", "Saison 1", "", show)
+	first := insertMediaRow(t, "episode", "E1", "/tv/dark/e1.mkv", season)
+	second := insertMediaRow(t, "episode", "E2", "/tv/dark/e2.mkv", season)
+	insertMediaRow(t, "episode", "E3", "/tv/dark/e3.mkv", season)
+	insertMediaRow(t, "episode", "E4", "", season)
+	insertMediaRow(t, "movie", "Heat", "/films/heat.mkv", 0)
+	for _, p := range []struct{ media, position, finished int }{{first, 2400, 1}, {second, 300, 0}} {
+		if _, err := database.DB.Exec(`INSERT INTO progressions (user_id, media_id, current_position_seconds, is_finished) VALUES (?, ?, ?, ?)`,
+			userID, p.media, p.position, p.finished); err != nil {
+			t.Fatalf("insert progression: %v", err)
+		}
+	}
+}
+
+func TestMediaHubLibraryCountsLeaveOutEpisodesWithoutAFile(t *testing.T) {
+	setupDirectory(t)
+	seedWatchedShow(t, createTestUser(t, "lea", false, models.DefaultPermissions()))
+
+	rec := callWithKey(RequireMediaHubKey(MediaHubLibraryCounts), http.MethodGet, "/", directoryKey, "")
+	var counts mediaHubLibraryCounts
+	if err := json.Unmarshal(rec.Body.Bytes(), &counts); err != nil || rec.Code != http.StatusOK {
+		t.Fatalf("HTTP %d %s", rec.Code, rec.Body.String())
+	}
+	if counts != (mediaHubLibraryCounts{Movies: 1, Shows: 1, Episodes: 3}) {
+		t.Fatalf("totaux = %+v", counts)
+	}
+}
+
+func TestMediaHubLibraryCarriesTheProgressOfTheNamedAccountOnly(t *testing.T) {
+	setupDirectory(t)
+	lea := createTestUser(t, "lea", false, models.DefaultPermissions())
+	seedWatchedShow(t, lea)
+
+	watched := func(playerID string) showLibraryItem {
+		req := httptest.NewRequest(http.MethodGet, "/api/integrations/mediahub/shows", nil)
+		req.Header.Set("Authorization", "Bearer "+directoryKey)
+		if playerID != "" {
+			req.Header.Set("X-Player-Id", playerID)
+		}
+		rec := httptest.NewRecorder()
+		RequireMediaHubKey(GetShows)(rec, req, nil)
+		var items []showLibraryItem
+		if err := json.Unmarshal(rec.Body.Bytes(), &items); err != nil || len(items) != 1 {
+			t.Fatalf("séries = %s (%v)", rec.Body.String(), err)
+		}
+		return items[0]
+	}
+
+	got := watched(strconv.Itoa(lea))
+	if got.AvailableEpisodeCount != 3 || got.WatchedEpisodeCount != 1 || got.StartedEpisodeCount != 1 {
+		t.Fatalf("compte de lea : %+v", got)
+	}
+	for _, other := range []string{"", "999", "abc"} {
+		if got := watched(other); got.WatchedEpisodeCount != 0 || got.StartedEpisodeCount != 0 {
+			t.Errorf("X-Player-Id %q voit une progression : %+v", other, got)
+		}
 	}
 }

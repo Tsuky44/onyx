@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"project-player/server/buildinfo"
@@ -23,16 +26,65 @@ import (
 // le reste du serveur.
 
 // RequireMediaHubKey ouvre une route au serveur MediaHub qui présente la clé
-// d'intégration. Le handler reçoit l'utilisateur 0 : aucun compte n'appelle,
-// donc aucune progression ni aucun droit propre ne s'y mêle.
+// d'intégration. Le handler reçoit le compte nommé par X-Player-Id (le compte
+// Onyx lié à l'utilisateur MediaHub, ADR-0090), sinon l'utilisateur 0 : la
+// bibliothèque vient alors sans progression. La clé fait déjà agir MediaHub au
+// nom de n'importe quel compte : lire sa progression n'ouvre rien de plus.
 func RequireMediaHubKey(next AuthenticatedHandle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if err := mediahub.VerifyKey(r.Header, config.MediaHubAPIKey()); err != nil {
 			writeJSONError(w, http.StatusUnauthorized, "Clé d'intégration invalide")
 			return
 		}
-		next(w, r, ps, 0)
+		next(w, r, ps, mediaHubCaller(r))
 	}
+}
+
+// mediaHubCaller rend le compte d'X-Player-Id s'il existe, sinon 0. Un id
+// inconnu (compte supprimé côté Onyx) ne refuse pas l'appel : MediaHub montre
+// la bibliothèque sans pastilles plutôt qu'une erreur.
+func mediaHubCaller(r *http.Request) int {
+	id, err := strconv.Atoi(strings.TrimSpace(r.Header.Get("X-Player-Id")))
+	if err != nil || id <= 0 {
+		return 0
+	}
+	if _, err := LoadUser(id); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Printf("mediaHubCaller: load user %d: %v", id, err)
+		}
+		return 0
+	}
+	return id
+}
+
+// mediaHubLibraryCounts : ce que l'accueil de MediaHub affiche. Un film en
+// plusieurs versions, ou une série répartie sur deux dossiers, compte une
+// fois (même identifiant TMDB) ; un épisode compte s'il a un fichier.
+type mediaHubLibraryCounts struct {
+	Movies   int `json:"movies"`
+	Shows    int `json:"shows"`
+	Episodes int `json:"episodes"`
+}
+
+const mediaHubCountsQuery = `
+	SELECT
+		COUNT(DISTINCT CASE WHEN type = 'movie' THEN CASE WHEN COALESCE(tmdb_id, 0) > 0 THEN 't' || tmdb_id ELSE 'i' || id END END),
+		COUNT(DISTINCT CASE WHEN type = 'show' THEN CASE WHEN COALESCE(tmdb_id, 0) > 0 THEN 't' || tmdb_id ELSE 'i' || id END END),
+		COUNT(CASE WHEN type = 'episode' AND COALESCE(file_path, '') != '' THEN 1 END)
+	FROM medias
+	WHERE type IN ('movie', 'show', 'episode')`
+
+// MediaHubLibraryCounts rend les totaux de la bibliothèque
+// (GET /api/integrations/mediahub/counts).
+func MediaHubLibraryCounts(w http.ResponseWriter, _ *http.Request, _ httprouter.Params, _ int) {
+	var counts mediaHubLibraryCounts
+	if err := database.DB.QueryRow(mediaHubCountsQuery).Scan(&counts.Movies, &counts.Shows, &counts.Episodes); err != nil {
+		log.Printf("MediaHubLibraryCounts: %v", err)
+		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(counts)
 }
 
 // integrationAccount est un compte tel que MediaHub l'importe : ni le gabarit

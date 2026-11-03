@@ -58,7 +58,8 @@ désigné par `user.id`, jamais réutilisé ; `username` ne change pas et sert d
 | `onyx_integration_link.json` | Onyx → MediaHub | `GET` et `PUT /api/integrations/mediahub/link` `{mediahub_url?, mediahub_api_key?}` |
 
 `GET /api/integrations/mediahub/movies` et `/shows` rendent la forme de `/api/movies` et
-`/api/shows` (« Ma médiathèque »), sans progression.
+`/api/shows` (« Ma médiathèque »), avec la progression du compte d'`X-Player-Id`.
+`GET /api/integrations/mediahub/counts` rend `{movies, shows, episodes}` (accueil).
 
 Erreurs : toujours `{"error": "…"}`. Login : `401` sans clé `otp` = mauvais identifiants, `429` +
 `Retry-After`. Étape OTP : `401` « Code incorrect » (on peut redemander), `410` (on recommence au mot
