@@ -16,6 +16,9 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
 
   private var players: [Int64: AetherPlayer] = [:]
   private var nextId: Int64 = 1
+  #if os(tvOS)
+    private var presenters: [Int64: NativePlayerPresenter] = [:]
+  #endif
 
   /// Le lecteur auquel une vue se rattache. Nil s'il a déjà été détruit : la
   /// vue reste noire plutôt que de faire tomber l'app.
@@ -53,7 +56,12 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   }
 
   func release(playerId: Int64) throws {
-    onMain { players.removeValue(forKey: playerId)?.release() }
+    onMain {
+      #if os(tvOS)
+        presenters.removeValue(forKey: playerId)?.release()
+      #endif
+      players.removeValue(forKey: playerId)?.release()
+    }
   }
 
   func open(playerId: Int64, url: String, startPositionMs: Int64, play: Bool) throws {
@@ -123,16 +131,50 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
     try onMain { try require(playerId).setPictureInPictureArmed(armed) }
   }
 
-  // Squelette du contrat du lecteur natif : le vrai présentateur arrive avec
-  // `NativePlayerPresenter`. D'ici là, répondre `unavailable` fait garder
-  // l'écran Flutter à Dart, plutôt que de laisser un appel sans réponse.
+  // Le lecteur natif n'existe que sur l'Apple TV. Ailleurs, et pour un
+  // lecteur inconnu, la réponse est un `unavailable`, jamais une erreur : Dart
+  // garde alors l'écran Flutter au lieu de rester sur un appel en échec.
   func presentNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws {
-    nativeEvents.send(
-      OnyxAppleNativeEvent(
-        playerId: playerId, kind: .unavailable, reason: .unsupported))
+    #if os(tvOS)
+      onMain {
+        guard let presenter = presenter(playerId) else {
+          nativeEvents.send(
+            OnyxAppleNativeEvent(
+              playerId: playerId, kind: .unavailable, reason: .presentationFailed))
+          return
+        }
+        presenter.present(spec)
+      }
+    #else
+      nativeEvents.send(
+        OnyxAppleNativeEvent(
+          playerId: playerId, kind: .unavailable, reason: .unsupported))
+    #endif
   }
 
-  func updateNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws {}
+  func updateNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws {
+    #if os(tvOS)
+      onMain { presenters[playerId]?.update(spec) }
+    #endif
+  }
 
-  func dismissNative(playerId: Int64) throws {}
+  func dismissNative(playerId: Int64) throws {
+    #if os(tvOS)
+      onMain { presenters[playerId]?.dismiss() }
+    #endif
+  }
+
+  #if os(tvOS)
+    /// Créé au premier `presentNative`, et gardé avec son lecteur : l'affiche
+    /// téléchargée sert encore à l'épisode suivant s'il la partage.
+    @MainActor private func presenter(_ id: Int64) -> NativePlayerPresenter? {
+      if let presenter = presenters[id] { return presenter }
+      guard let player = players[id] else { return nil }
+      let events = nativeEvents
+      let presenter = NativePlayerPresenter(
+        playerId: id, engine: player.engine, send: { events.send($0) })
+      presenters[id] = presenter
+      return presenter
+    }
+  #endif
 }
