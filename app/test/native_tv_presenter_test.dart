@@ -237,6 +237,29 @@ void main() {
           ['Passer le récap', 'Épisode suivant']);
     });
 
+    test('sans segment ni générique, aucune action ; chacune seule suffit', () {
+      expect(NativeTvSpecBuilder.build(_state()).actions, isEmpty);
+      final next =
+          NativeTvSpecBuilder.build(_state(hasNextEpisode: true)).actions;
+      expect(next.map((a) => a.id), [NativeTvIds.nextEpisode]);
+    });
+
+    test('Auto disparaît du menu quand le serveur ne le propose pas', () {
+      final spec = NativeTvSpecBuilder.build(_state(
+        quality: const NativeTvQuality(
+          tiers: [],
+          current: null,
+          isAuto: false,
+          autoAvailable: false,
+          isLocalPlayback: false,
+        ),
+      ));
+
+      final ids = _menu(spec, NativeTvIds.quality).options.map((o) => o.id);
+      expect(ids, isNot(contains('auto')));
+      expect(ids, contains('direct'));
+    });
+
     test('les libellés passent par la l10n', () {
       AppLanguage.notifier.value = AppLanguage.english;
       final spec = NativeTvSpecBuilder.build(
@@ -297,6 +320,42 @@ void main() {
             _event(OnyxAppleNativeEventKind.action, actionId: 'autre')),
         isNull,
       );
+    });
+
+    test('un identifiant de piste mal formé est ignoré', () {
+      for (final option in ['index:x', 'index:', 'piste']) {
+        expect(
+          nativeTvIntentOf(_event(OnyxAppleNativeEventKind.menuSelected,
+              menuId: NativeTvIds.audio, optionId: option)),
+          isNull,
+          reason: option,
+        );
+      }
+      expect(
+        nativeTvIntentOf(_event(OnyxAppleNativeEventKind.menuSelected,
+            menuId: NativeTvIds.fit, optionId: 'zoom')),
+        isNull,
+      );
+    });
+
+    test('un sous-titre du menu AVKit porte l’identifiant du moteur', () {
+      final intent = nativeTvIntentOf(_event(
+              OnyxAppleNativeEventKind.subtitleSelected, trackId: '4'))
+          as NativeTvSetSubtitle;
+      expect(intent.trackId, '4');
+    });
+
+    test('chaque raison de refus remonte telle quelle', () {
+      for (final reason in [
+        OnyxAppleNativeReason.softwareRoute,
+        OnyxAppleNativeReason.presentationFailed,
+        OnyxAppleNativeReason.unsupported,
+      ]) {
+        final intent = nativeTvIntentOf(_event(
+            OnyxAppleNativeEventKind.unavailable,
+            reason: reason)) as NativeTvUnavailable;
+        expect(intent.reason, reason);
+      }
     });
 
     test('les actions, la fermeture et le refus', () {

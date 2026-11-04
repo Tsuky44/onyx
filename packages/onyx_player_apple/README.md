@@ -28,3 +28,26 @@ dart run tool/sync_tvos.dart                    # toujours
 - iOS 18, tvOS 18 et macOS 15 au minimum, les planchers d'AetherEngine.
 - AetherEngine est sous LGPL-3.0 avec une exception pour les magasins d'applications : une
   modification du moteur lui-même doit être publiée, pas le code de l'app.
+
+## Lecteur natif tvOS
+
+Sur Apple TV, `OnyxApplePlayer` peut présenter un `AVPlayerViewController` par-dessus Flutter
+(`NativePlayerPresenter.swift`, tvOS seulement). `PlayerScreen` reste le cerveau : le natif affiche
+la dernière spec reçue. Décision : [ADR-0105](../../docs/adr/0105-lecteur-natif-sur-apple-tv.md).
+
+| API | Rôle |
+|---|---|
+| `presentNative(spec)` | Présente le contrôleur (un second appel vaut `updateNative`). Peut se faire pendant le `load`. |
+| `updateNative(spec)` | Applique titre, affiche, menus cochés (Vitesse, Format, Qualité, Audio) et actions contextuelles. |
+| `dismissNative()` | Ferme ; émet `dismissed/requested`. Sans effet si rien n'est présenté. |
+| `setLoadSubtitles(…)` | Déclare les sous-titres au `load` (requis pour le menu AVKit). |
+| `nativeEvents` | `action`, `menuSelected`, `subtitleSelected`, `dismissed`, `unavailable`. |
+
+Événements notables : Menu sur la télécommande donne `dismissed/userDismissed` (sans pause ni arrêt
+de la lecture : c'est à Dart) ; la route logicielle donne `unavailable/softwareRoute` puis la
+fermeture, sans `dismissed` ; `subtitleSelected` demande à Dart de rappeler `selectSubtitleTrack`.
+
+Limites : iOS et macOS répondent `unavailable/unsupported` ; la route logicielle, les sous-titres
+image et le HLS avec sous-titre texte restent sur l'interface Flutter ; ni zoom, ni statistiques, ni
+toast « Regarder ensemble » ; non vérifié sur appareil (recette :
+`docs/agents/native-tv-player-manual-tests.md`).

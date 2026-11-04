@@ -56,6 +56,24 @@ void main() {
       }
     });
 
+    test('priorité : refus, puis route logicielle, puis piste image', () {
+      expect(
+          nativeTvFallbackFor(
+              softwareRoute: true, subtitle: NativeTvSubtitleKind.image),
+          NativeTvFallback.softwareRoute);
+      expect(
+          nativeTvFallbackFor(
+              refusal: OnyxAppleNativeReason.presentationFailed,
+              softwareRoute: true),
+          NativeTvFallback.presentationFailed);
+      expect(
+          nativeTvFallbackFor(
+              softwareRoute: true,
+              streaming: true,
+              subtitle: NativeTvSubtitleKind.text),
+          NativeTvFallback.softwareRoute);
+    });
+
     test('une fermeture n’est pas un refus', () {
       expect(nativeTvFallbackFor(refusal: OnyxAppleNativeReason.userDismissed),
           isNull);
