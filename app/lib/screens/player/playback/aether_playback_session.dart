@@ -95,8 +95,8 @@ class AetherPlaybackSession implements PlaybackSession {
   final ValueNotifier<List<OnyxAppleSubtitleBitmap>> bitmaps =
       ValueNotifier(const []);
 
-  final ValueNotifier<({EdgeInsets padding, Duration duration})>
-      subtitleInset = ValueNotifier((
+  final ValueNotifier<({EdgeInsets padding, Duration duration})> subtitleInset =
+      ValueNotifier((
     padding: SubtitleOverlay.defaultPadding,
     duration: Duration.zero,
   ));
@@ -272,6 +272,9 @@ class AetherPlaybackSession implements PlaybackSession {
         // séparément, et n'en retirer qu'un laisserait l'autre à l'écran.
         await p.setExternalSubtitle(null);
         await p.selectSubtitleTrack(null);
+      case SubtitleFromTrack(track: PlaybackTrack(id: 'no')):
+        // « Désactivé » du menu AVKit, rendu par le contrôleur comme sur mpv.
+        await p.selectSubtitleTrack(null);
       case SubtitleFromTrack(:final track):
         final nativeId = _tracksNow.nativeSubtitleId(track);
         if (nativeId == null) {
@@ -400,7 +403,7 @@ class AetherPlaybackSession implements PlaybackSession {
   /// Le natif répond `unavailable` là où il n'a pas d'écran à présenter
   /// (iPhone, Mac) : la capacité existe sur tout appareil Apple.
   @override
-  late final NativeTvScreen nativeTvScreen = _AetherNativeTvScreen(_ready);
+  late final NativeTvScreen nativeTvScreen = _AetherNativeTvScreen(this);
 
   @override
   Future<PlaybackDiagnostics> readDiagnostics() async {
@@ -447,9 +450,10 @@ class AetherPlaybackSession implements PlaybackSession {
 
 /// [NativeTvScreen] sur le lecteur AetherEngine de cette session.
 class _AetherNativeTvScreen implements NativeTvScreen {
-  _AetherNativeTvScreen(this._ready);
+  _AetherNativeTvScreen(this._session);
 
-  final Future<OnyxApplePlayer> _ready;
+  final AetherPlaybackSession _session;
+  Future<OnyxApplePlayer> get _ready => _session._ready;
 
   @override
   Future<void> present(OnyxAppleNativeSpec spec) async =>
@@ -466,10 +470,45 @@ class _AetherNativeTvScreen implements NativeTvScreen {
   Future<void> setFit(OnyxAppleVideoFit fit) async =>
       (await _ready).setVideoFit(fit);
 
+  @override
+  Future<void> prepareSubtitles(OnyxAppleLoadSubtitles subtitles) async =>
+      (await _ready).setLoadSubtitles(subtitles);
+
+  @override
+  bool get softwareRoute => _session._status?.videoRoute == 'software';
+
+  @override
+  bool get showsBitmapSubtitle => _session._tracksNow.currentSubtitleIsBitmap;
+
   /// Déjà filtré sur ce lecteur par [OnyxApplePlayer.nativeEvents].
   @override
-  Stream<OnyxAppleNativeEvent> get events =>
-      Stream.fromFuture(_ready).asyncExpand((player) => player.nativeEvents);
+  Stream<OnyxAppleNativeEvent> get events => Stream.fromFuture(_ready)
+      .asyncExpand((player) => player.nativeEvents)
+      .map(_inPlayerTrackIds)
+      .where((event) => event != null)
+      .cast<OnyxAppleNativeEvent>();
+
+  /// Le natif parle en index de flux du moteur, le contrôleur dans sa propre
+  /// numérotation (voir [AetherTracks]). Une piste qu'il ne liste plus est
+  /// écartée plutôt que prise pour une autre.
+  OnyxAppleNativeEvent? _inPlayerTrackIds(OnyxAppleNativeEvent event) {
+    final nativeId = event.trackId;
+    if (event.kind != OnyxAppleNativeEventKind.subtitleSelected ||
+        nativeId == null) {
+      return event;
+    }
+    final track = _session._tracksNow.subtitleForNativeId(nativeId);
+    if (track == null) {
+      debugPrint('AetherEngine: sous-titre natif $nativeId hors des pistes '
+          'du fichier, ignoré');
+      return null;
+    }
+    return OnyxAppleNativeEvent(
+      playerId: event.playerId,
+      kind: event.kind,
+      trackId: track.id,
+    );
+  }
 }
 
 /// La vue native, cadrée, avec les sous-titres par-dessus.
@@ -535,8 +574,7 @@ class _AetherSurfaceState extends State<_AetherSurface> {
           ValueListenableBuilder<PlaybackVideoParams>(
             valueListenable: session._params,
             builder: (context, params, _) {
-              final aspectRatio =
-                  widget.aspectRatio ?? params.aspect ?? 16 / 9;
+              final aspectRatio = widget.aspectRatio ?? params.aspect ?? 16 / 9;
               return LayoutBuilder(
                 builder: (context, constraints) {
                   // Dépend de la place offerte autant que du réglage : le

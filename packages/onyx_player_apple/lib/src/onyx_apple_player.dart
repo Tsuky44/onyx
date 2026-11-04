@@ -4,6 +4,8 @@ import 'messages.g.dart' as pigeon show engineLog;
 export 'messages.g.dart'
     show
         OnyxApplePlaybackState,
+        OnyxAppleExternalSubtitle,
+        OnyxAppleLoadSubtitles,
         OnyxAppleNativeAction,
         OnyxAppleNativeEvent,
         OnyxAppleNativeEventKind,
@@ -143,6 +145,11 @@ class OnyxApplePlayer {
   /// session.
   Future<void> setPreferredAudioLanguages(List<String> priorities) =>
       _api.setPreferredAudioLanguages(_id, priorities);
+
+  /// Les sous-titres à déclarer au chargement, appliqués aux ouvertures
+  /// suivantes : AVKit ne voit que ceux-là.
+  Future<void> setLoadSubtitles(OnyxAppleLoadSubtitles subtitles) =>
+      _api.setLoadSubtitles(_id, subtitles);
 
   Future<void> selectAudioTrack(String trackId) =>
       _api.selectAudioTrack(_id, trackId);

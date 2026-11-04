@@ -47,7 +47,8 @@ void main() {
         videoFormat: 'sdr',
       );
 
-  test('les sous-titres du fichier sont numérotés de 1 à N, dans l’ordre du '
+  test(
+      'les sous-titres du fichier sont numérotés de 1 à N, dans l’ordre du '
       'conteneur', () {
     // Flux 0 : vidéo, 1-2 : audio, 3-5 : sous-titres, listés dans le désordre.
     final tracks = AetherTracks.of(status(subtitles: [
@@ -89,6 +90,29 @@ void main() {
       selectedSubtitle: '100000',
     ));
     expect(tracks.currentSubtitle, isNull);
+  });
+
+  test('un index natif du menu AVKit revient dans la numérotation de l’app',
+      () {
+    final tracks = AetherTracks.of(status(
+      subtitles: [track('5'), track('3'), track('100000', container: false)],
+    ));
+    expect(tracks.subtitleForNativeId('5'), tracks.subtitles[1]);
+    expect(tracks.subtitleForNativeId('3')?.id, '1');
+    // Une piste hors du conteneur n'a pas de place dans la numérotation.
+    expect(tracks.subtitleForNativeId('100000'), isNull);
+  });
+
+  test('une piste image active se signale, pour rendre la main à Flutter', () {
+    final subtitles = [track('3'), track('4', bitmap: true)];
+    expect(
+        AetherTracks.of(status(subtitles: subtitles, selectedSubtitle: '4'))
+            .currentSubtitleIsBitmap,
+        isTrue);
+    expect(
+        AetherTracks.of(status(subtitles: subtitles, selectedSubtitle: '3'))
+            .currentSubtitleIsBitmap,
+        isFalse);
   });
 
   test('l’audio garde l’ordre du conteneur et ses index natifs', () {

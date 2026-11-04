@@ -17,7 +17,18 @@ class _RecordingScreen implements NativeTvScreen {
   final specs = <OnyxAppleNativeSpec>[];
   final fits = <OnyxAppleVideoFit>[];
   final events$ = StreamController<OnyxAppleNativeEvent>.broadcast();
+  final prepared = <OnyxAppleLoadSubtitles>[];
   bool failPresent = false;
+
+  @override
+  bool softwareRoute = false;
+
+  @override
+  bool showsBitmapSubtitle = false;
+
+  @override
+  Future<void> prepareSubtitles(OnyxAppleLoadSubtitles subtitles) async =>
+      prepared.add(subtitles);
 
   @override
   Future<void> present(OnyxAppleNativeSpec spec) async {
@@ -129,9 +140,15 @@ void main() {
     test('la qualité propose Auto, le Direct et l’échelle, comme le menu Onyx',
         () {
       const tiers = [
-        QualityTier(key: '1080p', label: '1080p · 8 Mbit/s', height: 1080,
+        QualityTier(
+            key: '1080p',
+            label: '1080p · 8 Mbit/s',
+            height: 1080,
             bitrateBps: 8000000),
-        QualityTier(key: '720p', label: '720p · 4 Mbit/s', height: 720,
+        QualityTier(
+            key: '720p',
+            label: '720p · 4 Mbit/s',
+            height: 720,
             bitrateBps: 4000000),
       ];
       final spec = NativeTvSpecBuilder.build(_state(
@@ -169,10 +186,10 @@ void main() {
     test('l’audio suit la liste du serveur quand elle existe', () {
       final spec = NativeTvSpecBuilder.build(_state(
         serverAudio: [
-          MediaAudioTrack(index: 1, typedIndex: 0, codec: 'eac3',
-              language: 'fre'),
-          MediaAudioTrack(index: 2, typedIndex: 1, codec: 'eac3',
-              language: 'eng'),
+          MediaAudioTrack(
+              index: 1, typedIndex: 0, codec: 'eac3', language: 'fre'),
+          MediaAudioTrack(
+              index: 2, typedIndex: 1, codec: 'eac3', language: 'eng'),
         ],
         selectedAudioIndex: 1,
         engineAudio: const [PlaybackTrack(id: '1', language: 'fr')],
@@ -225,8 +242,7 @@ void main() {
       );
 
       expect(_menu(spec, NativeTvIds.fit).label, 'Aspect ratio');
-      expect(spec.actions.map((a) => a.label),
-          ['Skip intro', 'Next episode']);
+      expect(spec.actions.map((a) => a.label), ['Skip intro', 'Next episode']);
     });
 
     test('deux états identiques donnent deux specs égales', () {
@@ -292,20 +308,16 @@ void main() {
             actionId: NativeTvIds.nextEpisode)),
         isA<NativeTvNextEpisode>(),
       );
-      final byUser = nativeTvIntentOf(_event(
-              OnyxAppleNativeEventKind.dismissed,
-              reason: OnyxAppleNativeReason.userDismissed))
-          as NativeTvClosed;
+      final byUser = nativeTvIntentOf(_event(OnyxAppleNativeEventKind.dismissed,
+          reason: OnyxAppleNativeReason.userDismissed)) as NativeTvClosed;
       expect(byUser.byUser, isTrue);
       final requested = nativeTvIntentOf(_event(
-              OnyxAppleNativeEventKind.dismissed,
-              reason: OnyxAppleNativeReason.requested))
-          as NativeTvClosed;
+          OnyxAppleNativeEventKind.dismissed,
+          reason: OnyxAppleNativeReason.requested)) as NativeTvClosed;
       expect(requested.byUser, isFalse);
       final refused = nativeTvIntentOf(_event(
-              OnyxAppleNativeEventKind.unavailable,
-              reason: OnyxAppleNativeReason.softwareRoute))
-          as NativeTvUnavailable;
+          OnyxAppleNativeEventKind.unavailable,
+          reason: OnyxAppleNativeReason.softwareRoute)) as NativeTvUnavailable;
       expect(refused.reason, OnyxAppleNativeReason.softwareRoute);
       expect(
         (nativeTvIntentOf(_event(OnyxAppleNativeEventKind.subtitleSelected))
@@ -425,6 +437,35 @@ void main() {
       await pumpEventQueue();
 
       expect(screen.fits, [OnyxAppleVideoFit.cover, OnyxAppleVideoFit.contain]);
+    });
+
+    test('prépare les pistes texte pour AVKit avant toute ouverture', () async {
+      await pumpEventQueue();
+
+      expect(screen.prepared.single.prepareNative, isTrue);
+      expect(screen.prepared.single.external, isEmpty);
+      expect(screen.calls, isEmpty);
+    });
+
+    test('garde la raison d’un refus pour la règle de repli', () async {
+      presenter.sync(wanted: true, spec: NativeTvSpecBuilder.build(_state()));
+      screen.events$.add(_event(OnyxAppleNativeEventKind.unavailable,
+          reason: OnyxAppleNativeReason.presentationFailed));
+      await pumpEventQueue();
+
+      expect(presenter.refusal, OnyxAppleNativeReason.presentationFailed);
+    });
+
+    test('un sous-titre choisi dans AVKit arrive au lecteur', () async {
+      presenter.sync(wanted: true, spec: NativeTvSpecBuilder.build(_state()));
+      screen.events$
+          .add(_event(OnyxAppleNativeEventKind.subtitleSelected, trackId: '2'));
+      screen.events$.add(_event(OnyxAppleNativeEventKind.subtitleSelected));
+      await pumpEventQueue();
+
+      expect(
+          intents.map((i) => (i as NativeTvSetSubtitle).trackId), ['2', null]);
+      expect(presenter.isShown, isTrue);
     });
 
     test('se ferme en partant', () async {

@@ -225,8 +225,9 @@ enum OnyxAppleNativeEventKind: Int, CaseIterable {
   case action = 0
   /// Une option de menu a été choisie : `menuId` et `optionId`.
   case menuSelected = 1
-  /// Un sous-titre a été choisi dans le menu AVKit (le moteur publie
-  /// `systemCaptionRequest`) : `trackId`, nul pour « aucun ».
+  /// Un sous-titre a été choisi dans le menu AVKit : `trackId` (l'index de
+  /// flux du moteur), nul pour « aucun ». Le moteur ne l'a pas adoptée :
+  /// Dart doit rappeler `selectSubtitleTrack` pour que le choix tienne.
   case subtitleSelected = 2
   /// L'écran natif est fermé : [OnyxAppleNativeEvent.reason].
   case dismissed = 3
@@ -412,6 +413,10 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
   var videoFormat: String
   var errorKind: OnyxApplePlayerErrorKind? = nil
   var errorMessage: String? = nil
+  /// Le chemin vidéo du moteur (`loopback`, `software`, `remoteBypass`,
+  /// `none`…). Sur `software`, il n'y a pas d'`AVPlayer` : l'écran natif
+  /// d'Apple TV n'a rien à montrer et l'interface Flutter garde la main.
+  var videoRoute: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -431,6 +436,7 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
     let videoFormat = pigeonVar_list[12] as! String
     let errorKind: OnyxApplePlayerErrorKind? = nilOrValue(pigeonVar_list[13])
     let errorMessage: String? = nilOrValue(pigeonVar_list[14])
+    let videoRoute: String? = nilOrValue(pigeonVar_list[15])
 
     return OnyxApplePlayerStatus(
       playerId: playerId,
@@ -447,7 +453,8 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
       selectedSubtitleTrackId: selectedSubtitleTrackId,
       videoFormat: videoFormat,
       errorKind: errorKind,
-      errorMessage: errorMessage
+      errorMessage: errorMessage,
+      videoRoute: videoRoute
     )
   }
   func toList() -> [Any?] {
@@ -467,13 +474,14 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
       videoFormat,
       errorKind,
       errorMessage,
+      videoRoute,
     ]
   }
   static func == (lhs: OnyxApplePlayerStatus, rhs: OnyxApplePlayerStatus) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.playerId, rhs.playerId) && MessagesPigeonInternal.deepEquals(lhs.state, rhs.state) && MessagesPigeonInternal.deepEquals(lhs.isPlaying, rhs.isPlaying) && MessagesPigeonInternal.deepEquals(lhs.positionMs, rhs.positionMs) && MessagesPigeonInternal.deepEquals(lhs.durationMs, rhs.durationMs) && MessagesPigeonInternal.deepEquals(lhs.bufferedPositionMs, rhs.bufferedPositionMs) && MessagesPigeonInternal.deepEquals(lhs.videoSize, rhs.videoSize) && MessagesPigeonInternal.deepEquals(lhs.pixelAspectRatio, rhs.pixelAspectRatio) && MessagesPigeonInternal.deepEquals(lhs.audioTracks, rhs.audioTracks) && MessagesPigeonInternal.deepEquals(lhs.subtitleTracks, rhs.subtitleTracks) && MessagesPigeonInternal.deepEquals(lhs.selectedAudioTrackId, rhs.selectedAudioTrackId) && MessagesPigeonInternal.deepEquals(lhs.selectedSubtitleTrackId, rhs.selectedSubtitleTrackId) && MessagesPigeonInternal.deepEquals(lhs.videoFormat, rhs.videoFormat) && MessagesPigeonInternal.deepEquals(lhs.errorKind, rhs.errorKind) && MessagesPigeonInternal.deepEquals(lhs.errorMessage, rhs.errorMessage)
+    return MessagesPigeonInternal.deepEquals(lhs.playerId, rhs.playerId) && MessagesPigeonInternal.deepEquals(lhs.state, rhs.state) && MessagesPigeonInternal.deepEquals(lhs.isPlaying, rhs.isPlaying) && MessagesPigeonInternal.deepEquals(lhs.positionMs, rhs.positionMs) && MessagesPigeonInternal.deepEquals(lhs.durationMs, rhs.durationMs) && MessagesPigeonInternal.deepEquals(lhs.bufferedPositionMs, rhs.bufferedPositionMs) && MessagesPigeonInternal.deepEquals(lhs.videoSize, rhs.videoSize) && MessagesPigeonInternal.deepEquals(lhs.pixelAspectRatio, rhs.pixelAspectRatio) && MessagesPigeonInternal.deepEquals(lhs.audioTracks, rhs.audioTracks) && MessagesPigeonInternal.deepEquals(lhs.subtitleTracks, rhs.subtitleTracks) && MessagesPigeonInternal.deepEquals(lhs.selectedAudioTrackId, rhs.selectedAudioTrackId) && MessagesPigeonInternal.deepEquals(lhs.selectedSubtitleTrackId, rhs.selectedSubtitleTrackId) && MessagesPigeonInternal.deepEquals(lhs.videoFormat, rhs.videoFormat) && MessagesPigeonInternal.deepEquals(lhs.errorKind, rhs.errorKind) && MessagesPigeonInternal.deepEquals(lhs.errorMessage, rhs.errorMessage) && MessagesPigeonInternal.deepEquals(lhs.videoRoute, rhs.videoRoute)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -493,10 +501,121 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
     MessagesPigeonInternal.deepHash(value: videoFormat, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: errorKind, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: errorMessage, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: videoRoute, hasher: &hasher)
   }
 
   public var description: String {
-    return "OnyxApplePlayerStatus(playerId: \(String(describing: playerId)), state: \(String(describing: state)), isPlaying: \(String(describing: isPlaying)), positionMs: \(String(describing: positionMs)), durationMs: \(String(describing: durationMs)), bufferedPositionMs: \(String(describing: bufferedPositionMs)), videoSize: \(String(describing: videoSize)), pixelAspectRatio: \(String(describing: pixelAspectRatio)), audioTracks: \(String(describing: audioTracks)), subtitleTracks: \(String(describing: subtitleTracks)), selectedAudioTrackId: \(String(describing: selectedAudioTrackId)), selectedSubtitleTrackId: \(String(describing: selectedSubtitleTrackId)), videoFormat: \(String(describing: videoFormat)), errorKind: \(String(describing: errorKind)), errorMessage: \(String(describing: errorMessage)))"
+    return "OnyxApplePlayerStatus(playerId: \(String(describing: playerId)), state: \(String(describing: state)), isPlaying: \(String(describing: isPlaying)), positionMs: \(String(describing: positionMs)), durationMs: \(String(describing: durationMs)), bufferedPositionMs: \(String(describing: bufferedPositionMs)), videoSize: \(String(describing: videoSize)), pixelAspectRatio: \(String(describing: pixelAspectRatio)), audioTracks: \(String(describing: audioTracks)), subtitleTracks: \(String(describing: subtitleTracks)), selectedAudioTrackId: \(String(describing: selectedAudioTrackId)), selectedSubtitleTrackId: \(String(describing: selectedSubtitleTrackId)), videoFormat: \(String(describing: videoFormat)), errorKind: \(String(describing: errorKind)), errorMessage: \(String(describing: errorMessage)), videoRoute: \(String(describing: videoRoute)))"
+  }
+}
+
+/// Un fichier de sous-titres texte déclaré à l'ouverture
+/// (`LoadOptions.externalSubtitles`).
+///
+/// Déclaré au chargement, il entre dans le groupe `legible` de l'item, donc
+/// dans le menu Sous-titres d'AVKit. Posé après coup
+/// ([OnyxApplePlayerApi.setExternalSubtitle]), il n'existe que pour la couche
+/// de sous-titres de l'app.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleExternalSubtitle: Hashable, CustomStringConvertible {
+  /// Une URL absolue (avec son ticket de lecture), ou un chemin local.
+  var url: String
+  var language: String? = nil
+  var title: String? = nil
+  var isForced: Bool
+  var isDefault: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleExternalSubtitle? {
+    let url = pigeonVar_list[0] as! String
+    let language: String? = nilOrValue(pigeonVar_list[1])
+    let title: String? = nilOrValue(pigeonVar_list[2])
+    let isForced = pigeonVar_list[3] as! Bool
+    let isDefault = pigeonVar_list[4] as! Bool
+
+    return OnyxAppleExternalSubtitle(
+      url: url,
+      language: language,
+      title: title,
+      isForced: isForced,
+      isDefault: isDefault
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      url,
+      language,
+      title,
+      isForced,
+      isDefault,
+    ]
+  }
+  static func == (lhs: OnyxAppleExternalSubtitle, rhs: OnyxAppleExternalSubtitle) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.url, rhs.url) && MessagesPigeonInternal.deepEquals(lhs.language, rhs.language) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.isForced, rhs.isForced) && MessagesPigeonInternal.deepEquals(lhs.isDefault, rhs.isDefault)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleExternalSubtitle")
+    MessagesPigeonInternal.deepHash(value: url, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: language, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: isForced, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: isDefault, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleExternalSubtitle(url: \(String(describing: url)), language: \(String(describing: language)), title: \(String(describing: title)), isForced: \(String(describing: isForced)), isDefault: \(String(describing: isDefault)))"
+  }
+}
+
+/// Les sous-titres que le moteur prépare pour le rendu natif à la prochaine
+/// ouverture.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleLoadSubtitles: Hashable, CustomStringConvertible {
+  /// `LoadOptions.prepareNativeSubtitles` : les pistes texte du fichier
+  /// rejoignent le groupe `legible`, que l'écran natif d'Apple TV affiche.
+  /// Les sous-titres image (PGS, VobSub, DVB) en restent exclus.
+  var prepareNative: Bool
+  var external: [OnyxAppleExternalSubtitle]
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleLoadSubtitles? {
+    let prepareNative = pigeonVar_list[0] as! Bool
+    let external = pigeonVar_list[1] as! [OnyxAppleExternalSubtitle]
+
+    return OnyxAppleLoadSubtitles(
+      prepareNative: prepareNative,
+      external: external
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      prepareNative,
+      external,
+    ]
+  }
+  static func == (lhs: OnyxAppleLoadSubtitles, rhs: OnyxAppleLoadSubtitles) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.prepareNative, rhs.prepareNative) && MessagesPigeonInternal.deepEquals(lhs.external, rhs.external)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleLoadSubtitles")
+    MessagesPigeonInternal.deepHash(value: prepareNative, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: external, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleLoadSubtitles(prepareNative: \(String(describing: prepareNative)), external: \(String(describing: external)))"
   }
 }
 
@@ -1082,22 +1201,26 @@ private class MessagesPigeonCodecReader: FlutterStandardReader {
     case 136:
       return OnyxApplePlayerStatus.fromList(self.readValue() as! [Any?])
     case 137:
-      return OnyxAppleSubtitleBitmap.fromList(self.readValue() as! [Any?])
+      return OnyxAppleExternalSubtitle.fromList(self.readValue() as! [Any?])
     case 138:
-      return OnyxAppleSubtitleFrame.fromList(self.readValue() as! [Any?])
+      return OnyxAppleLoadSubtitles.fromList(self.readValue() as! [Any?])
     case 139:
-      return OnyxApplePlaybackStats.fromList(self.readValue() as! [Any?])
+      return OnyxAppleSubtitleBitmap.fromList(self.readValue() as! [Any?])
     case 140:
-      return OnyxApplePictureInPicture.fromList(self.readValue() as! [Any?])
+      return OnyxAppleSubtitleFrame.fromList(self.readValue() as! [Any?])
     case 141:
-      return OnyxAppleNativeOption.fromList(self.readValue() as! [Any?])
+      return OnyxApplePlaybackStats.fromList(self.readValue() as! [Any?])
     case 142:
-      return OnyxAppleNativeMenu.fromList(self.readValue() as! [Any?])
+      return OnyxApplePictureInPicture.fromList(self.readValue() as! [Any?])
     case 143:
-      return OnyxAppleNativeAction.fromList(self.readValue() as! [Any?])
+      return OnyxAppleNativeOption.fromList(self.readValue() as! [Any?])
     case 144:
-      return OnyxAppleNativeSpec.fromList(self.readValue() as! [Any?])
+      return OnyxAppleNativeMenu.fromList(self.readValue() as! [Any?])
     case 145:
+      return OnyxAppleNativeAction.fromList(self.readValue() as! [Any?])
+    case 146:
+      return OnyxAppleNativeSpec.fromList(self.readValue() as! [Any?])
+    case 147:
       return OnyxAppleNativeEvent.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -1131,32 +1254,38 @@ private class MessagesPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? OnyxApplePlayerStatus {
       super.writeByte(136)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleSubtitleBitmap {
+    } else if let value = value as? OnyxAppleExternalSubtitle {
       super.writeByte(137)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleSubtitleFrame {
+    } else if let value = value as? OnyxAppleLoadSubtitles {
       super.writeByte(138)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxApplePlaybackStats {
+    } else if let value = value as? OnyxAppleSubtitleBitmap {
       super.writeByte(139)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxApplePictureInPicture {
+    } else if let value = value as? OnyxAppleSubtitleFrame {
       super.writeByte(140)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleNativeOption {
+    } else if let value = value as? OnyxApplePlaybackStats {
       super.writeByte(141)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleNativeMenu {
+    } else if let value = value as? OnyxApplePictureInPicture {
       super.writeByte(142)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleNativeAction {
+    } else if let value = value as? OnyxAppleNativeOption {
       super.writeByte(143)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleNativeSpec {
+    } else if let value = value as? OnyxAppleNativeMenu {
       super.writeByte(144)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleNativeEvent {
+    } else if let value = value as? OnyxAppleNativeAction {
       super.writeByte(145)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeSpec {
+      super.writeByte(146)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeEvent {
+      super.writeByte(147)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -1208,6 +1337,10 @@ protocol OnyxApplePlayerApi {
   /// avant l'ouverture : après, changer de piste reconstruit la session
   /// (une demi-seconde d'image noire).
   func setPreferredAudioLanguages(playerId: Int64, priorities: [String]) throws
+  /// Les sous-titres à déclarer au chargement, appliqués à la prochaine
+  /// ouverture et aux suivantes. AVKit ne voit que ceux-là : un WebVTT posé
+  /// après coup n'arrive jamais dans son menu (spike Apple TV, Q5).
+  func setLoadSubtitles(playerId: Int64, subtitles: OnyxAppleLoadSubtitles) throws
   func selectAudioTrack(playerId: Int64, trackId: String) throws
   /// Une piste de sous-titres du média, ou aucune si [trackId] est nul.
   func selectSubtitleTrack(playerId: Int64, trackId: String?) throws
@@ -1428,6 +1561,25 @@ class OnyxApplePlayerApiSetup {
       }
     } else {
       setPreferredAudioLanguagesChannel.setMessageHandler(nil)
+    }
+    /// Les sous-titres à déclarer au chargement, appliqués à la prochaine
+    /// ouverture et aux suivantes. AVKit ne voit que ceux-là : un WebVTT posé
+    /// après coup n'arrive jamais dans son menu (spike Apple TV, Q5).
+    let setLoadSubtitlesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.setLoadSubtitles\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setLoadSubtitlesChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let playerIdArg = args[0] as! Int64
+        let subtitlesArg = args[1] as! OnyxAppleLoadSubtitles
+        do {
+          try api.setLoadSubtitles(playerId: playerIdArg, subtitles: subtitlesArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setLoadSubtitlesChannel.setMessageHandler(nil)
     }
     let selectAudioTrackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.selectAudioTrack\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {

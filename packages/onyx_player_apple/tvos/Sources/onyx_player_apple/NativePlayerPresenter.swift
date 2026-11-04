@@ -32,6 +32,12 @@
     private var posterTask: Task<Void, Never>?
     private var posterRequested: String?
 
+    /// Suit les choix du menu Sous-titres d'AVKit sur l'item courant.
+    private var selectionObserver: NSObjectProtocol?
+    /// La dernière option `legible` vue sur cet item : un item neuf commence
+    /// sans sélection, et ce n'est pas un « Désactivé ».
+    private var lastLegible: AVMediaSelectionOption?
+
     init(playerId: Int64, engine: AetherEngine, send: @escaping (OnyxAppleNativeEvent) -> Void) {
       self.playerId = playerId
       self.engine = engine
@@ -69,6 +75,11 @@
       closingFromHere = false
       apply(spec)
       observe()
+      // Une demande permanente : tant que l'écran natif est là, chaque
+      // `selectSubtitleTrack` de Dart passe aussi au groupe `legible`, que
+      // seul AVKit peint ici (Sodalite#156). Sans elle, la piste choisie ne
+      // s'affichait que dans la couche Flutter, qui n'est plus montée.
+      engine.setNativeSubtitleRendering(true)
 
       presenting.present(controller, animated: true) { [weak self, weak controller] in
         MainActor.assumeIsolated {
@@ -206,6 +217,11 @@
           MainActor.assumeIsolated { self?.captionRequested(request) }
         }
         .store(in: &subscriptions)
+      engine.$currentAVPlayerItem
+        .sink { [weak self] item in
+          MainActor.assumeIsolated { self?.watchSelection(of: item) }
+        }
+        .store(in: &subscriptions)
     }
 
     /// Le même `AVPlayer` survit à un changement d'audio ou de qualité, un
@@ -228,17 +244,67 @@
       close(then: nil)
     }
 
-    /// AVKit ou les sous-titres automatiques du système ont choisi une piste :
-    /// le moteur l'a déjà désélectionnée et publie la demande (Sodalite#65).
-    /// Dart décide et rappelle `selectSubtitleTrack`.
+    /// AVKit ou les sous-titres automatiques du système ont choisi une piste
+    /// alors qu'aucune n'était active : le moteur l'a déjà désélectionnée et
+    /// publie la demande (Sodalite#65). Dart décide et rappelle
+    /// `selectSubtitleTrack`, que la demande permanente de rendu natif porte
+    /// jusqu'au groupe `legible`.
     private func captionRequested(_ request: SystemCaptionRequest) {
       guard controller != nil else { return }
-      let wanted = CaptionLanguage.normalized(request.language)
-      guard let track = engine.subtitleTracks.first(where: { CaptionLanguage.normalized($0.language) == wanted })
+      guard let track = CaptionLanguage.track(language: request.language, rank: 0, in: engine.subtitleTracks)
       else {
         NSLog("Onyx: sous-titre demandé par le système sans piste correspondante (\(request.language ?? "sans langue"))")
         return
       }
+      emit(.subtitleSelected, trackId: String(track.id))
+    }
+
+    /// Une fois qu'une piste est active, le moteur rend la sélection à l'hôte
+    /// et ne publie plus rien : un second choix dans le menu AVKit tiendrait à
+    /// l'écran sans que Dart le sache, et la mémoire des pistes se tromperait.
+    /// On le lit donc sur l'item.
+    private func watchSelection(of item: AVPlayerItem?) {
+      stopWatchingSelection()
+      guard let item else { return }
+      selectionObserver = NotificationCenter.default.addObserver(
+        forName: AVPlayerItem.mediaSelectionDidChangeNotification, object: item, queue: .main
+      ) { [weak self, weak item] _ in
+        MainActor.assumeIsolated {
+          guard let self, let item else { return }
+          Task { await self.legibleSelectionChanged(on: item) }
+        }
+      }
+    }
+
+    private func stopWatchingSelection() {
+      if let selectionObserver { NotificationCenter.default.removeObserver(selectionObserver) }
+      selectionObserver = nil
+      lastLegible = nil
+    }
+
+    private func legibleSelectionChanged(on item: AVPlayerItem) async {
+      guard let group = try? await item.asset.loadMediaSelectionGroup(for: .legible),
+        controller != nil, item === engine.currentAVPlayerItem
+      else { return }
+      let selected = item.currentMediaSelection.selectedMediaOption(in: group)
+      let previous = lastLegible
+      lastLegible = selected
+      // Sans piste active, c'est l'épingle du moteur qui répond, par
+      // `systemCaptionRequest` : ne pas le dire deux fois.
+      guard let active = engine.activeSubtitleTrackIndex else { return }
+      guard let selected else {
+        if previous != nil { emit(.subtitleSelected) }
+        return
+      }
+      let language = CaptionLanguage.normalized(selected.extendedLanguageTag)
+      let rank = group.options
+        .filter { CaptionLanguage.normalized($0.extendedLanguageTag) == language }
+        .firstIndex(of: selected) ?? 0
+      // Le moteur qui réaffirme sa propre piste (rechargement, changement
+      // d'audio) retombe sur la piste active : rien à dire.
+      guard let track = CaptionLanguage.track(language: selected.extendedLanguageTag, rank: rank, in: engine.subtitleTracks),
+        track.id != active
+      else { return }
       emit(.subtitleSelected, trackId: String(track.id))
     }
 
@@ -261,6 +327,12 @@
     }
 
     private func teardown() {
+      if controller != nil {
+        // L'interface Flutter reprend : c'est sa couche qui peint, et
+        // `AVPlayerLayer` peindrait le groupe `legible` une seconde fois.
+        engine.setNativeSubtitleRendering(false)
+      }
+      stopWatchingSelection()
       subscriptions.removeAll()
       posterTask?.cancel()
       posterTask = nil
@@ -325,6 +397,18 @@
       "gre": "ell", "ice": "isl", "mac": "mkd", "mao": "mri", "may": "msa",
       "per": "fas", "rum": "ron", "slo": "slk", "tib": "bod", "wel": "cym",
     ]
+
+    /// La piste texte de [language] au rang [rank] parmi celles de la même
+    /// langue, dans l'ordre du moteur : c'est l'ordre des options `legible`,
+    /// que le moteur rapproche lui aussi par langue et par rang. Les pistes
+    /// image n'ont pas d'option native et sont sautées.
+    static func track(language: String?, rank: Int, in tracks: [TrackInfo]) -> TrackInfo? {
+      let wanted = normalized(language)
+      let candidates = tracks.filter {
+        !StatusMapping.bitmapSubtitleCodecs.contains($0.codec) && normalized($0.language) == wanted
+      }
+      return rank < candidates.count ? candidates[rank] : candidates.first
+    }
 
     /// Nil pour une piste sans langue (ou `und`), qui ne correspond qu'à une
     /// demande sans langue.

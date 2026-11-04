@@ -138,8 +138,9 @@ enum OnyxAppleNativeEventKind {
   action,
   /// Une option de menu a été choisie : `menuId` et `optionId`.
   menuSelected,
-  /// Un sous-titre a été choisi dans le menu AVKit (le moteur publie
-  /// `systemCaptionRequest`) : `trackId`, nul pour « aucun ».
+  /// Un sous-titre a été choisi dans le menu AVKit : `trackId` (l'index de
+  /// flux du moteur), nul pour « aucun ». Le moteur ne l'a pas adoptée :
+  /// Dart doit rappeler `selectSubtitleTrack` pour que le choix tienne.
   subtitleSelected,
   /// L'écran natif est fermé : [OnyxAppleNativeEvent.reason].
   dismissed,
@@ -335,6 +336,7 @@ class OnyxApplePlayerStatus {
     required this.videoFormat,
     this.errorKind,
     this.errorMessage,
+    this.videoRoute,
   });
 
   int playerId;
@@ -375,6 +377,11 @@ class OnyxApplePlayerStatus {
 
   String? errorMessage;
 
+  /// Le chemin vidéo du moteur (`loopback`, `software`, `remoteBypass`,
+  /// `none`…). Sur `software`, il n'y a pas d'`AVPlayer` : l'écran natif
+  /// d'Apple TV n'a rien à montrer et l'interface Flutter garde la main.
+  String? videoRoute;
+
   List<Object?> _toList() {
     return <Object?>[
       playerId,
@@ -392,6 +399,7 @@ class OnyxApplePlayerStatus {
       videoFormat,
       errorKind,
       errorMessage,
+      videoRoute,
     ];
   }
 
@@ -416,6 +424,7 @@ class OnyxApplePlayerStatus {
       videoFormat: result[12]! as String,
       errorKind: result[13] as OnyxApplePlayerErrorKind?,
       errorMessage: result[14] as String?,
+      videoRoute: result[15] as String?,
     );
   }
 
@@ -428,7 +437,7 @@ class OnyxApplePlayerStatus {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(playerId, other.playerId) && _deepEquals(state, other.state) && _deepEquals(isPlaying, other.isPlaying) && _deepEquals(positionMs, other.positionMs) && _deepEquals(durationMs, other.durationMs) && _deepEquals(bufferedPositionMs, other.bufferedPositionMs) && _deepEquals(videoSize, other.videoSize) && _deepEquals(pixelAspectRatio, other.pixelAspectRatio) && _deepEquals(audioTracks, other.audioTracks) && _deepEquals(subtitleTracks, other.subtitleTracks) && _deepEquals(selectedAudioTrackId, other.selectedAudioTrackId) && _deepEquals(selectedSubtitleTrackId, other.selectedSubtitleTrackId) && _deepEquals(videoFormat, other.videoFormat) && _deepEquals(errorKind, other.errorKind) && _deepEquals(errorMessage, other.errorMessage);
+    return _deepEquals(playerId, other.playerId) && _deepEquals(state, other.state) && _deepEquals(isPlaying, other.isPlaying) && _deepEquals(positionMs, other.positionMs) && _deepEquals(durationMs, other.durationMs) && _deepEquals(bufferedPositionMs, other.bufferedPositionMs) && _deepEquals(videoSize, other.videoSize) && _deepEquals(pixelAspectRatio, other.pixelAspectRatio) && _deepEquals(audioTracks, other.audioTracks) && _deepEquals(subtitleTracks, other.subtitleTracks) && _deepEquals(selectedAudioTrackId, other.selectedAudioTrackId) && _deepEquals(selectedSubtitleTrackId, other.selectedSubtitleTrackId) && _deepEquals(videoFormat, other.videoFormat) && _deepEquals(errorKind, other.errorKind) && _deepEquals(errorMessage, other.errorMessage) && _deepEquals(videoRoute, other.videoRoute);
   }
 
   @override
@@ -437,7 +446,135 @@ class OnyxApplePlayerStatus {
 
   @override
   String toString() {
-    return 'OnyxApplePlayerStatus(playerId: $playerId, state: $state, isPlaying: $isPlaying, positionMs: $positionMs, durationMs: $durationMs, bufferedPositionMs: $bufferedPositionMs, videoSize: $videoSize, pixelAspectRatio: $pixelAspectRatio, audioTracks: $audioTracks, subtitleTracks: $subtitleTracks, selectedAudioTrackId: $selectedAudioTrackId, selectedSubtitleTrackId: $selectedSubtitleTrackId, videoFormat: $videoFormat, errorKind: $errorKind, errorMessage: $errorMessage)';
+    return 'OnyxApplePlayerStatus(playerId: $playerId, state: $state, isPlaying: $isPlaying, positionMs: $positionMs, durationMs: $durationMs, bufferedPositionMs: $bufferedPositionMs, videoSize: $videoSize, pixelAspectRatio: $pixelAspectRatio, audioTracks: $audioTracks, subtitleTracks: $subtitleTracks, selectedAudioTrackId: $selectedAudioTrackId, selectedSubtitleTrackId: $selectedSubtitleTrackId, videoFormat: $videoFormat, errorKind: $errorKind, errorMessage: $errorMessage, videoRoute: $videoRoute)';
+  }
+}
+
+/// Un fichier de sous-titres texte déclaré à l'ouverture
+/// (`LoadOptions.externalSubtitles`).
+///
+/// Déclaré au chargement, il entre dans le groupe `legible` de l'item, donc
+/// dans le menu Sous-titres d'AVKit. Posé après coup
+/// ([OnyxApplePlayerApi.setExternalSubtitle]), il n'existe que pour la couche
+/// de sous-titres de l'app.
+class OnyxAppleExternalSubtitle {
+  OnyxAppleExternalSubtitle({
+    required this.url,
+    this.language,
+    this.title,
+    required this.isForced,
+    required this.isDefault,
+  });
+
+  /// Une URL absolue (avec son ticket de lecture), ou un chemin local.
+  String url;
+
+  String? language;
+
+  String? title;
+
+  bool isForced;
+
+  bool isDefault;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      url,
+      language,
+      title,
+      isForced,
+      isDefault,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleExternalSubtitle decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleExternalSubtitle(
+      url: result[0]! as String,
+      language: result[1] as String?,
+      title: result[2] as String?,
+      isForced: result[3]! as bool,
+      isDefault: result[4]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleExternalSubtitle || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(url, other.url) && _deepEquals(language, other.language) && _deepEquals(title, other.title) && _deepEquals(isForced, other.isForced) && _deepEquals(isDefault, other.isDefault);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleExternalSubtitle(url: $url, language: $language, title: $title, isForced: $isForced, isDefault: $isDefault)';
+  }
+}
+
+/// Les sous-titres que le moteur prépare pour le rendu natif à la prochaine
+/// ouverture.
+class OnyxAppleLoadSubtitles {
+  OnyxAppleLoadSubtitles({
+    required this.prepareNative,
+    required this.external,
+  });
+
+  /// `LoadOptions.prepareNativeSubtitles` : les pistes texte du fichier
+  /// rejoignent le groupe `legible`, que l'écran natif d'Apple TV affiche.
+  /// Les sous-titres image (PGS, VobSub, DVB) en restent exclus.
+  bool prepareNative;
+
+  List<OnyxAppleExternalSubtitle> external;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      prepareNative,
+      external,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleLoadSubtitles decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleLoadSubtitles(
+      prepareNative: result[0]! as bool,
+      external: (result[1]! as List<Object?>).cast<OnyxAppleExternalSubtitle>(),
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleLoadSubtitles || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(prepareNative, other.prepareNative) && _deepEquals(external, other.external);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleLoadSubtitles(prepareNative: $prepareNative, external: $external)';
   }
 }
 
@@ -1096,32 +1233,38 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is OnyxApplePlayerStatus) {
       buffer.putUint8(136);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleSubtitleBitmap) {
+    }    else if (value is OnyxAppleExternalSubtitle) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleSubtitleFrame) {
+    }    else if (value is OnyxAppleLoadSubtitles) {
       buffer.putUint8(138);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxApplePlaybackStats) {
+    }    else if (value is OnyxAppleSubtitleBitmap) {
       buffer.putUint8(139);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxApplePictureInPicture) {
+    }    else if (value is OnyxAppleSubtitleFrame) {
       buffer.putUint8(140);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleNativeOption) {
+    }    else if (value is OnyxApplePlaybackStats) {
       buffer.putUint8(141);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleNativeMenu) {
+    }    else if (value is OnyxApplePictureInPicture) {
       buffer.putUint8(142);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleNativeAction) {
+    }    else if (value is OnyxAppleNativeOption) {
       buffer.putUint8(143);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleNativeSpec) {
+    }    else if (value is OnyxAppleNativeMenu) {
       buffer.putUint8(144);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleNativeEvent) {
+    }    else if (value is OnyxAppleNativeAction) {
       buffer.putUint8(145);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeSpec) {
+      buffer.putUint8(146);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeEvent) {
+      buffer.putUint8(147);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -1153,22 +1296,26 @@ class _PigeonCodec extends StandardMessageCodec {
       case 136:
         return OnyxApplePlayerStatus.decode(readValue(buffer)!);
       case 137:
-        return OnyxAppleSubtitleBitmap.decode(readValue(buffer)!);
+        return OnyxAppleExternalSubtitle.decode(readValue(buffer)!);
       case 138:
-        return OnyxAppleSubtitleFrame.decode(readValue(buffer)!);
+        return OnyxAppleLoadSubtitles.decode(readValue(buffer)!);
       case 139:
-        return OnyxApplePlaybackStats.decode(readValue(buffer)!);
+        return OnyxAppleSubtitleBitmap.decode(readValue(buffer)!);
       case 140:
-        return OnyxApplePictureInPicture.decode(readValue(buffer)!);
+        return OnyxAppleSubtitleFrame.decode(readValue(buffer)!);
       case 141:
-        return OnyxAppleNativeOption.decode(readValue(buffer)!);
+        return OnyxApplePlaybackStats.decode(readValue(buffer)!);
       case 142:
-        return OnyxAppleNativeMenu.decode(readValue(buffer)!);
+        return OnyxApplePictureInPicture.decode(readValue(buffer)!);
       case 143:
-        return OnyxAppleNativeAction.decode(readValue(buffer)!);
+        return OnyxAppleNativeOption.decode(readValue(buffer)!);
       case 144:
-        return OnyxAppleNativeSpec.decode(readValue(buffer)!);
+        return OnyxAppleNativeMenu.decode(readValue(buffer)!);
       case 145:
+        return OnyxAppleNativeAction.decode(readValue(buffer)!);
+      case 146:
+        return OnyxAppleNativeSpec.decode(readValue(buffer)!);
+      case 147:
         return OnyxAppleNativeEvent.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -1395,6 +1542,27 @@ class OnyxApplePlayerApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[playerId, priorities]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  /// Les sous-titres à déclarer au chargement, appliqués à la prochaine
+  /// ouverture et aux suivantes. AVKit ne voit que ceux-là : un WebVTT posé
+  /// après coup n'arrive jamais dans son menu (spike Apple TV, Q5).
+  Future<void> setLoadSubtitles(int playerId, OnyxAppleLoadSubtitles subtitles) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.setLoadSubtitles$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[playerId, subtitles]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(

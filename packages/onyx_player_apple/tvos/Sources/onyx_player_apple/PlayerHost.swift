@@ -101,6 +101,10 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
     try onMain { try require(playerId).preferredAudioLanguages = priorities }
   }
 
+  func setLoadSubtitles(playerId: Int64, subtitles: OnyxAppleLoadSubtitles) throws {
+    try onMain { try require(playerId).loadSubtitles = subtitles }
+  }
+
   func selectAudioTrack(playerId: Int64, trackId: String) throws {
     try onMain { try require(playerId).selectAudioTrack(trackId) }
   }

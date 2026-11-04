@@ -22,16 +22,19 @@ class AetherTracks {
     required this.currentAudio,
     required this.currentSubtitle,
     required Map<String, String> subtitleNativeIds,
+    this.currentSubtitleIsBitmap = false,
   }) : _subtitleNativeIds = subtitleNativeIds;
 
   factory AetherTracks.of(OnyxApplePlayerStatus status) {
     final audio = _containerOrder(status.audioTracks)
-        .map((t) => PlaybackTrack(id: t.id, title: t.title, language: t.language))
+        .map((t) =>
+            PlaybackTrack(id: t.id, title: t.title, language: t.language))
         .toList(growable: false);
 
     final nativeIds = <String, String>{};
     final subtitles = <PlaybackTrack>[];
     PlaybackTrack? currentSubtitle;
+    var currentIsBitmap = false;
     for (final t in _containerOrder(status.subtitleTracks)) {
       final track = PlaybackTrack(
         id: '${subtitles.length + 1}',
@@ -40,7 +43,10 @@ class AetherTracks {
       );
       subtitles.add(track);
       nativeIds[track.id] = t.id;
-      if (t.id == status.selectedSubtitleTrackId) currentSubtitle = track;
+      if (t.id == status.selectedSubtitleTrackId) {
+        currentSubtitle = track;
+        currentIsBitmap = t.isBitmap;
+      }
     }
 
     PlaybackTrack? currentAudio;
@@ -54,6 +60,7 @@ class AetherTracks {
       currentAudio: currentAudio,
       currentSubtitle: currentSubtitle,
       subtitleNativeIds: Map.unmodifiable(nativeIds),
+      currentSubtitleIsBitmap: currentIsBitmap,
     );
   }
 
@@ -75,15 +82,30 @@ class AetherTracks {
 
   final Map<String, String> _subtitleNativeIds;
 
+  /// La piste active est une image (PGS, VobSub, DVB) : AVKit ne la montre
+  /// pas, l'écran natif d'Apple TV rend la main à Flutter.
+  final bool currentSubtitleIsBitmap;
+
   /// L'index de flux FFmpeg d'une piste de [subtitles], à rendre au moteur.
   String? nativeSubtitleId(PlaybackTrack track) => _subtitleNativeIds[track.id];
+
+  /// L'inverse : la piste de [subtitles] d'un index de flux du moteur, celui
+  /// que le menu AVKit renvoie. Null pour une piste hors du conteneur.
+  PlaybackTrack? subtitleForNativeId(String nativeId) {
+    for (final entry in _subtitleNativeIds.entries) {
+      if (entry.value == nativeId) {
+        return subtitles.firstWhere((track) => track.id == entry.key);
+      }
+    }
+    return null;
+  }
 
   /// Les vrais flux du fichier, dans l'ordre du conteneur. Un sous-titre posé
   /// par l'app ou extrait de l'image décalerait toute la numérotation.
   static List<OnyxAppleTrack> _containerOrder(List<OnyxAppleTrack> tracks) {
     final streams = tracks.where((t) => t.isContainerStream).toList();
-    streams.sort((a, b) =>
-        (int.tryParse(a.id) ?? 0).compareTo(int.tryParse(b.id) ?? 0));
+    streams.sort(
+        (a, b) => (int.tryParse(a.id) ?? 0).compareTo(int.tryParse(b.id) ?? 0));
     return streams;
   }
 }

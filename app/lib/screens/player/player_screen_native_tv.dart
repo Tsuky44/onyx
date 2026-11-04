@@ -31,7 +31,25 @@ extension _PlayerNativeTv on _PlayerScreenState {
       !_isLeaving &&
       !_isDisposing &&
       !_needsFlutterScreen &&
-      nativeTvFallbackFor(tracks: _playerController.mediaTracks) == null;
+      _nativeTvFallback == null;
+
+  /// Ce que le média demande, relu à chaque construction : une piste image
+  /// choisie, ou la route logicielle qui s'installe en cours de film, rendent
+  /// l'interface Flutter sans couper la lecture.
+  NativeTvFallback? get _nativeTvFallback {
+    final controller = _playerController;
+    final screen = controller.session.nativeTvScreen;
+    return nativeTvFallbackFor(
+      refusal: _nativeTv?.refusal,
+      softwareRoute: screen?.softwareRoute ?? false,
+      subtitle: nativeTvSubtitleKind(
+        selectedLang: controller.selectedSubtitleLang,
+        serverTracks: controller.mediaTracks?.subtitles,
+        engineShowsBitmap: screen?.showsBitmapSubtitle ?? false,
+      ),
+      streaming: controller.currentQuality != null,
+    );
+  }
 
   /// Appelé à chaque construction de l'écran : c'est là que tout changement
   /// d'état arrive. Le présentateur ne passe le pont que si la spec a changé.
@@ -117,11 +135,17 @@ extension _PlayerNativeTv on _PlayerScreenState {
       case NativeTvSetAudio():
         break;
       case NativeTvSetSubtitle(:final trackId):
-        // Les sous-titres du menu AVKit demandent d'être déclarés au
-        // chargement (voir docs/agents/spike-native-tv-player.md, Q5) : leur
-        // branchement vient avec cette déclaration.
-        debugPrint('Lecteur natif : sous-titre $trackId pas encore pris en '
-            'charge');
+        // Le menu AVKit ne liste que les pistes du fichier : le même chemin
+        // que le menu Onyx en Direct Play, mémoire des pistes comprise. Le
+        // moteur n'a rien adopté de lui-même, c'est ce rappel qui fait tenir
+        // le choix.
+        final track = nativeTvSubtitleChoice(
+            trackId, _playerController.session.subtitleTracks);
+        if (track == null || !_playerController.listsEmbeddedSubtitles) {
+          debugPrint('Lecteur natif : sous-titre $trackId ignoré');
+          break;
+        }
+        _playerController.selectInternalSubtitle(track);
       case NativeTvClosed():
         // Menu sur la télécommande : le même chemin que Retour, pour que la
         // progression parte et que la séance soit quittée.

@@ -134,6 +134,7 @@ class OnyxApplePlayerStatus {
     this.selectedSubtitleTrackId,
     this.errorKind,
     this.errorMessage,
+    this.videoRoute,
   });
 
   final int playerId;
@@ -168,6 +169,47 @@ class OnyxApplePlayerStatus {
 
   final OnyxApplePlayerErrorKind? errorKind;
   final String? errorMessage;
+
+  /// Le chemin vidéo du moteur (`loopback`, `software`, `remoteBypass`,
+  /// `none`…). Sur `software`, il n'y a pas d'`AVPlayer` : l'écran natif
+  /// d'Apple TV n'a rien à montrer et l'interface Flutter garde la main.
+  final String? videoRoute;
+}
+
+/// Un fichier de sous-titres texte déclaré à l'ouverture
+/// (`LoadOptions.externalSubtitles`).
+///
+/// Déclaré au chargement, il entre dans le groupe `legible` de l'item, donc
+/// dans le menu Sous-titres d'AVKit. Posé après coup
+/// ([OnyxApplePlayerApi.setExternalSubtitle]), il n'existe que pour la couche
+/// de sous-titres de l'app.
+class OnyxAppleExternalSubtitle {
+  OnyxAppleExternalSubtitle({
+    required this.url,
+    required this.isForced,
+    required this.isDefault,
+    this.language,
+    this.title,
+  });
+
+  /// Une URL absolue (avec son ticket de lecture), ou un chemin local.
+  final String url;
+  final String? language;
+  final String? title;
+  final bool isForced;
+  final bool isDefault;
+}
+
+/// Les sous-titres que le moteur prépare pour le rendu natif à la prochaine
+/// ouverture.
+class OnyxAppleLoadSubtitles {
+  OnyxAppleLoadSubtitles({required this.prepareNative, required this.external});
+
+  /// `LoadOptions.prepareNativeSubtitles` : les pistes texte du fichier
+  /// rejoignent le groupe `legible`, que l'écran natif d'Apple TV affiche.
+  /// Les sous-titres image (PGS, VobSub, DVB) en restent exclus.
+  final bool prepareNative;
+  final List<OnyxAppleExternalSubtitle> external;
 }
 
 /// Un sous-titre image, placé en fractions de l'image vidéo.
@@ -351,8 +393,9 @@ enum OnyxAppleNativeEventKind {
   /// Une option de menu a été choisie : `menuId` et `optionId`.
   menuSelected,
 
-  /// Un sous-titre a été choisi dans le menu AVKit (le moteur publie
-  /// `systemCaptionRequest`) : `trackId`, nul pour « aucun ».
+  /// Un sous-titre a été choisi dans le menu AVKit : `trackId` (l'index de
+  /// flux du moteur), nul pour « aucun ». Le moteur ne l'a pas adoptée :
+  /// Dart doit rappeler `selectSubtitleTrack` pour que le choix tienne.
   subtitleSelected,
 
   /// L'écran natif est fermé : [OnyxAppleNativeEvent.reason].
@@ -442,6 +485,11 @@ abstract class OnyxApplePlayerApi {
   /// avant l'ouverture : après, changer de piste reconstruit la session
   /// (une demi-seconde d'image noire).
   void setPreferredAudioLanguages(int playerId, List<String> priorities);
+
+  /// Les sous-titres à déclarer au chargement, appliqués à la prochaine
+  /// ouverture et aux suivantes. AVKit ne voit que ceux-là : un WebVTT posé
+  /// après coup n'arrive jamais dans son menu (spike Apple TV, Q5).
+  void setLoadSubtitles(int playerId, OnyxAppleLoadSubtitles subtitles);
 
   void selectAudioTrack(int playerId, String trackId);
 

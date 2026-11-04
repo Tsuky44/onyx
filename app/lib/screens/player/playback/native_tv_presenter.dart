@@ -12,34 +12,20 @@ import '../video_display_mode.dart';
 import '../widgets/direct_source_label.dart';
 import '../widgets/track_label.dart';
 import 'aether_video_fit.dart';
+import 'native_tv_fallback.dart';
 import 'native_tv_screen.dart';
 import 'playback_session.dart';
 import 'skip_segments.dart';
+
+export 'native_tv_fallback.dart';
 
 /// Si le lecteur prend l'écran natif d'Apple TV (`AVPlayerViewController`)
 /// au lieu de son interface Flutter.
 ///
 /// Le seul endroit où cela se décide pour l'appareil : le réglage Natif /
 /// Onyx de l'utilisateur viendra s'ajouter ici. Ce qui dépend du média, lui,
-/// passe par [nativeTvFallbackFor].
+/// passe par `nativeTvFallbackFor` (`native_tv_fallback.dart`).
 bool isNativeTvPlayerEligible() => AppPlatform.isTvOS;
-
-/// Pourquoi une lecture garde l'interface Flutter sur un appareil éligible.
-enum NativeTvFallback {
-  /// Des sous-titres image (PGS, VobSub) : AVKit ne sait pas les peindre.
-  bitmapSubtitles,
-
-  /// La route logicielle d'AetherEngine : pas d'`AVPlayer` à présenter.
-  softwareRoute,
-}
-
-/// La règle de repli connue d'avance, avant que le natif ne réponde
-/// `unavailable` de lui-même.
-///
-/// Relue à chaque changement d'état du lecteur : un repli qui apparaît en
-/// cours de lecture (une piste image choisie) rend l'écran Flutter sans
-/// couper la lecture. Pour l'instant aucune règle : seul le natif refuse.
-NativeTvFallback? nativeTvFallbackFor({required MediaTracks? tracks}) => null;
 
 /// La spec que reçoit l'écran natif, sous un nom du lecteur.
 typedef NativeTvSpec = OnyxAppleNativeSpec;
@@ -303,7 +289,8 @@ final class NativeTvSetAudio extends NativeTvIntent {
   final String? engineTrackId;
 }
 
-/// Un sous-titre choisi dans le menu AVKit, nul pour « aucun ».
+/// Un sous-titre choisi dans le menu AVKit, dans la numérotation du lecteur
+/// (`PlaybackTrack.id`) : nul pour « aucun ».
 final class NativeTvSetSubtitle extends NativeTvIntent {
   const NativeTvSetSubtitle(this.trackId);
   final String? trackId;
@@ -378,7 +365,8 @@ NativeTvIntent? _menuIntent(String? menuId, String? optionId) {
       }
       if (optionId.startsWith(NativeTvIds.audioTrackPrefix)) {
         return NativeTvSetAudio(
-          engineTrackId: optionId.substring(NativeTvIds.audioTrackPrefix.length),
+          engineTrackId:
+              optionId.substring(NativeTvIds.audioTrackPrefix.length),
         );
       }
       return null;
@@ -398,10 +386,16 @@ class NativeTvPresenter {
     required void Function(NativeTvIntent intent) onIntent,
   })  : _screen = screen,
         _onIntent = onIntent {
+    // Construit avec l'écran du lecteur, donc avant la première ouverture :
+    // les pistes texte n'entrent dans le menu d'AVKit que déclarées au
+    // chargement (spike Apple TV, Q5).
+    _run('préparation des sous-titres',
+        () => screen.prepareSubtitles(nativeTvLoadSubtitles()));
     _events = screen.events.listen(
       _onEvent,
       onError: (Object error) {
-        ClientLog.error('Lecteur natif : flux d’événements interrompu ($error)');
+        ClientLog.error(
+            'Lecteur natif : flux d’événements interrompu ($error)');
       },
     );
   }
@@ -419,6 +413,11 @@ class NativeTvPresenter {
   /// présente plus pour ce lecteur. Le représenter après un refus, c'était
   /// un aller-retour noir à chaque changement d'état.
   bool _retired = false;
+
+  /// La raison du dernier `unavailable` : un refus vaut pour toute la vie de
+  /// ce lecteur, et la règle de repli la reprend.
+  OnyxAppleNativeReason? _refusal;
+  OnyxAppleNativeReason? get refusal => _refusal;
 
   /// L'écran natif est demandé et n'a pas été refusé ni fermé.
   ///
@@ -484,17 +483,20 @@ class NativeTvPresenter {
       _forget();
       _retired = true;
     }
+    if (intent is NativeTvUnavailable) _refusal = intent.reason;
     _onIntent(intent);
   }
 
   /// [failOpen] : une présentation qui échoue côté Dart (canal absent) vaut un
   /// refus, sinon l'écran resterait noir sans interface.
-  void _run(String what, Future<void> Function() call, {bool failOpen = false}) {
+  void _run(String what, Future<void> Function() call,
+      {bool failOpen = false}) {
     unawaited(call().catchError((Object error) {
       ClientLog.error('Lecteur natif : $what refusée ($error)');
       if (failOpen && !_disposed && _shown) {
         _forget();
         _retired = true;
+        _refusal = OnyxAppleNativeReason.presentationFailed;
         _onIntent(const NativeTvUnavailable(
           OnyxAppleNativeReason.presentationFailed,
         ));

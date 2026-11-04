@@ -21,6 +21,11 @@ final class AetherPlayer {
   /// et un son qui repart. Voir ADR-0092.
   var preferredAudioLanguages: [String] = []
 
+  /// Les sous-titres déclarés au chargement, à chaque ouverture. Seuls ceux-là
+  /// rejoignent le groupe `legible` d'AVKit : une piste ajoutée après `load`
+  /// n'y arrive jamais (spike Apple TV, Q5).
+  var loadSubtitles: OnyxAppleLoadSubtitles?
+
   private let onStatus: (OnyxApplePlayerStatus) -> Void
   private let onSubtitles: (OnyxAppleSubtitleFrame) -> Void
   private let onPictureInPicture: (OnyxApplePictureInPicture) -> Void
@@ -104,6 +109,10 @@ final class AetherPlayer {
     // Le HLS de transcodage du serveur n'est pas concerné : AVPlayer parle
     // directement au serveur. Voir ADR-0092.
     options.progressiveSegmentDelivery = isRawFile
+    if let loadSubtitles {
+      options.prepareNativeSubtitles = loadSubtitles.prepareNative
+      options.externalSubtitles = Self.externalSubtitles(loadSubtitles.external)
+    }
     let loadOptions = options
     let start: Double? = startMs > 0 ? Double(startMs) / 1000 : nil
     loadTask = Task { [weak self] in
@@ -249,7 +258,8 @@ final class AetherPlayer {
       selectedSubtitleTrackId: engine.activeSubtitleTrackIndex.map { String($0) },
       videoFormat: StatusMapping.videoFormat(engine.videoFormat),
       errorKind: errorKind,
-      errorMessage: errorMessage)
+      errorMessage: errorMessage,
+      videoRoute: engine.videoRoute.rawValue)
   }
 
   func stats() -> OnyxApplePlaybackStats {
@@ -290,6 +300,7 @@ final class AetherPlayer {
       Self.signal(engine.$sourceVideoWidth),
       Self.signal(engine.$sourceVideoHeight),
       Self.signal(engine.$videoFormat),
+      Self.signal(engine.$videoRoute),
       Self.signal(engine.clock.$currentTime.throttle(for: .milliseconds(250), scheduler: tick, latest: true)),
       Self.signal(engine.clock.$bufferedPosition.throttle(for: .milliseconds(250), scheduler: tick, latest: true)),
     ]
@@ -367,6 +378,21 @@ final class AetherPlayer {
     let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
     for item in items where item.name == "ticket" {
       if let value = item.value { EngineLog.registerSecret(value) }
+    }
+  }
+
+  /// Une URL illisible est écartée plutôt que de faire échouer l'ouverture :
+  /// le film passe avant un sous-titre.
+  static func externalSubtitles(_ tracks: [OnyxAppleExternalSubtitle]) -> [ExternalSubtitleTrack] {
+    tracks.compactMap { track in
+      guard let url = sourceURL(track.url) else {
+        NSLog("Onyx: sous-titre déclaré au chargement illisible, écarté")
+        return nil
+      }
+      registerSecrets(of: url)
+      return ExternalSubtitleTrack(
+        url: url, name: track.title, language: track.language,
+        isForced: track.isForced, isDefault: track.isDefault)
     }
   }
 

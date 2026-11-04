@@ -49,7 +49,7 @@ enum StatusMapping {
   }
 
   /// Les codecs de sous-titres qui arrivent en images plutôt qu'en texte.
-  private static let bitmapSubtitleCodecs: Set<String> = [
+  static let bitmapSubtitleCodecs: Set<String> = [
     "hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle", "xsub",
   ]
 
