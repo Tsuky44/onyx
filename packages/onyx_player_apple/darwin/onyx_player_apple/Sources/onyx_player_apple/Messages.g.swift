@@ -219,6 +219,37 @@ enum OnyxAppleVideoFit: Int, CaseIterable {
   case cover = 1
 }
 
+/// Ce que le natif raconte à Dart.
+enum OnyxAppleNativeEventKind: Int, CaseIterable {
+  /// Un bouton contextuel a été pressé : [OnyxAppleNativeEvent.actionId].
+  case action = 0
+  /// Une option de menu a été choisie : `menuId` et `optionId`.
+  case menuSelected = 1
+  /// Un sous-titre a été choisi dans le menu AVKit (le moteur publie
+  /// `systemCaptionRequest`) : `trackId`, nul pour « aucun ».
+  case subtitleSelected = 2
+  /// L'écran natif est fermé : [OnyxAppleNativeEvent.reason].
+  case dismissed = 3
+  /// Le natif ne sait pas jouer ceci : Dart doit rendre l'écran Flutter.
+  /// [OnyxAppleNativeEvent.reason] dit pourquoi.
+  case unavailable = 4
+}
+
+/// Pourquoi l'écran natif se ferme ou n'est pas disponible.
+enum OnyxAppleNativeReason: Int, CaseIterable {
+  /// Menu (télécommande) ou geste de fermeture.
+  case userDismissed = 0
+  /// Dart a demandé la fermeture (`dismissNative`).
+  case requested = 1
+  /// La route vidéo est `software` : `currentAVPlayer` est nul et AVKit
+  /// n'afficherait qu'une roue sur fond noir, son joué.
+  case softwareRoute = 2
+  /// La présentation a échoué (pas de contrôleur racine, lecteur inconnu).
+  case presentationFailed = 3
+  /// Plateforme sans lecteur natif (iPhone, Mac).
+  case unsupported = 4
+}
+
 /// Une piste qu'AetherEngine a énumérée.
 ///
 /// Generated class from Pigeon that represents data sent in messages.
@@ -727,6 +758,290 @@ struct OnyxApplePictureInPicture: Hashable, CustomStringConvertible {
   }
 }
 
+/// Une option d'un menu du lecteur natif (`UIAction` dans la barre de
+/// transport d'AVKit).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativeOption: Hashable, CustomStringConvertible {
+  /// Rendu tel quel dans [OnyxAppleNativeEvent.optionId] au choix.
+  var id: String
+  /// Déjà traduit : Swift n'affiche que ce texte.
+  var label: String
+  /// Coché dans le menu. Dart reste maître de l'état : le natif ne coche rien
+  /// de lui-même, il attend la spec suivante.
+  var selected: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativeOption? {
+    let id = pigeonVar_list[0] as! String
+    let label = pigeonVar_list[1] as! String
+    let selected = pigeonVar_list[2] as! Bool
+
+    return OnyxAppleNativeOption(
+      id: id,
+      label: label,
+      selected: selected
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      id,
+      label,
+      selected,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativeOption, rhs: OnyxAppleNativeOption) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.label, rhs.label) && MessagesPigeonInternal.deepEquals(lhs.selected, rhs.selected)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativeOption")
+    MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: label, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: selected, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativeOption(id: \(String(describing: id)), label: \(String(describing: label)), selected: \(String(describing: selected)))"
+  }
+}
+
+/// Un menu de la barre de transport : Vitesse, Format d'image, Qualité,
+/// Audio et, au besoin, Sous-titres.
+///
+/// L'audio passe par ici et non par le menu AVKit : le moteur ne sert qu'une
+/// rendition audio, donc AVKit n'expose que la piste active.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativeMenu: Hashable, CustomStringConvertible {
+  /// Identifiant stable choisi par Dart (`speed`, `fit`, `quality`, `audio`,
+  /// `subtitles`), rendu dans [OnyxAppleNativeEvent.menuId].
+  var id: String
+  var label: String
+  var options: [OnyxAppleNativeOption]
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativeMenu? {
+    let id = pigeonVar_list[0] as! String
+    let label = pigeonVar_list[1] as! String
+    let options = pigeonVar_list[2] as! [OnyxAppleNativeOption]
+
+    return OnyxAppleNativeMenu(
+      id: id,
+      label: label,
+      options: options
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      id,
+      label,
+      options,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativeMenu, rhs: OnyxAppleNativeMenu) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.label, rhs.label) && MessagesPigeonInternal.deepEquals(lhs.options, rhs.options)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativeMenu")
+    MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: label, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: options, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativeMenu(id: \(String(describing: id)), label: \(String(describing: label)), options: \(String(describing: options)))"
+  }
+}
+
+/// Un bouton contextuel posé sur le lecteur : « Passer l'intro », « Épisode
+/// suivant ». Dart ajoute ou retire l'entrée selon la position.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativeAction: Hashable, CustomStringConvertible {
+  /// Rendu dans [OnyxAppleNativeEvent.actionId] à l'appui.
+  var id: String
+  var label: String
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativeAction? {
+    let id = pigeonVar_list[0] as! String
+    let label = pigeonVar_list[1] as! String
+
+    return OnyxAppleNativeAction(
+      id: id,
+      label: label
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      id,
+      label,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativeAction, rhs: OnyxAppleNativeAction) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.label, rhs.label)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativeAction")
+    MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: label, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativeAction(id: \(String(describing: id)), label: \(String(describing: label)))"
+  }
+}
+
+/// Tout ce que le lecteur natif affiche, en un seul objet : Swift n'a pas
+/// d'état à réconcilier, il applique la dernière spec reçue.
+///
+/// Tous les textes sont traduits côté Dart.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
+  var title: String
+  var subtitle: String? = nil
+  /// L'affiche, en URL absolue (avec le ticket d'image s'il en faut un).
+  var posterUrl: String? = nil
+  /// Le synopsis (`description` est réservé en Swift).
+  var overview: String? = nil
+  var menus: [OnyxAppleNativeMenu]
+  var actions: [OnyxAppleNativeAction]
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativeSpec? {
+    let title = pigeonVar_list[0] as! String
+    let subtitle: String? = nilOrValue(pigeonVar_list[1])
+    let posterUrl: String? = nilOrValue(pigeonVar_list[2])
+    let overview: String? = nilOrValue(pigeonVar_list[3])
+    let menus = pigeonVar_list[4] as! [OnyxAppleNativeMenu]
+    let actions = pigeonVar_list[5] as! [OnyxAppleNativeAction]
+
+    return OnyxAppleNativeSpec(
+      title: title,
+      subtitle: subtitle,
+      posterUrl: posterUrl,
+      overview: overview,
+      menus: menus,
+      actions: actions
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      title,
+      subtitle,
+      posterUrl,
+      overview,
+      menus,
+      actions,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativeSpec, rhs: OnyxAppleNativeSpec) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.posterUrl, rhs.posterUrl) && MessagesPigeonInternal.deepEquals(lhs.overview, rhs.overview) && MessagesPigeonInternal.deepEquals(lhs.menus, rhs.menus) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativeSpec")
+    MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: subtitle, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: posterUrl, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: overview, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: menus, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: actions, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativeSpec(title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), posterUrl: \(String(describing: posterUrl)), overview: \(String(describing: overview)), menus: \(String(describing: menus)), actions: \(String(describing: actions)))"
+  }
+}
+
+/// Un événement du lecteur natif. Un seul type pour tous : seuls les champs
+/// de son [kind] sont remplis.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativeEvent: Hashable, CustomStringConvertible {
+  var playerId: Int64
+  var kind: OnyxAppleNativeEventKind
+  var actionId: String? = nil
+  var menuId: String? = nil
+  var optionId: String? = nil
+  var trackId: String? = nil
+  var reason: OnyxAppleNativeReason? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativeEvent? {
+    let playerId = pigeonVar_list[0] as! Int64
+    let kind = pigeonVar_list[1] as! OnyxAppleNativeEventKind
+    let actionId: String? = nilOrValue(pigeonVar_list[2])
+    let menuId: String? = nilOrValue(pigeonVar_list[3])
+    let optionId: String? = nilOrValue(pigeonVar_list[4])
+    let trackId: String? = nilOrValue(pigeonVar_list[5])
+    let reason: OnyxAppleNativeReason? = nilOrValue(pigeonVar_list[6])
+
+    return OnyxAppleNativeEvent(
+      playerId: playerId,
+      kind: kind,
+      actionId: actionId,
+      menuId: menuId,
+      optionId: optionId,
+      trackId: trackId,
+      reason: reason
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      playerId,
+      kind,
+      actionId,
+      menuId,
+      optionId,
+      trackId,
+      reason,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativeEvent, rhs: OnyxAppleNativeEvent) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.playerId, rhs.playerId) && MessagesPigeonInternal.deepEquals(lhs.kind, rhs.kind) && MessagesPigeonInternal.deepEquals(lhs.actionId, rhs.actionId) && MessagesPigeonInternal.deepEquals(lhs.menuId, rhs.menuId) && MessagesPigeonInternal.deepEquals(lhs.optionId, rhs.optionId) && MessagesPigeonInternal.deepEquals(lhs.trackId, rhs.trackId) && MessagesPigeonInternal.deepEquals(lhs.reason, rhs.reason)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativeEvent")
+    MessagesPigeonInternal.deepHash(value: playerId, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: kind, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: actionId, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: menuId, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: optionId, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: trackId, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: reason, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativeEvent(playerId: \(String(describing: playerId)), kind: \(String(describing: kind)), actionId: \(String(describing: actionId)), menuId: \(String(describing: menuId)), optionId: \(String(describing: optionId)), trackId: \(String(describing: trackId)), reason: \(String(describing: reason)))"
+  }
+}
+
 private class MessagesPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -749,19 +1064,41 @@ private class MessagesPigeonCodecReader: FlutterStandardReader {
       }
       return nil
     case 132:
-      return OnyxAppleTrack.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return OnyxAppleNativeEventKind(rawValue: enumResultAsInt)
+      }
+      return nil
     case 133:
-      return OnyxAppleVideoSize.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return OnyxAppleNativeReason(rawValue: enumResultAsInt)
+      }
+      return nil
     case 134:
-      return OnyxApplePlayerStatus.fromList(self.readValue() as! [Any?])
+      return OnyxAppleTrack.fromList(self.readValue() as! [Any?])
     case 135:
-      return OnyxAppleSubtitleBitmap.fromList(self.readValue() as! [Any?])
+      return OnyxAppleVideoSize.fromList(self.readValue() as! [Any?])
     case 136:
-      return OnyxAppleSubtitleFrame.fromList(self.readValue() as! [Any?])
+      return OnyxApplePlayerStatus.fromList(self.readValue() as! [Any?])
     case 137:
-      return OnyxApplePlaybackStats.fromList(self.readValue() as! [Any?])
+      return OnyxAppleSubtitleBitmap.fromList(self.readValue() as! [Any?])
     case 138:
+      return OnyxAppleSubtitleFrame.fromList(self.readValue() as! [Any?])
+    case 139:
+      return OnyxApplePlaybackStats.fromList(self.readValue() as! [Any?])
+    case 140:
       return OnyxApplePictureInPicture.fromList(self.readValue() as! [Any?])
+    case 141:
+      return OnyxAppleNativeOption.fromList(self.readValue() as! [Any?])
+    case 142:
+      return OnyxAppleNativeMenu.fromList(self.readValue() as! [Any?])
+    case 143:
+      return OnyxAppleNativeAction.fromList(self.readValue() as! [Any?])
+    case 144:
+      return OnyxAppleNativeSpec.fromList(self.readValue() as! [Any?])
+    case 145:
+      return OnyxAppleNativeEvent.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -779,26 +1116,47 @@ private class MessagesPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? OnyxAppleVideoFit {
       super.writeByte(131)
       super.writeValue(value.rawValue)
-    } else if let value = value as? OnyxAppleTrack {
+    } else if let value = value as? OnyxAppleNativeEventKind {
       super.writeByte(132)
-      super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleVideoSize {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? OnyxAppleNativeReason {
       super.writeByte(133)
-      super.writeValue(value.toList())
-    } else if let value = value as? OnyxApplePlayerStatus {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? OnyxAppleTrack {
       super.writeByte(134)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleSubtitleBitmap {
+    } else if let value = value as? OnyxAppleVideoSize {
       super.writeByte(135)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleSubtitleFrame {
+    } else if let value = value as? OnyxApplePlayerStatus {
       super.writeByte(136)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxApplePlaybackStats {
+    } else if let value = value as? OnyxAppleSubtitleBitmap {
       super.writeByte(137)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxApplePictureInPicture {
+    } else if let value = value as? OnyxAppleSubtitleFrame {
       super.writeByte(138)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxApplePlaybackStats {
+      super.writeByte(139)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxApplePictureInPicture {
+      super.writeByte(140)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeOption {
+      super.writeByte(141)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeMenu {
+      super.writeByte(142)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeAction {
+      super.writeByte(143)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeSpec {
+      super.writeByte(144)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeEvent {
+      super.writeByte(145)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -865,6 +1223,18 @@ protocol OnyxApplePlayerApi {
   /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne
   /// laisse pas l'app la demander après coup, comme Android.
   func setPictureInPictureArmed(playerId: Int64, armed: Bool) throws
+  /// Présente l'`AVPlayerViewController` natif par-dessus Flutter (Apple TV
+  /// seulement). Le lecteur doit déjà avoir ouvert un média. Si le natif ne
+  /// sait pas faire, il répond par un événement `unavailable`, jamais par une
+  /// erreur : Dart garde alors l'écran Flutter.
+  func presentNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws
+  /// Remplace ce qu'affiche l'écran natif (menus cochés, action contextuelle
+  /// apparue ou retirée, titre de l'épisode suivant). Sans effet s'il n'est
+  /// pas présenté.
+  func updateNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws
+  /// Ferme l'écran natif. Sans effet s'il n'est pas présenté ; le natif
+  /// répond `dismissed` avec la raison `requested`.
+  func dismissNative(playerId: Int64) throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -1176,6 +1546,62 @@ class OnyxApplePlayerApiSetup {
     } else {
       setPictureInPictureArmedChannel.setMessageHandler(nil)
     }
+    /// Présente l'`AVPlayerViewController` natif par-dessus Flutter (Apple TV
+    /// seulement). Le lecteur doit déjà avoir ouvert un média. Si le natif ne
+    /// sait pas faire, il répond par un événement `unavailable`, jamais par une
+    /// erreur : Dart garde alors l'écran Flutter.
+    let presentNativeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.presentNative\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      presentNativeChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let playerIdArg = args[0] as! Int64
+        let specArg = args[1] as! OnyxAppleNativeSpec
+        do {
+          try api.presentNative(playerId: playerIdArg, spec: specArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      presentNativeChannel.setMessageHandler(nil)
+    }
+    /// Remplace ce qu'affiche l'écran natif (menus cochés, action contextuelle
+    /// apparue ou retirée, titre de l'épisode suivant). Sans effet s'il n'est
+    /// pas présenté.
+    let updateNativeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.updateNative\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      updateNativeChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let playerIdArg = args[0] as! Int64
+        let specArg = args[1] as! OnyxAppleNativeSpec
+        do {
+          try api.updateNative(playerId: playerIdArg, spec: specArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      updateNativeChannel.setMessageHandler(nil)
+    }
+    /// Ferme l'écran natif. Sans effet s'il n'est pas présenté ; le natif
+    /// répond `dismissed` avec la raison `requested`.
+    let dismissNativeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.dismissNative\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      dismissNativeChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let playerIdArg = args[0] as! Int64
+        do {
+          try api.dismissNative(playerId: playerIdArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      dismissNativeChannel.setMessageHandler(nil)
+    }
   }
 }
 
@@ -1279,6 +1705,20 @@ class EngineLogStreamHandler: PigeonEventChannelWrapper<[String]> {
       channelName += ".\(instanceName)"
     }
     let internalStreamHandler = PigeonStreamHandler<[String]>(wrapper: streamHandler)
+    let channel = FlutterEventChannel(name: channelName, binaryMessenger: messenger, codec: messagesPigeonMethodCodec)
+    channel.setStreamHandler(internalStreamHandler)
+  }
+}
+      
+class NativeEventsStreamHandler: PigeonEventChannelWrapper<OnyxAppleNativeEvent> {
+  static func register(with messenger: FlutterBinaryMessenger,
+                      instanceName: String = "",
+                      streamHandler: NativeEventsStreamHandler) {
+    var channelName = "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerEventApi.nativeEvents"
+    if !instanceName.isEmpty {
+      channelName += ".\(instanceName)"
+    }
+    let internalStreamHandler = PigeonStreamHandler<OnyxAppleNativeEvent>(wrapper: streamHandler)
     let channel = FlutterEventChannel(name: channelName, binaryMessenger: messenger, codec: messagesPigeonMethodCodec)
     channel.setStreamHandler(internalStreamHandler)
   }

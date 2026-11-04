@@ -4,6 +4,13 @@ import 'messages.g.dart' as pigeon show engineLog;
 export 'messages.g.dart'
     show
         OnyxApplePlaybackState,
+        OnyxAppleNativeAction,
+        OnyxAppleNativeEvent,
+        OnyxAppleNativeEventKind,
+        OnyxAppleNativeMenu,
+        OnyxAppleNativeOption,
+        OnyxAppleNativeReason,
+        OnyxAppleNativeSpec,
         OnyxApplePictureInPicture,
         OnyxApplePlaybackStats,
         OnyxApplePlayerErrorKind,
@@ -26,6 +33,7 @@ Stream<OnyxApplePlayerStatus>? _sharedStatuses;
 Stream<OnyxAppleSubtitleFrame>? _sharedSubtitles;
 Stream<OnyxApplePictureInPicture>? _sharedPictureInPicture;
 Stream<List<String>>? _sharedEngineLog;
+Stream<OnyxAppleNativeEvent>? _sharedNativeEvents;
 
 Stream<OnyxApplePlayerStatus> _nativeStatuses() =>
     _sharedStatuses ??= statusChanged().asBroadcastStream();
@@ -35,6 +43,9 @@ Stream<OnyxApplePictureInPicture> _nativePictureInPicture() =>
 
 Stream<OnyxAppleSubtitleFrame> _nativeSubtitles() =>
     _sharedSubtitles ??= subtitlesChanged().asBroadcastStream();
+
+Stream<OnyxAppleNativeEvent> _nativeEvents() =>
+    _sharedNativeEvents ??= nativeEvents().asBroadcastStream();
 
 /// Un lecteur AetherEngine, vu de Dart.
 ///
@@ -51,11 +62,10 @@ class OnyxApplePlayer {
 
   /// Le journal d'AetherEngine, tous lecteurs confondus, par paquets de
   /// lignes. Le ticket de lecture y est déjà masqué.
-  static Stream<List<String>> get engineLog =>
-      _sharedEngineLog ??= pigeon
-          .engineLog()
-          .map((lines) => lines.cast<String>())
-          .asBroadcastStream();
+  static Stream<List<String>> get engineLog => _sharedEngineLog ??= pigeon
+      .engineLog()
+      .map((lines) => lines.cast<String>())
+      .asBroadcastStream();
 
   /// L'ouverture et la fermeture de la fenêtre d'image dans l'image, tous
   /// lecteurs confondus ; [OnyxApplePictureInPicture.playerId] dit lequel.
@@ -86,14 +96,30 @@ class OnyxApplePlayer {
   Stream<OnyxAppleSubtitleFrame> get subtitles =>
       _nativeSubtitles().where((frame) => frame.playerId == _id);
 
+  /// Les actions de l'utilisateur sur l'écran natif d'*ce* lecteur, et son
+  /// repli (`unavailable`).
+  Stream<OnyxAppleNativeEvent> get nativeEvents =>
+      _nativeEvents().where((event) => event.playerId == _id);
+
+  /// Présente l'écran natif (Apple TV) par-dessus Flutter. Si le natif ne
+  /// sait pas, [nativeEvents] émet `unavailable` : l'appelant garde alors
+  /// l'écran Flutter.
+  Future<void> presentNative(OnyxAppleNativeSpec spec) =>
+      _api.presentNative(_id, spec);
+
+  /// Remplace ce que l'écran natif affiche.
+  Future<void> updateNative(OnyxAppleNativeSpec spec) =>
+      _api.updateNative(_id, spec);
+
+  Future<void> dismissNative() => _api.dismissNative(_id);
+
   /// Charge [url] (fichier du serveur, chemin d'un téléchargement ou session
   /// HLS) en se plaçant à [startPosition] dans le même geste.
   Future<void> open(
     String url, {
     Duration startPosition = Duration.zero,
     bool play = false,
-  }) =>
-      _api.open(_id, url, startPosition.inMilliseconds, play);
+  }) => _api.open(_id, url, startPosition.inMilliseconds, play);
 
   Future<void> play() => _api.play(_id);
 
@@ -111,8 +137,7 @@ class OnyxApplePlayer {
   Future<void> setRate(double rate) => _api.setRate(_id, rate);
 
   /// Le cadrage de l'image dans la vue, appliqué par la couche vidéo.
-  Future<void> setVideoFit(OnyxAppleVideoFit fit) =>
-      _api.setVideoFit(_id, fit);
+  Future<void> setVideoFit(OnyxAppleVideoFit fit) => _api.setVideoFit(_id, fit);
 
   /// Posé avant l'ouverture : changer d'audio après coup reconstruit la
   /// session.
@@ -131,8 +156,7 @@ class OnyxApplePlayer {
     String? vtt, {
     String? language,
     String? title,
-  }) =>
-      _api.setExternalSubtitle(_id, vtt, language, title);
+  }) => _api.setExternalSubtitle(_id, vtt, language, title);
 
   /// L'état à cet instant, pour s'amorcer sans attendre le premier événement.
   Future<OnyxApplePlayerStatus> status() => _api.status(_id);

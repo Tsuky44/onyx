@@ -57,6 +57,24 @@ final class PictureInPictureStream: PictureInPictureChangedStreamHandler {
   }
 }
 
+final class NativeEventStream: NativeEventsStreamHandler {
+  private var sink: PigeonEventSink<OnyxAppleNativeEvent>?
+
+  override func onListen(
+    withArguments arguments: Any?, sink: PigeonEventSink<OnyxAppleNativeEvent>
+  ) {
+    self.sink = sink
+  }
+
+  override func onCancel(withArguments arguments: Any?) {
+    sink = nil
+  }
+
+  func send(_ event: OnyxAppleNativeEvent) {
+    sink?.success(event)
+  }
+}
+
 /// Le journal d'AetherEngine, relayé vers Dart par paquets.
 ///
 /// `EngineLog.handler` est appelé depuis n'importe quel thread, parfois des

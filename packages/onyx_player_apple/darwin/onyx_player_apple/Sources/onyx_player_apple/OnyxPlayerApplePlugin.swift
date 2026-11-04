@@ -7,7 +7,7 @@ import Foundation
   import Flutter
 #endif
 
-/// Point d'entrée du plugin : branche le contrat Pigeon, les trois flux
+/// Point d'entrée du plugin : branche le contrat Pigeon, les flux
 /// d'événements et la fabrique de vues.
 ///
 /// Rien n'est retenu ici. Les fermetures de Pigeon gardent l'hôte en vie tant
@@ -27,6 +27,7 @@ public final class OnyxPlayerApplePlugin: NSObject, FlutterPlugin {
     PictureInPictureChangedStreamHandler.register(
       with: messenger, streamHandler: host.pictureInPicture)
     EngineLogStreamHandler.register(with: messenger, streamHandler: host.engineLog)
+    NativeEventsStreamHandler.register(with: messenger, streamHandler: host.nativeEvents)
 
     // Global au processus, comme le journal d'AetherEngine lui-même : un seul
     // relais, quel que soit le nombre de lecteurs.

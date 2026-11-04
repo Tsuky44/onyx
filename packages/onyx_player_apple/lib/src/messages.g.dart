@@ -132,6 +132,37 @@ enum OnyxAppleVideoFit {
   cover,
 }
 
+/// Ce que le natif raconte à Dart.
+enum OnyxAppleNativeEventKind {
+  /// Un bouton contextuel a été pressé : [OnyxAppleNativeEvent.actionId].
+  action,
+  /// Une option de menu a été choisie : `menuId` et `optionId`.
+  menuSelected,
+  /// Un sous-titre a été choisi dans le menu AVKit (le moteur publie
+  /// `systemCaptionRequest`) : `trackId`, nul pour « aucun ».
+  subtitleSelected,
+  /// L'écran natif est fermé : [OnyxAppleNativeEvent.reason].
+  dismissed,
+  /// Le natif ne sait pas jouer ceci : Dart doit rendre l'écran Flutter.
+  /// [OnyxAppleNativeEvent.reason] dit pourquoi.
+  unavailable,
+}
+
+/// Pourquoi l'écran natif se ferme ou n'est pas disponible.
+enum OnyxAppleNativeReason {
+  /// Menu (télécommande) ou geste de fermeture.
+  userDismissed,
+  /// Dart a demandé la fermeture (`dismissNative`).
+  requested,
+  /// La route vidéo est `software` : `currentAVPlayer` est nul et AVKit
+  /// n'afficherait qu'une roue sur fond noir, son joué.
+  softwareRoute,
+  /// La présentation a échoué (pas de contrôleur racine, lecteur inconnu).
+  presentationFailed,
+  /// Plateforme sans lecteur natif (iPhone, Mac).
+  unsupported,
+}
+
 /// Une piste qu'AetherEngine a énumérée.
 class OnyxAppleTrack {
   OnyxAppleTrack({
@@ -704,6 +735,335 @@ class OnyxApplePictureInPicture {
   }
 }
 
+/// Une option d'un menu du lecteur natif (`UIAction` dans la barre de
+/// transport d'AVKit).
+class OnyxAppleNativeOption {
+  OnyxAppleNativeOption({
+    required this.id,
+    required this.label,
+    required this.selected,
+  });
+
+  /// Rendu tel quel dans [OnyxAppleNativeEvent.optionId] au choix.
+  String id;
+
+  /// Déjà traduit : Swift n'affiche que ce texte.
+  String label;
+
+  /// Coché dans le menu. Dart reste maître de l'état : le natif ne coche rien
+  /// de lui-même, il attend la spec suivante.
+  bool selected;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      label,
+      selected,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativeOption decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativeOption(
+      id: result[0]! as String,
+      label: result[1]! as String,
+      selected: result[2]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativeOption || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) && _deepEquals(label, other.label) && _deepEquals(selected, other.selected);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativeOption(id: $id, label: $label, selected: $selected)';
+  }
+}
+
+/// Un menu de la barre de transport : Vitesse, Format d'image, Qualité,
+/// Audio et, au besoin, Sous-titres.
+///
+/// L'audio passe par ici et non par le menu AVKit : le moteur ne sert qu'une
+/// rendition audio, donc AVKit n'expose que la piste active.
+class OnyxAppleNativeMenu {
+  OnyxAppleNativeMenu({
+    required this.id,
+    required this.label,
+    required this.options,
+  });
+
+  /// Identifiant stable choisi par Dart (`speed`, `fit`, `quality`, `audio`,
+  /// `subtitles`), rendu dans [OnyxAppleNativeEvent.menuId].
+  String id;
+
+  String label;
+
+  List<OnyxAppleNativeOption> options;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      label,
+      options,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativeMenu decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativeMenu(
+      id: result[0]! as String,
+      label: result[1]! as String,
+      options: (result[2]! as List<Object?>).cast<OnyxAppleNativeOption>(),
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativeMenu || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) && _deepEquals(label, other.label) && _deepEquals(options, other.options);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativeMenu(id: $id, label: $label, options: $options)';
+  }
+}
+
+/// Un bouton contextuel posé sur le lecteur : « Passer l'intro », « Épisode
+/// suivant ». Dart ajoute ou retire l'entrée selon la position.
+class OnyxAppleNativeAction {
+  OnyxAppleNativeAction({
+    required this.id,
+    required this.label,
+  });
+
+  /// Rendu dans [OnyxAppleNativeEvent.actionId] à l'appui.
+  String id;
+
+  String label;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      label,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativeAction decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativeAction(
+      id: result[0]! as String,
+      label: result[1]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativeAction || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) && _deepEquals(label, other.label);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativeAction(id: $id, label: $label)';
+  }
+}
+
+/// Tout ce que le lecteur natif affiche, en un seul objet : Swift n'a pas
+/// d'état à réconcilier, il applique la dernière spec reçue.
+///
+/// Tous les textes sont traduits côté Dart.
+class OnyxAppleNativeSpec {
+  OnyxAppleNativeSpec({
+    required this.title,
+    this.subtitle,
+    this.posterUrl,
+    this.overview,
+    required this.menus,
+    required this.actions,
+  });
+
+  String title;
+
+  String? subtitle;
+
+  /// L'affiche, en URL absolue (avec le ticket d'image s'il en faut un).
+  String? posterUrl;
+
+  /// Le synopsis (`description` est réservé en Swift).
+  String? overview;
+
+  List<OnyxAppleNativeMenu> menus;
+
+  List<OnyxAppleNativeAction> actions;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      title,
+      subtitle,
+      posterUrl,
+      overview,
+      menus,
+      actions,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativeSpec decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativeSpec(
+      title: result[0]! as String,
+      subtitle: result[1] as String?,
+      posterUrl: result[2] as String?,
+      overview: result[3] as String?,
+      menus: (result[4]! as List<Object?>).cast<OnyxAppleNativeMenu>(),
+      actions: (result[5]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativeSpec || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(posterUrl, other.posterUrl) && _deepEquals(overview, other.overview) && _deepEquals(menus, other.menus) && _deepEquals(actions, other.actions);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativeSpec(title: $title, subtitle: $subtitle, posterUrl: $posterUrl, overview: $overview, menus: $menus, actions: $actions)';
+  }
+}
+
+/// Un événement du lecteur natif. Un seul type pour tous : seuls les champs
+/// de son [kind] sont remplis.
+class OnyxAppleNativeEvent {
+  OnyxAppleNativeEvent({
+    required this.playerId,
+    required this.kind,
+    this.actionId,
+    this.menuId,
+    this.optionId,
+    this.trackId,
+    this.reason,
+  });
+
+  int playerId;
+
+  OnyxAppleNativeEventKind kind;
+
+  String? actionId;
+
+  String? menuId;
+
+  String? optionId;
+
+  String? trackId;
+
+  OnyxAppleNativeReason? reason;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      playerId,
+      kind,
+      actionId,
+      menuId,
+      optionId,
+      trackId,
+      reason,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativeEvent decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativeEvent(
+      playerId: result[0]! as int,
+      kind: result[1]! as OnyxAppleNativeEventKind,
+      actionId: result[2] as String?,
+      menuId: result[3] as String?,
+      optionId: result[4] as String?,
+      trackId: result[5] as String?,
+      reason: result[6] as OnyxAppleNativeReason?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativeEvent || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(playerId, other.playerId) && _deepEquals(kind, other.kind) && _deepEquals(actionId, other.actionId) && _deepEquals(menuId, other.menuId) && _deepEquals(optionId, other.optionId) && _deepEquals(trackId, other.trackId) && _deepEquals(reason, other.reason);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativeEvent(playerId: $playerId, kind: $kind, actionId: $actionId, menuId: $menuId, optionId: $optionId, trackId: $trackId, reason: $reason)';
+  }
+}
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -721,26 +1081,47 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is OnyxAppleVideoFit) {
       buffer.putUint8(131);
       writeValue(buffer, value.index);
-    }    else if (value is OnyxAppleTrack) {
+    }    else if (value is OnyxAppleNativeEventKind) {
       buffer.putUint8(132);
-      writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleVideoSize) {
+      writeValue(buffer, value.index);
+    }    else if (value is OnyxAppleNativeReason) {
       buffer.putUint8(133);
-      writeValue(buffer, value.encode());
-    }    else if (value is OnyxApplePlayerStatus) {
+      writeValue(buffer, value.index);
+    }    else if (value is OnyxAppleTrack) {
       buffer.putUint8(134);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleSubtitleBitmap) {
+    }    else if (value is OnyxAppleVideoSize) {
       buffer.putUint8(135);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleSubtitleFrame) {
+    }    else if (value is OnyxApplePlayerStatus) {
       buffer.putUint8(136);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxApplePlaybackStats) {
+    }    else if (value is OnyxAppleSubtitleBitmap) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxApplePictureInPicture) {
+    }    else if (value is OnyxAppleSubtitleFrame) {
       buffer.putUint8(138);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxApplePlaybackStats) {
+      buffer.putUint8(139);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxApplePictureInPicture) {
+      buffer.putUint8(140);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeOption) {
+      buffer.putUint8(141);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeMenu) {
+      buffer.putUint8(142);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeAction) {
+      buffer.putUint8(143);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeSpec) {
+      buffer.putUint8(144);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeEvent) {
+      buffer.putUint8(145);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -760,19 +1141,35 @@ class _PigeonCodec extends StandardMessageCodec {
         final value = readValue(buffer) as int?;
         return value == null ? null : OnyxAppleVideoFit.values[value];
       case 132:
-        return OnyxAppleTrack.decode(readValue(buffer)!);
+        final value = readValue(buffer) as int?;
+        return value == null ? null : OnyxAppleNativeEventKind.values[value];
       case 133:
-        return OnyxAppleVideoSize.decode(readValue(buffer)!);
+        final value = readValue(buffer) as int?;
+        return value == null ? null : OnyxAppleNativeReason.values[value];
       case 134:
-        return OnyxApplePlayerStatus.decode(readValue(buffer)!);
+        return OnyxAppleTrack.decode(readValue(buffer)!);
       case 135:
-        return OnyxAppleSubtitleBitmap.decode(readValue(buffer)!);
+        return OnyxAppleVideoSize.decode(readValue(buffer)!);
       case 136:
-        return OnyxAppleSubtitleFrame.decode(readValue(buffer)!);
+        return OnyxApplePlayerStatus.decode(readValue(buffer)!);
       case 137:
-        return OnyxApplePlaybackStats.decode(readValue(buffer)!);
+        return OnyxAppleSubtitleBitmap.decode(readValue(buffer)!);
       case 138:
+        return OnyxAppleSubtitleFrame.decode(readValue(buffer)!);
+      case 139:
+        return OnyxApplePlaybackStats.decode(readValue(buffer)!);
+      case 140:
         return OnyxApplePictureInPicture.decode(readValue(buffer)!);
+      case 141:
+        return OnyxAppleNativeOption.decode(readValue(buffer)!);
+      case 142:
+        return OnyxAppleNativeMenu.decode(readValue(buffer)!);
+      case 143:
+        return OnyxAppleNativeAction.decode(readValue(buffer)!);
+      case 144:
+        return OnyxAppleNativeSpec.decode(readValue(buffer)!);
+      case 145:
+        return OnyxAppleNativeEvent.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -1144,6 +1541,69 @@ class OnyxApplePlayerApi {
     )
     ;
   }
+
+  /// Présente l'`AVPlayerViewController` natif par-dessus Flutter (Apple TV
+  /// seulement). Le lecteur doit déjà avoir ouvert un média. Si le natif ne
+  /// sait pas faire, il répond par un événement `unavailable`, jamais par une
+  /// erreur : Dart garde alors l'écran Flutter.
+  Future<void> presentNative(int playerId, OnyxAppleNativeSpec spec) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.presentNative$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[playerId, spec]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  /// Remplace ce qu'affiche l'écran natif (menus cochés, action contextuelle
+  /// apparue ou retirée, titre de l'épisode suivant). Sans effet s'il n'est
+  /// pas présenté.
+  Future<void> updateNative(int playerId, OnyxAppleNativeSpec spec) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.updateNative$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[playerId, spec]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  /// Ferme l'écran natif. Sans effet s'il n'est pas présenté ; le natif
+  /// répond `dismissed` avec la raison `requested`.
+  Future<void> dismissNative(int playerId) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.dismissNative$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[playerId]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
 }
 
 /// Un flux unique pour tous les lecteurs ; [OnyxApplePlayerStatus.playerId]
@@ -1222,6 +1682,26 @@ Stream<List> engineLog( {String instanceName = ''}) {
       EventChannel('dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerEventApi.engineLog$instanceName', pigeonMethodCodec);
   return engineLogChannel.receiveBroadcastStream().map((dynamic event) {
     return event as List;
+  });
+}
+    
+/// Les actions de l'utilisateur sur l'écran natif et son repli, tous
+/// lecteurs confondus ; [OnyxAppleNativeEvent.playerId] dit lequel.
+///
+/// Returns a broadcast [Stream] of events from the `nativeEvents` event channel.
+///
+/// Each call to this method creates a new [EventChannel], so it should
+/// not be called multiple times for the same `instanceName`. To deliver
+/// events to multiple listeners, call this method once and listen to the
+/// returned broadcast stream multiple times instead.
+Stream<OnyxAppleNativeEvent> nativeEvents( {String instanceName = ''}) {
+  if (instanceName.isNotEmpty) {
+    instanceName = '.$instanceName';
+  }
+  final EventChannel nativeEventsChannel =
+      EventChannel('dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerEventApi.nativeEvents$instanceName', pigeonMethodCodec);
+  return nativeEventsChannel.receiveBroadcastStream().map((dynamic event) {
+    return event as OnyxAppleNativeEvent;
   });
 }
     

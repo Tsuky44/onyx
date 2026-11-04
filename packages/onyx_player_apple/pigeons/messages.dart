@@ -269,6 +269,141 @@ class OnyxApplePictureInPicture {
   final bool closed;
 }
 
+/// Une option d'un menu du lecteur natif (`UIAction` dans la barre de
+/// transport d'AVKit).
+class OnyxAppleNativeOption {
+  OnyxAppleNativeOption({
+    required this.id,
+    required this.label,
+    required this.selected,
+  });
+
+  /// Rendu tel quel dans [OnyxAppleNativeEvent.optionId] au choix.
+  final String id;
+
+  /// Déjà traduit : Swift n'affiche que ce texte.
+  final String label;
+
+  /// Coché dans le menu. Dart reste maître de l'état : le natif ne coche rien
+  /// de lui-même, il attend la spec suivante.
+  final bool selected;
+}
+
+/// Un menu de la barre de transport : Vitesse, Format d'image, Qualité,
+/// Audio et, au besoin, Sous-titres.
+///
+/// L'audio passe par ici et non par le menu AVKit : le moteur ne sert qu'une
+/// rendition audio, donc AVKit n'expose que la piste active.
+class OnyxAppleNativeMenu {
+  OnyxAppleNativeMenu({
+    required this.id,
+    required this.label,
+    required this.options,
+  });
+
+  /// Identifiant stable choisi par Dart (`speed`, `fit`, `quality`, `audio`,
+  /// `subtitles`), rendu dans [OnyxAppleNativeEvent.menuId].
+  final String id;
+  final String label;
+  final List<OnyxAppleNativeOption> options;
+}
+
+/// Un bouton contextuel posé sur le lecteur : « Passer l'intro », « Épisode
+/// suivant ». Dart ajoute ou retire l'entrée selon la position.
+class OnyxAppleNativeAction {
+  OnyxAppleNativeAction({required this.id, required this.label});
+
+  /// Rendu dans [OnyxAppleNativeEvent.actionId] à l'appui.
+  final String id;
+  final String label;
+}
+
+/// Tout ce que le lecteur natif affiche, en un seul objet : Swift n'a pas
+/// d'état à réconcilier, il applique la dernière spec reçue.
+///
+/// Tous les textes sont traduits côté Dart.
+class OnyxAppleNativeSpec {
+  OnyxAppleNativeSpec({
+    required this.title,
+    required this.menus,
+    required this.actions,
+    this.subtitle,
+    this.posterUrl,
+    this.overview,
+  });
+
+  final String title;
+  final String? subtitle;
+
+  /// L'affiche, en URL absolue (avec le ticket d'image s'il en faut un).
+  final String? posterUrl;
+  /// Le synopsis (`description` est réservé en Swift).
+  final String? overview;
+  final List<OnyxAppleNativeMenu> menus;
+  final List<OnyxAppleNativeAction> actions;
+}
+
+/// Ce que le natif raconte à Dart.
+enum OnyxAppleNativeEventKind {
+  /// Un bouton contextuel a été pressé : [OnyxAppleNativeEvent.actionId].
+  action,
+
+  /// Une option de menu a été choisie : `menuId` et `optionId`.
+  menuSelected,
+
+  /// Un sous-titre a été choisi dans le menu AVKit (le moteur publie
+  /// `systemCaptionRequest`) : `trackId`, nul pour « aucun ».
+  subtitleSelected,
+
+  /// L'écran natif est fermé : [OnyxAppleNativeEvent.reason].
+  dismissed,
+
+  /// Le natif ne sait pas jouer ceci : Dart doit rendre l'écran Flutter.
+  /// [OnyxAppleNativeEvent.reason] dit pourquoi.
+  unavailable,
+}
+
+/// Pourquoi l'écran natif se ferme ou n'est pas disponible.
+enum OnyxAppleNativeReason {
+  /// Menu (télécommande) ou geste de fermeture.
+  userDismissed,
+
+  /// Dart a demandé la fermeture (`dismissNative`).
+  requested,
+
+  /// La route vidéo est `software` : `currentAVPlayer` est nul et AVKit
+  /// n'afficherait qu'une roue sur fond noir, son joué.
+  softwareRoute,
+
+  /// La présentation a échoué (pas de contrôleur racine, lecteur inconnu).
+  presentationFailed,
+
+  /// Plateforme sans lecteur natif (iPhone, Mac).
+  unsupported,
+}
+
+/// Un événement du lecteur natif. Un seul type pour tous : seuls les champs
+/// de son [kind] sont remplis.
+class OnyxAppleNativeEvent {
+  OnyxAppleNativeEvent({
+    required this.playerId,
+    required this.kind,
+    this.actionId,
+    this.menuId,
+    this.optionId,
+    this.trackId,
+    this.reason,
+  });
+
+  final int playerId;
+  final OnyxAppleNativeEventKind kind;
+  final String? actionId;
+  final String? menuId;
+  final String? optionId;
+  final String? trackId;
+  final OnyxAppleNativeReason? reason;
+}
+
 @HostApi()
 abstract class OnyxApplePlayerApi {
   /// Crée un lecteur et rend son identifiant. La vue s'y rattache par cet
@@ -334,6 +469,21 @@ abstract class OnyxApplePlayerApi {
   /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne
   /// laisse pas l'app la demander après coup, comme Android.
   void setPictureInPictureArmed(int playerId, bool armed);
+
+  /// Présente l'`AVPlayerViewController` natif par-dessus Flutter (Apple TV
+  /// seulement). Le lecteur doit déjà avoir ouvert un média. Si le natif ne
+  /// sait pas faire, il répond par un événement `unavailable`, jamais par une
+  /// erreur : Dart garde alors l'écran Flutter.
+  void presentNative(int playerId, OnyxAppleNativeSpec spec);
+
+  /// Remplace ce qu'affiche l'écran natif (menus cochés, action contextuelle
+  /// apparue ou retirée, titre de l'épisode suivant). Sans effet s'il n'est
+  /// pas présenté.
+  void updateNative(int playerId, OnyxAppleNativeSpec spec);
+
+  /// Ferme l'écran natif. Sans effet s'il n'est pas présenté ; le natif
+  /// répond `dismissed` avec la raison `requested`.
+  void dismissNative(int playerId);
 }
 
 @EventChannelApi()
@@ -352,4 +502,8 @@ abstract class OnyxApplePlayerEventApi {
   /// lecture de l'app (ADR-0026). Les secrets (ticket de lecture) y sont
   /// déjà masqués.
   List<String> engineLog();
+
+  /// Les actions de l'utilisateur sur l'écran natif et son repli, tous
+  /// lecteurs confondus ; [OnyxAppleNativeEvent.playerId] dit lequel.
+  OnyxAppleNativeEvent nativeEvents();
 }

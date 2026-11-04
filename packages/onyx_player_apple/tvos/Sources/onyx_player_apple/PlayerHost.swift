@@ -12,6 +12,7 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   let subtitles = SubtitleStream()
   let pictureInPicture = PictureInPictureStream()
   let engineLog = EngineLogRelay()
+  let nativeEvents = NativeEventStream()
 
   private var players: [Int64: AetherPlayer] = [:]
   private var nextId: Int64 = 1
@@ -121,4 +122,17 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   func setPictureInPictureArmed(playerId: Int64, armed: Bool) throws {
     try onMain { try require(playerId).setPictureInPictureArmed(armed) }
   }
+
+  // Squelette du contrat du lecteur natif : le vrai présentateur arrive avec
+  // `NativePlayerPresenter`. D'ici là, répondre `unavailable` fait garder
+  // l'écran Flutter à Dart, plutôt que de laisser un appel sans réponse.
+  func presentNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws {
+    nativeEvents.send(
+      OnyxAppleNativeEvent(
+        playerId: playerId, kind: .unavailable, reason: .unsupported))
+  }
+
+  func updateNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws {}
+
+  func dismissNative(playerId: Int64) throws {}
 }
