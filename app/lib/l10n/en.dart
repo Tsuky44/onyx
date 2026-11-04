@@ -988,6 +988,8 @@ const Map<String, String> kEnglish = <String, String>{
       'End of the time range',
   'Finnois':
       'Finnish',
+  'Format d’image':
+      'Aspect ratio',
   'Formats indisponibles pour ce fichier.':
       'Formats unavailable for this file.',
   'France':

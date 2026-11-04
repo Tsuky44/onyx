@@ -371,6 +371,9 @@ extension _PlayerFlow on _PlayerScreenState {
     _closeEpisodesPanel();
     _isEpisodeTransition = true;
     _isLeaving = true;
+    // Fermé avant que l'épisode suivant ne présente le sien : UIKit ne
+    // présente pas deux écrans l'un sur l'autre.
+    _nativeTv?.dispose();
     // La séance passe à l'épisode avec ce lecteur.
     if (_party.carryTo(next.media.id, fromParty: fromParty)) {
       resumeAtSeconds ??= 0;

@@ -9,6 +9,7 @@ import 'package:web/web.dart' as web;
 import '../playback_profile.dart';
 import '../web/web_playback.dart';
 import 'playback_session.dart';
+import 'native_tv_screen.dart';
 
 PlaybackSession createWebOSPlaybackSession() => WebOSPlaybackSession();
 
@@ -367,6 +368,10 @@ class WebOSPlaybackSession implements PlaybackSession {
   /// contrôleur (`dolbyVisionInDirectPlay` faux, voir les capacités webOS).
   @override
   Future<void> useDolbyVisionOutput() async {}
+
+  /// Pas d'écran natif hors d'Apple TV.
+  @override
+  NativeTvScreen? get nativeTvScreen => null;
 
   // --- Événements de l'élément -------------------------------------------
 

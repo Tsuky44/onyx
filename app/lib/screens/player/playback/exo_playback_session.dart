@@ -6,6 +6,7 @@ import 'package:onyx_player_android/onyx_player_android.dart';
 import '../playback_profile.dart';
 import '../../../services/client_log.dart';
 import 'playback_session.dart';
+import 'native_tv_screen.dart';
 import 'subtitle_overlay.dart';
 
 /// [PlaybackSession] adossée à ExoPlayer, sur Android.
@@ -470,6 +471,10 @@ class ExoPlaybackSession implements PlaybackSession {
     // Une seule surface, et c'est le décodeur de l'appareil qui applique la
     // couche RPU.
   }
+
+  /// Pas d'écran natif hors d'Apple TV.
+  @override
+  NativeTvScreen? get nativeTvScreen => null;
 
   @override
   Future<void> prepare() async {

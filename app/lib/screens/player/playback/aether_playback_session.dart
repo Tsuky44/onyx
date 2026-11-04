@@ -9,6 +9,7 @@ import '../playback_profile.dart';
 import 'aether_failure.dart';
 import 'aether_tracks.dart';
 import 'aether_video_fit.dart';
+import 'native_tv_screen.dart';
 import 'native_video_framing.dart';
 import 'playback_session.dart';
 import 'screen_awake.dart';
@@ -396,6 +397,11 @@ class AetherPlaybackSession implements PlaybackSession {
     // couche RPU.
   }
 
+  /// Le natif répond `unavailable` là où il n'a pas d'écran à présenter
+  /// (iPhone, Mac) : la capacité existe sur tout appareil Apple.
+  @override
+  late final NativeTvScreen nativeTvScreen = _AetherNativeTvScreen(_ready);
+
   @override
   Future<PlaybackDiagnostics> readDiagnostics() async {
     final stats = await (await _ready).stats();
@@ -437,6 +443,33 @@ class AetherPlaybackSession implements PlaybackSession {
     PictureInPicture.detach(player);
     await player.release();
   }
+}
+
+/// [NativeTvScreen] sur le lecteur AetherEngine de cette session.
+class _AetherNativeTvScreen implements NativeTvScreen {
+  _AetherNativeTvScreen(this._ready);
+
+  final Future<OnyxApplePlayer> _ready;
+
+  @override
+  Future<void> present(OnyxAppleNativeSpec spec) async =>
+      (await _ready).presentNative(spec);
+
+  @override
+  Future<void> update(OnyxAppleNativeSpec spec) async =>
+      (await _ready).updateNative(spec);
+
+  @override
+  Future<void> dismiss() async => (await _ready).dismissNative();
+
+  @override
+  Future<void> setFit(OnyxAppleVideoFit fit) async =>
+      (await _ready).setVideoFit(fit);
+
+  /// Déjà filtré sur ce lecteur par [OnyxApplePlayer.nativeEvents].
+  @override
+  Stream<OnyxAppleNativeEvent> get events =>
+      Stream.fromFuture(_ready).asyncExpand((player) => player.nativeEvents);
 }
 
 /// La vue native, cadrée, avec les sous-titres par-dessus.

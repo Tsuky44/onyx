@@ -12,6 +12,7 @@ import '../../../../utils/app_platform.dart';
 import '../../hooks/use_episode_navigation.dart';
 import '../../hooks/use_player_controller.dart';
 import '../../hooks/use_player_popup.dart';
+import '../../player_menu_choices.dart';
 import '../../video_display_mode.dart';
 import '../direct_source_label.dart';
 import '../track_label.dart';
@@ -296,9 +297,7 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
     return track == null ? lang : splitTrackLabel(track.displayName).$1;
   }
 
-  String get _speedValue => widget.playbackRate == 1.0
-      ? tr('Normale')
-      : '${_trimRate(widget.playbackRate)}×';
+  String get _speedValue => PlayerMenuChoices.rateLabel(widget.playbackRate);
 
   String get _displayValue => _mode.label;
 
@@ -325,11 +324,6 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
     if (choice.inMinutes < 60) return '${choice.inMinutes} minutes';
     final hours = choice.inHours;
     return hours == 1 ? '1 heure' : '$hours heures';
-  }
-
-  static String _trimRate(double rate) {
-    final text = rate.toStringAsFixed(2);
-    return text.replaceFirst(RegExp(r'\.?0+$'), '');
   }
 
   static String _timecode(double seconds) {
@@ -467,25 +461,8 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
 
   // --- Sections ------------------------------------------------------------
 
-  /// Les barreaux figés d'avant l'échelle annoncée par le serveur.
-  ///
-  /// Un serveur plus ancien ne renvoie pas de `qualities`, et la médiathèque
-  /// peut en réunir plusieurs (ADR-0013) : le menu doit rester utilisable en
-  /// face de celui qui ne sait pas encore répondre. Ces cinq clés existent
-  /// toujours côté serveur et gardent leurs débits d'origine.
-  static const _legacyQualities = <QualityTier>[
-    QualityTier(key: '2160p', label: '4K', height: 2160, bitrateBps: 0),
-    QualityTier(key: '1080p', label: '1080p', height: 1080, bitrateBps: 0),
-    QualityTier(key: '720p', label: '720p', height: 720, bitrateBps: 0),
-    QualityTier(key: '480p', label: '480p', height: 480, bitrateBps: 0),
-    QualityTier(key: '360p', label: '360p', height: 360, bitrateBps: 0),
-  ];
-
-  List<QualityTier> get _qualityTiers {
-    final offered =
-        _controller?.mediaTracks?.qualities ?? const <QualityTier>[];
-    return offered.isEmpty ? _legacyQualities : offered;
-  }
+  List<QualityTier> get _qualityTiers =>
+      PlayerMenuChoices.qualityTiers(_controller?.mediaTracks);
 
   Widget _buildQuality() {
     final controller = _controller;
@@ -652,7 +629,7 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
     return _sectionList([
       for (final rate in widget.playbackRates)
         _OnyxMenuOption(
-          label: rate == 1.0 ? tr('Normale') : '${_trimRate(rate)}×',
+          label: PlayerMenuChoices.rateLabel(rate),
           selected: rate == widget.playbackRate,
           onTap: () {
             widget.onRateChanged(rate);

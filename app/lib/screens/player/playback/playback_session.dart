@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../playback_profile.dart';
+import 'native_tv_screen.dart';
 
 /// Une piste audio ou de sous-titres, telle que le moteur de lecture la voit.
 ///
@@ -355,4 +356,9 @@ abstract interface class PlaybackSession {
   /// Appelé à l'arrivée des pistes, donc après l'ouverture : c'est le serveur
   /// qui sait lire le profil, pas le moteur.
   Future<void> useDolbyVisionOutput();
+
+  /// L'écran natif d'Apple TV sur ce lecteur, ou null pour un moteur qui n'en
+  /// a pas. Ce n'est qu'une capacité : c'est `isNativeTvPlayerEligible` qui
+  /// décide de s'en servir.
+  NativeTvScreen? get nativeTvScreen;
 }
