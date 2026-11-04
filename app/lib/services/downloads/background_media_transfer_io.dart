@@ -115,9 +115,8 @@ class BackgroundMediaTransfer implements MediaTransfer {
         final attempt = (attempts[range.start] ?? 0) + 1;
         if (attempt > maxAttempts) {
           await _session.cancel(prefix);
-          return TransferFailed(
-              snapshot.failures['$prefix${range.start}'] ??
-                  tr('Transfert interrompu'));
+          return TransferFailed(snapshot.failures['$prefix${range.start}'] ??
+              tr('Transfert interrompu'));
         }
         attempts[range.start] = attempt;
         await _session.enqueue(
@@ -134,7 +133,8 @@ class BackgroundMediaTransfer implements MediaTransfer {
 
   /// La taille du fichier, demandée par un premier octet. Null quand le
   /// serveur ignore `Range:`.
-  Future<int?> _probeTotal(String url, TransferCancellation cancellation) async {
+  Future<int?> _probeTotal(
+      String url, TransferCancellation cancellation) async {
     final token = cancellation.toCancelToken();
     final response = await _dio.get<ResponseBody>(
       url,

@@ -4,7 +4,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_icons.dart';
 import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
-import '../../../widgets/global/poster_grid_zoom_slider.dart';
+import '../../../widgets/global/poster_grid_display_menu.dart';
 
 /// L'en-tête d'un catalogue : le titre, le nombre de titres et le tri, sur une
 /// seule ligne.
@@ -35,24 +35,6 @@ class CatalogHeader<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final zoom = PosterGridZoomSlider.availableIn(context);
-    final row = _row(context, inlineZoom: zoom && !compact);
-    // Sur un téléphone la ligne est pleine avec le titre, le compte et le tri :
-    // le curseur de densité passe dessous, à droite.
-    if (!zoom || !compact) return row;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        row,
-        const Align(
-          alignment: Alignment.centerRight,
-          child: PosterGridZoomSlider(width: 110),
-        ),
-      ],
-    );
-  }
-
-  Widget _row(BuildContext context, {required bool inlineZoom}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
@@ -94,16 +76,6 @@ class CatalogHeader<T> extends StatelessWidget {
             ],
           ),
         ),
-        if (inlineZoom) ...[
-          // La ligne est alignée sur la ligne de base du texte, que le
-          // curseur n'a pas : on place son centre à hauteur des minuscules.
-          const Baseline(
-            baseline: 19,
-            baselineType: TextBaseline.alphabetic,
-            child: PosterGridZoomSlider(),
-          ),
-          const SizedBox(width: 20),
-        ],
         PopupMenuButton<T>(
           tooltip: tr('Trier'),
           initialValue: sort,
@@ -137,6 +109,17 @@ class CatalogHeader<T> extends StatelessWidget {
             ),
           ),
         ),
+        if (PosterGridDisplayMenu.availableIn(context)) ...[
+          const SizedBox(width: 12),
+          // La ligne est alignée sur la ligne de base du texte, que le bouton
+          // n'a pas : on place son centre à hauteur des minuscules. Sur un
+          // téléphone, l'icône seule laisse la place au titre.
+          Baseline(
+            baseline: 19,
+            baselineType: TextBaseline.alphabetic,
+            child: PosterGridDisplayMenu(compact: compact),
+          ),
+        ],
       ],
     );
   }

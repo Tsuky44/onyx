@@ -553,9 +553,11 @@ class OnyxApp extends StatelessWidget {
                                 },
                               ),
                             Expanded(
-                              child: ColoredBox(
-                                color: AppColors.background,
-                                child: child ?? const SizedBox.shrink(),
+                              child: CaptionBarPeek(
+                                child: ColoredBox(
+                                  color: AppColors.background,
+                                  child: child ?? const SizedBox.shrink(),
+                                ),
                               ),
                             ),
                           ],

@@ -302,12 +302,27 @@ class _EpisodeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final airDate = formatAirDate(episode.airDate);
     final wide = MediaQuery.sizeOf(context).width >= 700;
+    // TMDB n'a pas de capture pour la plupart des épisodes pas encore sortis :
+    // un cadre quasi noir de 200×112 à côté du résumé ne dit rien, on s'en passe
+    // et le numéro passe devant le titre.
+    final hasStill = episode.stillUrl != null;
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (!hasStill) ...[
+              Text(
+                'E${episode.number}',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontWeight: FontWeight.w800,
+                  fontSize: AppType.callout,
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
             Expanded(
               child: Text(
                 episode.name,
@@ -390,7 +405,9 @@ class _EpisodeCard extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       padding: const EdgeInsets.all(12),
-      child: wide
+      child: !hasStill
+          ? details
+          : wide
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -451,7 +468,7 @@ class _EpisodeCard extends StatelessWidget {
 
   Widget _stillPlaceholder() {
     return ColoredBox(
-      color: AppColors.background,
+      color: Colors.white.withValues(alpha: 0.05),
       child: Center(
         child: Icon(
           AppIcons.movie,

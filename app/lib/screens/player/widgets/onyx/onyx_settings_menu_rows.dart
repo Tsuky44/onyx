@@ -309,7 +309,8 @@ class _OnyxMenuBadge extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(color: OnyxChromeTheme.meta, fontSize: AppType.micro),
+        style: const TextStyle(
+            color: OnyxChromeTheme.meta, fontSize: AppType.micro),
       ),
     );
   }
@@ -324,7 +325,8 @@ class _OnyxMenuEmpty extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 22, horizontal: 16),
       child: Text(
         tr('Aucune piste disponible'),
-        style: TextStyle(color: OnyxChromeTheme.meta, fontSize: AppType.subhead),
+        style:
+            TextStyle(color: OnyxChromeTheme.meta, fontSize: AppType.subhead),
       ),
     );
   }

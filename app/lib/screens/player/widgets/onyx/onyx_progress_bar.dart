@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -162,7 +161,8 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
             _pointerFraction = null;
           }),
           onHover: (event) => setState(
-            () => _pointerFraction = _fractionFor(event.localPosition.dx, width),
+            () =>
+                _pointerFraction = _fractionFor(event.localPosition.dx, width),
           ),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -361,8 +361,7 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
 
     final boxWidth = widget.metrics.previewWidth.clamp(0.0, width);
     final boxHeight = boxWidth / manifest.aspectRatio;
-    final left =
-        (fraction * width - boxWidth / 2).clamp(0.0, width - boxWidth);
+    final left = (fraction * width - boxWidth / 2).clamp(0.0, width - boxWidth);
     final radius = BorderRadius.circular(8);
 
     return Positioned(

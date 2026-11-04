@@ -108,8 +108,9 @@ class HlsPreload {
     // `warm=1` : le serveur sait que ce segment est pris d'avance, et ne
     // tient pas encore la session pour lue.
     final joined = [if (q.isNotEmpty) q, if (warming) 'warm=1'].join('&');
-    return _upstream.resolve(file).replace(
-        query: joined.isEmpty ? null : joined);
+    return _upstream
+        .resolve(file)
+        .replace(query: joined.isEmpty ? null : joined);
   }
 
   Future<void> _serve(HttpRequest request, String file) async {
@@ -131,8 +132,8 @@ class HlsPreload {
         await response.close();
         return;
       }
-      final upstream = await _client.getUrl(
-          _upstreamFor(file, query: request.uri.hasQuery ? request.uri.query : ''));
+      final upstream = await _client.getUrl(_upstreamFor(file,
+          query: request.uri.hasQuery ? request.uri.query : ''));
       final range = request.headers.value(HttpHeaders.rangeHeader);
       if (range != null) upstream.headers.set(HttpHeaders.rangeHeader, range);
       final answer = await upstream.close();

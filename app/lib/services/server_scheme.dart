@@ -100,7 +100,9 @@ class ServerScheme {
     try {
       final response = await dio.get<dynamic>('$base/api/ping');
       final data = response.data;
-      return response.statusCode == 200 && data is Map && data['status'] == 'ok';
+      return response.statusCode == 200 &&
+          data is Map &&
+          data['status'] == 'ok';
     } catch (_) {
       // Pas de HTTPS ici (refus, certificat invalide, délai) : le serveur
       // reste à l'adresse qu'on avait.

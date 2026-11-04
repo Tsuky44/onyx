@@ -26,7 +26,8 @@ Future<String?> readInstallOriginMarker() async {
   if (Platform.isAndroid) return _readAndroid();
   if (Platform.isMacOS) return _readMacOS();
   // iOS, et tvOS que flutter-tvos annonce sous son propre nom.
-  if (Platform.isIOS || Platform.operatingSystem == 'tvos') return _readBundle();
+  if (Platform.isIOS || Platform.operatingSystem == 'tvos')
+    return _readBundle();
   return null;
 }
 
@@ -42,8 +43,8 @@ Future<String?> _readWindows() async {
 }
 
 /// iOS et tvOS : un fichier du bundle, ajouté à l'IPA par le serveur.
-Future<String?> _readBundle() =>
-    _readText(File('${File(Platform.resolvedExecutable).parent.path}/$_markerFile'));
+Future<String?> _readBundle() => _readText(
+    File('${File(Platform.resolvedExecutable).parent.path}/$_markerFile'));
 
 Future<String?> _readText(File file) async {
   if (!await file.exists()) return null;

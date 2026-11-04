@@ -11,9 +11,12 @@ import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../navigation/search_route_observer.dart';
 import '../../services/api_client.dart';
+import '../../services/device_library/device_library.dart';
 import '../../services/download_manager.dart';
+import '../../services/local_playback_source.dart';
 import '../../services/server_reachability.dart';
 import '../../services/media_details_cache.dart';
+import '../../services/desktop_picture_in_picture.dart';
 import '../../services/picture_in_picture.dart';
 import '../../services/player_presence.dart';
 import '../../services/screen_brightness_control.dart';
@@ -34,6 +37,7 @@ import 'hooks/use_player_media_keys.dart';
 import 'hooks/use_player_popup.dart';
 import 'hooks/use_player_watch_party.dart';
 import 'hooks/use_window_focus.dart';
+import 'widgets/desktop_pip_overlay.dart';
 import 'widgets/seek_feedback_overlay.dart';
 import 'widgets/video_zoom_hint.dart';
 import 'widgets/next_episode_overlay.dart';
@@ -168,6 +172,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
   /// nothing to tap it with — so the player renders the picture and nothing
   /// else until it comes back.
   bool _inPip = false;
+
+  /// Même chose sur ordinateur : la fenêtre de l'app est réduite en un coin de
+  /// l'écran. Le lecteur y garde l'image et [DesktopPipOverlay], pas le chrome.
+  bool _inDesktopPip = false;
 
   /// L'écran est verrouillé contre les touchers : plus de chrome, plus de
   /// gestes, jusqu'à l'appui long sur le cadenas. Voir [PlayerScreenLock].
@@ -334,6 +342,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
     unawaited(_loadScreenBrightness());
     PictureInPicture.active.addListener(_handlePictureInPictureChanged);
     PictureInPicture.closed.addListener(_handlePictureInPictureClosed);
+    DesktopPictureInPicture.active
+        .addListener(_handleDesktopPictureInPictureChanged);
     _keyboardFocusNode.addListener(_handlePlayerFocusChanged);
     _windowFocus.attach();
     _hints.addListener(_rebuild);
@@ -406,6 +416,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
     PictureInPicture.active.removeListener(_handlePictureInPictureChanged);
     PictureInPicture.closed.removeListener(_handlePictureInPictureClosed);
     unawaited(PictureInPicture.disarm());
+    // La fenêtre rendue telle qu'elle était : le reste de l'app n'a pas été
+    // pensé pour vivre dans un coin de l'écran.
+    DesktopPictureInPicture.active
+        .removeListener(_handleDesktopPictureInPictureChanged);
+    unawaited(DesktopPictureInPicture.exit());
     _keyboardFocusNode.removeListener(_handlePlayerFocusChanged);
     _windowFocus.dispose();
     SleepTimer.instance.removeListener(_applySleepTimer);
@@ -512,7 +527,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 // list: rebuilding it there would tear down the platform view
                 // and re-attach the surface, which is a blink in the corner of
                 // the home screen for nothing.
-                if (!_inPip) ...[
+                if (!_inPip && !_inDesktopPip) ...[
                 // Dimming scrim for a session rebuild. It sits here — directly
                 // above the video and BELOW the controls — so it veils the
                 // stale frame without also greying out the buttons the user
@@ -744,6 +759,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     ),
                   ),
                 ],
+                // Dans la petite fenêtre d'ordinateur : l'image reste
+                // cliquable (pause, retour, déplacement), sans le chrome.
+                if (_inDesktopPip)
+                  Positioned.fill(
+                    child: DesktopPipOverlay(
+                      playing: _playerController.isPlaying,
+                      onTogglePlayback: _togglePlayPause,
+                      onSeek: _seekRelative,
+                      onRestore: () => unawaited(DesktopPictureInPicture.exit()),
+                      onDrag: _startWindowDrag,
+                    ),
+                  ),
               ],
             ),
           ),

@@ -80,6 +80,10 @@ class MediaRequestsProvider extends ChangeNotifier {
     _items = const [];
     _errorMessage = null;
     _isLoading = true;
+    // Un loadMore parti avant ce chargement ne remettra jamais son drapeau à
+    // zéro (sa génération est périmée) : sans ce reset, la grille neuve
+    // gardait un spinner en bas et refusait toute page suivante.
+    _isLoadingMore = false;
     _ahead.clear();
     final generation = ++_loadGeneration;
     notifyListeners();

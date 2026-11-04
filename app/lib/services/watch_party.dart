@@ -41,7 +41,8 @@ abstract interface class WatchPartyPlayer {
   Future<void> applyRateFactor(double factor);
 
   /// La séance est passée à un autre média (l'épisode suivant, en général).
-  void openMedia(HomeMediaItem media, Duration position, {required bool playing});
+  void openMedia(HomeMediaItem media, Duration position,
+      {required bool playing});
 }
 
 /// Une séance « Regarder ensemble » à laquelle cet appareil participe.
@@ -501,8 +502,8 @@ class WatchPartySession extends ChangeNotifier {
 
     final now = _now;
     final expected = snap.expectedPosition(now);
-    final drift =
-        (player.position - expected).inMicroseconds / Duration.microsecondsPerSecond;
+    final drift = (player.position - expected).inMicroseconds /
+        Duration.microsecondsPerSecond;
     final seekAllowed = _lastSeek == null || now - _lastSeek! >= _seekCooldown;
 
     if (!snap.isRunning) {

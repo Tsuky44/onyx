@@ -17,7 +17,7 @@ import '../../widgets/global/empty_state.dart';
 import '../../widgets/global/overlay_back_button.dart';
 import '../../widgets/global/poster_card.dart';
 import '../../widgets/global/poster_grid_zoom_region.dart';
-import '../../widgets/global/poster_grid_zoom_slider.dart';
+import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../widgets/global/progress_pill.dart';
 import '../../widgets/global/watch_list_editor_dialog.dart';
 import '../../navigation/detail_flight.dart';
@@ -183,7 +183,7 @@ class _ListDetailScreenState extends State<ListDetailScreen> {
       );
     } else {
       body = SliverMainAxisGroup(slivers: [
-        const SliverPosterGridZoomBar(),
+        const SliverPosterGridDisplayBar(),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(padding, 8, padding, 48),
           sliver: SliverLayoutBuilder(

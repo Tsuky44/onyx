@@ -275,7 +275,7 @@ class _PosterCardState extends State<PosterCard> {
       url: widget.posterUrl,
       fit: BoxFit.cover,
       fadeInDuration: const Duration(milliseconds: 180),
-      color: widget.dimmed ? Colors.black.withValues(alpha: 0.45) : null,
+      color: widget.dimmed ? AppColors.unavailableTint : null,
       colorBlendMode: widget.dimmed ? BlendMode.darken : null,
       placeholder: const ColoredBox(color: AppColors.surfaceElevated),
       errorWidget: _fallback(broken: widget.posterUrl?.isNotEmpty ?? false),

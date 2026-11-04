@@ -305,10 +305,12 @@ class PlaybackPreferencesStorage {
 
   /// Picks the best audio track index for [preferredLang], falling back to the
   /// file default track then index 0.
-  static int pickAudioIndex(List<MediaAudioTrack> tracks, String? preferredLang) {
+  static int pickAudioIndex(
+      List<MediaAudioTrack> tracks, String? preferredLang) {
     if (tracks.isEmpty) return 0;
 
-    final norm = preferredLang == null ? null : normalizeLangCode(preferredLang);
+    final norm =
+        preferredLang == null ? null : normalizeLangCode(preferredLang);
     if (norm != null) {
       var fallbackIdx = -1;
       for (var i = 0; i < tracks.length; i++) {
@@ -329,18 +331,35 @@ class PlaybackPreferencesStorage {
     var c = code.trim().toLowerCase();
     if (c.isEmpty || c == 'und' || c == 'auto' || c == 'no') return null;
     const map = {
-      'fra': 'fr', 'fre': 'fr', 'french': 'fr',
-      'eng': 'en', 'english': 'en',
-      'spa': 'es', 'esp': 'es', 'spanish': 'es',
-      'ger': 'de', 'deu': 'de', 'german': 'de',
-      'ita': 'it', 'italian': 'it',
-      'por': 'pt', 'portuguese': 'pt',
-      'jpn': 'ja', 'japanese': 'ja',
-      'rus': 'ru', 'russian': 'ru',
-      'chi': 'zh', 'zho': 'zh', 'chinese': 'zh',
-      'ara': 'ar', 'arabic': 'ar',
-      'nld': 'nl', 'dut': 'nl', 'dutch': 'nl',
-      'kor': 'ko', 'korean': 'ko',
+      'fra': 'fr',
+      'fre': 'fr',
+      'french': 'fr',
+      'eng': 'en',
+      'english': 'en',
+      'spa': 'es',
+      'esp': 'es',
+      'spanish': 'es',
+      'ger': 'de',
+      'deu': 'de',
+      'german': 'de',
+      'ita': 'it',
+      'italian': 'it',
+      'por': 'pt',
+      'portuguese': 'pt',
+      'jpn': 'ja',
+      'japanese': 'ja',
+      'rus': 'ru',
+      'russian': 'ru',
+      'chi': 'zh',
+      'zho': 'zh',
+      'chinese': 'zh',
+      'ara': 'ar',
+      'arabic': 'ar',
+      'nld': 'nl',
+      'dut': 'nl',
+      'dutch': 'nl',
+      'kor': 'ko',
+      'korean': 'ko',
     };
     if (map.containsKey(c)) return map[c];
     if (c.length > 2) return c.substring(0, 2);

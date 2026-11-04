@@ -238,3 +238,33 @@ class _OnyxVolumeControlState extends State<OnyxVolumeControl> {
     );
   }
 }
+
+/// Les boutons qui agissent sur la fenêtre, à l'extrémité de la barre : image
+/// dans l'image (là où elle existe) puis plein écran. Chacun est précédé de
+/// l'écart de grappe.
+List<Widget> onyxWindowButtons({
+  required OnyxChromeMetrics metrics,
+  required VoidCallback onToggleFullscreen,
+  VoidCallback? onTogglePictureInPicture,
+}) {
+  return [
+    if (onTogglePictureInPicture != null) ...[
+      SizedBox(width: metrics.clusterGap),
+      OnyxIconButton(
+        key: const ValueKey('onyx-picture-in-picture'),
+        icon: Icons.picture_in_picture_alt_rounded,
+        tooltip: tr('Image dans l’image'),
+        metrics: metrics,
+        onPressed: onTogglePictureInPicture,
+      ),
+    ],
+    SizedBox(width: metrics.clusterGap),
+    OnyxIconButton(
+      key: const ValueKey('onyx-fullscreen'),
+      icon: Icons.fullscreen_rounded,
+      tooltip: tr('Plein écran'),
+      metrics: metrics,
+      onPressed: onToggleFullscreen,
+    ),
+  ];
+}

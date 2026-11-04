@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:onyx_player_apple/onyx_player_apple.dart';
 
 import '../../../services/client_log.dart';
+import '../../../services/picture_in_picture.dart';
 import '../playback_profile.dart';
 import 'aether_failure.dart';
 import 'aether_tracks.dart';
@@ -35,6 +36,7 @@ class AetherPlaybackSession implements PlaybackSession {
     _ready = OnyxApplePlayer.create().then((player) {
       _statusSubscription = player.statuses.listen(_onStatus);
       _subtitleSubscription = player.subtitles.listen(_onSubtitles);
+      PictureInPicture.attach(player);
       return player;
     });
   }
@@ -431,7 +433,9 @@ class AetherPlaybackSession implements PlaybackSession {
     cues.dispose();
     bitmaps.dispose();
     subtitleInset.dispose();
-    await (await _ready).release();
+    final player = await _ready;
+    PictureInPicture.detach(player);
+    await player.release();
   }
 }
 

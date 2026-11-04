@@ -2,4 +2,5 @@
 /// voir l'implémentation io. Sans objet sur le web.
 library;
 
-export 'hls_preload_io.dart' if (dart.library.js_interop) 'hls_preload_web.dart';
+export 'hls_preload_io.dart'
+    if (dart.library.js_interop) 'hls_preload_web.dart';

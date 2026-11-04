@@ -39,6 +39,11 @@ abstract final class AppColors {
 
   static const navBackground = Color(0xE6141414);
 
+  /// Le voile d'une affiche absente du serveur (titres similaires, listes,
+  /// épisodes pas encore là), posé en `BlendMode.darken` sur l'image même :
+  /// un seul gris pour dire « pas là » partout.
+  static const unavailableTint = Color(0x73000000);
+
   /// Les pastilles de « Qui regarde ? » : une teinte par personne, pour la
   /// reconnaître de loin avant d'avoir lu son nom. Assourdies, pour que le
   /// focus bleu reste la seule chose qui ressorte.

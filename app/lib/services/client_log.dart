@@ -100,9 +100,8 @@ abstract final class ClientLog {
   /// tranche est ce qu'on a encore, pas ce qu'on a eu. Pour une séance de
   /// lecture c'est sans conséquence — la tranche est prélevée à la fin de la
   /// séance, et six cents lignes couvrent largement un film.
-  static List<LogEntry> since(int mark) => _entries
-      .where((entry) => entry.sequence >= mark)
-      .toList(growable: false);
+  static List<LogEntry> since(int mark) =>
+      _entries.where((entry) => entry.sequence >= mark).toList(growable: false);
 
   /// Branche la capture. À appeler une fois, au tout début de `main`.
   ///
@@ -175,8 +174,7 @@ abstract final class ClientLog {
     final trimmed = message.length > maxMessageLength
         ? '${message.substring(0, maxMessageLength)}…'
         : message;
-    _entries.addLast(
-        LogEntry(_nextSequence++, DateTime.now(), level, trimmed));
+    _entries.addLast(LogEntry(_nextSequence++, DateTime.now(), level, trimmed));
     while (_entries.length > capacity) {
       _entries.removeFirst();
     }

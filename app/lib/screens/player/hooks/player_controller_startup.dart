@@ -30,7 +30,7 @@ extension PlayerControllerStartup on PlayerController {
     // d'un autre serveur, qui peut être celui d'un téléchargement d'ici.
     _localFilePath = apiClient.isGuest
         ? null
-        : DownloadManager.instance.localVideoPath(media.id);
+        : localPlaybackPath(media.id);
     final Future<PlaybackAccess>? accessFuture = _localFilePath == null
         ? apiClient.openPlaybackAccess(media.id)
         : null;

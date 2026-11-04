@@ -75,8 +75,8 @@ mixin _LibraryEndpoints {
 
   /// Les films d'une bibliothèque, avec la progression du compte.
   Future<List<HomeMediaItem>> getLibraryMovies(MediaLibrary library) async {
-    final data = await _libraryLists.get(_dio, _listPath('/api/movies', library),
-        scope: accountId ?? '');
+    final data = await _libraryLists
+        .get(_dio, _listPath('/api/movies', library), scope: accountId ?? '');
     return (data as List<dynamic>)
         .map((e) => HomeMediaItem.fromJson(e as Map<String, dynamic>))
         .toList();

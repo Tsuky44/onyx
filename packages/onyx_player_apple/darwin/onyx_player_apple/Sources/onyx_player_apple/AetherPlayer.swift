@@ -23,6 +23,8 @@ final class AetherPlayer {
 
   private let onStatus: (OnyxApplePlayerStatus) -> Void
   private let onSubtitles: (OnyxAppleSubtitleFrame) -> Void
+  private let onPictureInPicture: (OnyxApplePictureInPicture) -> Void
+  private var pictureInPicture: PictureInPictureBridge?
   private var subscriptions = Set<AnyCancellable>()
 
   private var loadTask: Task<Void, Never>?
@@ -50,13 +52,18 @@ final class AetherPlayer {
   init(
     id: Int64,
     onStatus: @escaping (OnyxApplePlayerStatus) -> Void,
-    onSubtitles: @escaping (OnyxAppleSubtitleFrame) -> Void
+    onSubtitles: @escaping (OnyxAppleSubtitleFrame) -> Void,
+    onPictureInPicture: @escaping (OnyxApplePictureInPicture) -> Void
   ) throws {
     self.id = id
     self.engine = try AetherEngine()
     self.onStatus = onStatus
     self.onSubtitles = onSubtitles
+    self.onPictureInPicture = onPictureInPicture
     observe()
+    pictureInPicture = PictureInPictureBridge(engine: engine) { [weak self] active, closed in
+      self?.pictureInPictureChanged(active: active, closed: closed)
+    }
   }
 
   // MARK: - Commandes
@@ -136,6 +143,17 @@ final class AetherPlayer {
     Task { await engine.seek(to: seconds) }
   }
 
+  func setPictureInPictureArmed(_ armed: Bool) {
+    pictureInPicture?.setArmed(armed)
+  }
+
+  private func pictureInPictureChanged(active: Bool, closed: Bool) {
+    // Fermer la petite fenêtre, c'est renoncer à regarder : un film qui n'a
+    // plus d'écran ne doit pas continuer à jouer (ADR-0012, §2).
+    if closed { pause() }
+    onPictureInPicture(OnyxApplePictureInPicture(playerId: id, active: active, closed: closed))
+  }
+
   /// Décharge le média sans toucher au mode de l'écran : l'épisode suivant
   /// arrive souvent juste derrière, et un téléviseur qui repasse en SDR entre
   /// deux épisodes HDR, c'est deux écrans noirs de plus.
@@ -157,6 +175,8 @@ final class AetherPlayer {
     loadTask?.cancel()
     forgetExternalSubtitle()
     subscriptions.removeAll()
+    pictureInPicture?.release()
+    pictureInPicture = nil
     engine.stop()
   }
 

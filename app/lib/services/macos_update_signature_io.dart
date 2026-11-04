@@ -46,13 +46,15 @@ Future<String> bundleDigest(String bundlePath) async {
   final lines = <(List<int>, String)>[];
   await for (final entry
       in Directory(bundlePath).list(recursive: true, followLinks: false)) {
-    final relative = p.posix.joinAll(p.split(p.relative(entry.path, from: bundlePath)));
+    final relative =
+        p.posix.joinAll(p.split(p.relative(entry.path, from: bundlePath)));
     // Un saut de ligne dans un nom rendrait le manifeste ambigu.
     if (relative.contains('\n')) {
       throw const FormatException('nom de fichier invalide dans le bundle');
     }
     if (entry is Link) {
-      lines.add((utf8.encode(relative), 'l $relative ${await entry.target()}\n'));
+      lines.add(
+          (utf8.encode(relative), 'l $relative ${await entry.target()}\n'));
     } else if (entry is File) {
       final hash = await sha256.bind(entry.openRead()).first;
       lines.add((utf8.encode(relative), 'f $relative $hash\n'));

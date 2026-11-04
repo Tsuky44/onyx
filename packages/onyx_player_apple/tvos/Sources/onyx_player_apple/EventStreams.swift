@@ -39,6 +39,24 @@ final class SubtitleStream: SubtitlesChangedStreamHandler {
   }
 }
 
+final class PictureInPictureStream: PictureInPictureChangedStreamHandler {
+  private var sink: PigeonEventSink<OnyxApplePictureInPicture>?
+
+  override func onListen(
+    withArguments arguments: Any?, sink: PigeonEventSink<OnyxApplePictureInPicture>
+  ) {
+    self.sink = sink
+  }
+
+  override func onCancel(withArguments arguments: Any?) {
+    sink = nil
+  }
+
+  func send(_ change: OnyxApplePictureInPicture) {
+    sink?.success(change)
+  }
+}
+
 /// Le journal d'AetherEngine, relayé vers Dart par paquets.
 ///
 /// `EngineLog.handler` est appelé depuis n'importe quel thread, parfois des

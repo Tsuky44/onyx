@@ -64,16 +64,16 @@ DownloadNotice? downloadNoticeFor(
   if (active == null && waiting == 0) return null;
   final queued = waiting > 0 ? tr('{0} en attente', [waiting]) : null;
   if (active == null) {
-    return DownloadNotice(title: tr('Téléchargements'), text: queued!, percent: -1);
+    return DownloadNotice(
+        title: tr('Téléchargements'), text: queued!, percent: -1);
   }
 
   final total = active.bytesTotal;
   final percent =
       total > 0 ? (active.bytesReceived * 100 ~/ total).clamp(0, 100) : -1;
   final code = active.episodeCode;
-  final title = code == null
-      ? active.groupTitle
-      : '${active.groupTitle} · $code';
+  final title =
+      code == null ? active.groupTitle : '${active.groupTitle} · $code';
   return DownloadNotice(
     title: title,
     text: [

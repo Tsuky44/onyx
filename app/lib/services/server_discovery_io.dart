@@ -65,8 +65,8 @@ abstract final class ServerDiscovery {
   static Future<bool> reaches(String baseUrl) async {
     final uri = Uri.tryParse(baseUrl);
     if (uri == null || uri.host.isEmpty) return false;
-    return _confirm(uri.replace(path: '/api/auth/state'),
-        const Duration(seconds: 3));
+    return _confirm(
+        uri.replace(path: '/api/auth/state'), const Duration(seconds: 3));
   }
 
   /// Every address on the same /24 as one of this device's own interfaces.
@@ -117,9 +117,8 @@ abstract final class ServerDiscovery {
   static List<int> _outward(int self) {
     final ordered = <int>[];
     for (var distance = 0; distance < 255; distance++) {
-      for (final host in distance == 0
-          ? [self]
-          : [self - distance, self + distance]) {
+      for (final host
+          in distance == 0 ? [self] : [self - distance, self + distance]) {
         if (host >= 1 && host <= 254) ordered.add(host);
       }
     }
@@ -163,10 +162,8 @@ abstract final class ServerDiscovery {
         await response.drain<void>();
         return false;
       }
-      final body = await response
-          .transform(utf8.decoder)
-          .join()
-          .timeout(timeout);
+      final body =
+          await response.transform(utf8.decoder).join().timeout(timeout);
       final decoded = jsonDecode(body);
       return decoded is Map && decoded.containsKey('setup_required');
     } catch (_) {

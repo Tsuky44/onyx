@@ -2,6 +2,13 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Les vidéos de l'appareil (ADR-0104) : lire les fichiers d'un dossier
+         que l'utilisateur a choisi. READ_MEDIA_VIDEO depuis Android 13, la
+         permission de stockage d'avant pour les versions plus anciennes. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
     <!-- Lets the app hand a downloaded APK straight to the system installer
          instead of dropping it in Downloads for the user to find by hand. The
          system still shows its own install confirmation — this only grants

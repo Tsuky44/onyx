@@ -101,6 +101,26 @@ void main() {
     expect(provider.hasMore, isFalse);
   });
 
+  test('effacer la recherche pendant un loadMore ne bloque pas la pagination',
+      () async {
+    final server = _CatalogServer();
+    final provider = MediaRequestsProvider(server);
+    await provider.load(query: 'dune');
+    await pumpEventQueue();
+
+    // Le défilement demande la page 2 d'un côté, la recherche est effacée de l'autre.
+    final staleMore = provider.loadMore();
+    await provider.load(query: '');
+    await staleMore;
+    await pumpEventQueue();
+
+    expect(provider.isLoadingMore, isFalse,
+        reason: 'sinon le spinner du bas reste affiché pour toujours');
+
+    await provider.loadMore();
+    expect(provider.items, hasLength(40));
+  });
+
   test('une nouvelle recherche oublie les pages préchargées de l’ancienne',
       () async {
     final server = _CatalogServer();

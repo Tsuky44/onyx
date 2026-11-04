@@ -59,7 +59,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('Ctrl + molette vers le bas ajoute des affiches par ligne',
+  testWidgets('Ctrl + molette vers le bas passe au mode suivant',
       (tester) async {
     await pumpPage(tester, ScrollController());
     final before = columns(tester);
@@ -68,26 +68,23 @@ void main() {
     await wheel(tester, 100);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
 
-    expect(columns(tester), before + 1);
+    expect(
+        columns(tester), PosterGridZoom.presets.firstWhere((p) => p > before));
   });
 
-  testWidgets('Ctrl + molette vers le haut en retire, jusqu\'à 2 colonnes',
+  testWidgets('Ctrl + molette vers le haut recule jusqu\'au premier mode',
       (tester) async {
     await pumpPage(tester, ScrollController());
-    final before = columns(tester);
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-    await wheel(tester, -100);
-    expect(columns(tester), before - 1);
-
-    for (var i = 0; i < 30; i++) {
+    for (var i = 0; i < 10; i++) {
       await wheel(tester, -100);
     }
-    expect(columns(tester), PosterGridZoom.minColumns);
+    expect(columns(tester), PosterGridZoom.presets.first);
 
     // À la butée, un cran dans l'autre sens agit tout de suite.
     await wheel(tester, 100);
-    expect(columns(tester), PosterGridZoom.minColumns + 1);
+    expect(columns(tester), PosterGridZoom.presets[1]);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
   });
 

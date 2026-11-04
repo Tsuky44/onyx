@@ -252,7 +252,8 @@ Future<PreparedUpdate> _prepareMacOS(
   try {
     final source = await _findAppBundle(Directory(mountPoint));
     if (source == null) {
-      throw UpdateException(tr('Aucune application trouvée dans l’image disque.'));
+      throw UpdateException(
+          tr('Aucune application trouvée dans l’image disque.'));
     }
     final signed = File('$mountPoint/$signatureFileName');
     if (signed.existsSync()) await signed.copy(signature);
@@ -320,8 +321,10 @@ Future<void> _assertSwappable(Directory parent) async {
     await probe.delete();
   } catch (_) {
     throw UpdateException(
-      tr('Onyx n’a pas les droits d’écriture sur {0}. Déplacez l’app dans '
-          'votre dossier Applications ou mettez à jour manuellement.', [parent.path]),
+      tr(
+          'Onyx n’a pas les droits d’écriture sur {0}. Déplacez l’app dans '
+          'votre dossier Applications ou mettez à jour manuellement.',
+          [parent.path]),
     );
   }
 }
@@ -402,7 +405,8 @@ Future<PreparedUpdate> _prepareWindows(String zipPath, String workDir) async {
 /// contain one; refusing is the safe answer if it ever happens.
 String _shellQuote(String path) {
   if (path.contains("'") || path.contains('\n')) {
-    throw UpdateException(tr('Chemin non supporté pour la mise à jour : {0}', [path]));
+    throw UpdateException(
+        tr('Chemin non supporté pour la mise à jour : {0}', [path]));
   }
   return "'$path'";
 }

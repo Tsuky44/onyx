@@ -137,7 +137,7 @@ extension _PlayerStartup on _PlayerScreenState {
   Future<void> _loadMediaLogo() async {
     final api = _apiClient;
     final detailsId = _info.logoDetailsId;
-    if (api == null || detailsId == null) return;
+    if (api == null || detailsId == null || isDeviceVideoId(detailsId)) return;
 
     // Already resolved this session (detail page, or a previous playback):
     // set it synchronously so the chrome opens on the logo, not on the title.
@@ -181,6 +181,14 @@ extension _PlayerStartup on _PlayerScreenState {
     // in front of the picture, now that the open waits on this.
     if (widget.resumeAtSeconds != null) return widget.resumeAtSeconds!;
     if (widget.autoAdvance) return 0;
+
+    // Une vidéo de l'appareil n'est connue que de lui : son avancement est
+    // sur disque, et le serveur n'aurait rien à en dire (ADR-0104).
+    if (isDeviceVideoId(actualMedia.id)) {
+      final progress = DeviceLibrary.instance.progressFor(actualMedia.id);
+      if (progress == null || progress.isFinished) return 0;
+      return progress.positionSeconds >= 3 ? progress.positionSeconds : 0;
+    }
 
     int savedPositionSeconds = 0;
     final item = _info.item;
@@ -232,7 +240,9 @@ extension _PlayerStartup on _PlayerScreenState {
     _update(() => _isInitialized = true);
     // L'échéance a pu tomber pendant le passage à cet épisode.
     _applySleepTimer();
-    _handoff.start();
+    // Personne ne reprend ailleurs une vidéo que seul cet appareil connaît :
+    // inutile d'interroger le serveur toutes les quatre secondes.
+    if (!isDeviceVideoId(_info.media.id)) _handoff.start();
     _armStartupWatchdog();
     _scheduleSubtitlePaddingSync();
     unawaited(_mediaKeys.attach(
@@ -264,7 +274,7 @@ extension _PlayerStartup on _PlayerScreenState {
     // l'appareil des autres participants.
     if (_party.party != null) return;
     final media = _info.media;
-    if (DownloadManager.instance.localVideoPath(media.id) != null) return;
+    if (localPlaybackPath(media.id) != null) return;
     final auth = context.read<AuthProvider>();
     if (auth.activeServer?.id != source) return;
     if (!_relayTrigger.inTrouble(hasFirstFrame: _playerController.hasFirstFrame)) return;

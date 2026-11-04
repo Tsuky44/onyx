@@ -80,7 +80,8 @@ class NetworkStatus extends ChangeNotifier {
 
   /// Ce réseau-là se paie à l'octet, ou du moins il faut faire comme si.
   bool get isMetered {
-    if (isDisconnected) return false; // rien à arbitrer : il n'y a pas de réseau
+    if (isDisconnected)
+      return false; // rien à arbitrer : il n'y a pas de réseau
     if (_systemMetered == true) return true;
     if (_systemMetered == false) return false;
     return kind == NetworkKind.mobile;
@@ -94,7 +95,8 @@ class NetworkStatus extends ChangeNotifier {
   ///
   /// C'est le rendez-vous des téléchargements mis de côté : ce qui attendait
   /// le Wi-Fi repart ici, sans que l'utilisateur ait à rouvrir quoi que ce soit.
-  void addUnmeteredListener(VoidCallback listener) => _onUnmetered.add(listener);
+  void addUnmeteredListener(VoidCallback listener) =>
+      _onUnmetered.add(listener);
 
   Future<void> start() async {
     if (_started) return;

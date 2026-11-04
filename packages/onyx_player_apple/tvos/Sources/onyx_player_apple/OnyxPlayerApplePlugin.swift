@@ -24,6 +24,8 @@ public final class OnyxPlayerApplePlugin: NSObject, FlutterPlugin {
     OnyxApplePlayerApiSetup.setUp(binaryMessenger: messenger, api: host)
     StatusChangedStreamHandler.register(with: messenger, streamHandler: host.statuses)
     SubtitlesChangedStreamHandler.register(with: messenger, streamHandler: host.subtitles)
+    PictureInPictureChangedStreamHandler.register(
+      with: messenger, streamHandler: host.pictureInPicture)
     EngineLogStreamHandler.register(with: messenger, streamHandler: host.engineLog)
 
     // Global au processus, comme le journal d'AetherEngine lui-même : un seul

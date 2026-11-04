@@ -29,7 +29,7 @@ import '../../../services/api_client.dart';
 import '../../../services/client_log.dart';
 import '../../../services/playback_access.dart';
 import '../../../services/dns_warmup.dart';
-import '../../../services/download_manager.dart';
+import '../../../services/local_playback_source.dart';
 import '../../../services/hls_preload.dart';
 import '../../../services/playback_capabilities.dart';
 import '../../../services/playback_preferences_storage.dart';

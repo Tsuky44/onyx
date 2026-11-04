@@ -10,6 +10,7 @@ import Foundation
 final class PlayerHost: NSObject, OnyxApplePlayerApi {
   let statuses = StatusStream()
   let subtitles = SubtitleStream()
+  let pictureInPicture = PictureInPictureStream()
   let engineLog = EngineLogRelay()
 
   private var players: [Int64: AetherPlayer] = [:]
@@ -40,10 +41,12 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
       nextId += 1
       let statuses = self.statuses
       let subtitles = self.subtitles
+      let pictureInPicture = self.pictureInPicture
       players[id] = try AetherPlayer(
         id: id,
         onStatus: { statuses.send($0) },
-        onSubtitles: { subtitles.send($0) })
+        onSubtitles: { subtitles.send($0) },
+        onPictureInPicture: { pictureInPicture.send($0) })
       return id
     }
   }
@@ -109,5 +112,13 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
 
   func stats(playerId: Int64) throws -> OnyxApplePlaybackStats {
     try onMain { try require(playerId).stats() }
+  }
+
+  func supportsPictureInPicture() throws -> Bool {
+    onMain { PictureInPictureBridge.isSupported }
+  }
+
+  func setPictureInPictureArmed(playerId: Int64, armed: Bool) throws {
+    try onMain { try require(playerId).setPictureInPictureArmed(armed) }
   }
 }

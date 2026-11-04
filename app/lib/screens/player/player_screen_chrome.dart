@@ -406,6 +406,27 @@ extension _PlayerChrome on _PlayerScreenState {
     _handleVideoTap(togglePlayback: true);
   }
 
+  /// L'image dans l'image d'ordinateur : la fenêtre du navigateur ou celle de
+  /// l'app, selon la plateforme — voir [DesktopPictureInPicture].
+  Future<void> _toggleDesktopPictureInPicture() async {
+    _popups.dismissTop();
+    await DesktopPictureInPicture.toggle(
+      aspect: _playerController.videoAspectRatio,
+    );
+  }
+
+  void _handleDesktopPictureInPictureChanged() {
+    // Dans le navigateur la page reste entière : rien à cacher.
+    final inPip = DesktopPictureInPicture.shrinksWindow &&
+        DesktopPictureInPicture.active.value;
+    if (!mounted || _inDesktopPip == inPip) return;
+    if (inPip) _controlsTimer?.cancel();
+    _safeSetState(() {
+      _inDesktopPip = inPip;
+      if (inPip) _showControls = false;
+    });
+  }
+
   Future<void> _toggleFullscreen() async {
     final isFullScreen = await WindowControls.isFullScreen();
     await WindowControls.setFullScreen(!isFullScreen);
@@ -586,6 +607,9 @@ extension _PlayerChrome on _PlayerScreenState {
       onOpenWatchParty: _watchPartyAction,
       watchPartyActive: _party.party != null,
       onToggleFullscreen: _toggleFullscreen,
+      onTogglePictureInPicture: DesktopPictureInPicture.supported
+          ? _toggleDesktopPictureInPicture
+          : null,
       playbackRate: _playbackRate,
       onLockScreen: _handheld ? _lockScreen : null,
       onSkipNext: nav?.nextEpisode != null ? _goToNextEpisode : null,

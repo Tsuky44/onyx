@@ -248,6 +248,27 @@ class OnyxApplePlaybackStats {
   final String? container;
 }
 
+/// La fenêtre d'image dans l'image, quand le système l'ouvre ou la referme.
+///
+/// Le système décide seul du moment (geste d'accueil), donc c'est le natif qui
+/// raconte, pas Dart qui demande. Voir l'ADR-0012.
+class OnyxApplePictureInPicture {
+  OnyxApplePictureInPicture({
+    required this.playerId,
+    required this.active,
+    required this.closed,
+  });
+
+  final int playerId;
+
+  /// Vrai tant que le film joue dans la petite fenêtre.
+  final bool active;
+
+  /// Vrai quand la fenêtre a été fermée au lieu d'être restaurée : le film n'a
+  /// plus d'endroit où jouer, le natif l'a déjà mis en pause.
+  final bool closed;
+}
+
 @HostApi()
 abstract class OnyxApplePlayerApi {
   /// Crée un lecteur et rend son identifiant. La vue s'y rattache par cet
@@ -304,6 +325,15 @@ abstract class OnyxApplePlayerApi {
   OnyxApplePlayerStatus status(int playerId);
 
   OnyxApplePlaybackStats stats(int playerId);
+
+  /// Si l'appareil sait faire l'image dans l'image (iPhone et iPad ; ni Mac, ni
+  /// Apple TV, où le lecteur n'en a pas l'usage).
+  bool supportsPictureInPicture();
+
+  /// Arme ou désarme la fenêtre pour ce lecteur. Armée, le système l'ouvre de
+  /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne
+  /// laisse pas l'app la demander après coup, comme Android.
+  void setPictureInPictureArmed(int playerId, bool armed);
 }
 
 @EventChannelApi()
@@ -314,6 +344,9 @@ abstract class OnyxApplePlayerEventApi {
 
   /// Les sous-titres à afficher, à chaque changement de réplique.
   OnyxAppleSubtitleFrame subtitlesChanged();
+
+  /// L'ouverture et la fermeture de la fenêtre d'image dans l'image.
+  OnyxApplePictureInPicture pictureInPictureChanged();
 
   /// Le journal d'AetherEngine, par paquets de lignes, pour le journal par
   /// lecture de l'app (ADR-0026). Les secrets (ticket de lecture) y sont

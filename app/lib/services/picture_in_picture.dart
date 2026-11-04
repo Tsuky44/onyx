@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:onyx_player_apple/onyx_player_apple.dart';
 
 import '../tv/tv_mode.dart';
 import '../utils/app_platform.dart';
@@ -7,25 +10,26 @@ import '../utils/app_platform.dart';
 /// The film in a corner of the home screen, while the phone is used for
 /// something else.
 ///
-/// **Android only, and that is not an omission.** The system window is created
-/// by the platform, not by the app: on Android the activity asks for it and the
-/// same Flutter view is simply drawn smaller, which is why the picture and the
-/// sound carry on without interruption. iOS has the same feature and it is a
-/// different mechanism — `AVPictureInPictureController` puts an *AVFoundation
-/// layer* on screen, and this player renders through mpv into a Flutter
-/// texture, which is not one. Reaching it there would mean handing decoded
-/// frames to an `AVSampleBufferDisplayLayer`, or playing through `AVPlayer` —
-/// which the ADR-0011 ruled out, because it refuses MKV and much of a private
-/// library is MKV.
+/// **Android and iPhone/iPad, each by its own mechanism** (ADR-0012, §3 as
+/// amended). On Android the activity asks for the window and the same Flutter
+/// view is simply drawn smaller. On iOS the window is an
+/// `AVPictureInPictureController` built around the layer AetherEngine plays on
+/// (ADR-0038) — which is what the mpv texture of the earlier player could not
+/// offer, and why this was Android only until AetherEngine. The plugin builds
+/// the controller; this class only arms it for the player that is on screen.
 ///
-/// The window is *armed* rather than opened: Android only lets it be created at
-/// the instant the user leaves, so the shape is handed over in advance and the
-/// system does the rest — on Android 12 and up, with the animation that carries
-/// the picture into the corner.
+/// The window is *armed* rather than opened: both systems only let it be
+/// created at the instant the user leaves, so the player says in advance that
+/// it may, and the system does the rest.
 abstract final class PictureInPicture {
   const PictureInPicture._();
 
   static const MethodChannel _channel = MethodChannel('onyx/device');
+
+  /// iOS: the player the window is armed for, set by the playback session once
+  /// the native player exists. Null on Android, which has one activity.
+  static OnyxApplePlayer? _apple;
+  static bool _armed = false;
 
   /// Whether the platform can do it at all. False until [initialize] has asked.
   static bool get supported => _supported;
@@ -44,13 +48,60 @@ abstract final class PictureInPicture {
   /// Asked once, at startup, and the answers wired up.
   static Future<void> initialize() async {
     if (!_canAsk) return;
+    if (AppPlatform.isIOS) return _initializeApple();
     _channel.setMethodCallHandler(_onPlatformCall);
     try {
       _supported =
-          await _channel.invokeMethod<bool>('supportsPictureInPicture') ?? false;
+          await _channel.invokeMethod<bool>('supportsPictureInPicture') ??
+              false;
     } catch (error) {
       debugPrint('Picture-in-picture: unavailable ($error)');
       _supported = false;
+    }
+  }
+
+  static Future<void> _initializeApple() async {
+    try {
+      _supported = await OnyxApplePlayer.supportsPictureInPicture();
+    } catch (error) {
+      debugPrint('Picture-in-picture: unavailable ($error)');
+      _supported = false;
+    }
+    if (!_supported) return;
+    OnyxApplePlayer.pictureInPictureChanges.listen((change) {
+      // Two players are alive for an instant when an episode hands over to the
+      // next; only the one the window is armed for speaks for the screen.
+      final player = _apple;
+      if (player == null || change.playerId != player.id) return;
+      active.value = change.active;
+      if (change.closed) closed.value++;
+    }, onError: (Object error) {
+      debugPrint('Picture-in-picture: stream interrupted ($error)');
+    });
+  }
+
+  /// iOS: the native player now on screen. Arms it at once if the screen
+  /// already asked, since the player is built a moment after the screen is.
+  static void attach(OnyxApplePlayer player) {
+    _apple = player;
+    if (_armed) unawaited(_armApple(player, true));
+  }
+
+  /// iOS: [player] is going away. The next episode's player is built before
+  /// this one is released, so a stale one must not unseat its successor.
+  static void detach(OnyxApplePlayer player) {
+    if (!identical(_apple, player)) return;
+    _apple = null;
+    active.value = false;
+  }
+
+  static Future<void> _armApple(OnyxApplePlayer player, bool armed) async {
+    try {
+      await player.setPictureInPictureArmed(armed);
+    } catch (error) {
+      // The player may already be released when the screen disarms on the way
+      // out; there is then nothing left to disarm.
+      debugPrint('Picture-in-picture: cannot arm ($error)');
     }
   }
 
@@ -59,6 +110,14 @@ abstract final class PictureInPicture {
   /// big it is yet.
   static Future<void> arm({required int width, required int height}) async {
     if (!_supported) return;
+    if (AppPlatform.isIOS) {
+      // iOS reads the shape off the layer itself; all it needs to know is
+      // whether the window may open.
+      _armed = width > 0 && height > 0;
+      final player = _apple;
+      if (player != null) await _armApple(player, _armed);
+      return;
+    }
     final shape = shapeFor(width, height);
     try {
       await _channel.invokeMethod<bool>('setPictureInPicture', <String, int>{
@@ -96,7 +155,9 @@ abstract final class PictureInPicture {
   /// A television has its own idea of this, and the chrome here is not built
   /// for it; a desktop has windows already.
   static bool get _canAsk =>
-      AppPlatform.isAndroid && !AppPlatform.isWeb && !TvMode.isTv;
+      (AppPlatform.isAndroid || AppPlatform.isIOS) &&
+      !AppPlatform.isWeb &&
+      !TvMode.isTv;
 
   static Future<dynamic> _onPlatformCall(MethodCall call) async {
     if (call.method != 'pictureInPictureChanged') return null;

@@ -12,7 +12,7 @@ import '../../widgets/global/app_network_image.dart';
 import '../../widgets/global/media_detail_widgets.dart';
 import '../../widgets/global/overlay_back_button.dart';
 import '../../widgets/global/poster_grid_zoom_region.dart';
-import '../../widgets/global/poster_grid_zoom_slider.dart';
+import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -143,8 +143,7 @@ class _PersonDetailScreenState extends State<PersonDetailScreen> {
                                 ),
                           ),
                         ),
-                        PosterGridZoomSlider(
-                            width: AppLayout.isCompact(context) ? 100 : 140),
+                        PosterGridDisplayMenu(compact: AppLayout.isCompact(context)),
                       ],
                     ),
                   ),

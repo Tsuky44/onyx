@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../models/device_video.dart';
 import '../../../models/server_activity.dart';
 import '../../../services/api_client.dart';
 import '../../../services/client_log.dart';
+import '../../../services/device_library/device_library.dart';
 import '../../../services/download_manager.dart';
 import '../../../services/pending_playback_logs.dart';
 import '../../../services/playback_access.dart';
@@ -280,6 +282,17 @@ class PlaybackReporter {
     final posSeconds = now.positionSeconds;
     final durSeconds = now.durationSeconds;
     if (posSeconds <= 0) return;
+
+    // Une vidéo de l'appareil ne regarde que lui : le disque, et rien d'autre.
+    if (isDeviceVideoId(mediaId)) {
+      await DeviceLibrary.instance.recordProgress(
+        id: mediaId,
+        positionSeconds: posSeconds,
+        durationSeconds: durSeconds,
+        isFinished: isFinished,
+      );
+      return;
+    }
 
     // Le serveur d'abord, le disque ensuite — et le disque dans tous les cas.
     //

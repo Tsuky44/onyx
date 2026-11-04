@@ -295,7 +295,8 @@ class ApiClient
         }
         final response = await client.get('/api/links');
         final links = (response.data as List)
-            .map((e) => AccountLink.fromJson(Map<String, dynamic>.from(e as Map)))
+            .map((e) =>
+                AccountLink.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
         await servers.setServerLinks(account.id, links);
       } on Object {

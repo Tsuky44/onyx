@@ -64,8 +64,8 @@ Uint8List? apkSigningBlockValue(Uint8List pairs, int id) {
   return null;
 }
 
-final RegExp _uuid = RegExp(
-    r'^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$');
+final RegExp _uuid =
+    RegExp(r'^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$');
 
 /// L'identifiant d'événement porté par l'attribut `com.apple.quarantine` de
 /// macOS (`0083;65a1b2c3;Safari;<UUID>`). C'est la clé sous laquelle le

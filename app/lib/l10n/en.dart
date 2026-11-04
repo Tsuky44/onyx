@@ -1054,6 +1054,8 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} min ago',
   'Image':
       'Camera',
+  'Image dans l’image':
+      'Picture in picture',
   'Image disque illisible ({0}).':
       'Unreadable disk image ({0}).',
   'Image entière, bandes noires si besoin':
@@ -1634,6 +1636,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Who’s watching?',
   'Regarder en tant que {0}':
       'Watch as {0}',
+  'Revenir à la taille normale':
+      'Back to normal size',
   'Revenir à l’initiale':
       'Use the initial',
   'Rien sur ce serveur pour l’instant. Son administrateur peut en ajouter.':
@@ -2378,8 +2382,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Transfer ownership',
   'Transférer la propriété à {0} ?':
       'Transfer ownership to {0}?',
-  'Affiches par ligne':
-      'Posters per row',
   '{0} par ligne':
       '{0} per row',
   'Trier':
@@ -3212,6 +3214,10 @@ const Map<String, String> kEnglish = <String, String>{
       'MediaHub integration key',
   'Films populaires':
       'Popular movies',
+  'Type de média':
+      'Media type',
+  'Effacer':
+      'Clear',
   'Séries populaires':
       'Popular shows',
   'En attente de sortie':
@@ -3322,4 +3328,46 @@ const Map<String, String> kEnglish = <String, String>{
       'What the server keeps of each playback to understand a failure, whichever device was playing.',
   'Chaque lecture envoie son journal et ses mesures en se terminant, et le serveur garde ceux des dix dernières. On les relit depuis l’Historique, en ouvrant une lecture — y compris celle d’un autre appareil, ce que le journal de l’app ne permet pas. Les mesures ont leur propre interrupteur : elles interrogent le lecteur toutes les cinq secondes, là où le journal ne coûte rien avant la fin.':
       'Each playback sends its log and measurements when it ends, and the server keeps those of the last ten. Read them from History by opening a playback — including one from another device, which the app log cannot do. Measurements have their own switch: they poll the player every five seconds, whereas the log costs nothing until the end.',
+  'Ajouter un dossier':
+      'Add a folder',
+  'Ajoutez un dossier de l’appareil : ses vidéos apparaîtront ici et se liront sans serveur.':
+      'Add a folder from this device: its videos will show up here and play without a server.',
+  'Aucune vidéo n’a pu être importée.':
+      'No video could be imported.',
+  'Aucune vidéo':
+      'No videos',
+  'Ce dossier n’est pas lisible : autorisez l’accès aux vidéos.':
+      'This folder can’t be read: allow access to videos.',
+  'Cet appareil n’a pas de dossier de vidéos à parcourir.':
+      'This device has no video folder to browse.',
+  'Choisir un dossier de vidéos':
+      'Choose a video folder',
+  'Dossier Onyx (app Fichiers)':
+      'Onyx folder (Files app)',
+  'Dossier Onyx':
+      'Onyx folder',
+  'Importer des vidéos':
+      'Import videos',
+  'Importez des vidéos depuis l’app Fichiers, ou déposez-les dans le dossier Onyx depuis le Finder ou l’app Fichiers.':
+      'Import videos from the Files app, or drop them into the Onyx folder from Finder or the Files app.',
+  'Le sélecteur de dossier n’a pas pu s’ouvrir.':
+      'The folder picker couldn’t open.',
+  'Le sélecteur de fichiers n’a pas pu s’ouvrir.':
+      'The file picker couldn’t open.',
+  'Les fichiers restent où ils sont ; seules leurs vidéos disparaissent de cette liste.':
+      'The files stay where they are; their videos just leave this list.',
+  'Lire les vidéos de cet appareil':
+      'Play videos on this device',
+  'Ne plus suivre ce dossier ?':
+      'Stop following this folder?',
+  'Ne plus suivre':
+      'Stop following',
+  'Supprimer cette vidéo ?':
+      'Delete this video?',
+  'Vidéos de cet appareil':
+      'Videos on this device',
+  'Vos fichiers personnels, lus sans serveur':
+      'Your own files, played without a server',
+  '« {0} » sera effacée de l’appareil.':
+      '“{0}” will be erased from this device.',
 };

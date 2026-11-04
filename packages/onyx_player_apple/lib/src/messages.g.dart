@@ -642,6 +642,68 @@ class OnyxApplePlaybackStats {
   }
 }
 
+/// La fenêtre d'image dans l'image, quand le système l'ouvre ou la referme.
+///
+/// Le système décide seul du moment (geste d'accueil), donc c'est le natif qui
+/// raconte, pas Dart qui demande. Voir l'ADR-0012.
+class OnyxApplePictureInPicture {
+  OnyxApplePictureInPicture({
+    required this.playerId,
+    required this.active,
+    required this.closed,
+  });
+
+  int playerId;
+
+  /// Vrai tant que le film joue dans la petite fenêtre.
+  bool active;
+
+  /// Vrai quand la fenêtre a été fermée au lieu d'être restaurée : le film n'a
+  /// plus d'endroit où jouer, le natif l'a déjà mis en pause.
+  bool closed;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      playerId,
+      active,
+      closed,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxApplePictureInPicture decode(Object result) {
+    result as List<Object?>;
+    return OnyxApplePictureInPicture(
+      playerId: result[0]! as int,
+      active: result[1]! as bool,
+      closed: result[2]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxApplePictureInPicture || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(playerId, other.playerId) && _deepEquals(active, other.active) && _deepEquals(closed, other.closed);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxApplePictureInPicture(playerId: $playerId, active: $active, closed: $closed)';
+  }
+}
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -677,6 +739,9 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is OnyxApplePlaybackStats) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
+    }    else if (value is OnyxApplePictureInPicture) {
+      buffer.putUint8(138);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -706,6 +771,8 @@ class _PigeonCodec extends StandardMessageCodec {
         return OnyxAppleSubtitleFrame.decode(readValue(buffer)!);
       case 137:
         return OnyxApplePlaybackStats.decode(readValue(buffer)!);
+      case 138:
+        return OnyxApplePictureInPicture.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -1035,6 +1102,48 @@ class OnyxApplePlayerApi {
     ;
     return pigeonVar_replyValue! as OnyxApplePlaybackStats;
   }
+
+  /// Si l'appareil sait faire l'image dans l'image (iPhone et iPad ; ni Mac, ni
+  /// Apple TV, où le lecteur n'en a pas l'usage).
+  Future<bool> supportsPictureInPicture() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.supportsPictureInPicture$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Arme ou désarme la fenêtre pour ce lecteur. Armée, le système l'ouvre de
+  /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne
+  /// laisse pas l'app la demander après coup, comme Android.
+  Future<void> setPictureInPictureArmed(int playerId, bool armed) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.setPictureInPictureArmed$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[playerId, armed]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
 }
 
 /// Un flux unique pour tous les lecteurs ; [OnyxApplePlayerStatus.playerId]
@@ -1073,6 +1182,25 @@ Stream<OnyxAppleSubtitleFrame> subtitlesChanged( {String instanceName = ''}) {
       EventChannel('dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerEventApi.subtitlesChanged$instanceName', pigeonMethodCodec);
   return subtitlesChangedChannel.receiveBroadcastStream().map((dynamic event) {
     return event as OnyxAppleSubtitleFrame;
+  });
+}
+    
+/// L'ouverture et la fermeture de la fenêtre d'image dans l'image.
+///
+/// Returns a broadcast [Stream] of events from the `pictureInPictureChanged` event channel.
+///
+/// Each call to this method creates a new [EventChannel], so it should
+/// not be called multiple times for the same `instanceName`. To deliver
+/// events to multiple listeners, call this method once and listen to the
+/// returned broadcast stream multiple times instead.
+Stream<OnyxApplePictureInPicture> pictureInPictureChanged( {String instanceName = ''}) {
+  if (instanceName.isNotEmpty) {
+    instanceName = '.$instanceName';
+  }
+  final EventChannel pictureInPictureChangedChannel =
+      EventChannel('dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerEventApi.pictureInPictureChanged$instanceName', pigeonMethodCodec);
+  return pictureInPictureChangedChannel.receiveBroadcastStream().map((dynamic event) {
+    return event as OnyxApplePictureInPicture;
   });
 }
     

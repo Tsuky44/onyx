@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart' show PointerHoverEvent;
 import 'package:flutter/material.dart';
 
 import 'theme/app_colors.dart';
@@ -115,6 +118,118 @@ class _WindowCaptionBarState extends State<WindowCaptionBar> {
             onClose: WindowControls.close,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Fait réapparaître la barre de titre par-dessus le lecteur, comme la barre
+/// de menus de macOS : la barre est cachée pendant la lecture, ce qui ôtait la
+/// seule poignée de la fenêtre (fermer, réduire, déplacer).
+///
+/// La barre se pose en surimpression au lieu de repousser la vidéo, qui ne
+/// bouge donc pas d'un pixel. Elle sort quand la souris touche le bord haut de
+/// la fenêtre, y reste tant que la souris est dessus, et repart un moment
+/// après qu'elle s'en est éloignée.
+///
+/// Inerte tant que [showDesktopCaption] est vrai : la barre a alors sa place
+/// dans la colonne et rien n'est à surimposer. L'arbre ne change jamais de
+/// forme, sans quoi le Navigator perdrait son état en passant au lecteur.
+class CaptionBarPeek extends StatefulWidget {
+  final Widget child;
+
+  const CaptionBarPeek({super.key, required this.child});
+
+  /// Bande du bord haut qui fait sortir la barre. Fine : elle ne doit pas
+  /// se déclencher quand la souris vise un bouton du lecteur.
+  static const double triggerZone = 6;
+
+  /// Tant que la souris est dans cette zone, la barre reste : la barre
+  /// elle-même plus une marge, pour ne pas la perdre en visant une pastille.
+  static const double keepZone = WindowCaptionBar.height + 12;
+
+  /// « Que ça reste un peu » : le délai avant de ranger la barre.
+  static const Duration lingerDelay = Duration(milliseconds: 1800);
+
+  @override
+  State<CaptionBarPeek> createState() => _CaptionBarPeekState();
+}
+
+class _CaptionBarPeekState extends State<CaptionBarPeek> {
+  bool _shown = false;
+  Timer? _hideTimer;
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onHover(PointerHoverEvent event) {
+    if (!useDesktopCaptionBar || showDesktopCaption.value) return;
+    final y = event.localPosition.dy;
+    if (y <= CaptionBarPeek.triggerZone ||
+        (_shown && y <= CaptionBarPeek.keepZone)) {
+      _reveal();
+    } else {
+      _scheduleHide();
+    }
+  }
+
+  void _reveal() {
+    _hideTimer?.cancel();
+    _hideTimer = null;
+    if (!_shown) setState(() => _shown = true);
+  }
+
+  void _scheduleHide() {
+    if (!_shown || _hideTimer != null) return;
+    _hideTimer = Timer(CaptionBarPeek.lingerDelay, () {
+      _hideTimer = null;
+      if (mounted) setState(() => _shown = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerHover: _onHover,
+      child: MouseRegion(
+        opaque: false,
+        onExit: (_) => _scheduleHide(),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            widget.child,
+            if (useDesktopCaptionBar)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: showDesktopCaption,
+                  builder: (context, captionInLayout, _) {
+                    final visible = _shown && !captionInLayout;
+                    return IgnorePointer(
+                      ignoring: !visible,
+                      child: AnimatedSlide(
+                        offset: visible ? Offset.zero : const Offset(0, -1),
+                        duration: AppMotion.fade(context, AppMotion.micro),
+                        curve: AppMotion.curve,
+                        child: AnimatedOpacity(
+                          opacity: visible ? 1 : 0,
+                          duration: AppMotion.fade(context, AppMotion.micro),
+                          curve: AppMotion.curve,
+                          child: const WindowCaptionBar(),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -122,7 +122,8 @@ mixin _LibraryAdminEndpoints {
   /// Le serveur tente de joindre OnyxHub avec l'adresse et la clé données, ou
   /// celles enregistrées quand elles sont vides (ADR-0072). Null pour un
   /// serveur qui ne sait pas encore le faire.
-  Future<MediaHubLinkTest?> testMediaHubLink({String? url, String? apiKey}) async {
+  Future<MediaHubLinkTest?> testMediaHubLink(
+      {String? url, String? apiKey}) async {
     final ping = await _dio.get('/api/ping');
     final info = ServerCapabilities.tryParse(ping.data);
     if (info == null || !info.supports(ServerCapabilities.mediaHubLinkTest)) {
@@ -157,7 +158,8 @@ mixin _LibraryAdminEndpoints {
       if (tmdbLanguage != null) 'tmdb_language': tmdbLanguage,
       if (fanartApiKey != null) 'fanart_api_key': fanartApiKey,
       if (clearFanartApiKey) 'clear_fanart_api_key': true,
-      if (playbackLogsEnabled != null) 'playback_logs_enabled': playbackLogsEnabled,
+      if (playbackLogsEnabled != null)
+        'playback_logs_enabled': playbackLogsEnabled,
       if (playbackStatsEnabled != null)
         'playback_stats_enabled': playbackStatsEnabled,
       if (otpPolicy != null) 'otp_policy': otpPolicy.wire,
@@ -171,7 +173,8 @@ mixin _LibraryAdminEndpoints {
   /// dans les deux sens par le serveur. Voir `server/handlers/emby_sync.go`.
   Future<EmbyLinkStatus> getEmbyLink() async {
     final response = await _dio.get('/api/me/emby');
-    return EmbyLinkStatus.fromJson(Map<String, dynamic>.from(response.data as Map));
+    return EmbyLinkStatus.fromJson(
+        Map<String, dynamic>.from(response.data as Map));
   }
 
   /// Le mot de passe ne sert qu'à obtenir un jeton : le serveur ne le garde pas.
@@ -185,12 +188,14 @@ mixin _LibraryAdminEndpoints {
       'username': username,
       'password': password,
     });
-    return EmbyLinkStatus.fromJson(Map<String, dynamic>.from(response.data as Map));
+    return EmbyLinkStatus.fromJson(
+        Map<String, dynamic>.from(response.data as Map));
   }
 
   Future<EmbyLinkStatus> unlinkEmby() async {
     final response = await _dio.delete('/api/me/emby');
-    return EmbyLinkStatus.fromJson(Map<String, dynamic>.from(response.data as Map));
+    return EmbyLinkStatus.fromJson(
+        Map<String, dynamic>.from(response.data as Map));
   }
 
   /// Relit Emby et envoie ce qui a changé ici, sans attendre la tâche de fond.

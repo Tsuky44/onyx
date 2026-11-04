@@ -4,6 +4,7 @@ import 'messages.g.dart' as pigeon show engineLog;
 export 'messages.g.dart'
     show
         OnyxApplePlaybackState,
+        OnyxApplePictureInPicture,
         OnyxApplePlaybackStats,
         OnyxApplePlayerErrorKind,
         OnyxApplePlayerStatus,
@@ -23,10 +24,14 @@ export 'messages.g.dart'
 /// sur Android.
 Stream<OnyxApplePlayerStatus>? _sharedStatuses;
 Stream<OnyxAppleSubtitleFrame>? _sharedSubtitles;
+Stream<OnyxApplePictureInPicture>? _sharedPictureInPicture;
 Stream<List<String>>? _sharedEngineLog;
 
 Stream<OnyxApplePlayerStatus> _nativeStatuses() =>
     _sharedStatuses ??= statusChanged().asBroadcastStream();
+
+Stream<OnyxApplePictureInPicture> _nativePictureInPicture() =>
+    _sharedPictureInPicture ??= pictureInPictureChanged().asBroadcastStream();
 
 Stream<OnyxAppleSubtitleFrame> _nativeSubtitles() =>
     _sharedSubtitles ??= subtitlesChanged().asBroadcastStream();
@@ -51,6 +56,15 @@ class OnyxApplePlayer {
           .engineLog()
           .map((lines) => lines.cast<String>())
           .asBroadcastStream();
+
+  /// L'ouverture et la fermeture de la fenêtre d'image dans l'image, tous
+  /// lecteurs confondus ; [OnyxApplePictureInPicture.playerId] dit lequel.
+  static Stream<OnyxApplePictureInPicture> get pictureInPictureChanges =>
+      _nativePictureInPicture();
+
+  /// Si l'appareil sait faire l'image dans l'image : iPhone et iPad.
+  static Future<bool> supportsPictureInPicture() =>
+      OnyxApplePlayerApi().supportsPictureInPicture();
 
   /// Crée le lecteur natif. Rien n'est chargé tant qu'[open] n'est pas appelé.
   static Future<OnyxApplePlayer> create() async {
@@ -124,6 +138,11 @@ class OnyxApplePlayer {
   Future<OnyxApplePlayerStatus> status() => _api.status(_id);
 
   Future<OnyxApplePlaybackStats> stats() => _api.stats(_id);
+
+  /// Arme la fenêtre pour ce lecteur : le système l'ouvre alors de lui-même
+  /// quand l'utilisateur quitte l'app en plein film.
+  Future<void> setPictureInPictureArmed(bool armed) =>
+      _api.setPictureInPictureArmed(_id, armed);
 
   /// Détruit le lecteur natif et rend le mode de l'écran. Sans appel,
   /// AetherEngine garde sa connexion et son serveur local ouverts.

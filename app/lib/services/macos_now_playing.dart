@@ -57,13 +57,15 @@ class MacosNowPlaying {
     required bool isPlaying,
   }) {
     if (!isSupported) return Future.value();
-    return _method.invokeMethod<void>('activate', _payload(
-      title: title,
-      artist: artist,
-      durationSeconds: durationSeconds,
-      positionSeconds: positionSeconds,
-      isPlaying: isPlaying,
-    ));
+    return _method.invokeMethod<void>(
+        'activate',
+        _payload(
+          title: title,
+          artist: artist,
+          durationSeconds: durationSeconds,
+          positionSeconds: positionSeconds,
+          isPlaying: isPlaying,
+        ));
   }
 
   static Future<void> update({
@@ -74,13 +76,15 @@ class MacosNowPlaying {
     required bool isPlaying,
   }) {
     if (!isSupported) return Future.value();
-    return _method.invokeMethod<void>('update', _payload(
-      title: title,
-      artist: artist,
-      durationSeconds: durationSeconds,
-      positionSeconds: positionSeconds,
-      isPlaying: isPlaying,
-    ));
+    return _method.invokeMethod<void>(
+        'update',
+        _payload(
+          title: title,
+          artist: artist,
+          durationSeconds: durationSeconds,
+          positionSeconds: positionSeconds,
+          isPlaying: isPlaying,
+        ));
   }
 
   static Future<void> deactivate() {

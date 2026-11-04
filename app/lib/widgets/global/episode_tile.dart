@@ -150,16 +150,6 @@ class _EpisodeTileState extends State<EpisodeTile> {
     }
   }
 
-  Widget _dimIfUnavailable(Widget poster) => _isAvailable
-      ? poster
-      : ColorFiltered(
-          colorFilter: ColorFilter.mode(
-            Colors.black.withValues(alpha: 0.35),
-            BlendMode.darken,
-          ),
-          child: poster,
-        );
-
   @override
   Widget build(BuildContext context) {
     final isFinished = widget.episode.isFinished;
@@ -184,6 +174,14 @@ class _EpisodeTileState extends State<EpisodeTile> {
     final thumbW = compact ? 128.0 : 180.0;
     final thumbH = compact ? 72.0 : 101.0;
     final isTv = TvScope.of(context);
+    final thumb = MediaPoster(
+      media: widget.episode.media,
+      width: thumbW,
+      height: thumbH,
+      borderRadius: 10,
+      // Le même voile que les titres similaires absents du serveur.
+      dimmed: !_isAvailable,
+    );
 
     final row = TvFocusable(
       focusNode: _rowNode,
@@ -224,237 +222,229 @@ class _EpisodeTileState extends State<EpisodeTile> {
                 ),
               ),
             ),
-            child: Opacity(
-              opacity: _isAvailable ? 1 : 0.72,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!compact) ...[
-                    SizedBox(
-                      width: 36,
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 40),
-                          if (!_isAvailable)
-                            const Icon(AppIcons.airDate,
-                                color: AppColors.textMuted, size: 22)
-                          else if (_active)
-                            const Icon(AppIcons.playCircleFilled,
-                                color: AppColors.textPrimary, size: 28)
-                          else ...[
-                            // Le numéro reste affiché une fois l'épisode vu :
-                            // le remplacer par une coche obligeait à compter
-                            // les lignes pour savoir où l'on en était.
-                            Text(
-                              '${widget.episodeNumber}',
-                              style: TextStyle(
-                                color: isStarted
-                                    ? AppColors.textPrimary
-                                    : AppColors.textMuted,
-                                fontSize: AppType.title2,
-                                fontWeight: FontWeight.w600,
-                              ),
+            // Pas d'Opacity pour atténuer un épisode indisponible : elle ouvre
+            // une couche hors écran dont le rendu laissait un rectangle sombre
+            // sur le texte (résumé, date). Les couleurs ci-dessous font déjà
+            // le travail.
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!compact) ...[
+                  SizedBox(
+                    width: 36,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 40),
+                        if (!_isAvailable)
+                          const Icon(AppIcons.airDate,
+                              color: AppColors.textMuted, size: 22)
+                        else if (_active)
+                          const Icon(AppIcons.playCircleFilled,
+                              color: AppColors.textPrimary, size: 28)
+                        else ...[
+                          // Le numéro reste affiché une fois l'épisode vu :
+                          // le remplacer par une coche obligeait à compter
+                          // les lignes pour savoir où l'on en était.
+                          Text(
+                            '${widget.episodeNumber}',
+                            style: TextStyle(
+                              color: isStarted
+                                  ? AppColors.textPrimary
+                                  : AppColors.textMuted,
+                              fontSize: AppType.title2,
+                              fontWeight: FontWeight.w600,
                             ),
-                            if (isFinished)
-                              // Discret : le bouton à droite dit déjà « vu »,
-                              // en clair. Trois coches vertes par ligne
-                              // faisaient de la liste un tableau de validation.
-                              const Padding(
-                                padding: EdgeInsets.only(top: 2),
-                                child: Icon(AppIcons.check,
-                                    color: AppColors.textMuted, size: 14),
-                              ),
-                          ],
+                          ),
+                          if (isFinished)
+                            // Discret : le bouton à droite dit déjà « vu »,
+                            // en clair. Trois coches vertes par ligne
+                            // faisaient de la liste un tableau de validation.
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: Icon(AppIcons.check,
+                                  color: AppColors.textMuted, size: 14),
+                            ),
                         ],
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                  ],
-                  Stack(
-                    children: [
-                      // Un filtre, même neutre, ouvre un calque par ligne : seul un
-                      // épisode pas encore sorti est assombri.
-                      _dimIfUnavailable(
-                        MediaPoster(
-                          media: widget.episode.media,
-                          width: thumbW,
-                          height: thumbH,
-                          borderRadius: 10,
-                        ),
-                      ),
-                      // Sur téléphone la vignette est trop petite : la pastille
-                      // recouvrait l'icône d'attente, et la ligne dit déjà
-                      // pourquoi l'épisode n'est pas là (date de sortie).
-                      if (!_isAvailable && !compact)
-                        Positioned(
-                          top: 8,
-                          left: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.72),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              tr('Indispo'),
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: AppType.caption,
-                                fontWeight: FontWeight.w600,
-                              ),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+                Stack(
+                  children: [
+                    thumb,
+                    // Sur téléphone la vignette est trop petite : la pastille
+                    // recouvrait l'icône d'attente, et la ligne dit déjà
+                    // pourquoi l'épisode n'est pas là (date de sortie).
+                    if (!_isAvailable && !compact)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.72),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            tr('Indispo'),
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: AppType.caption,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                      if (isStarted && !isFinished)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                                bottom: Radius.circular(10)),
-                            child: LinearProgressIndicator(
-                              value: widget.episode.percentWatched,
-                              minHeight: 3,
-                              backgroundColor: AppColors.border,
-                              valueColor: const AlwaysStoppedAnimation(
-                                  AppColors.progress),
+                      ),
+                    if (isStarted && !isFinished)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(10)),
+                          child: LinearProgressIndicator(
+                            value: widget.episode.percentWatched,
+                            minHeight: 3,
+                            backgroundColor: AppColors.border,
+                            valueColor: const AlwaysStoppedAnimation(
+                                AppColors.progress),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(width: compact ? 12 : 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              compact
+                                  ? 'E${widget.episodeNumber} · ${widget.episode.media.title}'
+                                  : widget.episode.media.title,
+                              style: TextStyle(
+                                color: _isAvailable
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: compact ? 14 : 16,
+                              ),
+                            ),
+                          ),
+                          if (_isAvailable && duration > 0 && !compact)
+                            Text(
+                              formatDuration(duration),
+                              style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: AppType.subhead,
+                              ),
+                            ),
+                          Focus(
+                            focusNode: _actionsNode,
+                            canRequestFocus: false,
+                            skipTraversal: true,
+                            descendantsAreTraversable: !isTv,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_isAvailable && widget.allowDownload)
+                                  MediaDownloadButton(
+                                    item: widget.episode,
+                                    compact: true,
+                                    showTitle: widget.showTitle,
+                                    showId: widget.showId,
+                                    showPosterUrl: widget.showPosterUrl,
+                                    seasonNumber: widget.seasonNumber,
+                                  ),
+                                if (_isAvailable)
+                                  ShareMediaButton(
+                                    item: widget.episode,
+                                    compact: true,
+                                    title: widget.showTitle == null
+                                        ? null
+                                        : '${widget.showTitle} · ${widget.episode.media.title}',
+                                  ),
+                                if (_isAvailable &&
+                                    widget.onToggleWatched != null)
+                                  WatchedActionButton(
+                                    compact: true,
+                                    isWatched: isFinished,
+                                    isLoading: _updatingWatched,
+                                    onPressed: _toggleWatched,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (compact && compactMeta.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          compactMeta,
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: AppType.footnote,
+                          ),
+                        ),
+                      ],
+                      if (!compact && releaseDay != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          releaseDay,
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: AppType.subhead,
+                          ),
+                        ),
+                      ],
+                      if (widget.episode.media.overview != null &&
+                          widget.episode.media.overview!.isNotEmpty &&
+                          !compact) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.episode.media.overview!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: AppType.subhead,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                      if (!_isAvailable) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          airDateLabel ?? tr('Pas sur le serveur'),
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: AppType.footnote,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ] else if (isStarted && !isFinished)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            formatRemaining(widget.episode.effectiveDuration -
+                                    widget.episode.currentPositionSeconds) ??
+                                '',
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: AppType.footnote,
                             ),
                           ),
                         ),
                     ],
                   ),
-                  SizedBox(width: compact ? 12 : 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                compact
-                                    ? 'E${widget.episodeNumber} · ${widget.episode.media.title}'
-                                    : widget.episode.media.title,
-                                style: TextStyle(
-                                  color: _isAvailable
-                                      ? AppColors.textPrimary
-                                      : AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: compact ? 14 : 16,
-                                ),
-                              ),
-                            ),
-                            if (_isAvailable && duration > 0 && !compact)
-                              Text(
-                                formatDuration(duration),
-                                style: const TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: AppType.subhead,
-                                ),
-                              ),
-                            Focus(
-                              focusNode: _actionsNode,
-                              canRequestFocus: false,
-                              skipTraversal: true,
-                              descendantsAreTraversable: !isTv,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (_isAvailable && widget.allowDownload)
-                                    MediaDownloadButton(
-                                      item: widget.episode,
-                                      compact: true,
-                                      showTitle: widget.showTitle,
-                                      showId: widget.showId,
-                                      showPosterUrl: widget.showPosterUrl,
-                                      seasonNumber: widget.seasonNumber,
-                                    ),
-                                  if (_isAvailable)
-                                    ShareMediaButton(
-                                      item: widget.episode,
-                                      compact: true,
-                                      title: widget.showTitle == null
-                                          ? null
-                                          : '${widget.showTitle} · ${widget.episode.media.title}',
-                                    ),
-                                  if (_isAvailable &&
-                                      widget.onToggleWatched != null)
-                                    WatchedActionButton(
-                                      compact: true,
-                                      isWatched: isFinished,
-                                      isLoading: _updatingWatched,
-                                      onPressed: _toggleWatched,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (compact && compactMeta.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            compactMeta,
-                            style: const TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: AppType.footnote,
-                            ),
-                          ),
-                        ],
-                        if (!compact && releaseDay != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            releaseDay,
-                            style: const TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: AppType.subhead,
-                            ),
-                          ),
-                        ],
-                        if (widget.episode.media.overview != null &&
-                            widget.episode.media.overview!.isNotEmpty &&
-                            !compact) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            widget.episode.media.overview!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: AppType.subhead,
-                              height: 1.45,
-                            ),
-                          ),
-                        ],
-                        if (!_isAvailable) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            airDateLabel ?? tr('Pas sur le serveur'),
-                            style: const TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: AppType.footnote,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ] else if (isStarted && !isFinished)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              formatRemaining(widget.episode.effectiveDuration -
-                                      widget.episode.currentPositionSeconds) ??
-                                  '',
-                              style: const TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: AppType.footnote,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

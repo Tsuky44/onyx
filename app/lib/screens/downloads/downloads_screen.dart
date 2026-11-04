@@ -15,6 +15,7 @@ import '../../widgets/global/local_file_image.dart';
 import '../../widgets/global/media_download_button.dart';
 import '../../widgets/global/metered_download_dialog.dart';
 import '../player/player_screen.dart';
+import '../device_library/device_library_entry.dart';
 import 'download_group_headers.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
@@ -65,6 +66,12 @@ class DownloadsScreen extends StatelessWidget {
                 heldForNetwork: manager.isHeldForNetwork,
                 queuedCount: manager.queuedCount,
               ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(pad, 16, pad, 0),
+              child: const DeviceLibraryEntryTile(),
             ),
           ),
           if (!manager.isSupported)

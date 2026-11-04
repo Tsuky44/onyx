@@ -16,6 +16,10 @@ class MediaPoster extends StatelessWidget {
   final Alignment alignment;
   final String? posterUrlOverride;
 
+  /// Assombrit l'image d'un média absent du serveur, comme `PosterCard`. La
+  /// teinte passe par l'image elle-même : pas de calque en plus par ligne.
+  final bool dimmed;
+
   const MediaPoster({
     super.key,
     required this.media,
@@ -25,6 +29,7 @@ class MediaPoster extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.alignment = Alignment.center,
     this.posterUrlOverride,
+    this.dimmed = false,
   });
 
   @override
@@ -52,6 +57,8 @@ class MediaPoster extends StatelessWidget {
           fit: fit,
           alignment: alignment,
           fadeInDuration: const Duration(milliseconds: 200),
+          color: dimmed ? AppColors.unavailableTint : null,
+          colorBlendMode: dimmed ? BlendMode.darken : null,
           // A flat fill, not a spinner: these are laid out in rows of a dozen,
           // and a dozen spinners read as a page that is broken rather than one
           // that is loading.

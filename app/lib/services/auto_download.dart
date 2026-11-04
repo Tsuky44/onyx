@@ -137,7 +137,8 @@ class AutoDownloadPlanner {
 
     while (picks.length < missing) {
       final next = await catalog.nextEpisodeAfter(cursor);
-      if (next == null) break; // fin de la série, ou le serveur n'a pas la suite
+      if (next == null)
+        break; // fin de la série, ou le serveur n'a pas la suite
       final id = next.media.id;
       // Un serveur qui renverrait l'épisode courant comme suivant ferait tourner
       // la boucle sans fin. On s'arrête, plutôt que d'y croire.
@@ -242,8 +243,7 @@ class AutoDownloadService {
           // Le serveur n'a pas répondu : on réessaiera au prochain changement,
           // et la signature est effacée pour que ce prochain changement compte.
           _signatures.remove(showId);
-          debugPrint(
-              'Téléchargements: réserve de la série $showId impossible: '
+          debugPrint('Téléchargements: réserve de la série $showId impossible: '
               '${redactPlaybackDiagnostic(e)}');
         }
       }

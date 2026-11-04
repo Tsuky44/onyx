@@ -4,5 +4,10 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<false/>
+	<!-- Hors bac à sable, ce droit n'ouvre rien de plus : file_picker le
+	     vérifie quand même avant d'afficher son sélecteur, et refuse sans lui
+	     (dossier de vidéos de l'appareil, ADR-0104 ; export du journal). -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
 </dict>
 </plist>

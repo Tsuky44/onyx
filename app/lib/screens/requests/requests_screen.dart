@@ -7,20 +7,19 @@ import '../../models/request_catalog_filters.dart';
 import '../../providers/media_requests_provider.dart';
 import '../../desktop_window.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_motion.dart';
-import '../../theme/lite_mode.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import '../../utils/responsive.dart';
 import '../../utils/poster_url.dart';
 import '../../widgets/global/app_network_image.dart';
 import '../../widgets/global/empty_state.dart';
 import '../../widgets/global/poster_grid_zoom_region.dart';
-import '../../widgets/global/poster_grid_zoom_slider.dart';
+import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../widgets/global/staggered_entrance.dart';
 import '../../services/api_client.dart';
 import 'my_requests_screen.dart';
 import 'widgets/request_filters_sheet.dart';
 import 'widgets/request_media_card.dart';
+import 'widgets/request_type_switch.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -185,6 +184,117 @@ class _RequestsScreenState extends State<RequestsScreen> {
     };
   }
 
+  /// Sélecteur de type à gauche, recherche au milieu, menu d'affichage à
+  /// droite, sur une seule ligne. Les deux flancs sont de même largeur
+  /// (`Expanded`) pour que la recherche reste vraiment centrée. Quand le
+  /// flanc gauche ne laisse plus la place au sélecteur, la recherche passe
+  /// au-dessus, et le menu d'affichage reste à droite du sélecteur.
+  Widget _buildSearchAndTypeRow() {
+    final typeSwitch = RequestTypeSwitch(
+      selected: _draftType,
+      onChanged: (type) {
+        setState(() => _draftType = type);
+        _reloadCatalog();
+      },
+    );
+    final displayMenu =
+        PosterGridDisplayMenu(compact: AppLayout.isCompact(context));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const searchWidth = 360.0;
+        final sideWidth = (constraints.maxWidth - searchWidth) / 2;
+        if (sideWidth >= RequestTypeSwitch.width + 16) {
+          return Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: typeSwitch,
+                ),
+              ),
+              SizedBox(width: searchWidth, child: _buildSearchField()),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: displayMenu,
+                ),
+              ),
+            ],
+          );
+        }
+        return Column(
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: _buildSearchField(),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [typeSwitch, displayMenu],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Champ de recherche en pilule basse : il ne mange que 40 px de hauteur et
+  /// se centre, au lieu de s'étirer sur toute la largeur de la page.
+  Widget _buildSearchField() {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(999),
+      borderSide: const BorderSide(color: AppColors.border),
+    );
+    return TvDeferredKeyboard(
+      builder: (context, focusNode, canRequestFocus) => TextField(
+        controller: _searchController,
+        focusNode: focusNode,
+        canRequestFocus: canRequestFocus,
+        onChanged: (_) {
+          setState(() {});
+          _scheduleSearch();
+        },
+        onSubmitted: (_) {
+          _searchDebounce?.cancel();
+          _runSearch();
+        },
+        textInputAction: TextInputAction.search,
+        style: const TextStyle(fontSize: AppType.body),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: AppColors.surface,
+          hintText: tr('Rechercher un film ou une série…'),
+          contentPadding: const EdgeInsets.symmetric(vertical: 11),
+          prefixIcon: const Icon(AppIcons.search, size: 18),
+          prefixIconConstraints:
+              const BoxConstraints(minWidth: 44, minHeight: 40),
+          suffixIcon: _searchController.text.isEmpty
+              ? null
+              : IconButton(
+                  onPressed: () {
+                    _searchDebounce?.cancel();
+                    _searchController.clear();
+                    setState(() {});
+                    _runSearch();
+                  },
+                  tooltip: tr('Effacer'),
+                  iconSize: 16,
+                  icon: const Icon(AppIcons.close),
+                ),
+          suffixIconConstraints:
+              const BoxConstraints(minWidth: 40, minHeight: 40),
+          border: border,
+          enabledBorder: border,
+          focusedBorder: border.copyWith(
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<MediaRequestsProvider>();
@@ -244,42 +354,12 @@ class _RequestsScreenState extends State<RequestsScreen> {
                     Text(
                         tr('Recherchez et demandez de nouveaux films et séries'),
                         style: TextStyle(color: AppColors.textSecondary)),
-                    const SizedBox(height: 22),
-                    TvDeferredKeyboard(
-                      builder: (context, focusNode, canRequestFocus) =>
-                          TextField(
-                        controller: _searchController,
-                        focusNode: focusNode,
-                        canRequestFocus: canRequestFocus,
-                        onChanged: (_) {
-                          setState(() {});
-                          _scheduleSearch();
-                        },
-                        onSubmitted: (_) {
-                          _searchDebounce?.cancel();
-                          _runSearch();
-                        },
-                        textInputAction: TextInputAction.search,
-                        decoration: InputDecoration(
-                          hintText: tr('Rechercher un film ou une série…'),
-                          prefixIcon: const Icon(AppIcons.search),
-                          suffixIcon: _searchController.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  onPressed: () {
-                                    _searchDebounce?.cancel();
-                                    _searchController.clear();
-                                    setState(() {});
-                                    _runSearch();
-                                  },
-                                  icon: const Icon(AppIcons.close),
-                                ),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 20),
+                    _buildSearchAndTypeRow(),
                     if (!provider.filters.isDefault) ...[
                       const SizedBox(height: 8),
                       Wrap(
+                        alignment: WrapAlignment.center,
                         spacing: 8,
                         children: [
                           Chip(
@@ -295,25 +375,6 @@ class _RequestsScreenState extends State<RequestsScreen> {
                         ],
                       ),
                     ],
-                    const SizedBox(height: 18),
-                    // Les pastilles à gauche, le curseur de densité à droite ;
-                    // sur un écran étroit il passe dessous plutôt que de
-                    // rogner les pastilles.
-                    Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      runSpacing: 12,
-                      children: [
-                        _TypeFilterPills(
-                          selected: _draftType,
-                          onChanged: (type) {
-                            setState(() => _draftType = type);
-                            _reloadCatalog();
-                          },
-                        ),
-                        const PosterGridZoomSlider(),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -382,105 +443,6 @@ class _RequestsScreenState extends State<RequestsScreen> {
                 ),
               ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Pill tabs inspired by MediaHub MediaTypeTabs.
-class _TypeFilterPills extends StatelessWidget {
-  final String selected;
-  final ValueChanged<String> onChanged;
-
-  const _TypeFilterPills({required this.selected, required this.onChanged});
-
-  static const _tabs = [
-    (value: 'all', label: 'Tout'),
-    (value: 'movie', label: 'Films'),
-    (value: 'tv', label: 'Séries'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final tab in _tabs)
-            _Pill(
-              label: tr(tab.label),
-              selected: selected == tab.value,
-              onTap: () {
-                if (selected != tab.value) onChanged(tab.value);
-              },
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _Pill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // La couleur passe par le conteneur animé et non par le Material : elle
-    // se fond d'un onglet à l'autre au lieu de sauter. L'ombre colorée part en
-    // mode léger, comme celles des affiches (ADR-0086).
-    final glow = selected && !LiteScope.of(context);
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: AnimatedContainer(
-          duration: AppMotion.fade(context, AppMotion.micro),
-          curve: AppMotion.curve,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.primary
-                : AppColors.primary.withValues(alpha: 0),
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: glow
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.35),
-                      blurRadius: 14,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: AnimatedDefaultTextStyle(
-            duration: AppMotion.fade(context, AppMotion.micro),
-            curve: AppMotion.curve,
-            style: TextStyle(
-              color: selected
-                  ? AppColors.onAccent
-                  : Colors.white.withValues(alpha: 0.55),
-              fontWeight: FontWeight.w600,
-              fontSize: AppType.subhead,
-            ),
-            child: Text(label),
-          ),
         ),
       ),
     );

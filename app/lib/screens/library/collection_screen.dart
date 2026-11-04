@@ -10,7 +10,7 @@ import '../../widgets/global/app_network_image.dart';
 import '../../widgets/global/media_detail_widgets.dart';
 import '../../widgets/global/overlay_back_button.dart';
 import '../../widgets/global/poster_grid_zoom_region.dart';
-import '../../widgets/global/poster_grid_zoom_slider.dart';
+import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 
@@ -102,11 +102,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 ),
               )
             else ...[
-              const SliverPosterGridZoomBar(),
+              const SliverPosterGridDisplayBar(),
               SliverPadding(
-                // La barre du curseur apporte déjà l'air au-dessus de la grille.
+                // La barre de l'affichage apporte déjà l'air au-dessus de la grille.
                 padding: AppLayout.pageInsets(context,
-                    top: PosterGridZoomSlider.availableIn(context) ? 0 : 28,
+                    top: PosterGridDisplayMenu.availableIn(context) ? 0 : 28,
                     bottom: 48),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart' show DioException;
 import 'package:flutter/material.dart';
+import '../device_library/device_library_entry.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import 'package:provider/provider.dart';
 import '../../models/otp.dart';
@@ -758,6 +759,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               : () => showOpenSharedLinkDialog(context),
                           child: Text(tr('Ouvrir un lien de partage')),
                         ),
+                      // Sans serveur du tout : les vidéos de l'appareil
+                      // (ADR-0104).
+                      DeviceLibraryLoginLink(enabled: !authProvider.isLoading),
                     ],
                   ),
                   ),

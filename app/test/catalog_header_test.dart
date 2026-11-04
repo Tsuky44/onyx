@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/library/widgets/catalog_header.dart';
 
 void main() {
-  testWidgets('le tri reste collé au bord droit, quel que soit le titre',
+  testWidgets('le bouton Affichage reste collé au bord droit, le tri avant lui',
       (tester) async {
     for (final title in ['Films', 'Une bibliothèque au nom bien plus long']) {
       await tester.pumpWidget(
@@ -23,9 +23,16 @@ void main() {
         ),
       );
 
-      final sortRight = tester.getTopRight(find.byType(PopupMenuButton<int>));
+      // Le tri est le premier menu de la ligne, le bouton d'affichage le
+      // dernier : celui-ci ferme la ligne, à droite.
+      final menus = find.byType(PopupMenuButton<int>);
+      final sort = menus.first;
+      final display = menus.last;
       final headerRight = tester.getTopRight(find.byType(CatalogHeader<int>));
-      expect(sortRight.dx, headerRight.dx, reason: title);
+      expect(tester.getTopRight(display).dx, headerRight.dx, reason: title);
+      expect(
+          tester.getTopRight(sort).dx, lessThan(tester.getTopLeft(display).dx),
+          reason: title);
     }
   });
 }

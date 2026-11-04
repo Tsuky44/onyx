@@ -78,7 +78,7 @@ abstract final class AppIcons {
       IconData(0xe136, fontFamily: _regular); // caretDown
   static const IconData sort =
       IconData(0xe140, fontFamily: _regular); // caretUpDown
-  // Les deux bouts du curseur de densité des grilles d'affiches.
+  // Les deux extrémités du menu d'affichage des grilles d'affiches.
   static const IconData postersSmall =
       IconData(0xe1fc, fontFamily: _regular); // dotsNine
   static const IconData postersLarge =

@@ -90,6 +90,9 @@ class OnyxControlsLayer extends StatelessWidget {
   final VoidCallback onCycleSpeed;
   final VoidCallback onOpenSettings;
   final VoidCallback onToggleFullscreen;
+
+  /// Image dans l'image d'ordinateur ; null là où elle n'existe pas.
+  final VoidCallback? onTogglePictureInPicture;
   final double playbackRate;
 
   /// Verrouille l'écran contre les touchers — voir [PlayerScreenLock]. Null
@@ -220,6 +223,7 @@ class OnyxControlsLayer extends StatelessWidget {
     this.onOpenWatchParty,
     this.watchPartyActive = false,
     required this.onToggleFullscreen,
+    this.onTogglePictureInPicture,
     this.playbackRate = 1.0,
     this.onLockScreen,
     this.timelineAnchorKey,
@@ -806,17 +810,13 @@ class OnyxControlsLayer extends StatelessWidget {
           isTv: isTv,
           onPressed: onOpenSettings,
         ),
-        // A television has no window to fill: the button would do nothing.
-        if (!isTv) ...[
-          SizedBox(width: m.clusterGap),
-          OnyxIconButton(
-            key: const ValueKey('onyx-fullscreen'),
-            icon: Icons.fullscreen_rounded,
-            tooltip: tr('Plein écran'),
+        // A television has no window to fill: the buttons would do nothing.
+        if (!isTv)
+          ...onyxWindowButtons(
             metrics: m,
-            onPressed: onToggleFullscreen,
+            onToggleFullscreen: onToggleFullscreen,
+            onTogglePictureInPicture: onTogglePictureInPicture,
           ),
-        ],
       ],
     );
   }

@@ -120,7 +120,8 @@ mixin _PlaybackEndpoints {
   Future<Uint8List> fetchTimelinePreview(int mediaId, int index,
       {required PlaybackAccess access}) async {
     final response = await _dio.get<List<int>>(
-      access.protect("${access.origin}/api/v1/media/$mediaId/previews/$index.jpg"),
+      access.protect(
+          "${access.origin}/api/v1/media/$mediaId/previews/$index.jpg"),
       options: Options(
           responseType: ResponseType.bytes, extra: {'playbackMedia': true}),
     );

@@ -8,22 +8,22 @@ import UIKit
 /// déjà : la session audio d'un lecteur vidéo, et le canal `onyx/device` que
 /// `TvMode`, `ClientIdentity` et la session AVPlayer interrogent.
 @main
-class AppDelegate: FlutterAppDelegate {
+class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    let flutterViewController = FlutterViewController(project: nil, nibName: nil, bundle: nil)
-    let window = UIWindow(frame: UIScreen.main.bounds)
-    window.rootViewController = flutterViewController
-    window.makeKeyAndVisible()
-    self.window = window
-
-    GeneratedPluginRegistrant.register(with: self)
-    registerDeviceChannel(messenger: flutterViewController.binaryMessenger)
     configureAudioSession()
-
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  /// Le SDK tvOS 27 exige cycle de vie UIScene : le moteur naît avec la scène
+  /// (storyboard `Main`) et les plugins s'inscrivent ici, comme sur iOS.
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "OnyxDevice") {
+      registerDeviceChannel(messenger: registrar.messenger())
+    }
   }
 
   /// Le pendant tvOS du canal `onyx/device` d'Android et d'iOS.
@@ -86,3 +86,6 @@ class AppDelegate: FlutterAppDelegate {
     }
   }
 }
+
+/// Délégué de scène par défaut de Flutter, requis par le SDK tvOS 27.
+class SceneDelegate: FlutterSceneDelegate {}

@@ -1,6 +1,7 @@
 # ADR-0012 — L'image dans l'image, sur Android seulement
 
-- **Statut :** accepté, réalisé — vérification sur appareil encore à faire
+- **Statut :** accepté, réalisé — vérification sur appareil encore à faire. Le §3 (rien sur iOS) est
+  levé par l'[ADR-0103](0103-image-dans-image-sur-iphone-et-ipad.md).
 - **Date :** 2026-09-07
 - **Portée :** le lecteur sur téléphone. Rien sur téléviseur, rien sur ordinateur.
 

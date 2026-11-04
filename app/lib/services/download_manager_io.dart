@@ -149,7 +149,8 @@ class DownloadManager extends ChangeNotifier {
       '${serverUrl.isEmpty ? _scope : serverUrl}|$mediaId';
 
   /// Ce média a-t-il été écarté à la main ?
-  bool isDeclined(int mediaId) => _declined.contains(_declineKey(mediaId, _scope));
+  bool isDeclined(int mediaId) =>
+      _declined.contains(_declineKey(mediaId, _scope));
 
   /// Le manifeste n'est pas réécrit à chaque paquet reçu : on marque, et une
   /// écriture groupée suit.
@@ -345,7 +346,8 @@ class DownloadManager extends ChangeNotifier {
   /// Une entrée sans adresse date de l'époque mono-serveur : elle appartient à
   /// celui qui est actif, faute de pouvoir appartenir à quelqu'un d'autre.
   bool _inScope(OfflineDownload entry) =>
-      entry.serverUrl.isEmpty || ServerAccount.sameAddress(entry.serverUrl, _scope);
+      entry.serverUrl.isEmpty ||
+      ServerAccount.sameAddress(entry.serverUrl, _scope);
 
   OfflineDownload _stamped(OfflineDownload entry) =>
       entry.serverUrl.isEmpty && _scope.isNotEmpty
@@ -409,13 +411,12 @@ class DownloadManager extends ChangeNotifier {
   /// C'est la vue dont le réapprovisionnement automatique se sert : ce qu'il
   /// reste d'avance, et jusqu'où on est allé, se lisent tous les deux là-dedans.
   List<OfflineDownload> entriesForShow(int showId) {
-    final list =
-        _entries.values.where((e) => e.showId == showId).toList()
-          ..sort((a, b) {
-            final season = (a.seasonNumber ?? 0).compareTo(b.seasonNumber ?? 0);
-            if (season != 0) return season;
-            return (a.episodeNumber ?? 0).compareTo(b.episodeNumber ?? 0);
-          });
+    final list = _entries.values.where((e) => e.showId == showId).toList()
+      ..sort((a, b) {
+        final season = (a.seasonNumber ?? 0).compareTo(b.seasonNumber ?? 0);
+        if (season != 0) return season;
+        return (a.episodeNumber ?? 0).compareTo(b.episodeNumber ?? 0);
+      });
     return list;
   }
 
@@ -852,8 +853,7 @@ class DownloadManager extends ChangeNotifier {
           final current = _entries[mediaId];
           // L'entrée a disparu (suppression) ou a changé d'état (pause) : on
           // n'écrit pas par-dessus la décision.
-          if (current == null ||
-              current.status != DownloadStatus.downloading) {
+          if (current == null || current.status != DownloadStatus.downloading) {
             return;
           }
           _entries[mediaId] = current.copyWith(

@@ -79,14 +79,17 @@ extension PlayerControllerTracks on PlayerController {
   /// et surtout elle existe hors ligne — où l'appel réseau ne ferait
   /// qu'attendre son délai avant de laisser les menus vides.
   Future<MediaTracks?> _loadTracks(ApiClient apiClient, int mediaId) async {
+    // Une vidéo de l'appareil n'a pas de fiche de pistes : le moteur garde
+    // celles que le conteneur marque par défaut (ADR-0104).
+    if (isDeviceVideoId(mediaId)) return null;
     if (_localFilePath != null) {
-      final offline = DownloadManager.instance.offlineTracks(mediaId);
+      final offline = localPlaybackTracks(mediaId);
       if (offline != null) return MediaTracks.fromJson(offline);
     }
     try {
       return await apiClient.getMediaTracks(mediaId);
     } catch (e) {
-      final offline = DownloadManager.instance.offlineTracks(mediaId);
+      final offline = localPlaybackTracks(mediaId);
       if (offline != null) return MediaTracks.fromJson(offline);
       rethrow;
     }
@@ -99,8 +102,7 @@ extension PlayerControllerTracks on PlayerController {
   /// pas à une session HLS commençant en cours de route.
   Future<String> _loadSubtitleVtt(int mediaId, String lang, int start) async {
     if (_localFilePath != null && start == 0) {
-      final local =
-          await DownloadManager.instance.offlineSubtitle(mediaId, lang);
+      final local = await localPlaybackSubtitle(mediaId, lang);
       if (local != null && local.contains('-->')) return local;
     }
     return _apiClient!.fetchSubtitleContent(mediaId, lang,

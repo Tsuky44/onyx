@@ -17,7 +17,8 @@ mixin _RequestReleaseEndpoints {
     final raw =
         (response.data as Map)['releases'] as List<dynamic>? ?? const [];
     return raw
-        .map((e) => RequestRelease.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map(
+            (e) => RequestRelease.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 

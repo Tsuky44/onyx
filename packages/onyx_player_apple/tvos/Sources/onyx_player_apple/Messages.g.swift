@@ -674,6 +674,59 @@ struct OnyxApplePlaybackStats: Hashable, CustomStringConvertible {
   }
 }
 
+/// La fenêtre d'image dans l'image, quand le système l'ouvre ou la referme.
+///
+/// Le système décide seul du moment (geste d'accueil), donc c'est le natif qui
+/// raconte, pas Dart qui demande. Voir l'ADR-0012.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxApplePictureInPicture: Hashable, CustomStringConvertible {
+  var playerId: Int64
+  /// Vrai tant que le film joue dans la petite fenêtre.
+  var active: Bool
+  /// Vrai quand la fenêtre a été fermée au lieu d'être restaurée : le film n'a
+  /// plus d'endroit où jouer, le natif l'a déjà mis en pause.
+  var closed: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxApplePictureInPicture? {
+    let playerId = pigeonVar_list[0] as! Int64
+    let active = pigeonVar_list[1] as! Bool
+    let closed = pigeonVar_list[2] as! Bool
+
+    return OnyxApplePictureInPicture(
+      playerId: playerId,
+      active: active,
+      closed: closed
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      playerId,
+      active,
+      closed,
+    ]
+  }
+  static func == (lhs: OnyxApplePictureInPicture, rhs: OnyxApplePictureInPicture) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.playerId, rhs.playerId) && MessagesPigeonInternal.deepEquals(lhs.active, rhs.active) && MessagesPigeonInternal.deepEquals(lhs.closed, rhs.closed)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxApplePictureInPicture")
+    MessagesPigeonInternal.deepHash(value: playerId, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: active, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: closed, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxApplePictureInPicture(playerId: \(String(describing: playerId)), active: \(String(describing: active)), closed: \(String(describing: closed)))"
+  }
+}
+
 private class MessagesPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -707,6 +760,8 @@ private class MessagesPigeonCodecReader: FlutterStandardReader {
       return OnyxAppleSubtitleFrame.fromList(self.readValue() as! [Any?])
     case 137:
       return OnyxApplePlaybackStats.fromList(self.readValue() as! [Any?])
+    case 138:
+      return OnyxApplePictureInPicture.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -741,6 +796,9 @@ private class MessagesPigeonCodecWriter: FlutterStandardWriter {
       super.writeValue(value.toList())
     } else if let value = value as? OnyxApplePlaybackStats {
       super.writeByte(137)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxApplePictureInPicture {
+      super.writeByte(138)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -800,6 +858,13 @@ protocol OnyxApplePlayerApi {
   /// L'état à cet instant, pour s'amorcer sans attendre le premier événement.
   func status(playerId: Int64) throws -> OnyxApplePlayerStatus
   func stats(playerId: Int64) throws -> OnyxApplePlaybackStats
+  /// Si l'appareil sait faire l'image dans l'image (iPhone et iPad ; ni Mac, ni
+  /// Apple TV, où le lecteur n'en a pas l'usage).
+  func supportsPictureInPicture() throws -> Bool
+  /// Arme ou désarme la fenêtre pour ce lecteur. Armée, le système l'ouvre de
+  /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne
+  /// laisse pas l'app la demander après coup, comme Android.
+  func setPictureInPictureArmed(playerId: Int64, armed: Bool) throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -1077,6 +1142,40 @@ class OnyxApplePlayerApiSetup {
     } else {
       statsChannel.setMessageHandler(nil)
     }
+    /// Si l'appareil sait faire l'image dans l'image (iPhone et iPad ; ni Mac, ni
+    /// Apple TV, où le lecteur n'en a pas l'usage).
+    let supportsPictureInPictureChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.supportsPictureInPicture\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsPictureInPictureChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.supportsPictureInPicture()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      supportsPictureInPictureChannel.setMessageHandler(nil)
+    }
+    /// Arme ou désarme la fenêtre pour ce lecteur. Armée, le système l'ouvre de
+    /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne
+    /// laisse pas l'app la demander après coup, comme Android.
+    let setPictureInPictureArmedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.setPictureInPictureArmed\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setPictureInPictureArmedChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let playerIdArg = args[0] as! Int64
+        let armedArg = args[1] as! Bool
+        do {
+          try api.setPictureInPictureArmed(playerId: playerIdArg, armed: armedArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setPictureInPictureArmedChannel.setMessageHandler(nil)
+    }
   }
 }
 
@@ -1152,6 +1251,20 @@ class SubtitlesChangedStreamHandler: PigeonEventChannelWrapper<OnyxAppleSubtitle
       channelName += ".\(instanceName)"
     }
     let internalStreamHandler = PigeonStreamHandler<OnyxAppleSubtitleFrame>(wrapper: streamHandler)
+    let channel = FlutterEventChannel(name: channelName, binaryMessenger: messenger, codec: messagesPigeonMethodCodec)
+    channel.setStreamHandler(internalStreamHandler)
+  }
+}
+      
+class PictureInPictureChangedStreamHandler: PigeonEventChannelWrapper<OnyxApplePictureInPicture> {
+  static func register(with messenger: FlutterBinaryMessenger,
+                      instanceName: String = "",
+                      streamHandler: PictureInPictureChangedStreamHandler) {
+    var channelName = "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerEventApi.pictureInPictureChanged"
+    if !instanceName.isEmpty {
+      channelName += ".\(instanceName)"
+    }
+    let internalStreamHandler = PigeonStreamHandler<OnyxApplePictureInPicture>(wrapper: streamHandler)
     let channel = FlutterEventChannel(name: channelName, binaryMessenger: messenger, codec: messagesPigeonMethodCodec)
     channel.setStreamHandler(internalStreamHandler)
   }

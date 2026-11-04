@@ -17,6 +17,8 @@ import android.view.Display
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
@@ -37,6 +39,10 @@ class MainActivity : FlutterActivity() {
     /// one instant where the window may be created, and a round trip to Dart
     /// would land after it.
     private var pictureInPicture: Rational? = null
+
+    /// La réponse en attente du dialogue d'accès aux vidéos. Une seule à la
+    /// fois : le système n'en montre pas deux.
+    private var pendingVideoAccess: MethodChannel.Result? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -88,10 +94,50 @@ class MainActivity : FlutterActivity() {
                             result.success(installApk(path))
                         }
                     }
+                    "requestVideoAccess" -> requestVideoAccess(result)
                     else -> result.notImplemented()
                 }
             }
         }
+    }
+
+    // --- Vidéos de l'appareil (ADR-0104) ------------------------------------
+
+    /// La permission qui rend lisibles les vidéos du stockage partagé :
+    /// `READ_MEDIA_VIDEO` depuis Android 13, `READ_EXTERNAL_STORAGE` avant.
+    private fun videoPermission(): String =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            android.Manifest.permission.READ_MEDIA_VIDEO
+        } else {
+            android.Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+    private fun requestVideoAccess(result: MethodChannel.Result) {
+        val permission = videoPermission()
+        if (ContextCompat.checkSelfPermission(this, permission) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            result.success(true)
+            return
+        }
+        // Une demande déjà affichée : la nouvelle attendrait une réponse que
+        // le système n'enverra qu'à la première.
+        pendingVideoAccess?.success(false)
+        pendingVideoAccess = result
+        ActivityCompat.requestPermissions(this, arrayOf(permission), VIDEO_ACCESS_REQUEST)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != VIDEO_ACCESS_REQUEST) return
+        val granted = grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+        pendingVideoAccess?.success(granted)
+        pendingVideoAccess = null
     }
 
     /// Whether the network the device is actually using is a paid one.
@@ -358,5 +404,6 @@ class MainActivity : FlutterActivity() {
 
     private companion object {
         const val DEVICE_CHANNEL = "onyx/device"
+        const val VIDEO_ACCESS_REQUEST = 4104
     }
 }

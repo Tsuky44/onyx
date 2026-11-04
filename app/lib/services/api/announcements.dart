@@ -35,8 +35,8 @@ mixin _AnnouncementEndpoints {
     required String title,
     required String message,
   }) async {
-    final response = await _dio.put('/api/announcement',
-        data: {'title': title, 'message': message});
+    final response = await _dio
+        .put('/api/announcement', data: {'title': title, 'message': message});
     return ServerAnnouncement.fromEnvelope(
         Map<String, dynamic>.from(response.data as Map));
   }

@@ -19,8 +19,12 @@ import 'tv_link.dart';
 /// same network cannot point this screen at a server of their choosing.
 class TvLinkHost implements TvLinkSession {
   static bool get isSupported =>
-      !kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isLinux ||
-          Platform.isMacOS || Platform.isWindows);
+      !kIsWeb &&
+      (Platform.isAndroid ||
+          Platform.isIOS ||
+          Platform.isLinux ||
+          Platform.isMacOS ||
+          Platform.isWindows);
 
   HttpServer? _server;
   String? _code;

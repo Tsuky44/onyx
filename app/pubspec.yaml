@@ -54,6 +54,10 @@ dependencies:
 
   # Desktop window management
   window_manager: ^0.5.2
+  # Écran qui porte la fenêtre (zone visible, barre des tâches exclue) : sert à
+  # poser la petite fenêtre de l'image dans l'image dans un coin. Déjà tirée par
+  # window_manager, déclarée ici parce que le code l'importe.
+  screen_retriever: ^0.2.0
 
   # Browser APIs, used only by the web-side conditional imports in lib/utils/
   web: ^1.1.0

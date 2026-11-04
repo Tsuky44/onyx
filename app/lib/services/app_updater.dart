@@ -1,5 +1,6 @@
 /// In-place application update — see `app_updater_io.dart`.
 library;
+
 ///
 /// `dart:io` cannot be imported in a web build at all, and there is nothing to
 /// update there anyway (the browser always loads the current bundle), so the

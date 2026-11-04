@@ -455,7 +455,10 @@ extension _PlayerFlow on _PlayerScreenState {
       libraryProvider = Provider.of<LibraryProvider>(context, listen: false);
       // Une progression cédée à un autre appareil n'a rien à montrer ici :
       // la rangée attend ce que le serveur dira de lui.
-      if (posSeconds > 0 && _playerController.reporter.ownsProgress) {
+      // Ni une vidéo de l'appareil : la rangée est celle du serveur.
+      if (posSeconds > 0 &&
+          _playerController.reporter.ownsProgress &&
+          !isDeviceVideoId(actualMedia.id)) {
         homeProvider.updateContinueWatchingProgress(
           mediaId: actualMedia.id,
           positionSeconds: posSeconds,

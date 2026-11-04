@@ -6,6 +6,7 @@
 library;
 
 export 'catalog.dart';
+export 'device_video.dart';
 export 'episode_navigation.dart';
 export 'home_response.dart';
 export 'media.dart';

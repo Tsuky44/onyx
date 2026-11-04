@@ -7,7 +7,7 @@ import '../../utils/responsive.dart';
 import '../../widgets/global/empty_state.dart';
 import '../../widgets/global/media_card.dart';
 import '../../widgets/global/poster_grid_zoom_region.dart';
-import '../../widgets/global/poster_grid_zoom_slider.dart';
+import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -65,8 +65,7 @@ class SearchResultsScreen extends StatelessWidget {
                                   fontSize: AppType.subhead),
                             ),
                           ),
-                          PosterGridZoomSlider(
-                              width: AppLayout.isCompact(context) ? 100 : 140),
+                          PosterGridDisplayMenu(compact: AppLayout.isCompact(context)),
                         ],
                       ),
                     ),
