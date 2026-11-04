@@ -4,12 +4,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/l10n/app_language.dart';
 import 'package:onyx/models/models.dart';
+import 'package:onyx/screens/player/playback/native_tv_preference.dart';
 import 'package:onyx/screens/player/playback/native_tv_presenter.dart';
 import 'package:onyx/screens/player/playback/native_tv_screen.dart';
 import 'package:onyx/screens/player/playback/playback_session.dart';
 import 'package:onyx/screens/player/playback/skip_segments.dart';
 import 'package:onyx/screens/player/video_display_mode.dart';
 import 'package:onyx_player_apple/onyx_player_apple.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Un écran natif qui note ce que le présentateur lui envoie.
 class _RecordingScreen implements NativeTvScreen {
@@ -480,5 +482,40 @@ void main() {
   test('le lecteur natif n’est éligible que sur Apple TV', () {
     // La suite tourne sur un ordinateur : jamais tvOS.
     expect(isNativeTvPlayerEligible(), isFalse);
+  });
+
+  group('réglage Lecteur Apple TV', () {
+    setUp(NativeTvPlayerPreference.resetForTest);
+
+    test('le défaut vaut Onyx', () {
+      expect(NativeTvPlayerPreference.defaultMode, NativeTvPlayerMode.onyx);
+      expect(NativeTvPlayerPreference.mode, NativeTvPlayerMode.onyx);
+    });
+
+    test('le réglage n’est visible que sur tvOS', () {
+      expect(NativeTvPlayerPreference.isAvailable(isTvOS: true), isTrue);
+      expect(NativeTvPlayerPreference.isAvailable(isTvOS: false), isFalse);
+    });
+
+    test('l’éligibilité ne s’active qu’avec tvOS et Natif', () {
+      bool eligible(bool tvos, NativeTvPlayerMode mode) =>
+          NativeTvPlayerPreference.isEligible(isTvOS: tvos, mode: mode);
+      expect(eligible(true, NativeTvPlayerMode.native), isTrue);
+      expect(eligible(true, NativeTvPlayerMode.onyx), isFalse);
+      expect(eligible(false, NativeTvPlayerMode.native), isFalse);
+      expect(eligible(false, NativeTvPlayerMode.onyx), isFalse);
+    });
+
+    test('le choix est relu au démarrage, un inconnu retombe sur le défaut',
+        () async {
+      SharedPreferences.setMockInitialValues(
+          {'native_tv_player_mode': 'native'});
+      await NativeTvPlayerPreference.initialize();
+      expect(NativeTvPlayerPreference.mode, NativeTvPlayerMode.native);
+
+      SharedPreferences.setMockInitialValues({'native_tv_player_mode': '??'});
+      await NativeTvPlayerPreference.initialize();
+      expect(NativeTvPlayerPreference.mode, NativeTvPlayerMode.onyx);
+    });
   });
 }

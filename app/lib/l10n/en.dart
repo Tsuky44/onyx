@@ -1882,6 +1882,14 @@ const Map<String, String> kEnglish = <String, String>{
       'Period',
   'Qualité':
       'Quality',
+  'Lecteur Apple TV':
+      'Apple TV player',
+  'Natif : le lecteur d’Apple TV. Onyx : l’interface d’Onyx. Un fichier que le natif ne sait pas lire repasse seul sur Onyx.':
+      'Native: the Apple TV player. Onyx: the Onyx interface. A file the native player cannot handle falls back to Onyx on its own.',
+  'Natif':
+      'Native',
+  'Propre à cet appareil.':
+      'Specific to this device.',
   'Qualité automatique':
       'Automatic quality',
   'Quand la poser':

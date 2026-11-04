@@ -7,6 +7,7 @@ import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/store_build.dart';
 import '../../widgets/global/resume_preview/hover_preview_preference.dart';
+import '../player/playback/native_tv_preference.dart';
 import 'settings_categories.dart';
 import 'settings_sections.dart';
 
@@ -218,6 +219,9 @@ List<_Setting> _settings(Permissions p) {
     if (AppPlatform.isAndroid)
       _s(SettingsSections.playback, tr('Vidéo'), tr('Adapter l’écran au film'),
           'frame rate fps refresh saccades 24p'),
+    if (NativeTvPlayerPreference.isAvailable(isTvOS: AppPlatform.isTvOS))
+      _s(SettingsSections.playback, tr('Apple TV'), tr('Lecteur Apple TV'),
+          'natif native onyx avplayer lecteur player tvos'),
     _s(SettingsSections.playback, tr('Connexion'), tr('Qualité automatique'),
         'bitrate debit transcodage quality reseau'),
     _s(SettingsSections.playback, tr('Séries'),

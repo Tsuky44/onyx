@@ -6,13 +6,13 @@ import 'package:onyx_player_apple/onyx_player_apple.dart';
 import '../../../l10n/tr.dart';
 import '../../../models/models.dart';
 import '../../../services/client_log.dart';
-import '../../../utils/app_platform.dart';
 import '../player_menu_choices.dart';
 import '../video_display_mode.dart';
 import '../widgets/direct_source_label.dart';
 import '../widgets/track_label.dart';
 import 'aether_video_fit.dart';
 import 'native_tv_fallback.dart';
+import 'native_tv_preference.dart';
 import 'native_tv_screen.dart';
 import 'playback_session.dart';
 import 'skip_segments.dart';
@@ -22,10 +22,10 @@ export 'native_tv_fallback.dart';
 /// Si le lecteur prend l'écran natif d'Apple TV (`AVPlayerViewController`)
 /// au lieu de son interface Flutter.
 ///
-/// Le seul endroit où cela se décide pour l'appareil : le réglage Natif /
-/// Onyx de l'utilisateur viendra s'ajouter ici. Ce qui dépend du média, lui,
-/// passe par `nativeTvFallbackFor` (`native_tv_fallback.dart`).
-bool isNativeTvPlayerEligible() => AppPlatform.isTvOS;
+/// Le seul endroit où cela se décide pour l'appareil : Apple TV et le réglage
+/// Natif / Onyx de l'utilisateur (`native_tv_preference.dart`). Ce qui dépend
+/// du média, lui, passe par `nativeTvFallbackFor` (`native_tv_fallback.dart`).
+bool isNativeTvPlayerEligible() => NativeTvPlayerPreference.eligibleHere;
 
 /// La spec que reçoit l'écran natif, sous un nom du lecteur.
 typedef NativeTvSpec = OnyxAppleNativeSpec;
