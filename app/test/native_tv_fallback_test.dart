@@ -97,6 +97,26 @@ void main() {
           NativeTvFallback.softwareRoute);
     });
 
+    test('une session HLS qui ne part pas du début garde Flutter', () {
+      // La barre d'AVKit afficherait 0:00 à 40 min, sans rien avant.
+      expect(
+          nativeTvFallbackFor(
+              streaming: true, hlsStartOffset: const Duration(minutes: 40)),
+          NativeTvFallback.hlsOffset);
+      expect(nativeTvFallbackFor(streaming: true), isNull);
+      // Le Direct Play n'a pas de décalage, quoi qu'en dise une ancienne
+      // session.
+      expect(nativeTvFallbackFor(hlsStartOffset: const Duration(minutes: 40)),
+          isNull);
+      // La route logicielle passe avant.
+      expect(
+          nativeTvFallbackFor(
+              softwareRoute: true,
+              streaming: true,
+              hlsStartOffset: const Duration(minutes: 40)),
+          NativeTvFallback.softwareRoute);
+    });
+
     test('une fermeture n’est pas un refus', () {
       expect(nativeTvFallbackFor(refusal: OnyxAppleNativeReason.userDismissed),
           isNull);

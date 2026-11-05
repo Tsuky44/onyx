@@ -3380,4 +3380,30 @@ const Map<String, String> kEnglish = <String, String>{
       'Your own files, played without a server',
   '« {0} » sera effacée de l’appareil.':
       '“{0}” will be erased from this device.',
+  'Demande envoyée':
+      'Request sent',
+  '{0} minutes':
+      '{0} minutes',
+  '1 heure':
+      '1 hour',
+  '{0} heures':
+      '{0} hours',
+  'Code de la séance : {0}':
+      'Session code: {0}',
+  '{0} participants':
+      '{0} participants',
+  '{0} (vous)':
+      '{0} (you)',
+  'Chemin de lecture':
+      'Playback path',
+  'Décodeur vidéo':
+      'Video decoder',
+  'Décodeur audio':
+      'Audio decoder',
+  'Format vidéo':
+      'Video format',
+  'Sortie audio':
+      'Audio output',
+  'Conteneur':
+      'Container',
 };

@@ -166,8 +166,15 @@ void main() {
       final quality = _menu(spec, NativeTvIds.quality);
       expect(quality.options.map((o) => o.id),
           ['auto', 'direct', 'tier:1080p', 'tier:720p']);
+      // Le débit passe en seconde ligne, comme dans le menu Onyx.
       expect(quality.options.map((o) => o.label),
-          ['Auto', 'Direct', '1080p · 8 Mbit/s', '720p · 4 Mbit/s']);
+          ['Auto', 'Direct', '1080p', '720p']);
+      expect(quality.options.map((o) => o.detail), [
+        'S’adapte à la connexion',
+        'Le fichier tel quel',
+        '8 Mbit/s',
+        '4 Mbit/s',
+      ]);
       expect(_checked(quality), ['tier:720p']);
     });
 
@@ -496,6 +503,20 @@ void main() {
       await pumpEventQueue();
 
       expect((intents.single as NativeTvSetRate).rate, 2.0);
+      expect(presenter.isShown, isTrue);
+    });
+
+    test('une pause faite dans AVKit arrive au lecteur, sans fermer', () async {
+      presenter.sync(wanted: true, spec: NativeTvSpecBuilder.build(_state()));
+      screen.events$.add(OnyxAppleNativeEvent(
+        playerId: 1,
+        kind: OnyxAppleNativeEventKind.transport,
+        playing: false,
+        positionMs: 5000,
+      ));
+      await pumpEventQueue();
+
+      expect((intents.single as NativeTvTransport).playing, isFalse);
       expect(presenter.isShown, isTrue);
     });
 

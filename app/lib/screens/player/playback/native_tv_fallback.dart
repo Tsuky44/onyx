@@ -14,6 +14,14 @@ enum NativeTvFallback {
   /// n'afficherait qu'une roue sur fond noir, son joué (spike, correction 1).
   softwareRoute,
 
+  /// Une session HLS qui ne commence pas au début du film (une reprise, une
+  /// recherche hors de ce qu'elle avait encodé) : sa timeline repart de zéro
+  /// à son point de départ, et la barre d'AVKit montrerait 0:00 à 40 min, sans
+  /// rien avant (parité, §1.5). Tant que le serveur ne sert pas une timeline
+  /// complète, l'interface Onyx, qui connaît le décalage, garde la main. À
+  /// revoir avec le chantier transcodage.
+  hlsOffset,
+
   /// Des sous-titres image (PGS, VobSub, DVB) en Direct Play, que l'écran natif
   /// n'a pas pu peindre (`unavailable/bitmapSubtitles`) : sa couche n'a pas pu
   /// se poser dans `contentOverlayView`. Sans ce refus, il les peint lui-même.
@@ -37,12 +45,14 @@ enum NativeTvSubtitleKind { none, text, image }
 /// [refusal] est la raison du dernier `unavailable` du natif : un refus est
 /// définitif pour ce lecteur, sauf `bitmapSubtitles`, qui ne vaut que tant
 /// qu'une piste image est choisie. [streaming] vaut pour une session HLS du
-/// serveur, où une piste image est déjà incrustée dans l'image.
+/// serveur, où une piste image est déjà incrustée dans l'image ;
+/// [hlsStartOffset] est le point du film où cette session commence.
 NativeTvFallback? nativeTvFallbackFor({
   OnyxAppleNativeReason? refusal,
   bool softwareRoute = false,
   NativeTvSubtitleKind subtitle = NativeTvSubtitleKind.none,
   bool streaming = false,
+  Duration hlsStartOffset = Duration.zero,
 }) {
   switch (refusal) {
     case OnyxAppleNativeReason.softwareRoute:
@@ -57,6 +67,9 @@ NativeTvFallback? nativeTvFallbackFor({
       break;
   }
   if (softwareRoute) return NativeTvFallback.softwareRoute;
+  if (streaming && hlsStartOffset > Duration.zero) {
+    return NativeTvFallback.hlsOffset;
+  }
   final bitmapRefused = refusal == OnyxAppleNativeReason.bitmapSubtitles;
   return switch (subtitle) {
     NativeTvSubtitleKind.image when !streaming && bitmapRefused =>

@@ -3,21 +3,19 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:onyx_player_apple/onyx_player_apple.dart';
 
-import '../../../l10n/tr.dart';
-import '../../../models/models.dart';
 import '../../../services/client_log.dart';
-import '../player_menu_choices.dart';
-import '../video_display_mode.dart';
-import '../widgets/direct_source_label.dart';
-import '../widgets/track_label.dart';
 import 'aether_video_fit.dart';
 import 'native_tv_fallback.dart';
+import 'native_tv_intent.dart';
 import 'native_tv_preference.dart';
 import 'native_tv_screen.dart';
-import 'playback_session.dart';
-import 'skip_segments.dart';
 
+export 'native_tv_contract.dart';
 export 'native_tv_fallback.dart';
+export 'native_tv_intent.dart';
+export 'native_tv_panels.dart';
+export 'native_tv_questions.dart';
+export 'native_tv_spec.dart';
 
 /// Si le lecteur prend l'écran natif d'Apple TV (`AVPlayerViewController`)
 /// au lieu de son interface Flutter.
@@ -27,399 +25,34 @@ export 'native_tv_fallback.dart';
 /// du média, lui, passe par `nativeTvFallbackFor` (`native_tv_fallback.dart`).
 bool isNativeTvPlayerEligible() => NativeTvPlayerPreference.eligibleHere;
 
-/// La spec que reçoit l'écran natif, sous un nom du lecteur.
-typedef NativeTvSpec = OnyxAppleNativeSpec;
+/// Ce que l'écran natif retient d'une spec à l'autre et que l'interface Onyx
+/// garde dans ses propres widgets : l'état du bouton « Démarrer une séance »,
+/// le moment où l'épisode suivant a été proposé.
+class NativeTvMemory {
+  /// Le panneau des épisodes a demandé sa saison : une seule fois par
+  /// lecteur, même quand le chargement échoue.
+  bool episodesRequested = false;
 
-/// Ce que le lecteur sait à cet instant, de quoi bâtir l'écran natif.
-///
-/// Des valeurs plutôt que le contrôleur : la construction de la spec se teste
-/// sans moteur ni écran.
-class NativeTvState {
-  const NativeTvState({
-    required this.title,
-    this.subtitle,
-    this.posterUrl,
-    this.overview,
-    required this.rate,
-    required this.rates,
-    required this.mode,
-    this.quality,
-    this.serverAudio,
-    this.selectedAudioIndex = -1,
-    this.engineAudio = const [],
-    this.currentEngineAudio,
-    this.skipSegment,
-    this.hasNextEpisode = false,
-  });
+  bool watchPartyStarting = false;
+  String? watchPartyError;
 
-  final String title;
-  final String? subtitle;
-  final String? posterUrl;
-  final String? overview;
-  final double rate;
-  final List<double> rates;
-  final VideoDisplayMode mode;
+  int? _nextUpEpisodeId;
+  Duration? _nextUpTransition;
+  int? _nextUpDeferredId;
 
-  /// Null quand la qualité n'a pas de menu (lecteur pas encore initialisé).
-  final NativeTvQuality? quality;
-
-  /// La liste canonique du serveur, ou null : on retombe alors sur les pistes
-  /// que le moteur a énumérées, comme le menu Onyx.
-  final List<MediaAudioTrack>? serverAudio;
-  final int selectedAudioIndex;
-  final List<PlaybackTrack> engineAudio;
-  final PlaybackTrack? currentEngineAudio;
-
-  /// Le segment que « Passer » propose maintenant, ou null.
-  final SkipSegment? skipSegment;
-
-  /// « Épisode suivant » est proposé.
-  final bool hasNextEpisode;
-}
-
-/// L'état du menu Qualité.
-class NativeTvQuality {
-  const NativeTvQuality({
-    required this.tiers,
-    required this.current,
-    required this.isAuto,
-    required this.autoAvailable,
-    required this.isLocalPlayback,
-  });
-
-  final List<QualityTier> tiers;
-
-  /// La clé du barreau joué, ou null en Direct Play.
-  final String? current;
-  final bool isAuto;
-  final bool autoAvailable;
-  final bool isLocalPlayback;
-}
-
-/// Les identifiants que Dart donne aux menus et aux actions, rendus tels quels
-/// par le natif dans ses événements.
-abstract final class NativeTvIds {
-  const NativeTvIds._();
-
-  static const speed = 'speed';
-  static const fit = 'fit';
-  static const quality = 'quality';
-  static const audio = 'audio';
-
-  static const sleep = 'sleep';
-  static const chapters = 'chapters';
-  static const subtitles = 'subtitles';
-
-  static const skipSegment = 'skipSegment';
-  static const nextEpisode = 'nextEpisode';
-  static const previousEpisode = 'previousEpisode';
-  static const cancelAutoPlay = 'cancelAutoPlay';
-  static const watchPartyStart = 'watchParty.start';
-  static const watchPartyLeave = 'watchParty.leave';
-
-  /// Les questions posées par-dessus le lecteur ([OnyxAppleNativePrompt.id]).
-  static const stillWatching = 'stillWatching';
-  static const languageGap = 'languageGap';
-  static const launchLanguageGap = 'launchLanguageGap';
-  static const nextSeason = 'nextSeason';
-  static const upcomingEpisode = 'upcomingEpisode';
-  static const playingElsewhere = 'playingElsewhere';
-
-  /// Les réponses sont `<question>.<réponse>` : `stillWatching.continue`,
-  /// `languageGap.wait`, `nextSeason.request`, `playingElsewhere.resume`…
-  static String answer(String prompt, String answer) => '$prompt.$answer';
-
-  /// Les onglets du panneau d'infos ([OnyxAppleNativePanel.id]).
-  static const episodesPanel = 'episodes';
-  static const watchPartyPanel = 'watchParty';
-  static const statsPanel = 'stats';
-
-  /// Les lignes : `episode:<id>`, `member:<id>` ; les onglets `season:<id>`.
-  static const episodeRowPrefix = 'episode:';
-  static const memberRowPrefix = 'member:';
-  static const seasonTabPrefix = 'season:';
-
-  /// Les options du menu `sleep` et `chapters`.
-  static const sleepOff = 'off';
-  static const sleepEpisodesPrefix = 'episodes:';
-  static const sleepMinutesPrefix = 'minutes:';
-  static const chapterPrefix = 'chapter:';
-
-  static const qualityAuto = 'auto';
-  static const qualityDirect = 'direct';
-  static const qualityTierPrefix = 'tier:';
-
-  /// Une piste de la liste du serveur, par son rang.
-  static const audioIndexPrefix = 'index:';
-
-  /// Une piste du moteur, par son identifiant.
-  static const audioTrackPrefix = 'track:';
-}
-
-/// Construit la spec de l'écran natif. Tous les textes sont traduits ici :
-/// Swift n'affiche que ce qu'il reçoit.
-abstract final class NativeTvSpecBuilder {
-  const NativeTvSpecBuilder._();
-
-  static OnyxAppleNativeSpec build(NativeTvState state) {
-    return OnyxAppleNativeSpec(
-      title: state.title,
-      subtitle: state.subtitle,
-      posterUrl: state.posterUrl,
-      overview: state.overview,
-      menus: [
-        _speedMenu(state),
-        _fitMenu(state),
-        if (state.quality != null) _qualityMenu(state.quality!),
-        if (_audioMenu(state) case final audio?) audio,
-      ],
-      actions: [
-        if (state.skipSegment case final segment?)
-          OnyxAppleNativeAction(
-            id: NativeTvIds.skipSegment,
-            label: switch (segment) {
-              SkipSegment.recap => tr('Passer le récap'),
-              SkipSegment.intro => tr('Passer l’intro'),
-            },
-          ),
-        if (state.hasNextEpisode)
-          OnyxAppleNativeAction(
-            id: NativeTvIds.nextEpisode,
-            label: tr('Épisode suivant'),
-          ),
-      ],
-      chapters: const [],
-      infoActions: const [],
-      panels: const [],
-      interceptSeeks: false,
-    );
-  }
-
-  static OnyxAppleNativeMenu _speedMenu(NativeTvState state) =>
-      OnyxAppleNativeMenu(
-        id: NativeTvIds.speed,
-        label: tr('Vitesse de lecture'),
-        options: [
-          for (final rate in state.rates)
-            OnyxAppleNativeOption(
-              id: '$rate',
-              label: PlayerMenuChoices.rateLabel(rate),
-              selected: rate == state.rate,
-            ),
-        ],
-      );
-
-  static OnyxAppleNativeMenu _fitMenu(NativeTvState state) =>
-      OnyxAppleNativeMenu(
-        id: NativeTvIds.fit,
-        label: tr('Format d’image'),
-        options: [
-          for (final mode in VideoDisplayMode.values)
-            OnyxAppleNativeOption(
-              id: mode.name,
-              label: mode.label,
-              selected: mode == state.mode,
-            ),
-        ],
-      );
-
-  /// Les mêmes lignes que le menu Onyx : Auto quand le serveur annonce ses
-  /// débits, le fichier tel quel, puis l'échelle.
-  static OnyxAppleNativeMenu _qualityMenu(NativeTvQuality quality) {
-    final auto = quality.isAuto;
-    return OnyxAppleNativeMenu(
-      id: NativeTvIds.quality,
-      label: tr('Qualité'),
-      options: [
-        if (quality.autoAvailable)
-          OnyxAppleNativeOption(
-            id: NativeTvIds.qualityAuto,
-            label: tr('Auto'),
-            selected: auto,
-          ),
-        OnyxAppleNativeOption(
-          id: NativeTvIds.qualityDirect,
-          label: directSourceLabel(local: quality.isLocalPlayback).label,
-          selected: !auto && quality.current == null,
-        ),
-        for (final tier in quality.tiers)
-          OnyxAppleNativeOption(
-            id: '${NativeTvIds.qualityTierPrefix}${tier.key}',
-            label: tier.label,
-            selected: !auto && quality.current == tier.key,
-          ),
-      ],
-    );
-  }
-
-  /// Null quand il n'y a aucune piste à proposer.
-  static OnyxAppleNativeMenu? _audioMenu(NativeTvState state) {
-    final server = state.serverAudio;
-    final List<OnyxAppleNativeOption> options;
-    if (server != null && server.isNotEmpty) {
-      options = [
-        for (var i = 0; i < server.length; i++)
-          OnyxAppleNativeOption(
-            id: '${NativeTvIds.audioIndexPrefix}$i',
-            label: splitTrackLabel(server[i].displayName).$1,
-            selected: i == state.selectedAudioIndex,
-          ),
-      ];
-    } else {
-      final engine = state.engineAudio;
-      options = [
-        for (var i = 0; i < engine.length; i++)
-          OnyxAppleNativeOption(
-            id: '${NativeTvIds.audioTrackPrefix}${engine[i].id}',
-            label: engine[i].id == 'no'
-                ? tr('Désactivé')
-                : engine[i].title ??
-                    (engine[i].language != null
-                        ? tr('Audio ({0})', [engine[i].language])
-                        : tr('Audio {0}', [i + 1])),
-            selected: engine[i] == state.currentEngineAudio,
-          ),
-      ];
+  /// Le moment de la proposition de [episodeId], retenu à sa première
+  /// demande : la spec ne doit pas changer à chaque position.
+  Duration nextUpTransition(int episodeId, Duration Function() now) {
+    if (_nextUpEpisodeId != episodeId || _nextUpTransition == null) {
+      _nextUpEpisodeId = episodeId;
+      _nextUpTransition = now();
     }
-    if (options.isEmpty) return null;
-    return OnyxAppleNativeMenu(
-      id: NativeTvIds.audio,
-      label: tr('Audio'),
-      options: options,
-    );
+    return _nextUpTransition!;
   }
-}
 
-/// Ce qu'un événement natif demande au lecteur. Chaque cas a déjà son
-/// gestionnaire dans l'écran du lecteur : ce type ne fait que traduire.
-sealed class NativeTvIntent {
-  const NativeTvIntent();
-}
-
-final class NativeTvSkipSegment extends NativeTvIntent {
-  const NativeTvSkipSegment();
-}
-
-final class NativeTvNextEpisode extends NativeTvIntent {
-  const NativeTvNextEpisode();
-}
-
-final class NativeTvSetRate extends NativeTvIntent {
-  const NativeTvSetRate(this.rate);
-  final double rate;
-}
-
-final class NativeTvSetFit extends NativeTvIntent {
-  const NativeTvSetFit(this.mode);
-  final VideoDisplayMode mode;
-}
-
-/// [auto] pour « Auto », sinon [key] : un barreau, ou null pour le Direct.
-final class NativeTvSetQuality extends NativeTvIntent {
-  const NativeTvSetQuality({this.key, this.auto = false});
-  final String? key;
-  final bool auto;
-}
-
-/// Une piste de la liste du serveur ([serverIndex]) ou du moteur
-/// ([engineTrackId]), selon la liste que le menu a proposée.
-final class NativeTvSetAudio extends NativeTvIntent {
-  const NativeTvSetAudio({this.serverIndex, this.engineTrackId});
-  final int? serverIndex;
-  final String? engineTrackId;
-}
-
-/// Un sous-titre choisi dans le menu AVKit, dans la numérotation du lecteur
-/// (`PlaybackTrack.id`) : nul pour « aucun ».
-final class NativeTvSetSubtitle extends NativeTvIntent {
-  const NativeTvSetSubtitle(this.trackId);
-  final String? trackId;
-}
-
-/// L'écran natif s'est fermé. [byUser] pour Menu sur la télécommande ; sinon
-/// c'est l'app qui l'a demandé.
-final class NativeTvClosed extends NativeTvIntent {
-  const NativeTvClosed({required this.byUser});
-  final bool byUser;
-}
-
-/// Le natif ne peut pas jouer ceci : l'écran Flutter reprend la main.
-final class NativeTvUnavailable extends NativeTvIntent {
-  const NativeTvUnavailable(this.reason);
-  final OnyxAppleNativeReason? reason;
-}
-
-/// Traduit un événement natif, ou null pour un identifiant inconnu (un natif
-/// plus récent que ce Dart) : il est ignoré plutôt que mal compris.
-NativeTvIntent? nativeTvIntentOf(OnyxAppleNativeEvent event) {
-  switch (event.kind) {
-    case OnyxAppleNativeEventKind.action:
-      return switch (event.actionId) {
-        NativeTvIds.skipSegment => const NativeTvSkipSegment(),
-        NativeTvIds.nextEpisode => const NativeTvNextEpisode(),
-        _ => null,
-      };
-    case OnyxAppleNativeEventKind.menuSelected:
-      return _menuIntent(event.menuId, event.optionId);
-    case OnyxAppleNativeEventKind.subtitleSelected:
-      return NativeTvSetSubtitle(event.trackId);
-    case OnyxAppleNativeEventKind.dismissed:
-      return NativeTvClosed(
-        byUser: event.reason != OnyxAppleNativeReason.requested,
-      );
-    case OnyxAppleNativeEventKind.unavailable:
-      return NativeTvUnavailable(event.reason);
-    case OnyxAppleNativeEventKind.transport:
-    case OnyxAppleNativeEventKind.userSeeked:
-    case OnyxAppleNativeEventKind.seekRequested:
-    case OnyxAppleNativeEventKind.panelRowSelected:
-    case OnyxAppleNativeEventKind.panelTabSelected:
-    case OnyxAppleNativeEventKind.userActivity:
-      // Contrat posé, pas encore branché (docs/agents/native-tv-parity.md).
-      return null;
-  }
-}
-
-NativeTvIntent? _menuIntent(String? menuId, String? optionId) {
-  if (optionId == null) return null;
-  switch (menuId) {
-    case NativeTvIds.speed:
-      final rate = double.tryParse(optionId);
-      return rate == null ? null : NativeTvSetRate(rate);
-    case NativeTvIds.fit:
-      final mode = VideoDisplayMode.values
-          .where((mode) => mode.name == optionId)
-          .firstOrNull;
-      return mode == null ? null : NativeTvSetFit(mode);
-    case NativeTvIds.quality:
-      if (optionId == NativeTvIds.qualityAuto) {
-        return const NativeTvSetQuality(auto: true);
-      }
-      if (optionId == NativeTvIds.qualityDirect) {
-        return const NativeTvSetQuality();
-      }
-      if (optionId.startsWith(NativeTvIds.qualityTierPrefix)) {
-        return NativeTvSetQuality(
-          key: optionId.substring(NativeTvIds.qualityTierPrefix.length),
-        );
-      }
-      return null;
-    case NativeTvIds.audio:
-      if (optionId.startsWith(NativeTvIds.audioIndexPrefix)) {
-        final index = int.tryParse(
-          optionId.substring(NativeTvIds.audioIndexPrefix.length),
-        );
-        return index == null ? null : NativeTvSetAudio(serverIndex: index);
-      }
-      if (optionId.startsWith(NativeTvIds.audioTrackPrefix)) {
-        return NativeTvSetAudio(
-          engineTrackId:
-              optionId.substring(NativeTvIds.audioTrackPrefix.length),
-        );
-      }
-      return null;
-  }
-  return null;
+  /// « Plus tard » : la proposition de [episodeId] ne revient pas.
+  void deferNextUp(int episodeId) => _nextUpDeferredId = episodeId;
+  bool nextUpDeferred(int episodeId) => _nextUpDeferredId == episodeId;
 }
 
 /// Tient l'écran natif d'Apple TV pour un lecteur : le présente, le garde à
@@ -456,6 +89,9 @@ class NativeTvPresenter {
   OnyxAppleNativeSpec? _sent;
   OnyxAppleVideoFit? _sentFit;
   bool _disposed = false;
+
+  /// Vit et meurt avec ce lecteur, comme l'écran natif.
+  final NativeTvMemory memory = NativeTvMemory();
 
   /// Le natif a refusé (`unavailable`) ou l'utilisateur l'a fermé : il ne se
   /// présente plus pour ce lecteur. Le représenter après un refus, c'était
