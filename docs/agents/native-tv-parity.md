@@ -67,6 +67,8 @@ ce soit.
 Légende de l'état :
 
 - **déjà fait** : livré avec l'ADR-0105 ;
+- **fait** : livré par les lots de parité (`e3a60042` Swift, `f7175e9b` Dart, relus ensemble le
+  2026-11-05), jamais vérifié à l'appareil ;
 - **partiel** : livré, mais avec un défaut ou un manque ;
 - **à faire** ;
 - **repli** : le natif rend la main à Flutter, ce qui est voulu ou temporaire ;
@@ -78,13 +80,13 @@ Légende de l'état :
 
 | Fonction | Code Onyx | État natif | Moyen prévu | Remarque |
 |---|---|---|---|---|
-| Lecture / pause (OK, bouton central) | `player_screen_flow.dart` (`_togglePlayPause`), `onyx_controls_layer.dart` (`_buildTransport`) | partiel | comportement natif d'AVKit + événement `transport` | Le geste marche, mais rien ne remonte : séance, `_wantsPlayback`, `StillWatching`. Voir §1.1. |
-| Reculer / avancer de 10 s (flèches, clic sur les bords) | `player_key_routing.dart` (`PlayerKeyRemoteSeek`), `player_screen_remote.dart` (`_remoteSeekStep`) | partiel | comportement natif + délégué `willResumePlaybackAfterUserNavigatedFromTime` → `userSeeked` | Même défaut. |
-| Barre de progression, balayage au trackpad (ADR-0039) | `widgets/onyx/onyx_progress_bar.dart`, `player_screen_remote.dart` (`_handleTouchpadMove`), `playback/remote_seek.dart` | partiel | comportement natif + `userSeeked` | |
-| Recherche HLS hors de la fenêtre encodée | `hooks/player_controller_hls.dart` (`seekToAbsoluteSeconds`) | à faire | délégué `timeToSeekAfterUserNavigatedFromTime` → `seekRequested` quand `interceptSeeks` | Le natif rend `oldTime` et Dart cherche. Un saut visuel est possible (à confirmer à l'appareil). |
-| Timeline absolue en HLS (offset de session) | `hooks/player_controller_hls.dart` (`_hlsStartOffset`) | à faire (repli) | repli Onyx tant que l'offset est non nul | Voir §1.5. Une timeline complète côté serveur relève du chantier transcodage. |
+| Lecture / pause (OK, bouton central) | `player_screen_flow.dart` (`_togglePlayPause`), `onyx_controls_layer.dart` (`_buildTransport`) | fait | comportement natif d'AVKit + événement `transport` | `NativeTransportWatch` (Swift) ; `_applyNativeTransport` (Dart). |
+| Reculer / avancer de 10 s (flèches, clic sur les bords) | `player_key_routing.dart` (`PlayerKeyRemoteSeek`), `player_screen_remote.dart` (`_remoteSeekStep`) | fait | comportement natif + délégué `willResumePlaybackAfterUserNavigatedFromTime` → `userSeeked` | Même défaut. |
+| Barre de progression, balayage au trackpad (ADR-0039) | `widgets/onyx/onyx_progress_bar.dart`, `player_screen_remote.dart` (`_handleTouchpadMove`), `playback/remote_seek.dart` | fait | comportement natif + `userSeeked` | |
+| Recherche HLS hors de la fenêtre encodée | `hooks/player_controller_hls.dart` (`seekToAbsoluteSeconds`) | fait | délégué `timeToSeekAfterUserNavigatedFromTime` → `seekRequested` quand `interceptSeeks` | Le natif rend `oldTime` et Dart cherche. Une recherche hors de la fenêtre encodée reconstruit la session, qui ne part plus du début : repli `hlsOffset`. |
+| Timeline absolue en HLS (offset de session) | `hooks/player_controller_hls.dart` (`_hlsStartOffset`) | repli | repli Onyx tant que l'offset est non nul | Repli `hlsOffset` livré. Touche aussi toute reprise d'une source transcodée (ADR-0106). Une timeline complète côté serveur reste à faire. |
 | Vignettes de la barre | `playback/timeline_previews.dart` | impossible | — | AVKit ne tire ses vignettes que d'une playlist I-frame HLS, et aucune API publique n'en accepte d'autres. Une playlist I-frame servie par le moteur sur la route loopback reste possible côté AetherEngine (à confirmer). |
-| Graduations des chapitres sur la barre | `onyx_controls_layer.dart` (`chapterMarks`) | à faire | `navigationMarkerGroups` (voir Chapitres) | Rendu à confirmer à l'appareil. |
+| Graduations des chapitres sur la barre | `onyx_controls_layer.dart` (`chapterMarks`) | fait | `navigationMarkerGroups` (voir Chapitres) | Rendu à confirmer à l'appareil. |
 | Retour visuel d'un saut | `widgets/seek_feedback_overlay.dart` | déjà fait | comportement natif | |
 | Roue de chargement, voile pendant un changement de qualité | `player_screen.dart` (`PlayerLoadingSpinner`, voile `isSwitchingQuality`) | déjà fait | comportement natif (roue d'AVKit) | Le moteur garde le même `AVPlayer` à un changement de qualité. |
 | Le chrome se cache, le focus suit la télécommande | `player_screen_remote.dart` (`_ensureRemoteInChrome`, `_leaveControlBar`), `chrome_auto_hide.dart` | déjà fait | comportement natif | |
@@ -107,16 +109,16 @@ Légende de l'état :
 
 | Fonction | Code Onyx | État natif | Moyen prévu | Remarque |
 |---|---|---|---|---|
-| Qualité : Auto, le fichier tel quel, l'échelle | `onyx_settings_menu.dart` (`_buildQuality`), `hooks/use_auto_quality.dart` | partiel | `transportBarCustomMenuItems` (menu `quality`) | Il manque les secondes lignes « Le fichier tel quel », « S'adapte à la connexion », « Couleurs incorrectes sur cet appareil » et la valeur « Auto · 1080p » : `OnyxAppleNativeOption.detail` → `UIMenuElement.subtitle` (à confirmer à la compilation, puis à l'appareil pour le rendu). |
-| Audio | `onyx_settings_menu.dart` (`_buildAudio`), `hooks/player_controller_tracks.dart` | partiel | `transportBarCustomMenuItems` (menu `audio`) | Seule la seconde ligne manque : codec et canaux, via `splitTrackLabel(...).$2` → `detail`. |
+| Qualité : Auto, le fichier tel quel, l'échelle | `onyx_settings_menu.dart` (`_buildQuality`), `hooks/use_auto_quality.dart` | fait | `transportBarCustomMenuItems` (menu `quality`) | Il manque les secondes lignes « Le fichier tel quel », « S'adapte à la connexion », « Couleurs incorrectes sur cet appareil » et la valeur « Auto · 1080p » : `OnyxAppleNativeOption.detail` → `UIMenuElement.subtitle` (à confirmer à la compilation, puis à l'appareil pour le rendu). |
+| Audio | `onyx_settings_menu.dart` (`_buildAudio`), `hooks/player_controller_tracks.dart` | fait | `transportBarCustomMenuItems` (menu `audio`) | Seule la seconde ligne manque : codec et canaux, via `splitTrackLabel(...).$2` → `detail`. |
 | Sous-titres texte en Direct Play | `onyx_settings_menu.dart` (`_buildSubtitles`), `playback/series_track_memory.dart` | déjà fait | menu Sous-titres natif d'AVKit (groupe `legible`) + `subtitleSelected` | Étape 4 de l'ADR-0105. |
 | Sous-titres texte en HLS (servis à part, peints par Flutter, ADR-0031) | `playback/live_subtitles.dart`, `playback/subtitle_overlay.dart` | repli (`overlaySubtitles`) | `contentOverlayView`, la même couche que les sous-titres image | À aligner sur le chantier des sous-titres image : même vue, mêmes répliques poussées par Dart. Le menu passe alors par `transportBarCustomMenuItems` (menu `subtitles`, qu'`OnyxAppleNativeMenu` prévoit déjà). |
 | Sous-titres image (PGS, VobSub) | `playback/subtitle_bitmap_overlay.dart` | déjà fait | `contentOverlayView` (`NativeBitmapSubtitles.swift`) + menu Sous-titres natif (renditions OCR) | ADR-0107. Repli `bitmapSubtitles` seulement si la couche ne se pose pas. Les répliques ne remontent pas encore avec la barre de transport. |
-| Vitesse de lecture | `onyx_settings_menu.dart` (`_buildSpeed`) | partiel | `transportBarCustomMenuItems` (menu `speed`) + `speeds = []` | Le menu Vitesse d'AVKit fait doublon. Voir §1.2. |
-| Affichage : Original, Remplir la hauteur, Remplir | `onyx_settings_menu.dart` (`_buildDisplay`), `video_display_mode.dart` | partiel | `transportBarCustomMenuItems` (menu `fit`) + `videoGravity` | Il manque la description de chaque mode (`mode.description` → `detail`). `AVPlayerViewController.videoGravity` n'était pas réglé (`engine.videoGravity` ne touche que les calques du moteur) : corrigé avec l'ADR-0107. |
+| Vitesse de lecture | `onyx_settings_menu.dart` (`_buildSpeed`) | fait | `transportBarCustomMenuItems` (menu `speed`) + `speeds = []` | `speeds = []` : un seul menu Vitesse. |
+| Affichage : Original, Remplir la hauteur, Remplir | `onyx_settings_menu.dart` (`_buildDisplay`), `video_display_mode.dart` | fait | `transportBarCustomMenuItems` (menu `fit`) + `videoGravity` | Il manque la description de chaque mode (`mode.description` → `detail`). `AVPlayerViewController.videoGravity` n'était pas réglé (`engine.videoGravity` ne touche que les calques du moteur) : corrigé avec l'ADR-0107. |
 | Zoom au pincement, indice de zoom | `pinch_zoom_fit.dart`, `widgets/video_zoom_hint.dart` | sans objet | — | Réservé aux appareils tenus en main (`_handheld`). Ce n'est donc pas une perte sur Apple TV, contrairement à ce que dit l'ADR. |
-| Minuterie de veille (durées, « À la fin de l'épisode », « Après N épisodes », « reste … ») | `playback/sleep_timer.dart`, `onyx_settings_menu.dart` (`_buildSleep`) | à faire | `transportBarCustomMenuItems` (menu `sleep`) | Le contrat actuel suffit, plus `detail` pour « reste 12 min ». L'échéance met en pause côté Dart, ce qui marche déjà en natif. |
-| Chapitres (liste, saut) | `onyx_settings_menu.dart` (`_buildChapters`), `hooks/use_episode_navigation.dart` (`chapters`) | à faire | `AVPlayerItem.navigationMarkerGroups`, à reposer sur chaque item | Panneau Chapitres natif, à confirmer à l'appareil. Si AVKit ne l'affiche pas hors HLS, prévoir un menu `chapters` dans `transportBarCustomMenuItems`. Un saut de chapitre est une navigation de l'utilisateur, donc il remonte en `userSeeked`. |
+| Minuterie de veille (durées, « À la fin de l'épisode », « Après N épisodes », « reste … ») | `playback/sleep_timer.dart`, `onyx_settings_menu.dart` (`_buildSleep`) | fait | `transportBarCustomMenuItems` (menu `sleep`) | Le contrat actuel suffit, plus `detail` pour « reste 12 min ». L'échéance met en pause côté Dart, ce qui marche déjà en natif. |
+| Chapitres (liste, saut) | `onyx_settings_menu.dart` (`_buildChapters`), `hooks/use_episode_navigation.dart` (`chapters`) | fait | `AVPlayerItem.navigationMarkerGroups`, à reposer sur chaque item | `navigationMarkerGroups` reposés sur chaque item. Le menu de repli `chapters` est décodé côté Dart mais pas envoyé : à n'ajouter que si AVKit n'affiche pas le panneau hors HLS. |
 | Délai audio ou sous-titres | — | sans objet | — | N'existe pas dans Onyx. |
 | Style des sous-titres | — | déjà fait | comportement natif (réglages d'accessibilité tvOS) | Onyx n'a pas de réglage de style. AVKit applique celui du système. |
 
@@ -125,17 +127,17 @@ Légende de l'état :
 | Fonction | Code Onyx | État natif | Moyen prévu | Remarque |
 |---|---|---|---|---|
 | Passer l'intro, passer le récap | `widgets/onyx/onyx_skip_intro_button.dart`, `playback/skip_segments.dart` | déjà fait | `contextualActions` (`skipSegment`) | |
-| Saut automatique avec compte à rebours | `hooks/use_episode_navigation.dart` (`introAutoSkipCountdown`, `_startIntroAutoSkip`) | partiel | `contextualActions` (libellé fixe) + événement `userActivity` | Le saut se fait (Dart), mais la pastille qui se remplit n'existe pas, et rien ne gèle le compte à rebours. Réécrire `contextualActions` chaque seconde est déconseillé (focus). |
+| Saut automatique avec compte à rebours | `hooks/use_episode_navigation.dart` (`introAutoSkipCountdown`, `_startIntroAutoSkip`) | partiel | `contextualActions` (libellé fixe) + événement `userActivity` | Le compte à rebours se gèle (`userActivity`), mais la pastille qui se remplit n'existe pas. |
 | Marqueurs de segments sur la barre | — | impossible (écarté) | ~~`AVInterstitialTimeRange`~~ | L'en-tête le dit : une plage interstitielle est repliée en un point de la barre. L'intro disparaîtrait de la durée affichée. |
-| Épisode suivant au générique, compte à rebours, « Annuler » | `widgets/next_episode_overlay.dart`, `hooks/use_episode_navigation.dart` (`_startOutroAutoPlay`, `cancelAutoPlay`) | partiel | `AVContentProposal` + sous-classe d'`AVContentProposalViewController` | Aujourd'hui, une action contextuelle sans compte à rebours ; l'enchaînement se fait quand même (Dart). Voir le détail sous ce tableau. |
-| Pas de compte à rebours si la minuterie s'arrête après cet épisode | `player_screen.dart` (`SleepTimer.instance.stopsAfterThisEpisode`) | à faire | `nextUp.countdownSeconds` nul | Décidé côté Dart. |
-| Épisode précédent, épisode suivant (boutons de transport) | `onyx_controls_layer.dart` (`onSkipPrevious`, `onSkipNext`), `hooks/use_episodes_panel.dart` (épisode précédent) | à faire | `infoViewActions` (deux au plus, d'après l'en-tête) | Remplace « Lire depuis le début », qui contournerait Dart. Une liste vide le retire aussi. |
-| Panneau des épisodes (saisons, liste, ouvrir un épisode) | `widgets/player_episodes_panel.dart`, `hooks/use_episodes_panel.dart` | à faire | `customInfoViewControllers`, onglet « Épisodes » | Panneau générique (§3) : saisons en onglets, épisodes en lignes. |
-| Carte « saison suivante » (la demander) | `widgets/next_season_overlay.dart` | repli (`_needsFlutterScreen`) | question native (`UIAlertController` présenté sur l'`AVPlayerViewController`) | Une sous-classe d'`AVContentProposalViewController` peut réduire l'image comme la carte Onyx, mais une seule proposition existe par item. La question est plus simple. |
-| Carte « épisode pas encore sorti » | `widgets/upcoming_episode_overlay.dart` | repli | question native | |
-| Question de langue (épisode suivant ou lancement sans la langue suivie) | `widgets/language_gap_overlay.dart`, `playback/audio_language_gap.dart` | repli | question native | |
-| « Vous regardez encore ? » | `widgets/still_watching_prompt.dart`, `playback/still_watching.dart` | repli | question native + `userActivity` | Sans `userActivity`, le compte d'épisodes est faux (§1.1). |
-| Lecture reprise sur un autre appareil | `hooks/use_playback_handoff.dart`, `widgets/player_status_panels.dart` (`PlayingElsewhere`) | repli | question native | |
+| Épisode suivant au générique, compte à rebours, « Annuler » | `widgets/next_episode_overlay.dart`, `hooks/use_episode_navigation.dart` (`_startOutroAutoPlay`, `cancelAutoPlay`) | fait | `AVContentProposal` + sous-classe d'`AVContentProposalViewController` | `NativeNextUpProposalController`, compte à rebours en anneau (pas de libellé traduit dans le contrat). « Plus tard » gèle le compte à rebours et retire la proposition pour cet épisode. |
+| Pas de compte à rebours si la minuterie s'arrête après cet épisode | `player_screen.dart` (`SleepTimer.instance.stopsAfterThisEpisode`) | fait | `nextUp.countdownSeconds` nul | Décidé côté Dart. |
+| Épisode précédent, épisode suivant (boutons de transport) | `onyx_controls_layer.dart` (`onSkipPrevious`, `onSkipNext`), `hooks/use_episodes_panel.dart` (épisode précédent) | fait | `infoViewActions` (deux au plus, d'après l'en-tête) | Remplace « Lire depuis le début », qui contournerait Dart. Une liste vide le retire aussi. |
+| Panneau des épisodes (saisons, liste, ouvrir un épisode) | `widgets/player_episodes_panel.dart`, `hooks/use_episodes_panel.dart` | fait | `customInfoViewControllers`, onglet « Épisodes » | Chargé dès la première présentation : aucun événement ne dit quand AVKit affiche l'onglet. |
+| Carte « saison suivante » (la demander) | `widgets/next_season_overlay.dart` | fait | question native (`UIAlertController` présenté sur l'`AVPlayerViewController`) | Question native ; « Demander » envoie la demande, range la question et l'annonce. |
+| Carte « épisode pas encore sorti » | `widgets/upcoming_episode_overlay.dart` | fait | question native | |
+| Question de langue (épisode suivant ou lancement sans la langue suivie) | `widgets/language_gap_overlay.dart`, `playback/audio_language_gap.dart` | fait | question native | |
+| « Vous regardez encore ? » | `widgets/still_watching_prompt.dart`, `playback/still_watching.dart` | fait | question native + `userActivity` | Sans `userActivity`, le compte d'épisodes est faux (§1.1). |
+| Lecture reprise sur un autre appareil | `hooks/use_playback_handoff.dart`, `widgets/player_status_panels.dart` (`PlayingElsewhere`) | fait | question native | |
 | Démarrage bloqué (« Réessayer ») | `widgets/player_status_panels.dart` (`StalledStartup`) | repli (définitif) | repli Onyx | Arrive avant la première image ou pendant un rechargement. L'interface Flutter est déjà là pour ça. |
 | Retour après une TV éteinte (`PlayerAwayGuard`) | `playback/away_from_screen.dart` | déjà fait | — (Dart, par le moteur) | Une recherche ordinaire, faite par Dart. |
 
@@ -155,10 +157,10 @@ Légende de l'état :
 
 | Fonction | Code Onyx | État natif | Moyen prévu | Remarque |
 |---|---|---|---|---|
-| Panneau : démarrer une séance, code, participants, hôte, quitter | `widgets/watch_party_overlay.dart` (`WatchPartyPanel`), `hooks/use_player_watch_party.dart` (`start`, `leave`) | à faire | `customInfoViewControllers`, onglet « Regarder ensemble » | Panneau générique : texte, code, lignes des participants, actions. « Copier » est sans objet sur TV. |
-| Annonces (« alex a mis en pause »), attente d'un participant | `widgets/watch_party_overlay.dart` (`WatchPartyToast`), `use_player_watch_party.dart` (`notice`, `waitingMessage`) | à faire | `contentOverlayView` (`spec.toast`) | Non interactif, au-dessus de l'image et sous les contrôles. |
+| Panneau : démarrer une séance, code, participants, hôte, quitter | `widgets/watch_party_overlay.dart` (`WatchPartyPanel`), `hooks/use_player_watch_party.dart` (`start`, `leave`) | fait | `customInfoViewControllers`, onglet « Regarder ensemble » | Panneau générique : texte, code, lignes des participants, actions. « Copier » est sans objet sur TV. |
+| Annonces (« alex a mis en pause »), attente d'un participant | `widgets/watch_party_overlay.dart` (`WatchPartyToast`), `use_player_watch_party.dart` (`notice`, `waitingMessage`) | fait | `contentOverlayView` (`spec.toast`) | Non interactif, au-dessus de l'image et sous les contrôles. |
 | La séance pilote le lecteur (lecture, pause, recherche, vitesse) | `services/watch_party.dart`, `use_player_watch_party.dart` (`applyPlaying`, `applySeek`, `applyRateFactor`) | déjà fait | — (passe par le moteur) | AVKit reflète l'`AVPlayer`. |
-| Les gestes locaux sont annoncés à la séance | `player_screen_flow.dart` (`_seekTo`, `_togglePlayPause`) | à faire (régression) | événements `transport`, `userSeeked`, `seekRequested` → mêmes chemins | Priorité 1 (§1.1). |
+| Les gestes locaux sont annoncés à la séance | `player_screen_flow.dart` (`_seekTo`, `_togglePlayPause`) | fait | événements `transport`, `userSeeked`, `seekRequested` → mêmes chemins | Priorité 1 (§1.1). |
 | La séance change de média | `use_player_watch_party.dart` (`openMedia`) | déjà fait | — | Nouvel écran, donc `dismissNative` puis `presentNative`, comme l'épisode suivant. À vérifier à l'appareil. |
 | Rejoindre une séance, invitations | menu du compte (hors lecteur) | sans objet | — | |
 
@@ -172,15 +174,15 @@ Légende de l'état :
 | Reprise après coupure du flux, relais | `playback/stream_cut_recovery.dart`, `relay_trigger.dart` | déjà fait | — | Un rechargement garde l'`AVPlayer`. |
 | Journal de lecture et statistiques résumées (ADR-0026) | `playback/playback_stats.dart`, `engineLog` | déjà fait | — | |
 | Adapter l'écran au film (HDR, cadence), décodage matériel | `display_frame_rate.dart`, `hardware_decoding.dart` | déjà fait | `appliesPreferredDisplayCriteriaAutomatically = false`, le moteur écrit les critères | HDR et Dolby Vision à confirmer à l'appareil (spike, Q4). |
-| Codecs sans décodeur matériel (route logicielle) | `native_tv_fallback.dart` (`softwareRoute`) | chantier en cours | repli Onyx en attendant | Transcodage serveur. |
+| Codecs sans décodeur matériel (route logicielle) | `native_tv_fallback.dart` (`softwareRoute`) | fait | repli Onyx en attendant | HLS transcodé (ADR-0106). Repli Onyx si la session échoue, et à toute reprise (`hlsOffset`). |
 | Refus du natif, échec de présentation | `native_tv_fallback.dart`, `native_tv_presenter.dart` (`_refusal`) | déjà fait | repli Onyx | |
 
 ### 2.7 Statistiques et fonctions propres aux autres appareils
 
 | Fonction | Code Onyx | État natif | Moyen prévu | Remarque |
 |---|---|---|---|---|
-| Statistiques à l'écran | — (absent d'Onyx) | à faire (ajout) | `customInfoViewControllers`, onglet « Stats » | Swift lit le moteur chaque seconde tant que l'onglet est visible, avec la fonction qui sert `stats()`. Dart ne fournit que les libellés. |
-| Image dans l'image | `PictureInPictureBridge.swift` (iPhone, iPad) | sans objet | `allowsPictureInPicturePlayback = false` | Voir §1.3. |
+| Statistiques à l'écran | — (absent d'Onyx) | fait (ajout) | `customInfoViewControllers`, onglet « Stats » | Swift lit le moteur chaque seconde tant que l'onglet est visible, avec la fonction qui sert `stats()`. Dart ne fournit que les libellés. |
+| Image dans l'image | `PictureInPictureBridge.swift` (iPhone, iPad) | fait | `allowsPictureInPicturePlayback = false` | Voir §1.3. |
 | Volume, muet, luminosité, plein écran, verrouillage, PiP d'ordinateur, double tap | `onyx_brightness_slider.dart`, `player_screen_lock.dart`, `desktop_pip_overlay.dart`, `player_tap_zones.dart` | sans objet | — | Déjà absents du chrome TV. |
 
 ## 3. Extension du contrat Pigeon
@@ -607,15 +609,17 @@ l'ordre est une priorité : P1 corrige les défauts du §1, P2 et P3 ajoutent de
 14. Traductions anglaises de chaque nouveau texte dans `en.dart`. Tests du constructeur de spec et de la traduction des
     événements, sans moteur.
 
-## 5. Recette à ajouter
+## 5. Recette
 
-Ajouter à `docs/agents/native-tv-player-manual-tests.md`, une fois les lots livrés :
+**Fait** (2026-11-05) : `docs/agents/native-tv-player-manual-tests.md` couvre chaque fonction de parité
+(transport et gestes, secondes lignes, minuterie, chapitres, proposition et « Plus tard », questions,
+onglets Épisodes, Regarder ensemble et Stats, pas de Vitesse en double ni de PiP), Regarder ensemble à
+deux appareils, le transcodage (VC-1, MPEG-2, AV1, Hi10P, entrelacé), les PGS et le repli `hlsOffset`.
 
-- en séance partagée, pause et saut à la télécommande, avec le second appareil qui suit ;
-- « Vous regardez encore ? » qui ne tombe pas quand on s'est servi de la télécommande ;
-- minuterie de veille depuis le menu natif ;
-- chapitres ;
-- proposition d'épisode suivant avec compte à rebours, puis « Plus tard » ;
-- onglets Épisodes, Regarder ensemble et Stats ;
-- pas de menu Vitesse en double, pas de bouton PiP ;
-- reprise HLS à 40 min : repli vers Onyx tant que la timeline serveur n'est pas complète.
+Relecture croisée des deux lots : identifiants, types d'événements, champs nuls ou remplis et panneaux
+concordent. Un seul écart corrigé (`9af5fa48`) : une question qui en remplaçait une autre n'était pas
+posée tant qu'une nouvelle spec n'arrivait pas. Les types du contrat sont exportés par le paquet
+(`76edf048`).
+
+Reste ouvert : les sous-titres image ne remontent pas avec la barre de transport ; la touche « avance
+rapide » ; une timeline HLS complète côté serveur, qui lèverait le repli `hlsOffset`.

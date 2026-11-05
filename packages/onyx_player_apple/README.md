@@ -38,16 +38,38 @@ la dernière spec reçue. Décision : [ADR-0105](../../docs/adr/0105-lecteur-nat
 | API | Rôle |
 |---|---|
 | `presentNative(spec)` | Présente le contrôleur (un second appel vaut `updateNative`). Peut se faire pendant le `load`. |
-| `updateNative(spec)` | Applique titre, affiche, menus cochés (Vitesse, Format, Qualité, Audio) et actions contextuelles. |
+| `updateNative(spec)` | Applique la spec par morceaux : seul ce qui a changé est réaffecté, pour qu'un menu ouvert ou le focus d'un onglet tienne. |
 | `dismissNative()` | Ferme ; émet `dismissed/requested`. Sans effet si rien n'est présenté. |
 | `setLoadSubtitles(…)` | Déclare les sous-titres au `load` (requis pour le menu AVKit). |
-| `nativeEvents` | `action`, `menuSelected`, `subtitleSelected`, `dismissed`, `unavailable`. |
+| `nativeEvents` | Les gestes de l'utilisateur, voir ci-dessous. |
 
-Événements notables : Menu sur la télécommande donne `dismissed/userDismissed` (sans pause ni arrêt
-de la lecture : c'est à Dart) ; la route logicielle donne `unavailable/softwareRoute` puis la
-fermeture, sans `dismissed` ; `subtitleSelected` demande à Dart de rappeler `selectSubtitleTrack`.
+Ce que porte la spec (`OnyxAppleNativeSpec`), tous les textes traduits par Dart :
 
-Limites : iOS et macOS répondent `unavailable/unsupported` ; la route logicielle, les sous-titres
-image et le HLS avec sous-titre texte restent sur l'interface Flutter ; ni zoom, ni statistiques, ni
-toast « Regarder ensemble » ; non vérifié sur appareil (recette :
+| Champ | Côté AVKit |
+|---|---|
+| `title`, `subtitle`, `overview`, `posterUrl` | `externalMetadata`, rejouée par le moteur sur chaque item. |
+| `menus` (options avec `detail`) | `transportBarCustomMenuItems`, seconde ligne en `UIMenuElement.subtitle`. |
+| `actions` | `contextualActions` (« Passer l'intro », « Épisode suivant »). |
+| `infoActions` | `infoViewActions`, deux au plus ; vide retire « Lire depuis le début ». |
+| `chapters` | `navigationMarkerGroups`, reposés sur chaque item ; vide laisse ceux du fichier. |
+| `nextUp` | `AVContentProposal` présentée par `NativeNextUpProposalController`, jamais acceptée d'elle-même. |
+| `prompt` | `UIAlertController` ; reposé seulement quand son `id` change. |
+| `panels` | `customInfoViewControllers` (`NativeInfoPanelController`) ; le panneau `stats` lit le moteur chaque seconde. |
+| `toast` | `NativeOverlayView` dans le `contentOverlayView`, au-dessus des sous-titres image. |
+| `interceptSeeks` | Les navigations de l'utilisateur ne sont pas appliquées : `seekRequested`, et Dart cherche. |
+
+Événements : `action` (bouton, réponse à une question, « Lire » / « Plus tard » de la proposition),
+`menuSelected`, `subtitleSelected` (Dart rappelle `selectSubtitleTrack`), `dismissed` (Menu donne
+`userDismissed`, sans pause ni arrêt de la lecture), `unavailable` (`softwareRoute`,
+`bitmapSubtitles`, `presentationFailed`, `unsupported`), `transport` (lecture ou pause décidée dans
+AVKit, jamais pour une commande de Dart), `userSeeked`, `seekRequested`, `panelRowSelected`,
+`panelTabSelected` et `userActivity` (cinq secondes au moins entre deux). Les positions sont en temps
+de l'item, en millisecondes.
+
+Le natif coupe le menu Vitesse d'AVKit (`speeds = []`) et l'image dans l'image, et peint lui-même les
+sous-titres image (`NativeBitmapSubtitles.swift`, ADR-0107).
+
+Limites : iOS et macOS répondent `unavailable/unsupported` ; une piste texte en HLS et une session
+HLS qui ne part pas du début restent sur l'interface Flutter, comme la route logicielle quand le
+transcodage échoue (ADR-0106) ; non vérifié sur appareil (recette :
 `docs/agents/native-tv-player-manual-tests.md`).
