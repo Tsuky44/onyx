@@ -26,8 +26,9 @@ Future<String?> readInstallOriginMarker() async {
   if (Platform.isAndroid) return _readAndroid();
   if (Platform.isMacOS) return _readMacOS();
   // iOS, et tvOS que flutter-tvos annonce sous son propre nom.
-  if (Platform.isIOS || Platform.operatingSystem == 'tvos')
+  if (Platform.isIOS || Platform.operatingSystem == 'tvos') {
     return _readBundle();
+  }
   return null;
 }
 

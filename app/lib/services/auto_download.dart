@@ -137,8 +137,8 @@ class AutoDownloadPlanner {
 
     while (picks.length < missing) {
       final next = await catalog.nextEpisodeAfter(cursor);
-      if (next == null)
-        break; // fin de la série, ou le serveur n'a pas la suite
+      // Fin de la série, ou le serveur n'a pas la suite.
+      if (next == null) break;
       final id = next.media.id;
       // Un serveur qui renverrait l'épisode courant comme suivant ferait tourner
       // la boucle sans fin. On s'arrête, plutôt que d'y croire.

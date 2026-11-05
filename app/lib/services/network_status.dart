@@ -80,8 +80,8 @@ class NetworkStatus extends ChangeNotifier {
 
   /// Ce réseau-là se paie à l'octet, ou du moins il faut faire comme si.
   bool get isMetered {
-    if (isDisconnected)
-      return false; // rien à arbitrer : il n'y a pas de réseau
+    // Rien à arbitrer : il n'y a pas de réseau.
+    if (isDisconnected) return false;
     if (_systemMetered == true) return true;
     if (_systemMetered == false) return false;
     return kind == NetworkKind.mobile;
