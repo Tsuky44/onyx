@@ -209,4 +209,58 @@ void main() {
 
     expect(content[0].hasFocus, isTrue);
   });
+  testWidgets(
+      'un onglet s’ouvre sur la première affiche, pas sur le bouton posé à '
+      'droite du titre', (tester) async {
+    final header = _nodes('header', 1);
+    final content = _nodes('content', 2);
+    await tester.pumpWidget(TvScope(
+      isTv: true,
+      child: MaterialApp(
+        home: Scaffold(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // L'onglet « Films », à gauche de l'en-tête.
+              Focus(
+                focusNode: header[0],
+                child: const SizedBox(width: 80, height: 40),
+              ),
+              Expanded(
+                child: TvFocusMemory(
+                  entersAtTop: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Le tri « Récents », à droite du titre de la page.
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Focus(
+                          focusNode: content[0],
+                          child: const SizedBox(width: 80, height: 30),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // La première affiche de la grille, à gauche.
+                      Focus(
+                        focusNode: content[1],
+                        child: const SizedBox(width: 80, height: 120),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ));
+    header[0].requestFocus();
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    expect(content[1].hasFocus, isTrue);
+  });
 }

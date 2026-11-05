@@ -25,6 +25,10 @@ class TvUiScale extends StatelessWidget {
 
   final Widget child;
 
+  /// Le facteur appliqué aux pages d'un écran de [width] pixels logiques.
+  static double factorFor(double width) =>
+      width > 0 && width.isFinite ? width / designWidth : 1;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(

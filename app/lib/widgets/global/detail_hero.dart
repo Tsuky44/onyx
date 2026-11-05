@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_motion.dart';
+import '../../theme/app_theme.dart';
 import '../../theme/app_type.dart';
 import '../../utils/responsive.dart';
 import 'app_network_image.dart';
@@ -637,15 +638,21 @@ class _InkTrack extends StatelessWidget {
 
 /// Un bouton rond secondaire (« Ajouter à une liste »), à côté des pastilles :
 /// verre à 5 %, filet blanc, la taille des pastilles.
+///
+/// Le filet passe par [AppTheme.focusRinged] : posé en valeur fixe, il
+/// remplaçait l'anneau de focus de [base], et à la télécommande les actions
+/// d'une fiche (« Corriger la fiche », « Changer l'affiche ») ne montraient
+/// plus qu'un voile à peine plus clair.
 ButtonStyle heroRoundButtonStyle(BuildContext context, ButtonStyle base) {
   final size = AppLayout.isCompact(context) ? 42.0 : 48.0;
-  return base.copyWith(
-    fixedSize: WidgetStatePropertyAll(Size(size, size)),
-    minimumSize: WidgetStatePropertyAll(Size(size, size)),
-    backgroundColor:
-        WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.05)),
-    side: WidgetStatePropertyAll(
-        BorderSide(color: Colors.white.withValues(alpha: 0.1))),
-    iconSize: const WidgetStatePropertyAll(20),
+  return AppTheme.focusRinged(
+    base.copyWith(
+      fixedSize: WidgetStatePropertyAll(Size(size, size)),
+      minimumSize: WidgetStatePropertyAll(Size(size, size)),
+      backgroundColor:
+          WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.05)),
+      iconSize: const WidgetStatePropertyAll(20),
+    ),
+    resting: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
   );
 }

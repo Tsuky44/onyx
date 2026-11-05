@@ -20,10 +20,11 @@ abstract final class AppTheme {
   /// colour — legible at arm's length on a phone, invisible from a sofa. A
   /// remote-driven UI lives or dies on the user being able to find the cursor,
   /// so focus gets a real ring, on every button, everywhere.
-  static WidgetStateProperty<BorderSide?> _focusSide(BorderSide? resting) {
+  static WidgetStateProperty<BorderSide?> _focusSide(BorderSide? resting,
+      {Color color = AppColors.accent}) {
     return WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.focused)) {
-        return const BorderSide(color: AppColors.accent, width: 2.5);
+        return BorderSide(color: color, width: 2.5);
       }
       return resting;
     });
@@ -177,6 +178,14 @@ abstract final class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: focusRinged(const ButtonStyle()),
       ),
+      // Un bouton plein se remplit de la couleur de l'anneau : le même bleu
+      // sur le même bleu, « Nouvelle liste » ne montrait aucun focus. Son
+      // anneau est blanc.
+      filledButtonTheme: FilledButtonThemeData(
+        style: const ButtonStyle().copyWith(
+          side: _focusSide(null, color: AppColors.textPrimary),
+        ),
+      ),
       textButtonTheme: TextButtonThemeData(
         style: focusRinged(TextButton.styleFrom(
           foregroundColor: AppColors.textSecondary,
@@ -266,6 +275,26 @@ abstract final class AppTheme {
       side: BorderSide(color: AppColors.glassBorder),
     )),
   );
+
+  /// Les menus contextuels d'un téléviseur, à l'échelle de ses pages.
+  ///
+  /// Un menu s'ouvre dans une route à part, que [TvUiScale] n'agrandit pas
+  /// (elle ne s'applique qu'aux pages) : sur l'Apple TV, qui annonce 1920
+  /// points de large, le menu du compte s'affichait aux deux tiers de la
+  /// taille de la page, illisible du canapé. [scale] est le facteur de
+  /// [TvUiScale] ; seuls les textes et les marges du menu le suivent, sa
+  /// position reste celle que calcule Flutter.
+  static PopupMenuThemeData popupMenuThemeScaled(double scale) {
+    final base = dark.popupMenuTheme;
+    TextStyle? grow(TextStyle? style) => style?.copyWith(
+        fontSize: (style.fontSize ?? AppType.body) * scale);
+    return base.copyWith(
+      textStyle: grow(base.textStyle),
+      labelTextStyle: WidgetStatePropertyAll(
+          grow(base.labelTextStyle?.resolve(const <WidgetState>{}))),
+      menuPadding: EdgeInsets.symmetric(vertical: 8 * scale),
+    );
+  }
 
   /// Adds the focus ring to a button style without disturbing anything else it
   /// declares. [resting] is the border the button wears when it is not focused.

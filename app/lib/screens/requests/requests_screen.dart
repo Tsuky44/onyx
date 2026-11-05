@@ -8,6 +8,7 @@ import '../../providers/media_requests_provider.dart';
 import '../../desktop_window.dart';
 import '../../theme/app_colors.dart';
 import '../../tv/tv_deferred_keyboard.dart';
+import '../../tv/tv_mode.dart';
 import '../../utils/responsive.dart';
 import '../../utils/poster_url.dart';
 import '../../widgets/global/app_network_image.dart';
@@ -197,8 +198,13 @@ class _RequestsScreenState extends State<RequestsScreen> {
         _reloadCatalog();
       },
     );
-    final displayMenu =
-        PosterGridDisplayMenu(compact: AppLayout.isCompact(context));
+    // Sur un téléviseur, les filtres avancés prennent la place du menu
+    // d'affichage (absent là-bas) : flottant au-dessus de la grille, le bouton
+    // n'était sur la ligne d'aucune affiche, et la télécommande ne l'atteignait
+    // jamais.
+    final displayMenu = TvMode.isTv
+        ? _filtersButton()
+        : PosterGridDisplayMenu(compact: AppLayout.isCompact(context));
     return LayoutBuilder(
       builder: (context, constraints) {
         const searchWidth = 360.0;
@@ -238,6 +244,12 @@ class _RequestsScreenState extends State<RequestsScreen> {
       },
     );
   }
+
+  Widget _filtersButton() => TextButton.icon(
+        onPressed: _openAdvancedFilters,
+        icon: const Icon(AppIcons.filters),
+        label: Text(tr('Filtres avancés')),
+      );
 
   /// Champ de recherche en pilule basse : il ne mange que 40 px de hauteur et
   /// se centre, au lieu de s'étirer sur toute la largeur de la page.
@@ -305,12 +317,14 @@ class _RequestsScreenState extends State<RequestsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAdvancedFilters,
-        backgroundColor: AppColors.primary,
-        tooltip: tr('Filtres avancés'),
-        child: const Icon(AppIcons.filters),
-      ),
+      floatingActionButton: TvMode.isTv
+          ? null
+          : FloatingActionButton(
+              onPressed: _openAdvancedFilters,
+              backgroundColor: AppColors.primary,
+              tooltip: tr('Filtres avancés'),
+              child: const Icon(AppIcons.filters),
+            ),
       body: PosterGridZoomRegion(
         child: CustomScrollView(
           scrollCacheExtent: AppLayout.imageCacheExtent(context),

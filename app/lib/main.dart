@@ -47,6 +47,7 @@ import 'tv/tv_mode.dart';
 import 'tv/tv_pairing_link.dart';
 import 'navigation/media_link.dart';
 import 'navigation/play_link.dart';
+import 'tv/tv_semantics_scroll_guard.dart';
 import 'tv/tv_touchpad.dart';
 import 'tv/tv_ui_scale.dart';
 import 'screens/player/display_frame_rate.dart';
@@ -178,6 +179,9 @@ void main() async {
   // Sur Apple TV, la force d'un glissé sur le trackpad accélère la navigation
   // et l'avance rapide. Voir [TvTouchpad].
   TvTouchpad.install();
+  // Sur Apple TV, le pont d'accessibilité ne fait plus défiler les pages dans
+  // le dos du focus. Voir [TvSemanticsScrollGuard].
+  TvSemanticsScrollGuard.install();
 
   final apiClient = ApiClient();
 
@@ -503,6 +507,11 @@ class OnyxApp extends StatelessWidget {
                   // voir [TvUiScale]. Le lecteur n'est pas concerné.
                   theme: isTv
                       ? AppTheme.dark.copyWith(
+                          popupMenuTheme: AppTheme.popupMenuThemeScaled(
+                            TvUiScale.factorFor(
+                                View.of(context).physicalSize.width /
+                                    View.of(context).devicePixelRatio),
+                          ),
                           pageTransitionsTheme: PageTransitionsTheme(
                             builders: <TargetPlatform, PageTransitionsBuilder>{
                               for (final platform in TargetPlatform.values)

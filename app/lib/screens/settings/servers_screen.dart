@@ -14,7 +14,7 @@ import '../../theme/app_colors.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import '../../utils/on_screen.dart';
 import '../../widgets/global/otp_code_dialog.dart';
-import 'server_account_subtitle.dart';
+import 'server_account_tile.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 
@@ -304,7 +304,7 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
         const SizedBox(height: 20),
       ],
       for (final account in accounts)
-        _ServerTile(
+        ServerAccountTile(
           account: account,
           isActive: account.id == activeId,
           isPrimary: auth.isPrimaryServer(account.id),
@@ -414,128 +414,6 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
         children: children,
-      ),
-    );
-  }
-}
-
-class _ServerTile extends StatelessWidget {
-  const _ServerTile({
-    required this.account,
-    required this.isActive,
-    required this.isPrimary,
-    required this.busy,
-    required this.onSelect,
-    required this.onTogglePrimary,
-    required this.onRename,
-    required this.links,
-    required this.onLink,
-    required this.onUnlink,
-    required this.onForget,
-  });
-
-  final ServerAccount account;
-  final bool isActive;
-
-  /// Celui sur lequel l'app redémarre, marqué d'une étoile.
-  final bool isPrimary;
-
-  final bool busy;
-  final VoidCallback onSelect;
-  final VoidCallback onTogglePrimary;
-  final VoidCallback onRename;
-  final List<AccountLink> links;
-  final VoidCallback? onLink;
-  final VoidCallback onUnlink;
-  final VoidCallback? onForget;
-
-  @override
-  Widget build(BuildContext context) {
-    // Le fond est porté par un Material et non par un DecoratedBox : sinon il
-    // se peint par-dessus l'onde de la tuile, et toucher un serveur ne donne
-    // aucun retour visible — précisément sur le geste dont tout dépend ici.
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: isActive
-            ? AppColors.primary.withValues(alpha: 0.10)
-            : AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: isActive
-                ? AppColors.primary.withValues(alpha: 0.45)
-                : Colors.transparent,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: ListTile(
-          onTap: isActive || busy ? null : onSelect,
-          leading: CircleAvatar(
-            backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-            child: Icon(
-              isActive ? Icons.check_rounded : Icons.dns_rounded,
-              size: 20,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          title: Row(
-            children: [
-              Flexible(child: Text(account.displayName)),
-              if (isPrimary) ...[
-                const SizedBox(width: 6),
-                const Icon(
-                  Icons.star_rounded,
-                  size: 16,
-                  color: AppColors.warning,
-                ),
-              ],
-            ],
-          ),
-          subtitle: Text(
-            serverAccountSubtitle(account,
-                isActive: isActive, isPrimary: isPrimary, links: links),
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
-          trailing: PopupMenuButton<String>(
-            tooltip: tr('Options du compte {0}', [account.username]),
-            enabled: !busy,
-            onSelected: (value) {
-              switch (value) {
-                case 'primary':
-                  onTogglePrimary();
-                case 'link':
-                  onLink?.call();
-                case 'unlink':
-                  onUnlink();
-                case 'rename':
-                  onRename();
-                case 'forget':
-                  onForget?.call();
-              }
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'primary',
-                child: Text(isPrimary
-                    ? tr('Ne plus démarrer ici')
-                    : tr('Démarrer sur ce serveur')),
-              ),
-              if (onLink != null)
-                PopupMenuItem(
-                    value: 'link', child: Text(tr('Lier un compte'))),
-              if (links.isNotEmpty)
-                PopupMenuItem(
-                    value: 'unlink', child: Text(tr('Dissocier ce compte'))),
-              PopupMenuItem(value: 'rename', child: Text(tr('Renommer'))),
-              if (onForget != null)
-                PopupMenuItem(
-                  value: 'forget',
-                  child: Text(tr('Retirer de cet appareil')),
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -6,6 +6,8 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
+import '../../../tv/tv_mode.dart';
+import 'settings_choice_focus.dart';
 
 export 'settings_page.dart';
 
@@ -279,6 +281,15 @@ class SettingsChoiceTile<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tile = _buildTile();
+    if (!TvScope.of(context)) return tile;
+    return SettingsChoiceFocus(
+      selectedIndex: options.indexWhere((option) => option.$1 == value),
+      child: tile,
+    );
+  }
+
+  Widget _buildTile() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       child: Row(

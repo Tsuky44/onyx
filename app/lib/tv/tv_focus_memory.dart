@@ -32,8 +32,8 @@ class TvFocusMemory extends StatefulWidget {
   final Widget child;
 
   /// À la première visite, le focus entre sur le premier élément visible de
-  /// la zone — le plus haut, puis le plus à gauche — au lieu du plus proche
-  /// géométriquement.
+  /// la zone — le plus proche de son coin haut-gauche — au lieu du plus proche
+  /// de l'élément quitté.
   ///
   /// Pour le contenu d'un onglet, sous l'en-tête : Bas depuis la recherche,
   /// à droite de l'en-tête, tombait sur « Voir tout » d'une rangée plus bas,
@@ -124,10 +124,17 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
             node.rect.top < zone.bottom)
         .toList();
     if (visible.isEmpty) return;
+    // Le plus proche du coin haut-gauche, et non le plus haut : un bouton posé
+    // à droite du titre (le tri « Récents », « Mes demandes », « Nouvelle
+    // liste ») est plus haut que la première affiche de quelques pixels, et il
+    // prenait le focus d'entrée — l'onglet s'ouvrait à l'autre bout de
+    // l'écran, et Bas descendait sur la dernière affiche de la rangée.
+    double distance(FocusNode node) =>
+        (node.rect.top - zone.top) + (node.rect.left - zone.left).abs();
     final first = visible.reduce((best, node) {
-      final byTop = node.rect.top.compareTo(best.rect.top);
-      if (byTop != 0) return byTop < 0 ? node : best;
-      return node.rect.left < best.rect.left ? node : best;
+      final byDistance = distance(node).compareTo(distance(best));
+      if (byDistance != 0) return byDistance < 0 ? node : best;
+      return node.rect.top < best.rect.top ? node : best;
     });
     if (!identical(FocusManager.instance.primaryFocus, first)) {
       first.requestFocus();
