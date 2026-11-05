@@ -318,6 +318,7 @@ class OnyxAppleNativeOption {
     required this.id,
     required this.label,
     required this.selected,
+    this.detail,
   });
 
   /// Rendu tel quel dans [OnyxAppleNativeEvent.optionId] au choix.
@@ -329,6 +330,10 @@ class OnyxAppleNativeOption {
   /// Coché dans le menu. Dart reste maître de l'état : le natif ne coche rien
   /// de lui-même, il attend la spec suivante.
   final bool selected;
+
+  /// Seconde ligne, déjà traduite (`UIMenuElement.subtitle`) : le codec d'une
+  /// piste, « reste 12 min » d'une minuterie, l'avertissement Dolby Vision.
+  final String? detail;
 }
 
 /// Un menu de la barre de transport : Vitesse, Format d'image, Qualité,
@@ -360,6 +365,150 @@ class OnyxAppleNativeAction {
   final String label;
 }
 
+/// Un chapitre, pour `AVPlayerItem.navigationMarkerGroups`
+/// (`AVTimedMetadataGroup` : titre et plage).
+class OnyxAppleNativeChapter {
+  OnyxAppleNativeChapter({
+    required this.title,
+    required this.startMs,
+    required this.endMs,
+  });
+
+  /// Déjà traduit (« Chapitre 3 » quand le fichier n'a pas de titre).
+  final String title;
+  final int startMs;
+  final int endMs;
+}
+
+/// L'épisode suivant, proposé par une sous-classe d'`AVContentProposalViewController`.
+/// Dart reste maître de l'enchaînement : le natif n'accepte jamais de lui-même.
+class OnyxAppleNativeNextUp {
+  OnyxAppleNativeNextUp({
+    required this.title,
+    required this.transitionMs,
+    required this.playLabel,
+    required this.laterLabel,
+    this.subtitle,
+    this.imageUrl,
+    this.countdownSeconds,
+  });
+
+  /// « S1:E4 · Le titre ».
+  final String title;
+  final String? subtitle;
+
+  /// L'image de l'épisode, en URL absolue avec son ticket.
+  final String? imageUrl;
+
+  /// `contentTimeForTransition` : le début du générique, en temps de l'item.
+  final int transitionMs;
+
+  /// Les secondes qui restent avant que Dart n'enchaîne, ou null sans compte
+  /// à rebours (gelé, annulé, minuterie de veille).
+  final int? countdownSeconds;
+
+  /// « Lire » → action `nextEpisode` ; « Plus tard » → action
+  /// `cancelAutoPlay`, après `dismissContentProposal(for: .defer)`.
+  final String playLabel;
+  final String laterLabel;
+}
+
+/// Une question posée par-dessus le lecteur natif : « Vous regardez encore ? »,
+/// langue manquante, saison suivante, épisode à venir, lecture reprise ailleurs.
+class OnyxAppleNativePrompt {
+  OnyxAppleNativePrompt({
+    required this.id,
+    required this.title,
+    required this.actions,
+    required this.cancelActionId,
+    this.message,
+  });
+
+  /// Stable d'une spec à l'autre : la même question n'est pas reposée.
+  final String id;
+  final String title;
+  final String? message;
+
+  /// Dans l'ordre d'affichage ; la première est l'action préférée.
+  final List<OnyxAppleNativeAction> actions;
+
+  /// L'action que vaut Menu (la touche Retour de la télécommande), rendue en
+  /// `action`. Elle doit être l'une de [actions].
+  final String cancelActionId;
+}
+
+/// Une ligne d'un panneau : un épisode, un participant, une statistique.
+class OnyxAppleNativePanelRow {
+  OnyxAppleNativePanelRow({
+    required this.id,
+    required this.title,
+    required this.selected,
+    required this.selectable,
+    this.subtitle,
+    this.detail,
+    this.imageUrl,
+    this.progress,
+  });
+
+  final String id;
+  final String title;
+  final String? subtitle;
+
+  /// À droite : une durée, « Hôte », une valeur de statistique.
+  final String? detail;
+  final String? imageUrl;
+
+  /// Avancement de 0 à 1, pour un épisode commencé.
+  final double? progress;
+
+  /// L'épisode qui joue : marqué, et le focus y entre.
+  final bool selected;
+
+  /// Faux pour une ligne d'information (participant, statistique).
+  final bool selectable;
+}
+
+/// Un onglet du panneau d'infos d'AVKit (`customInfoViewControllers`).
+///
+/// Un seul modèle pour Épisodes, Regarder ensemble et Stats : Swift a un seul
+/// contrôleur à écrire.
+class OnyxAppleNativePanel {
+  OnyxAppleNativePanel({
+    required this.id,
+    required this.title,
+    required this.tabs,
+    required this.rows,
+    required this.actions,
+    required this.loading,
+    this.message,
+  });
+
+  /// `episodes`, `watchParty`, `stats` : rendu dans les événements.
+  final String id;
+
+  /// Le titre de l'onglet (`UIViewController.title`).
+  final String title;
+
+  /// Un paragraphe au-dessus des lignes : l'explication et le code de la
+  /// séance, une erreur.
+  final String? message;
+
+  /// Les saisons : un choix rendu en `panelTabSelected` (`optionId`).
+  final List<OnyxAppleNativeOption> tabs;
+
+  /// Pour `stats`, les lignes ne portent que l'identifiant de la mesure
+  /// (`route`, `videoCodec`, `videoDecoder`, `audioDecoder`, `observedFps`,
+  /// `containerFps`, `droppedFrames`, `averageBitrateMbps`, `videoBitrate`,
+  /// `videoFormat`, `audioDelivery`, `container`) et son libellé : Swift
+  /// remplit `detail` lui-même, chaque seconde, tant que l'onglet est visible.
+  final List<OnyxAppleNativePanelRow> rows;
+
+  /// Les boutons sous les lignes (« Démarrer une séance », « Quitter la
+  /// séance »), rendus en `action`.
+  final List<OnyxAppleNativeAction> actions;
+  final bool loading;
+}
+
 /// Tout ce que le lecteur natif affiche, en un seul objet : Swift n'a pas
 /// d'état à réconcilier, il applique la dernière spec reçue.
 ///
@@ -369,9 +518,16 @@ class OnyxAppleNativeSpec {
     required this.title,
     required this.menus,
     required this.actions,
+    required this.chapters,
+    required this.infoActions,
+    required this.panels,
+    required this.interceptSeeks,
     this.subtitle,
     this.posterUrl,
     this.overview,
+    this.nextUp,
+    this.prompt,
+    this.toast,
   });
 
   final String title;
@@ -383,6 +539,33 @@ class OnyxAppleNativeSpec {
   final String? overview;
   final List<OnyxAppleNativeMenu> menus;
   final List<OnyxAppleNativeAction> actions;
+
+  /// `AVPlayerItem.navigationMarkerGroups`, reposé sur chaque nouvel item.
+  final List<OnyxAppleNativeChapter> chapters;
+
+  /// `infoViewActions` (deux au plus) : épisode précédent, épisode suivant.
+  /// Vide, AVKit n'en montre aucune : pas de « Lire depuis le début », qui
+  /// chercherait sans Dart.
+  final List<OnyxAppleNativeAction> infoActions;
+
+  /// L'épisode suivant proposé au générique (`AVContentProposal`), ou null.
+  final OnyxAppleNativeNextUp? nextUp;
+
+  /// La question à poser par-dessus le lecteur (`UIAlertController`), ou null.
+  final OnyxAppleNativePrompt? prompt;
+
+  /// Les onglets ajoutés au panneau d'infos (`customInfoViewControllers`),
+  /// dans l'ordre : Épisodes, Regarder ensemble, Stats.
+  final List<OnyxAppleNativePanel> panels;
+
+  /// Une annonce en haut de l'image (`contentOverlayView`), ou null pour la
+  /// retirer. Regarder ensemble l'utilise.
+  final String? toast;
+
+  /// Le natif retient les recherches de l'utilisateur au lieu de les
+  /// appliquer, et les remonte en `seekRequested` : Dart décide (HLS, où une
+  /// recherche peut reconstruire la session).
+  final bool interceptSeeks;
 }
 
 /// Ce que le natif raconte à Dart.
@@ -404,6 +587,28 @@ enum OnyxAppleNativeEventKind {
   /// Le natif ne sait pas jouer ceci : Dart doit rendre l'écran Flutter.
   /// [OnyxAppleNativeEvent.reason] dit pourquoi.
   unavailable,
+
+  /// Lecture ou pause demandée dans AVKit (télécommande, Centre de contrôle,
+  /// app Remote) : `playing`, `positionMs`. Jamais pour une demande de Dart.
+  transport,
+
+  /// L'utilisateur a déplacé la lecture dans AVKit (saut de 10 s, balayage,
+  /// chapitre), déjà appliqué : `fromPositionMs`, `positionMs`.
+  userSeeked,
+
+  /// La même chose, retenue parce que `interceptSeeks` : Dart doit chercher
+  /// `positionMs`.
+  seekRequested,
+
+  /// Une ligne choisie dans un panneau : `panelId`, `rowId`.
+  panelRowSelected,
+
+  /// Un onglet choisi dans un panneau (une saison) : `panelId`, `optionId`.
+  panelTabSelected,
+
+  /// Quelqu'un se sert de la télécommande : la barre de transport apparaît,
+  /// un menu, une action ou une navigation. Au plus un toutes les 5 s.
+  userActivity,
 }
 
 /// Pourquoi l'écran natif se ferme ou n'est pas disponible.
@@ -441,6 +646,11 @@ class OnyxAppleNativeEvent {
     this.optionId,
     this.trackId,
     this.reason,
+    this.playing,
+    this.positionMs,
+    this.fromPositionMs,
+    this.panelId,
+    this.rowId,
   });
 
   final int playerId;
@@ -450,6 +660,22 @@ class OnyxAppleNativeEvent {
   final String? optionId;
   final String? trackId;
   final OnyxAppleNativeReason? reason;
+
+  /// `transport` : l'état demandé dans AVKit.
+  final bool? playing;
+
+  /// `transport`, `userSeeked`, `seekRequested` : la position en temps de
+  /// l'item (millisecondes).
+  final int? positionMs;
+
+  /// `userSeeked` : d'où l'utilisateur est parti.
+  final int? fromPositionMs;
+
+  /// `panelRowSelected`, `panelTabSelected`.
+  final String? panelId;
+
+  /// `panelRowSelected`.
+  final String? rowId;
 }
 
 @HostApi()

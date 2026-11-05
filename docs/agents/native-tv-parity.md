@@ -192,6 +192,15 @@ dart run pigeon --input pigeons/messages.dart
 dart run tool/sync_tvos.dart
 ```
 
+**État : posé** (commit du contrat). Les types ci-dessous sont dans `messages.dart` sous ces noms. Écarts avec la
+première proposition :
+
+- aucune méthode `HostApi` n'est ajoutée : tout passe par `presentNative`, `updateNative` et `nativeEvents` ;
+- `detail`, `nextUp`, `prompt` et `toast` sont optionnels (nuls par défaut) ; `chapters`, `infoActions`, `panels` et
+  `interceptSeeks` sont requis ;
+- l'existant est conservé tel quel, dont `OnyxAppleNativeReason.bitmapSubtitles` (ADR-0107). Aucun conflit :
+  la proposition n'y touchait pas.
+
 Tous les textes restent traduits côté Dart. Les listes sont requises et valent `[]` quand elles sont vides, pour que
 l'égalité Pigeon (`updateNative` seulement si la spec change) reste simple.
 
@@ -447,25 +456,35 @@ Ajouts à `OnyxAppleNativeEventKind`, après `unavailable` (l'ordre des valeurs 
 | Réponses | `<question>.<réponse>` : `stillWatching.continue`, `stillWatching.leave`, `languageGap.continue`, `languageGap.wait`, `languageGap.dismiss`, `nextSeason.request`, `nextSeason.playNext`, `nextSeason.dismiss`, `upcomingEpisode.playNext`, `upcomingEpisode.dismiss`, `playingElsewhere.resume`, `playingElsewhere.leave` |
 | Panneaux | `episodes` (lignes `episode:<id>`, onglets `season:<id>`) ; `watchParty` (lignes `member:<id>`) ; `stats` |
 
+`NativeTvIds` porte maintenant ces constantes (`sleep`, `chapters`, `subtitles`, `previousEpisode`, `cancelAutoPlay`,
+`watchPartyStart`, `watchPartyLeave`, les six questions, `episodesPanel`, `watchPartyPanel`, `statsPanel`, les préfixes
+`episodeRowPrefix`, `memberRowPrefix`, `seasonTabPrefix`, `sleepEpisodesPrefix`, `sleepMinutesPrefix`, `chapterPrefix`,
+`sleepOff`) et `NativeTvIds.answer(question, réponse)` pour `<question>.<réponse>`.
+
 ### 3.5 Ce que la session du contrat livre en plus
 
-Les nouveaux champs requis cassent la construction de la spec. La session du contrat :
+**Livré.** Les nouveaux champs requis cassent la construction de la spec. La session du contrat :
 
 - remplit donc `NativeTvSpecBuilder.build` avec des valeurs vides (`[]`, `null`, `false`) ;
 - ajoute à `nativeTvIntentOf` des branches qui rendent `null` pour les nouveaux types d'événements ;
 - ajoute à `NativePlayerPresenter.swift` un `default` qui ignore les champs inconnus.
 
-Le dépôt reste ainsi vert, et les deux lots partent du même commit. Elle relance enfin
+Côté Swift, le `default` n'est pas nécessaire : le code existant n'énumère aucun type d'événement. Le helper `emit` de
+`NativePlayerPresenter.swift` ne prend pas encore `playing`, `positionMs`, `fromPositionMs`, `panelId` ni `rowId` : le
+lot Swift l'étend (les initialiseurs générés les ont déjà, à `nil` par défaut). Le dépôt reste ainsi vert, et les deux lots partent du même commit. Elle relance enfin
 `app/test/onyx_player_apple_sources_test.dart`, qui vérifie la copie `tvos/`.
 
 ## 4. Découpage en deux lots indépendants
+
+**Règle commune.** Aucun lot ne touche `messages.dart`, les `Messages.g.*` ni `onyx_apple_player.dart` : le contrat est
+figé. Un manque dans le contrat se signale à la session du contrat, il ne se corrige pas dans un lot.
 
 Les deux lots ne partagent aucun fichier. Ils ne dépendent l'un de l'autre que par le contrat généré. Dans chaque lot,
 l'ordre est une priorité : P1 corrige les défauts du §1, P2 et P3 ajoutent des fonctions.
 
 ### 4.1 Lot Swift
 
-**Fichiers :**
+**Fichiers (liste exhaustive) :**
 
 - `packages/onyx_player_apple/darwin/onyx_player_apple/Sources/onyx_player_apple/NativePlayerPresenter.swift` ;
 - nouveaux fichiers voisins, tous sous `#if os(tvOS)` :
@@ -531,7 +550,7 @@ l'ordre est une priorité : P1 corrige les défauts du §1, P2 et P3 ajoutent de
 
 ### 4.2 Lot Dart
 
-**Fichiers :**
+**Fichiers (liste exhaustive) :**
 
 - `app/lib/screens/player/playback/native_tv_presenter.dart` : `NativeTvState`, `NativeTvSpecBuilder`, `NativeTvIds`,
   `NativeTvIntent` et `nativeTvIntentOf` ;

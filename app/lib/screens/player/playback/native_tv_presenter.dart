@@ -106,8 +106,44 @@ abstract final class NativeTvIds {
   static const quality = 'quality';
   static const audio = 'audio';
 
+  static const sleep = 'sleep';
+  static const chapters = 'chapters';
+  static const subtitles = 'subtitles';
+
   static const skipSegment = 'skipSegment';
   static const nextEpisode = 'nextEpisode';
+  static const previousEpisode = 'previousEpisode';
+  static const cancelAutoPlay = 'cancelAutoPlay';
+  static const watchPartyStart = 'watchParty.start';
+  static const watchPartyLeave = 'watchParty.leave';
+
+  /// Les questions posées par-dessus le lecteur ([OnyxAppleNativePrompt.id]).
+  static const stillWatching = 'stillWatching';
+  static const languageGap = 'languageGap';
+  static const launchLanguageGap = 'launchLanguageGap';
+  static const nextSeason = 'nextSeason';
+  static const upcomingEpisode = 'upcomingEpisode';
+  static const playingElsewhere = 'playingElsewhere';
+
+  /// Les réponses sont `<question>.<réponse>` : `stillWatching.continue`,
+  /// `languageGap.wait`, `nextSeason.request`, `playingElsewhere.resume`…
+  static String answer(String prompt, String answer) => '$prompt.$answer';
+
+  /// Les onglets du panneau d'infos ([OnyxAppleNativePanel.id]).
+  static const episodesPanel = 'episodes';
+  static const watchPartyPanel = 'watchParty';
+  static const statsPanel = 'stats';
+
+  /// Les lignes : `episode:<id>`, `member:<id>` ; les onglets `season:<id>`.
+  static const episodeRowPrefix = 'episode:';
+  static const memberRowPrefix = 'member:';
+  static const seasonTabPrefix = 'season:';
+
+  /// Les options du menu `sleep` et `chapters`.
+  static const sleepOff = 'off';
+  static const sleepEpisodesPrefix = 'episodes:';
+  static const sleepMinutesPrefix = 'minutes:';
+  static const chapterPrefix = 'chapter:';
 
   static const qualityAuto = 'auto';
   static const qualityDirect = 'direct';
@@ -152,6 +188,10 @@ abstract final class NativeTvSpecBuilder {
             label: tr('Épisode suivant'),
           ),
       ],
+      chapters: const [],
+      infoActions: const [],
+      panels: const [],
+      interceptSeeks: false,
     );
   }
 
@@ -329,6 +369,14 @@ NativeTvIntent? nativeTvIntentOf(OnyxAppleNativeEvent event) {
       );
     case OnyxAppleNativeEventKind.unavailable:
       return NativeTvUnavailable(event.reason);
+    case OnyxAppleNativeEventKind.transport:
+    case OnyxAppleNativeEventKind.userSeeked:
+    case OnyxAppleNativeEventKind.seekRequested:
+    case OnyxAppleNativeEventKind.panelRowSelected:
+    case OnyxAppleNativeEventKind.panelTabSelected:
+    case OnyxAppleNativeEventKind.userActivity:
+      // Contrat posé, pas encore branché (docs/agents/native-tv-parity.md).
+      return null;
   }
 }
 

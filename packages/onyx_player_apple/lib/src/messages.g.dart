@@ -147,6 +147,22 @@ enum OnyxAppleNativeEventKind {
   /// Le natif ne sait pas jouer ceci : Dart doit rendre l'écran Flutter.
   /// [OnyxAppleNativeEvent.reason] dit pourquoi.
   unavailable,
+  /// Lecture ou pause demandée dans AVKit (télécommande, Centre de contrôle,
+  /// app Remote) : `playing`, `positionMs`. Jamais pour une demande de Dart.
+  transport,
+  /// L'utilisateur a déplacé la lecture dans AVKit (saut de 10 s, balayage,
+  /// chapitre), déjà appliqué : `fromPositionMs`, `positionMs`.
+  userSeeked,
+  /// La même chose, retenue parce que `interceptSeeks` : Dart doit chercher
+  /// `positionMs`.
+  seekRequested,
+  /// Une ligne choisie dans un panneau : `panelId`, `rowId`.
+  panelRowSelected,
+  /// Un onglet choisi dans un panneau (une saison) : `panelId`, `optionId`.
+  panelTabSelected,
+  /// Quelqu'un se sert de la télécommande : la barre de transport apparaît,
+  /// un menu, une action ou une navigation. Au plus un toutes les 5 s.
+  userActivity,
 }
 
 /// Pourquoi l'écran natif se ferme ou n'est pas disponible.
@@ -883,6 +899,7 @@ class OnyxAppleNativeOption {
     required this.id,
     required this.label,
     required this.selected,
+    this.detail,
   });
 
   /// Rendu tel quel dans [OnyxAppleNativeEvent.optionId] au choix.
@@ -895,11 +912,16 @@ class OnyxAppleNativeOption {
   /// de lui-même, il attend la spec suivante.
   bool selected;
 
+  /// Seconde ligne, déjà traduite (`UIMenuElement.subtitle`) : le codec d'une
+  /// piste, « reste 12 min » d'une minuterie, l'avertissement Dolby Vision.
+  String? detail;
+
   List<Object?> _toList() {
     return <Object?>[
       id,
       label,
       selected,
+      detail,
     ];
   }
 
@@ -912,6 +934,7 @@ class OnyxAppleNativeOption {
       id: result[0]! as String,
       label: result[1]! as String,
       selected: result[2]! as bool,
+      detail: result[3] as String?,
     );
   }
 
@@ -924,7 +947,7 @@ class OnyxAppleNativeOption {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(id, other.id) && _deepEquals(label, other.label) && _deepEquals(selected, other.selected);
+    return _deepEquals(id, other.id) && _deepEquals(label, other.label) && _deepEquals(selected, other.selected) && _deepEquals(detail, other.detail);
   }
 
   @override
@@ -933,7 +956,7 @@ class OnyxAppleNativeOption {
 
   @override
   String toString() {
-    return 'OnyxAppleNativeOption(id: $id, label: $label, selected: $selected)';
+    return 'OnyxAppleNativeOption(id: $id, label: $label, selected: $selected, detail: $detail)';
   }
 }
 
@@ -1052,6 +1075,395 @@ class OnyxAppleNativeAction {
   }
 }
 
+/// Un chapitre, pour `AVPlayerItem.navigationMarkerGroups`
+/// (`AVTimedMetadataGroup` : titre et plage).
+class OnyxAppleNativeChapter {
+  OnyxAppleNativeChapter({
+    required this.title,
+    required this.startMs,
+    required this.endMs,
+  });
+
+  /// Déjà traduit (« Chapitre 3 » quand le fichier n'a pas de titre).
+  String title;
+
+  int startMs;
+
+  int endMs;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      title,
+      startMs,
+      endMs,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativeChapter decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativeChapter(
+      title: result[0]! as String,
+      startMs: result[1]! as int,
+      endMs: result[2]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativeChapter || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(title, other.title) && _deepEquals(startMs, other.startMs) && _deepEquals(endMs, other.endMs);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativeChapter(title: $title, startMs: $startMs, endMs: $endMs)';
+  }
+}
+
+/// L'épisode suivant, proposé par une sous-classe d'`AVContentProposalViewController`.
+/// Dart reste maître de l'enchaînement : le natif n'accepte jamais de lui-même.
+class OnyxAppleNativeNextUp {
+  OnyxAppleNativeNextUp({
+    required this.title,
+    this.subtitle,
+    this.imageUrl,
+    required this.transitionMs,
+    this.countdownSeconds,
+    required this.playLabel,
+    required this.laterLabel,
+  });
+
+  /// « S1:E4 · Le titre ».
+  String title;
+
+  String? subtitle;
+
+  /// L'image de l'épisode, en URL absolue avec son ticket.
+  String? imageUrl;
+
+  /// `contentTimeForTransition` : le début du générique, en temps de l'item.
+  int transitionMs;
+
+  /// Les secondes qui restent avant que Dart n'enchaîne, ou null sans compte
+  /// à rebours (gelé, annulé, minuterie de veille).
+  int? countdownSeconds;
+
+  /// « Lire » → action `nextEpisode` ; « Plus tard » → action
+  /// `cancelAutoPlay`, après `dismissContentProposal(for: .defer)`.
+  String playLabel;
+
+  String laterLabel;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      title,
+      subtitle,
+      imageUrl,
+      transitionMs,
+      countdownSeconds,
+      playLabel,
+      laterLabel,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativeNextUp decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativeNextUp(
+      title: result[0]! as String,
+      subtitle: result[1] as String?,
+      imageUrl: result[2] as String?,
+      transitionMs: result[3]! as int,
+      countdownSeconds: result[4] as int?,
+      playLabel: result[5]! as String,
+      laterLabel: result[6]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativeNextUp || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(imageUrl, other.imageUrl) && _deepEquals(transitionMs, other.transitionMs) && _deepEquals(countdownSeconds, other.countdownSeconds) && _deepEquals(playLabel, other.playLabel) && _deepEquals(laterLabel, other.laterLabel);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativeNextUp(title: $title, subtitle: $subtitle, imageUrl: $imageUrl, transitionMs: $transitionMs, countdownSeconds: $countdownSeconds, playLabel: $playLabel, laterLabel: $laterLabel)';
+  }
+}
+
+/// Une question posée par-dessus le lecteur natif : « Vous regardez encore ? »,
+/// langue manquante, saison suivante, épisode à venir, lecture reprise ailleurs.
+class OnyxAppleNativePrompt {
+  OnyxAppleNativePrompt({
+    required this.id,
+    required this.title,
+    this.message,
+    required this.actions,
+    required this.cancelActionId,
+  });
+
+  /// Stable d'une spec à l'autre : la même question n'est pas reposée.
+  String id;
+
+  String title;
+
+  String? message;
+
+  /// Dans l'ordre d'affichage ; la première est l'action préférée.
+  List<OnyxAppleNativeAction> actions;
+
+  /// L'action que vaut Menu (la touche Retour de la télécommande), rendue en
+  /// `action`. Elle doit être l'une de [actions].
+  String cancelActionId;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      title,
+      message,
+      actions,
+      cancelActionId,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativePrompt decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativePrompt(
+      id: result[0]! as String,
+      title: result[1]! as String,
+      message: result[2] as String?,
+      actions: (result[3]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      cancelActionId: result[4]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativePrompt || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) && _deepEquals(title, other.title) && _deepEquals(message, other.message) && _deepEquals(actions, other.actions) && _deepEquals(cancelActionId, other.cancelActionId);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativePrompt(id: $id, title: $title, message: $message, actions: $actions, cancelActionId: $cancelActionId)';
+  }
+}
+
+/// Une ligne d'un panneau : un épisode, un participant, une statistique.
+class OnyxAppleNativePanelRow {
+  OnyxAppleNativePanelRow({
+    required this.id,
+    required this.title,
+    this.subtitle,
+    this.detail,
+    this.imageUrl,
+    this.progress,
+    required this.selected,
+    required this.selectable,
+  });
+
+  String id;
+
+  String title;
+
+  String? subtitle;
+
+  /// À droite : une durée, « Hôte », une valeur de statistique.
+  String? detail;
+
+  String? imageUrl;
+
+  /// Avancement de 0 à 1, pour un épisode commencé.
+  double? progress;
+
+  /// L'épisode qui joue : marqué, et le focus y entre.
+  bool selected;
+
+  /// Faux pour une ligne d'information (participant, statistique).
+  bool selectable;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      title,
+      subtitle,
+      detail,
+      imageUrl,
+      progress,
+      selected,
+      selectable,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativePanelRow decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativePanelRow(
+      id: result[0]! as String,
+      title: result[1]! as String,
+      subtitle: result[2] as String?,
+      detail: result[3] as String?,
+      imageUrl: result[4] as String?,
+      progress: result[5] as double?,
+      selected: result[6]! as bool,
+      selectable: result[7]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativePanelRow || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) && _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(detail, other.detail) && _deepEquals(imageUrl, other.imageUrl) && _deepEquals(progress, other.progress) && _deepEquals(selected, other.selected) && _deepEquals(selectable, other.selectable);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativePanelRow(id: $id, title: $title, subtitle: $subtitle, detail: $detail, imageUrl: $imageUrl, progress: $progress, selected: $selected, selectable: $selectable)';
+  }
+}
+
+/// Un onglet du panneau d'infos d'AVKit (`customInfoViewControllers`).
+///
+/// Un seul modèle pour Épisodes, Regarder ensemble et Stats : Swift a un seul
+/// contrôleur à écrire.
+class OnyxAppleNativePanel {
+  OnyxAppleNativePanel({
+    required this.id,
+    required this.title,
+    this.message,
+    required this.tabs,
+    required this.rows,
+    required this.actions,
+    required this.loading,
+  });
+
+  /// `episodes`, `watchParty`, `stats` : rendu dans les événements.
+  String id;
+
+  /// Le titre de l'onglet (`UIViewController.title`).
+  String title;
+
+  /// Un paragraphe au-dessus des lignes : l'explication et le code de la
+  /// séance, une erreur.
+  String? message;
+
+  /// Les saisons : un choix rendu en `panelTabSelected` (`optionId`).
+  List<OnyxAppleNativeOption> tabs;
+
+  /// Pour `stats`, les lignes ne portent que l'identifiant de la mesure
+  /// (`route`, `videoCodec`, `videoDecoder`, `audioDecoder`, `observedFps`,
+  /// `containerFps`, `droppedFrames`, `averageBitrateMbps`, `videoBitrate`,
+  /// `videoFormat`, `audioDelivery`, `container`) et son libellé : Swift
+  /// remplit `detail` lui-même, chaque seconde, tant que l'onglet est visible.
+  List<OnyxAppleNativePanelRow> rows;
+
+  /// Les boutons sous les lignes (« Démarrer une séance », « Quitter la
+  /// séance »), rendus en `action`.
+  List<OnyxAppleNativeAction> actions;
+
+  bool loading;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      id,
+      title,
+      message,
+      tabs,
+      rows,
+      actions,
+      loading,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleNativePanel decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleNativePanel(
+      id: result[0]! as String,
+      title: result[1]! as String,
+      message: result[2] as String?,
+      tabs: (result[3]! as List<Object?>).cast<OnyxAppleNativeOption>(),
+      rows: (result[4]! as List<Object?>).cast<OnyxAppleNativePanelRow>(),
+      actions: (result[5]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      loading: result[6]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleNativePanel || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) && _deepEquals(title, other.title) && _deepEquals(message, other.message) && _deepEquals(tabs, other.tabs) && _deepEquals(rows, other.rows) && _deepEquals(actions, other.actions) && _deepEquals(loading, other.loading);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleNativePanel(id: $id, title: $title, message: $message, tabs: $tabs, rows: $rows, actions: $actions, loading: $loading)';
+  }
+}
+
 /// Tout ce que le lecteur natif affiche, en un seul objet : Swift n'a pas
 /// d'état à réconcilier, il applique la dernière spec reçue.
 ///
@@ -1064,6 +1476,13 @@ class OnyxAppleNativeSpec {
     this.overview,
     required this.menus,
     required this.actions,
+    required this.chapters,
+    required this.infoActions,
+    this.nextUp,
+    this.prompt,
+    required this.panels,
+    this.toast,
+    required this.interceptSeeks,
   });
 
   String title;
@@ -1080,6 +1499,33 @@ class OnyxAppleNativeSpec {
 
   List<OnyxAppleNativeAction> actions;
 
+  /// `AVPlayerItem.navigationMarkerGroups`, reposé sur chaque nouvel item.
+  List<OnyxAppleNativeChapter> chapters;
+
+  /// `infoViewActions` (deux au plus) : épisode précédent, épisode suivant.
+  /// Vide, AVKit n'en montre aucune : pas de « Lire depuis le début », qui
+  /// chercherait sans Dart.
+  List<OnyxAppleNativeAction> infoActions;
+
+  /// L'épisode suivant proposé au générique (`AVContentProposal`), ou null.
+  OnyxAppleNativeNextUp? nextUp;
+
+  /// La question à poser par-dessus le lecteur (`UIAlertController`), ou null.
+  OnyxAppleNativePrompt? prompt;
+
+  /// Les onglets ajoutés au panneau d'infos (`customInfoViewControllers`),
+  /// dans l'ordre : Épisodes, Regarder ensemble, Stats.
+  List<OnyxAppleNativePanel> panels;
+
+  /// Une annonce en haut de l'image (`contentOverlayView`), ou null pour la
+  /// retirer. Regarder ensemble l'utilise.
+  String? toast;
+
+  /// Le natif retient les recherches de l'utilisateur au lieu de les
+  /// appliquer, et les remonte en `seekRequested` : Dart décide (HLS, où une
+  /// recherche peut reconstruire la session).
+  bool interceptSeeks;
+
   List<Object?> _toList() {
     return <Object?>[
       title,
@@ -1088,6 +1534,13 @@ class OnyxAppleNativeSpec {
       overview,
       menus,
       actions,
+      chapters,
+      infoActions,
+      nextUp,
+      prompt,
+      panels,
+      toast,
+      interceptSeeks,
     ];
   }
 
@@ -1103,6 +1556,13 @@ class OnyxAppleNativeSpec {
       overview: result[3] as String?,
       menus: (result[4]! as List<Object?>).cast<OnyxAppleNativeMenu>(),
       actions: (result[5]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      chapters: (result[6]! as List<Object?>).cast<OnyxAppleNativeChapter>(),
+      infoActions: (result[7]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      nextUp: result[8] as OnyxAppleNativeNextUp?,
+      prompt: result[9] as OnyxAppleNativePrompt?,
+      panels: (result[10]! as List<Object?>).cast<OnyxAppleNativePanel>(),
+      toast: result[11] as String?,
+      interceptSeeks: result[12]! as bool,
     );
   }
 
@@ -1115,7 +1575,7 @@ class OnyxAppleNativeSpec {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(posterUrl, other.posterUrl) && _deepEquals(overview, other.overview) && _deepEquals(menus, other.menus) && _deepEquals(actions, other.actions);
+    return _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(posterUrl, other.posterUrl) && _deepEquals(overview, other.overview) && _deepEquals(menus, other.menus) && _deepEquals(actions, other.actions) && _deepEquals(chapters, other.chapters) && _deepEquals(infoActions, other.infoActions) && _deepEquals(nextUp, other.nextUp) && _deepEquals(prompt, other.prompt) && _deepEquals(panels, other.panels) && _deepEquals(toast, other.toast) && _deepEquals(interceptSeeks, other.interceptSeeks);
   }
 
   @override
@@ -1124,7 +1584,7 @@ class OnyxAppleNativeSpec {
 
   @override
   String toString() {
-    return 'OnyxAppleNativeSpec(title: $title, subtitle: $subtitle, posterUrl: $posterUrl, overview: $overview, menus: $menus, actions: $actions)';
+    return 'OnyxAppleNativeSpec(title: $title, subtitle: $subtitle, posterUrl: $posterUrl, overview: $overview, menus: $menus, actions: $actions, chapters: $chapters, infoActions: $infoActions, nextUp: $nextUp, prompt: $prompt, panels: $panels, toast: $toast, interceptSeeks: $interceptSeeks)';
   }
 }
 
@@ -1139,6 +1599,11 @@ class OnyxAppleNativeEvent {
     this.optionId,
     this.trackId,
     this.reason,
+    this.playing,
+    this.positionMs,
+    this.fromPositionMs,
+    this.panelId,
+    this.rowId,
   });
 
   int playerId;
@@ -1155,6 +1620,22 @@ class OnyxAppleNativeEvent {
 
   OnyxAppleNativeReason? reason;
 
+  /// `transport` : l'état demandé dans AVKit.
+  bool? playing;
+
+  /// `transport`, `userSeeked`, `seekRequested` : la position en temps de
+  /// l'item (millisecondes).
+  int? positionMs;
+
+  /// `userSeeked` : d'où l'utilisateur est parti.
+  int? fromPositionMs;
+
+  /// `panelRowSelected`, `panelTabSelected`.
+  String? panelId;
+
+  /// `panelRowSelected`.
+  String? rowId;
+
   List<Object?> _toList() {
     return <Object?>[
       playerId,
@@ -1164,6 +1645,11 @@ class OnyxAppleNativeEvent {
       optionId,
       trackId,
       reason,
+      playing,
+      positionMs,
+      fromPositionMs,
+      panelId,
+      rowId,
     ];
   }
 
@@ -1180,6 +1666,11 @@ class OnyxAppleNativeEvent {
       optionId: result[4] as String?,
       trackId: result[5] as String?,
       reason: result[6] as OnyxAppleNativeReason?,
+      playing: result[7] as bool?,
+      positionMs: result[8] as int?,
+      fromPositionMs: result[9] as int?,
+      panelId: result[10] as String?,
+      rowId: result[11] as String?,
     );
   }
 
@@ -1192,7 +1683,7 @@ class OnyxAppleNativeEvent {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(playerId, other.playerId) && _deepEquals(kind, other.kind) && _deepEquals(actionId, other.actionId) && _deepEquals(menuId, other.menuId) && _deepEquals(optionId, other.optionId) && _deepEquals(trackId, other.trackId) && _deepEquals(reason, other.reason);
+    return _deepEquals(playerId, other.playerId) && _deepEquals(kind, other.kind) && _deepEquals(actionId, other.actionId) && _deepEquals(menuId, other.menuId) && _deepEquals(optionId, other.optionId) && _deepEquals(trackId, other.trackId) && _deepEquals(reason, other.reason) && _deepEquals(playing, other.playing) && _deepEquals(positionMs, other.positionMs) && _deepEquals(fromPositionMs, other.fromPositionMs) && _deepEquals(panelId, other.panelId) && _deepEquals(rowId, other.rowId);
   }
 
   @override
@@ -1201,7 +1692,7 @@ class OnyxAppleNativeEvent {
 
   @override
   String toString() {
-    return 'OnyxAppleNativeEvent(playerId: $playerId, kind: $kind, actionId: $actionId, menuId: $menuId, optionId: $optionId, trackId: $trackId, reason: $reason)';
+    return 'OnyxAppleNativeEvent(playerId: $playerId, kind: $kind, actionId: $actionId, menuId: $menuId, optionId: $optionId, trackId: $trackId, reason: $reason, playing: $playing, positionMs: $positionMs, fromPositionMs: $fromPositionMs, panelId: $panelId, rowId: $rowId)';
   }
 }
 
@@ -1264,11 +1755,26 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is OnyxAppleNativeAction) {
       buffer.putUint8(145);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleNativeSpec) {
+    }    else if (value is OnyxAppleNativeChapter) {
       buffer.putUint8(146);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleNativeEvent) {
+    }    else if (value is OnyxAppleNativeNextUp) {
       buffer.putUint8(147);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativePrompt) {
+      buffer.putUint8(148);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativePanelRow) {
+      buffer.putUint8(149);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativePanel) {
+      buffer.putUint8(150);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeSpec) {
+      buffer.putUint8(151);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxAppleNativeEvent) {
+      buffer.putUint8(152);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -1318,8 +1824,18 @@ class _PigeonCodec extends StandardMessageCodec {
       case 145:
         return OnyxAppleNativeAction.decode(readValue(buffer)!);
       case 146:
-        return OnyxAppleNativeSpec.decode(readValue(buffer)!);
+        return OnyxAppleNativeChapter.decode(readValue(buffer)!);
       case 147:
+        return OnyxAppleNativeNextUp.decode(readValue(buffer)!);
+      case 148:
+        return OnyxAppleNativePrompt.decode(readValue(buffer)!);
+      case 149:
+        return OnyxAppleNativePanelRow.decode(readValue(buffer)!);
+      case 150:
+        return OnyxAppleNativePanel.decode(readValue(buffer)!);
+      case 151:
+        return OnyxAppleNativeSpec.decode(readValue(buffer)!);
+      case 152:
         return OnyxAppleNativeEvent.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);

@@ -234,6 +234,22 @@ enum OnyxAppleNativeEventKind: Int, CaseIterable {
   /// Le natif ne sait pas jouer ceci : Dart doit rendre l'écran Flutter.
   /// [OnyxAppleNativeEvent.reason] dit pourquoi.
   case unavailable = 4
+  /// Lecture ou pause demandée dans AVKit (télécommande, Centre de contrôle,
+  /// app Remote) : `playing`, `positionMs`. Jamais pour une demande de Dart.
+  case transport = 5
+  /// L'utilisateur a déplacé la lecture dans AVKit (saut de 10 s, balayage,
+  /// chapitre), déjà appliqué : `fromPositionMs`, `positionMs`.
+  case userSeeked = 6
+  /// La même chose, retenue parce que `interceptSeeks` : Dart doit chercher
+  /// `positionMs`.
+  case seekRequested = 7
+  /// Une ligne choisie dans un panneau : `panelId`, `rowId`.
+  case panelRowSelected = 8
+  /// Un onglet choisi dans un panneau (une saison) : `panelId`, `optionId`.
+  case panelTabSelected = 9
+  /// Quelqu'un se sert de la télécommande : la barre de transport apparaît,
+  /// un menu, une action ou une navigation. Au plus un toutes les 5 s.
+  case userActivity = 10
 }
 
 /// Pourquoi l'écran natif se ferme ou n'est pas disponible.
@@ -893,6 +909,9 @@ struct OnyxAppleNativeOption: Hashable, CustomStringConvertible {
   /// Coché dans le menu. Dart reste maître de l'état : le natif ne coche rien
   /// de lui-même, il attend la spec suivante.
   var selected: Bool
+  /// Seconde ligne, déjà traduite (`UIMenuElement.subtitle`) : le codec d'une
+  /// piste, « reste 12 min » d'une minuterie, l'avertissement Dolby Vision.
+  var detail: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -900,11 +919,13 @@ struct OnyxAppleNativeOption: Hashable, CustomStringConvertible {
     let id = pigeonVar_list[0] as! String
     let label = pigeonVar_list[1] as! String
     let selected = pigeonVar_list[2] as! Bool
+    let detail: String? = nilOrValue(pigeonVar_list[3])
 
     return OnyxAppleNativeOption(
       id: id,
       label: label,
-      selected: selected
+      selected: selected,
+      detail: detail
     )
   }
   func toList() -> [Any?] {
@@ -912,13 +933,14 @@ struct OnyxAppleNativeOption: Hashable, CustomStringConvertible {
       id,
       label,
       selected,
+      detail,
     ]
   }
   static func == (lhs: OnyxAppleNativeOption, rhs: OnyxAppleNativeOption) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.label, rhs.label) && MessagesPigeonInternal.deepEquals(lhs.selected, rhs.selected)
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.label, rhs.label) && MessagesPigeonInternal.deepEquals(lhs.selected, rhs.selected) && MessagesPigeonInternal.deepEquals(lhs.detail, rhs.detail)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -926,10 +948,11 @@ struct OnyxAppleNativeOption: Hashable, CustomStringConvertible {
     MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: label, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: selected, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: detail, hasher: &hasher)
   }
 
   public var description: String {
-    return "OnyxAppleNativeOption(id: \(String(describing: id)), label: \(String(describing: label)), selected: \(String(describing: selected)))"
+    return "OnyxAppleNativeOption(id: \(String(describing: id)), label: \(String(describing: label)), selected: \(String(describing: selected)), detail: \(String(describing: detail)))"
   }
 }
 
@@ -1030,6 +1053,350 @@ struct OnyxAppleNativeAction: Hashable, CustomStringConvertible {
   }
 }
 
+/// Un chapitre, pour `AVPlayerItem.navigationMarkerGroups`
+/// (`AVTimedMetadataGroup` : titre et plage).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativeChapter: Hashable, CustomStringConvertible {
+  /// Déjà traduit (« Chapitre 3 » quand le fichier n'a pas de titre).
+  var title: String
+  var startMs: Int64
+  var endMs: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativeChapter? {
+    let title = pigeonVar_list[0] as! String
+    let startMs = pigeonVar_list[1] as! Int64
+    let endMs = pigeonVar_list[2] as! Int64
+
+    return OnyxAppleNativeChapter(
+      title: title,
+      startMs: startMs,
+      endMs: endMs
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      title,
+      startMs,
+      endMs,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativeChapter, rhs: OnyxAppleNativeChapter) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.startMs, rhs.startMs) && MessagesPigeonInternal.deepEquals(lhs.endMs, rhs.endMs)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativeChapter")
+    MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: startMs, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: endMs, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativeChapter(title: \(String(describing: title)), startMs: \(String(describing: startMs)), endMs: \(String(describing: endMs)))"
+  }
+}
+
+/// L'épisode suivant, proposé par une sous-classe d'`AVContentProposalViewController`.
+/// Dart reste maître de l'enchaînement : le natif n'accepte jamais de lui-même.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativeNextUp: Hashable, CustomStringConvertible {
+  /// « S1:E4 · Le titre ».
+  var title: String
+  var subtitle: String? = nil
+  /// L'image de l'épisode, en URL absolue avec son ticket.
+  var imageUrl: String? = nil
+  /// `contentTimeForTransition` : le début du générique, en temps de l'item.
+  var transitionMs: Int64
+  /// Les secondes qui restent avant que Dart n'enchaîne, ou null sans compte
+  /// à rebours (gelé, annulé, minuterie de veille).
+  var countdownSeconds: Int64? = nil
+  /// « Lire » → action `nextEpisode` ; « Plus tard » → action
+  /// `cancelAutoPlay`, après `dismissContentProposal(for: .defer)`.
+  var playLabel: String
+  var laterLabel: String
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativeNextUp? {
+    let title = pigeonVar_list[0] as! String
+    let subtitle: String? = nilOrValue(pigeonVar_list[1])
+    let imageUrl: String? = nilOrValue(pigeonVar_list[2])
+    let transitionMs = pigeonVar_list[3] as! Int64
+    let countdownSeconds: Int64? = nilOrValue(pigeonVar_list[4])
+    let playLabel = pigeonVar_list[5] as! String
+    let laterLabel = pigeonVar_list[6] as! String
+
+    return OnyxAppleNativeNextUp(
+      title: title,
+      subtitle: subtitle,
+      imageUrl: imageUrl,
+      transitionMs: transitionMs,
+      countdownSeconds: countdownSeconds,
+      playLabel: playLabel,
+      laterLabel: laterLabel
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      title,
+      subtitle,
+      imageUrl,
+      transitionMs,
+      countdownSeconds,
+      playLabel,
+      laterLabel,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativeNextUp, rhs: OnyxAppleNativeNextUp) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.imageUrl, rhs.imageUrl) && MessagesPigeonInternal.deepEquals(lhs.transitionMs, rhs.transitionMs) && MessagesPigeonInternal.deepEquals(lhs.countdownSeconds, rhs.countdownSeconds) && MessagesPigeonInternal.deepEquals(lhs.playLabel, rhs.playLabel) && MessagesPigeonInternal.deepEquals(lhs.laterLabel, rhs.laterLabel)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativeNextUp")
+    MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: subtitle, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: imageUrl, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: transitionMs, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: countdownSeconds, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: playLabel, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: laterLabel, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativeNextUp(title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), imageUrl: \(String(describing: imageUrl)), transitionMs: \(String(describing: transitionMs)), countdownSeconds: \(String(describing: countdownSeconds)), playLabel: \(String(describing: playLabel)), laterLabel: \(String(describing: laterLabel)))"
+  }
+}
+
+/// Une question posée par-dessus le lecteur natif : « Vous regardez encore ? »,
+/// langue manquante, saison suivante, épisode à venir, lecture reprise ailleurs.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativePrompt: Hashable, CustomStringConvertible {
+  /// Stable d'une spec à l'autre : la même question n'est pas reposée.
+  var id: String
+  var title: String
+  var message: String? = nil
+  /// Dans l'ordre d'affichage ; la première est l'action préférée.
+  var actions: [OnyxAppleNativeAction]
+  /// L'action que vaut Menu (la touche Retour de la télécommande), rendue en
+  /// `action`. Elle doit être l'une de [actions].
+  var cancelActionId: String
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativePrompt? {
+    let id = pigeonVar_list[0] as! String
+    let title = pigeonVar_list[1] as! String
+    let message: String? = nilOrValue(pigeonVar_list[2])
+    let actions = pigeonVar_list[3] as! [OnyxAppleNativeAction]
+    let cancelActionId = pigeonVar_list[4] as! String
+
+    return OnyxAppleNativePrompt(
+      id: id,
+      title: title,
+      message: message,
+      actions: actions,
+      cancelActionId: cancelActionId
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      id,
+      title,
+      message,
+      actions,
+      cancelActionId,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativePrompt, rhs: OnyxAppleNativePrompt) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.message, rhs.message) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions) && MessagesPigeonInternal.deepEquals(lhs.cancelActionId, rhs.cancelActionId)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativePrompt")
+    MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: message, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: actions, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: cancelActionId, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativePrompt(id: \(String(describing: id)), title: \(String(describing: title)), message: \(String(describing: message)), actions: \(String(describing: actions)), cancelActionId: \(String(describing: cancelActionId)))"
+  }
+}
+
+/// Une ligne d'un panneau : un épisode, un participant, une statistique.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativePanelRow: Hashable, CustomStringConvertible {
+  var id: String
+  var title: String
+  var subtitle: String? = nil
+  /// À droite : une durée, « Hôte », une valeur de statistique.
+  var detail: String? = nil
+  var imageUrl: String? = nil
+  /// Avancement de 0 à 1, pour un épisode commencé.
+  var progress: Double? = nil
+  /// L'épisode qui joue : marqué, et le focus y entre.
+  var selected: Bool
+  /// Faux pour une ligne d'information (participant, statistique).
+  var selectable: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativePanelRow? {
+    let id = pigeonVar_list[0] as! String
+    let title = pigeonVar_list[1] as! String
+    let subtitle: String? = nilOrValue(pigeonVar_list[2])
+    let detail: String? = nilOrValue(pigeonVar_list[3])
+    let imageUrl: String? = nilOrValue(pigeonVar_list[4])
+    let progress: Double? = nilOrValue(pigeonVar_list[5])
+    let selected = pigeonVar_list[6] as! Bool
+    let selectable = pigeonVar_list[7] as! Bool
+
+    return OnyxAppleNativePanelRow(
+      id: id,
+      title: title,
+      subtitle: subtitle,
+      detail: detail,
+      imageUrl: imageUrl,
+      progress: progress,
+      selected: selected,
+      selectable: selectable
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      id,
+      title,
+      subtitle,
+      detail,
+      imageUrl,
+      progress,
+      selected,
+      selectable,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativePanelRow, rhs: OnyxAppleNativePanelRow) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.detail, rhs.detail) && MessagesPigeonInternal.deepEquals(lhs.imageUrl, rhs.imageUrl) && MessagesPigeonInternal.deepEquals(lhs.progress, rhs.progress) && MessagesPigeonInternal.deepEquals(lhs.selected, rhs.selected) && MessagesPigeonInternal.deepEquals(lhs.selectable, rhs.selectable)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativePanelRow")
+    MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: subtitle, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: detail, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: imageUrl, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: progress, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: selected, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: selectable, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativePanelRow(id: \(String(describing: id)), title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), detail: \(String(describing: detail)), imageUrl: \(String(describing: imageUrl)), progress: \(String(describing: progress)), selected: \(String(describing: selected)), selectable: \(String(describing: selectable)))"
+  }
+}
+
+/// Un onglet du panneau d'infos d'AVKit (`customInfoViewControllers`).
+///
+/// Un seul modèle pour Épisodes, Regarder ensemble et Stats : Swift a un seul
+/// contrôleur à écrire.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleNativePanel: Hashable, CustomStringConvertible {
+  /// `episodes`, `watchParty`, `stats` : rendu dans les événements.
+  var id: String
+  /// Le titre de l'onglet (`UIViewController.title`).
+  var title: String
+  /// Un paragraphe au-dessus des lignes : l'explication et le code de la
+  /// séance, une erreur.
+  var message: String? = nil
+  /// Les saisons : un choix rendu en `panelTabSelected` (`optionId`).
+  var tabs: [OnyxAppleNativeOption]
+  /// Pour `stats`, les lignes ne portent que l'identifiant de la mesure
+  /// (`route`, `videoCodec`, `videoDecoder`, `audioDecoder`, `observedFps`,
+  /// `containerFps`, `droppedFrames`, `averageBitrateMbps`, `videoBitrate`,
+  /// `videoFormat`, `audioDelivery`, `container`) et son libellé : Swift
+  /// remplit `detail` lui-même, chaque seconde, tant que l'onglet est visible.
+  var rows: [OnyxAppleNativePanelRow]
+  /// Les boutons sous les lignes (« Démarrer une séance », « Quitter la
+  /// séance »), rendus en `action`.
+  var actions: [OnyxAppleNativeAction]
+  var loading: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativePanel? {
+    let id = pigeonVar_list[0] as! String
+    let title = pigeonVar_list[1] as! String
+    let message: String? = nilOrValue(pigeonVar_list[2])
+    let tabs = pigeonVar_list[3] as! [OnyxAppleNativeOption]
+    let rows = pigeonVar_list[4] as! [OnyxAppleNativePanelRow]
+    let actions = pigeonVar_list[5] as! [OnyxAppleNativeAction]
+    let loading = pigeonVar_list[6] as! Bool
+
+    return OnyxAppleNativePanel(
+      id: id,
+      title: title,
+      message: message,
+      tabs: tabs,
+      rows: rows,
+      actions: actions,
+      loading: loading
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      id,
+      title,
+      message,
+      tabs,
+      rows,
+      actions,
+      loading,
+    ]
+  }
+  static func == (lhs: OnyxAppleNativePanel, rhs: OnyxAppleNativePanel) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.message, rhs.message) && MessagesPigeonInternal.deepEquals(lhs.tabs, rhs.tabs) && MessagesPigeonInternal.deepEquals(lhs.rows, rhs.rows) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions) && MessagesPigeonInternal.deepEquals(lhs.loading, rhs.loading)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleNativePanel")
+    MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: message, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: tabs, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: rows, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: actions, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: loading, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleNativePanel(id: \(String(describing: id)), title: \(String(describing: title)), message: \(String(describing: message)), tabs: \(String(describing: tabs)), rows: \(String(describing: rows)), actions: \(String(describing: actions)), loading: \(String(describing: loading)))"
+  }
+}
+
 /// Tout ce que le lecteur natif affiche, en un seul objet : Swift n'a pas
 /// d'état à réconcilier, il applique la dernière spec reçue.
 ///
@@ -1045,6 +1412,26 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
   var overview: String? = nil
   var menus: [OnyxAppleNativeMenu]
   var actions: [OnyxAppleNativeAction]
+  /// `AVPlayerItem.navigationMarkerGroups`, reposé sur chaque nouvel item.
+  var chapters: [OnyxAppleNativeChapter]
+  /// `infoViewActions` (deux au plus) : épisode précédent, épisode suivant.
+  /// Vide, AVKit n'en montre aucune : pas de « Lire depuis le début », qui
+  /// chercherait sans Dart.
+  var infoActions: [OnyxAppleNativeAction]
+  /// L'épisode suivant proposé au générique (`AVContentProposal`), ou null.
+  var nextUp: OnyxAppleNativeNextUp? = nil
+  /// La question à poser par-dessus le lecteur (`UIAlertController`), ou null.
+  var prompt: OnyxAppleNativePrompt? = nil
+  /// Les onglets ajoutés au panneau d'infos (`customInfoViewControllers`),
+  /// dans l'ordre : Épisodes, Regarder ensemble, Stats.
+  var panels: [OnyxAppleNativePanel]
+  /// Une annonce en haut de l'image (`contentOverlayView`), ou null pour la
+  /// retirer. Regarder ensemble l'utilise.
+  var toast: String? = nil
+  /// Le natif retient les recherches de l'utilisateur au lieu de les
+  /// appliquer, et les remonte en `seekRequested` : Dart décide (HLS, où une
+  /// recherche peut reconstruire la session).
+  var interceptSeeks: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -1055,6 +1442,13 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
     let overview: String? = nilOrValue(pigeonVar_list[3])
     let menus = pigeonVar_list[4] as! [OnyxAppleNativeMenu]
     let actions = pigeonVar_list[5] as! [OnyxAppleNativeAction]
+    let chapters = pigeonVar_list[6] as! [OnyxAppleNativeChapter]
+    let infoActions = pigeonVar_list[7] as! [OnyxAppleNativeAction]
+    let nextUp: OnyxAppleNativeNextUp? = nilOrValue(pigeonVar_list[8])
+    let prompt: OnyxAppleNativePrompt? = nilOrValue(pigeonVar_list[9])
+    let panels = pigeonVar_list[10] as! [OnyxAppleNativePanel]
+    let toast: String? = nilOrValue(pigeonVar_list[11])
+    let interceptSeeks = pigeonVar_list[12] as! Bool
 
     return OnyxAppleNativeSpec(
       title: title,
@@ -1062,7 +1456,14 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
       posterUrl: posterUrl,
       overview: overview,
       menus: menus,
-      actions: actions
+      actions: actions,
+      chapters: chapters,
+      infoActions: infoActions,
+      nextUp: nextUp,
+      prompt: prompt,
+      panels: panels,
+      toast: toast,
+      interceptSeeks: interceptSeeks
     )
   }
   func toList() -> [Any?] {
@@ -1073,13 +1474,20 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
       overview,
       menus,
       actions,
+      chapters,
+      infoActions,
+      nextUp,
+      prompt,
+      panels,
+      toast,
+      interceptSeeks,
     ]
   }
   static func == (lhs: OnyxAppleNativeSpec, rhs: OnyxAppleNativeSpec) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.posterUrl, rhs.posterUrl) && MessagesPigeonInternal.deepEquals(lhs.overview, rhs.overview) && MessagesPigeonInternal.deepEquals(lhs.menus, rhs.menus) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions)
+    return MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.posterUrl, rhs.posterUrl) && MessagesPigeonInternal.deepEquals(lhs.overview, rhs.overview) && MessagesPigeonInternal.deepEquals(lhs.menus, rhs.menus) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions) && MessagesPigeonInternal.deepEquals(lhs.chapters, rhs.chapters) && MessagesPigeonInternal.deepEquals(lhs.infoActions, rhs.infoActions) && MessagesPigeonInternal.deepEquals(lhs.nextUp, rhs.nextUp) && MessagesPigeonInternal.deepEquals(lhs.prompt, rhs.prompt) && MessagesPigeonInternal.deepEquals(lhs.panels, rhs.panels) && MessagesPigeonInternal.deepEquals(lhs.toast, rhs.toast) && MessagesPigeonInternal.deepEquals(lhs.interceptSeeks, rhs.interceptSeeks)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1090,10 +1498,17 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
     MessagesPigeonInternal.deepHash(value: overview, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: menus, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: actions, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: chapters, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: infoActions, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: nextUp, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: prompt, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: panels, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: toast, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: interceptSeeks, hasher: &hasher)
   }
 
   public var description: String {
-    return "OnyxAppleNativeSpec(title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), posterUrl: \(String(describing: posterUrl)), overview: \(String(describing: overview)), menus: \(String(describing: menus)), actions: \(String(describing: actions)))"
+    return "OnyxAppleNativeSpec(title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), posterUrl: \(String(describing: posterUrl)), overview: \(String(describing: overview)), menus: \(String(describing: menus)), actions: \(String(describing: actions)), chapters: \(String(describing: chapters)), infoActions: \(String(describing: infoActions)), nextUp: \(String(describing: nextUp)), prompt: \(String(describing: prompt)), panels: \(String(describing: panels)), toast: \(String(describing: toast)), interceptSeeks: \(String(describing: interceptSeeks)))"
   }
 }
 
@@ -1109,6 +1524,17 @@ struct OnyxAppleNativeEvent: Hashable, CustomStringConvertible {
   var optionId: String? = nil
   var trackId: String? = nil
   var reason: OnyxAppleNativeReason? = nil
+  /// `transport` : l'état demandé dans AVKit.
+  var playing: Bool? = nil
+  /// `transport`, `userSeeked`, `seekRequested` : la position en temps de
+  /// l'item (millisecondes).
+  var positionMs: Int64? = nil
+  /// `userSeeked` : d'où l'utilisateur est parti.
+  var fromPositionMs: Int64? = nil
+  /// `panelRowSelected`, `panelTabSelected`.
+  var panelId: String? = nil
+  /// `panelRowSelected`.
+  var rowId: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -1120,6 +1546,11 @@ struct OnyxAppleNativeEvent: Hashable, CustomStringConvertible {
     let optionId: String? = nilOrValue(pigeonVar_list[4])
     let trackId: String? = nilOrValue(pigeonVar_list[5])
     let reason: OnyxAppleNativeReason? = nilOrValue(pigeonVar_list[6])
+    let playing: Bool? = nilOrValue(pigeonVar_list[7])
+    let positionMs: Int64? = nilOrValue(pigeonVar_list[8])
+    let fromPositionMs: Int64? = nilOrValue(pigeonVar_list[9])
+    let panelId: String? = nilOrValue(pigeonVar_list[10])
+    let rowId: String? = nilOrValue(pigeonVar_list[11])
 
     return OnyxAppleNativeEvent(
       playerId: playerId,
@@ -1128,7 +1559,12 @@ struct OnyxAppleNativeEvent: Hashable, CustomStringConvertible {
       menuId: menuId,
       optionId: optionId,
       trackId: trackId,
-      reason: reason
+      reason: reason,
+      playing: playing,
+      positionMs: positionMs,
+      fromPositionMs: fromPositionMs,
+      panelId: panelId,
+      rowId: rowId
     )
   }
   func toList() -> [Any?] {
@@ -1140,13 +1576,18 @@ struct OnyxAppleNativeEvent: Hashable, CustomStringConvertible {
       optionId,
       trackId,
       reason,
+      playing,
+      positionMs,
+      fromPositionMs,
+      panelId,
+      rowId,
     ]
   }
   static func == (lhs: OnyxAppleNativeEvent, rhs: OnyxAppleNativeEvent) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.playerId, rhs.playerId) && MessagesPigeonInternal.deepEquals(lhs.kind, rhs.kind) && MessagesPigeonInternal.deepEquals(lhs.actionId, rhs.actionId) && MessagesPigeonInternal.deepEquals(lhs.menuId, rhs.menuId) && MessagesPigeonInternal.deepEquals(lhs.optionId, rhs.optionId) && MessagesPigeonInternal.deepEquals(lhs.trackId, rhs.trackId) && MessagesPigeonInternal.deepEquals(lhs.reason, rhs.reason)
+    return MessagesPigeonInternal.deepEquals(lhs.playerId, rhs.playerId) && MessagesPigeonInternal.deepEquals(lhs.kind, rhs.kind) && MessagesPigeonInternal.deepEquals(lhs.actionId, rhs.actionId) && MessagesPigeonInternal.deepEquals(lhs.menuId, rhs.menuId) && MessagesPigeonInternal.deepEquals(lhs.optionId, rhs.optionId) && MessagesPigeonInternal.deepEquals(lhs.trackId, rhs.trackId) && MessagesPigeonInternal.deepEquals(lhs.reason, rhs.reason) && MessagesPigeonInternal.deepEquals(lhs.playing, rhs.playing) && MessagesPigeonInternal.deepEquals(lhs.positionMs, rhs.positionMs) && MessagesPigeonInternal.deepEquals(lhs.fromPositionMs, rhs.fromPositionMs) && MessagesPigeonInternal.deepEquals(lhs.panelId, rhs.panelId) && MessagesPigeonInternal.deepEquals(lhs.rowId, rhs.rowId)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1158,10 +1599,15 @@ struct OnyxAppleNativeEvent: Hashable, CustomStringConvertible {
     MessagesPigeonInternal.deepHash(value: optionId, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: trackId, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: reason, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: playing, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: positionMs, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: fromPositionMs, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: panelId, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: rowId, hasher: &hasher)
   }
 
   public var description: String {
-    return "OnyxAppleNativeEvent(playerId: \(String(describing: playerId)), kind: \(String(describing: kind)), actionId: \(String(describing: actionId)), menuId: \(String(describing: menuId)), optionId: \(String(describing: optionId)), trackId: \(String(describing: trackId)), reason: \(String(describing: reason)))"
+    return "OnyxAppleNativeEvent(playerId: \(String(describing: playerId)), kind: \(String(describing: kind)), actionId: \(String(describing: actionId)), menuId: \(String(describing: menuId)), optionId: \(String(describing: optionId)), trackId: \(String(describing: trackId)), reason: \(String(describing: reason)), playing: \(String(describing: playing)), positionMs: \(String(describing: positionMs)), fromPositionMs: \(String(describing: fromPositionMs)), panelId: \(String(describing: panelId)), rowId: \(String(describing: rowId)))"
   }
 }
 
@@ -1223,8 +1669,18 @@ private class MessagesPigeonCodecReader: FlutterStandardReader {
     case 145:
       return OnyxAppleNativeAction.fromList(self.readValue() as! [Any?])
     case 146:
-      return OnyxAppleNativeSpec.fromList(self.readValue() as! [Any?])
+      return OnyxAppleNativeChapter.fromList(self.readValue() as! [Any?])
     case 147:
+      return OnyxAppleNativeNextUp.fromList(self.readValue() as! [Any?])
+    case 148:
+      return OnyxAppleNativePrompt.fromList(self.readValue() as! [Any?])
+    case 149:
+      return OnyxAppleNativePanelRow.fromList(self.readValue() as! [Any?])
+    case 150:
+      return OnyxAppleNativePanel.fromList(self.readValue() as! [Any?])
+    case 151:
+      return OnyxAppleNativeSpec.fromList(self.readValue() as! [Any?])
+    case 152:
       return OnyxAppleNativeEvent.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -1285,11 +1741,26 @@ private class MessagesPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? OnyxAppleNativeAction {
       super.writeByte(145)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleNativeSpec {
+    } else if let value = value as? OnyxAppleNativeChapter {
       super.writeByte(146)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleNativeEvent {
+    } else if let value = value as? OnyxAppleNativeNextUp {
       super.writeByte(147)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativePrompt {
+      super.writeByte(148)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativePanelRow {
+      super.writeByte(149)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativePanel {
+      super.writeByte(150)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeSpec {
+      super.writeByte(151)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxAppleNativeEvent {
+      super.writeByte(152)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
