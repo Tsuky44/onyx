@@ -111,9 +111,9 @@ Légende de l'état :
 | Audio | `onyx_settings_menu.dart` (`_buildAudio`), `hooks/player_controller_tracks.dart` | partiel | `transportBarCustomMenuItems` (menu `audio`) | Seule la seconde ligne manque : codec et canaux, via `splitTrackLabel(...).$2` → `detail`. |
 | Sous-titres texte en Direct Play | `onyx_settings_menu.dart` (`_buildSubtitles`), `playback/series_track_memory.dart` | déjà fait | menu Sous-titres natif d'AVKit (groupe `legible`) + `subtitleSelected` | Étape 4 de l'ADR-0105. |
 | Sous-titres texte en HLS (servis à part, peints par Flutter, ADR-0031) | `playback/live_subtitles.dart`, `playback/subtitle_overlay.dart` | repli (`overlaySubtitles`) | `contentOverlayView`, la même couche que les sous-titres image | À aligner sur le chantier des sous-titres image : même vue, mêmes répliques poussées par Dart. Le menu passe alors par `transportBarCustomMenuItems` (menu `subtitles`, qu'`OnyxAppleNativeMenu` prévoit déjà). |
-| Sous-titres image (PGS, VobSub) | `playback/subtitle_bitmap_overlay.dart` | chantier en cours | `contentOverlayView` | Aujourd'hui en repli (`bitmapSubtitles`). |
+| Sous-titres image (PGS, VobSub) | `playback/subtitle_bitmap_overlay.dart` | déjà fait | `contentOverlayView` (`NativeBitmapSubtitles.swift`) + menu Sous-titres natif (renditions OCR) | ADR-0107. Repli `bitmapSubtitles` seulement si la couche ne se pose pas. Les répliques ne remontent pas encore avec la barre de transport. |
 | Vitesse de lecture | `onyx_settings_menu.dart` (`_buildSpeed`) | partiel | `transportBarCustomMenuItems` (menu `speed`) + `speeds = []` | Le menu Vitesse d'AVKit fait doublon. Voir §1.2. |
-| Affichage : Original, Remplir la hauteur, Remplir | `onyx_settings_menu.dart` (`_buildDisplay`), `video_display_mode.dart` | partiel | `transportBarCustomMenuItems` (menu `fit`) + `videoGravity` | Il manque la description de chaque mode (`mode.description` → `detail`). |
+| Affichage : Original, Remplir la hauteur, Remplir | `onyx_settings_menu.dart` (`_buildDisplay`), `video_display_mode.dart` | partiel | `transportBarCustomMenuItems` (menu `fit`) + `videoGravity` | Il manque la description de chaque mode (`mode.description` → `detail`). `AVPlayerViewController.videoGravity` n'était pas réglé (`engine.videoGravity` ne touche que les calques du moteur) : corrigé avec l'ADR-0107. |
 | Zoom au pincement, indice de zoom | `pinch_zoom_fit.dart`, `widgets/video_zoom_hint.dart` | sans objet | — | Réservé aux appareils tenus en main (`_handheld`). Ce n'est donc pas une perte sur Apple TV, contrairement à ce que dit l'ADR. |
 | Minuterie de veille (durées, « À la fin de l'épisode », « Après N épisodes », « reste … ») | `playback/sleep_timer.dart`, `onyx_settings_menu.dart` (`_buildSleep`) | à faire | `transportBarCustomMenuItems` (menu `sleep`) | Le contrat actuel suffit, plus `detail` pour « reste 12 min ». L'échéance met en pause côté Dart, ce qui marche déjà en natif. |
 | Chapitres (liste, saut) | `onyx_settings_menu.dart` (`_buildChapters`), `hooks/use_episode_navigation.dart` (`chapters`) | à faire | `AVPlayerItem.navigationMarkerGroups`, à reposer sur chaque item | Panneau Chapitres natif, à confirmer à l'appareil. Si AVKit ne l'affiche pas hors HLS, prévoir un menu `chapters` dans `transportBarCustomMenuItems`. Un saut de chapitre est une navigation de l'utilisateur, donc il remonte en `userSeeked`. |
@@ -506,7 +506,8 @@ l'ordre est une priorité : P1 corrige les défauts du §1, P2 et P3 ajoutent de
 **P3**
 
 11. `NativeOverlayView` dans `contentOverlayView` : le toast en haut au centre, avec fondu à l'apparition et au
-    retrait. Il réserve sa place sous la future couche des sous-titres image, à voir avec ce chantier.
+    retrait. Il se pose au-dessus de la couche des sous-titres image (`NativeBitmapSubtitles`, ADR-0107), dans le
+    même `contentOverlayView`.
 12. `NativeNextUpProposalController`, une sous-classe d'`AVContentProposalViewController` :
     - image, titre, compte à rebours et deux boutons ;
     - `preferredPlayerViewFrame` réduit l'image dans un coin ;

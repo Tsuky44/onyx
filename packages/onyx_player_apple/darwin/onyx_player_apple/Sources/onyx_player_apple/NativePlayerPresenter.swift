@@ -38,6 +38,10 @@
     /// sans sélection, et ce n'est pas un « Désactivé ».
     private var lastLegible: AVMediaSelectionOption?
 
+    /// Les sous-titres image, qu'AVKit ne peint pas : une couche à nous dans
+    /// son `contentOverlayView`, le temps de la présentation.
+    private var bitmapSubtitles: NativeBitmapSubtitles?
+
     init(playerId: Int64, engine: AetherEngine, send: @escaping (OnyxAppleNativeEvent) -> Void) {
       self.playerId = playerId
       self.engine = engine
@@ -71,10 +75,19 @@
       // setup on tvOS »).
       controller.appliesPreferredDisplayCriteriaAutomatically = false
       controller.player = engine.currentAVPlayer
+      // `engine.videoGravity` ne règle que les calques du moteur : celui
+      // d'AVKit garde le sien, que le format d'image du menu doit suivre.
+      controller.videoGravity = engine.videoGravity
       self.controller = controller
       closingFromHere = false
       apply(spec)
       observe()
+      let bitmapSubtitles = NativeBitmapSubtitles(engine: engine) { [weak self] in
+        self?.fallBackToFlutter(.bitmapSubtitles)
+      }
+      bitmapSubtitles.gravity = engine.videoGravity
+      bitmapSubtitles.attach(to: controller)
+      self.bitmapSubtitles = bitmapSubtitles
       // Une demande permanente : tant que l'écran natif est là, chaque
       // `selectSubtitleTrack` de Dart passe aussi au groupe `legible`, que
       // seul AVKit peint ici (Sodalite#156). Sans elle, la piste choisie ne
@@ -101,6 +114,13 @@
 
     func dismiss() {
       close { [weak self] in self?.emit(.dismissed, reason: .requested) }
+    }
+
+    /// Le format d'image choisi dans Dart (`setVideoFit`) : l'image d'AVKit et
+    /// les sous-titres image le suivent ensemble.
+    func setVideoGravity(_ gravity: AVLayerVideoGravity) {
+      controller?.videoGravity = gravity
+      bitmapSubtitles?.gravity = gravity
     }
 
     /// Le lecteur est détruit : Dart n'écoute plus, rien à lui dire.
@@ -207,7 +227,7 @@
       engine.$videoRoute
         .sink { [weak self] route in
           MainActor.assumeIsolated {
-            if route == .software { self?.fallBackToFlutter() }
+            if route == .software { self?.fallBackToFlutter(.softwareRoute) }
           }
         }
         .store(in: &subscriptions)
@@ -237,10 +257,11 @@
     }
 
     /// Le moteur peut passer en route logicielle en cours de film (un AVPlayer
-    /// qui refuse la source, AE#561) : Dart reprend l'écran Flutter.
-    private func fallBackToFlutter() {
+    /// qui refuse la source, AE#561), ou une piste image arriver sans couche
+    /// pour la peindre : Dart reprend l'écran Flutter.
+    private func fallBackToFlutter(_ reason: OnyxAppleNativeReason) {
       guard controller != nil, !closingFromHere else { return }
-      emit(.unavailable, reason: .softwareRoute)
+      emit(.unavailable, reason: reason)
       close(then: nil)
     }
 
@@ -249,9 +270,14 @@
     /// publie la demande (Sodalite#65). Dart décide et rappelle
     /// `selectSubtitleTrack`, que la demande permanente de rendu natif porte
     /// jusqu'au groupe `legible`.
+    ///
+    /// La demande ne porte que la langue : à langue égale, la piste texte passe
+    /// avant l'image, qui ne répond que seule dans sa langue.
     private func captionRequested(_ request: SystemCaptionRequest) {
       guard controller != nil else { return }
-      guard let track = CaptionLanguage.track(language: request.language, rank: 0, in: engine.subtitleTracks)
+      guard
+        let track = CaptionLanguage.track(language: request.language, rank: 0, in: engine.subtitleTracks)
+          ?? CaptionLanguage.bitmapTrack(language: request.language, in: engine.subtitleTracks)
       else {
         NSLog("Onyx: sous-titre demandé par le système sans piste correspondante (\(request.language ?? "sans langue"))")
         return
@@ -296,16 +322,32 @@
         if previous != nil { emit(.subtitleSelected) }
         return
       }
-      let language = CaptionLanguage.normalized(selected.extendedLanguageTag)
-      let rank = group.options
-        .filter { CaptionLanguage.normalized($0.extendedLanguageTag) == language }
-        .firstIndex(of: selected) ?? 0
       // Le moteur qui réaffirme sa propre piste (rechargement, changement
       // d'audio) retombe sur la piste active : rien à dire.
-      guard let track = CaptionLanguage.track(language: selected.extendedLanguageTag, rank: rank, in: engine.subtitleTracks),
-        track.id != active
-      else { return }
+      guard let track = engineTrack(of: selected, in: group), track.id != active else { return }
       emit(.subtitleSelected, trackId: String(track.id))
+    }
+
+    /// La piste du moteur derrière une option `legible`. Les renditions OCR
+    /// des pistes image se reconnaissent à leur nom (unique, celui que le
+    /// moteur a déclaré), à défaut à leur place dans le groupe, qui suit
+    /// l'ordre des renditions ; les pistes texte, par langue et par rang.
+    private func engineTrack(of option: AVMediaSelectionOption, in group: AVMediaSelectionGroup) -> TrackInfo? {
+      let ordinal =
+        engine.nativeSubtitleTracks.first(where: { $0.displayName == option.displayName })?.ordinal
+        ?? group.options.firstIndex(of: option)
+      if let ordinal,
+        let bitmap = CaptionLanguage.bitmapTrack(
+          nativeOrdinal: ordinal, nativeCount: engine.nativeSubtitleTracks.count,
+          isLive: engine.isLive, in: engine.subtitleTracks)
+      {
+        return bitmap
+      }
+      let language = CaptionLanguage.normalized(option.extendedLanguageTag)
+      let rank = group.options
+        .filter { CaptionLanguage.normalized($0.extendedLanguageTag) == language }
+        .firstIndex(of: option) ?? 0
+      return CaptionLanguage.track(language: option.extendedLanguageTag, rank: rank, in: engine.subtitleTracks)
     }
 
     // MARK: - Fermeture
@@ -334,6 +376,8 @@
       }
       stopWatchingSelection()
       subscriptions.removeAll()
+      bitmapSubtitles?.detach()
+      bitmapSubtitles = nil
       posterTask?.cancel()
       posterTask = nil
       posterRequested = nil
@@ -401,13 +445,35 @@
     /// La piste texte de [language] au rang [rank] parmi celles de la même
     /// langue, dans l'ordre du moteur : c'est l'ordre des options `legible`,
     /// que le moteur rapproche lui aussi par langue et par rang. Les pistes
-    /// image n'ont pas d'option native et sont sautées.
+    /// image sont sautées : leurs options passent par `bitmapTrack`.
     static func track(language: String?, rank: Int, in tracks: [TrackInfo]) -> TrackInfo? {
       let wanted = normalized(language)
       let candidates = tracks.filter {
         !StatusMapping.bitmapSubtitleCodecs.contains($0.codec) && normalized($0.language) == wanted
       }
       return rank < candidates.count ? candidates[rank] : candidates.first
+    }
+
+    /// La piste image derrière la rendition native [nativeOrdinal]. Le moteur
+    /// ajoute une rendition OCR par piste image (hors direct), après toutes les
+    /// autres et dans l'ordre de ses pistes : les dernières renditions sont
+    /// donc les pistes image, dans le même ordre.
+    static func bitmapTrack(nativeOrdinal: Int, nativeCount: Int, isLive: Bool, in tracks: [TrackInfo])
+      -> TrackInfo?
+    {
+      guard !isLive else { return nil }
+      let bitmaps = tracks.filter { StatusMapping.bitmapSubtitleCodecs.contains($0.codec) }
+      let first = nativeCount - bitmaps.count
+      guard first >= 0, nativeOrdinal >= first, nativeOrdinal < nativeCount else { return nil }
+      return bitmaps[nativeOrdinal - first]
+    }
+
+    /// La première piste image de [language].
+    static func bitmapTrack(language: String?, in tracks: [TrackInfo]) -> TrackInfo? {
+      let wanted = normalized(language)
+      return tracks.first {
+        StatusMapping.bitmapSubtitleCodecs.contains($0.codec) && normalized($0.language) == wanted
+      }
     }
 
     /// Nil pour une piste sans langue (ou `und`), qui ne correspond qu'à une

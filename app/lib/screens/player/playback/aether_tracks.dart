@@ -83,7 +83,7 @@ class AetherTracks {
   final Map<String, String> _subtitleNativeIds;
 
   /// La piste active est une image (PGS, VobSub, DVB) : AVKit ne la montre
-  /// pas, l'écran natif d'Apple TV rend la main à Flutter.
+  /// pas, l'écran natif d'Apple TV la peint dans sa propre couche.
   final bool currentSubtitleIsBitmap;
 
   /// L'index de flux FFmpeg d'une piste de [subtitles], à rendre au moteur.

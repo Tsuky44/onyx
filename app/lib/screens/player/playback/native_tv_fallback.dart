@@ -14,8 +14,9 @@ enum NativeTvFallback {
   /// n'afficherait qu'une roue sur fond noir, son joué (spike, correction 1).
   softwareRoute,
 
-  /// Des sous-titres image (PGS, VobSub, DVB) en Direct Play : le moteur les
-  /// exclut du groupe `legible`, seule la couche Flutter sait les peindre.
+  /// Des sous-titres image (PGS, VobSub, DVB) en Direct Play, que l'écran natif
+  /// n'a pas pu peindre (`unavailable/bitmapSubtitles`) : sa couche n'a pas pu
+  /// se poser dans `contentOverlayView`. Sans ce refus, il les peint lui-même.
   bitmapSubtitles,
 
   /// Des sous-titres texte pendant une session HLS : la session les écrit à
@@ -34,7 +35,8 @@ enum NativeTvSubtitleKind { none, text, image }
 /// disparaît (piste texte reprise) rend l'écran natif.
 ///
 /// [refusal] est la raison du dernier `unavailable` du natif : un refus est
-/// définitif pour ce lecteur. [streaming] vaut pour une session HLS du
+/// définitif pour ce lecteur, sauf `bitmapSubtitles`, qui ne vaut que tant
+/// qu'une piste image est choisie. [streaming] vaut pour une session HLS du
 /// serveur, où une piste image est déjà incrustée dans l'image.
 NativeTvFallback? nativeTvFallbackFor({
   OnyxAppleNativeReason? refusal,
@@ -50,12 +52,14 @@ NativeTvFallback? nativeTvFallbackFor({
       return NativeTvFallback.presentationFailed;
     case OnyxAppleNativeReason.userDismissed ||
           OnyxAppleNativeReason.requested ||
+          OnyxAppleNativeReason.bitmapSubtitles ||
           null:
       break;
   }
   if (softwareRoute) return NativeTvFallback.softwareRoute;
+  final bitmapRefused = refusal == OnyxAppleNativeReason.bitmapSubtitles;
   return switch (subtitle) {
-    NativeTvSubtitleKind.image when !streaming =>
+    NativeTvSubtitleKind.image when !streaming && bitmapRefused =>
       NativeTvFallback.bitmapSubtitles,
     NativeTvSubtitleKind.text when streaming =>
       NativeTvFallback.overlaySubtitles,
@@ -83,8 +87,10 @@ NativeTvSubtitleKind nativeTvSubtitleKind({
 }
 
 /// Ce que le natif prépare au chargement quand l'écran natif peut servir : les
-/// pistes texte du fichier rejoignent le menu Sous-titres d'AVKit. Rien de
-/// plus en Direct Play, où le moteur lit ces pistes dans le fichier lui-même.
+/// pistes du fichier rejoignent le menu Sous-titres d'AVKit, les pistes image
+/// comprises (une rendition OCR par piste, qui ne sert qu'au menu : l'image
+/// elle-même est peinte par le natif). Rien de plus en Direct Play, où le
+/// moteur lit ces pistes dans le fichier lui-même.
 OnyxAppleLoadSubtitles nativeTvLoadSubtitles({
   List<OnyxAppleExternalSubtitle> external = const [],
 }) =>

@@ -7,7 +7,8 @@ import 'package:onyx_player_apple/onyx_player_apple.dart';
 /// Sur Apple TV, l'écran natif ne montre que ce qu'AVPlayer sait peindre. Un
 /// repli manqué, c'est un film sans image (route logicielle : une roue AVKit,
 /// son joué) ou sans ses sous-titres (une piste PGS qu'AVKit ignore), sans la
-/// moindre erreur.
+/// moindre erreur. Une piste PGS, elle, reste sur l'écran natif, qui la peint
+/// lui-même : la quitter pour Flutter, c'est perdre AVKit pour rien.
 void main() {
   group('la règle de repli', () {
     test('rien à redire : l’écran natif', () {
@@ -23,9 +24,29 @@ void main() {
           NativeTvFallback.softwareRoute);
     });
 
-    test('une piste image en Direct Play garde Flutter', () {
-      expect(nativeTvFallbackFor(subtitle: NativeTvSubtitleKind.image),
+    test('une piste image en Direct Play reste sur l’écran natif', () {
+      expect(nativeTvFallbackFor(subtitle: NativeTvSubtitleKind.image), isNull);
+    });
+
+    test('une piste image que le natif n’a pas su peindre garde Flutter', () {
+      const refusal = OnyxAppleNativeReason.bitmapSubtitles;
+      expect(
+          nativeTvFallbackFor(
+              refusal: refusal, subtitle: NativeTvSubtitleKind.image),
           NativeTvFallback.bitmapSubtitles);
+      // Ce refus ne vaut que pour les pistes image : une piste texte, aucune
+      // piste ou le HLS (piste incrustée) rendent l'écran natif.
+      expect(
+          nativeTvFallbackFor(
+              refusal: refusal, subtitle: NativeTvSubtitleKind.text),
+          isNull);
+      expect(nativeTvFallbackFor(refusal: refusal), isNull);
+      expect(
+          nativeTvFallbackFor(
+              refusal: refusal,
+              subtitle: NativeTvSubtitleKind.image,
+              streaming: true),
+          isNull);
     });
 
     test('en HLS, la piste image est dans l’image, la piste texte non', () {
@@ -59,7 +80,9 @@ void main() {
     test('priorité : refus, puis route logicielle, puis piste image', () {
       expect(
           nativeTvFallbackFor(
-              softwareRoute: true, subtitle: NativeTvSubtitleKind.image),
+              refusal: OnyxAppleNativeReason.bitmapSubtitles,
+              softwareRoute: true,
+              subtitle: NativeTvSubtitleKind.image),
           NativeTvFallback.softwareRoute);
       expect(
           nativeTvFallbackFor(

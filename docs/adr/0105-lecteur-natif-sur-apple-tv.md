@@ -42,7 +42,8 @@ de geste de balayage natif. AetherEngine publie pourtant un `AVPlayer` (`engine.
    lecture. Par ordre de priorité :
    1. refus du natif (`presentationFailed`, `unsupported`) ;
    2. route logicielle ;
-   3. piste image (PGS, VobSub) en Direct Play ;
+   3. piste image (PGS, VobSub) en Direct Play — levé par l'[ADR-0107](0107-sous-titres-image-sur-l-ecran-natif-apple-tv.md) :
+      le natif les peint lui-même, et ne rend la main que s'il n'a pas pu poser sa couche ;
    4. piste texte en HLS : le serveur la sert à part et Flutter la peint (ADR-0031), AVKit ne la voit
       pas.
 
@@ -62,7 +63,8 @@ de geste de balayage natif. AetherEngine publie pourtant un `AVPlayer` (`engine.
   qu'il faut.
 - **Des overlays natifs sont possibles plus tard** (`contentOverlayView`, `customInfoViewControllers`)
   pour rendre Regarder ensemble ou les stats ; rien n'est fait.
-- **Sous-titres image et route logicielle restent sur l'interface Flutter** : une partie des films
+- **Sous-titres image et route logicielle restent sur l'interface Flutter** (levé pour les sous-titres image
+  par l'ADR-0107) : une partie des films
   (VC-1, MPEG-2, H.264 10 bits, AV1 sans décodeur matériel) ne verra jamais le lecteur natif.
   Levé pour la route logicielle par l'[ADR-0106](0106-sources-sans-decodeur-materiel-sur-l-ecran-natif-apple-tv.md) :
   ces sources passent en HLS transcodé.

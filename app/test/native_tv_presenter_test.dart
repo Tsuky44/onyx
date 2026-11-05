@@ -350,6 +350,7 @@ void main() {
         OnyxAppleNativeReason.softwareRoute,
         OnyxAppleNativeReason.presentationFailed,
         OnyxAppleNativeReason.unsupported,
+        OnyxAppleNativeReason.bitmapSubtitles,
       ]) {
         final intent = nativeTvIntentOf(_event(
             OnyxAppleNativeEventKind.unavailable,
@@ -456,6 +457,26 @@ void main() {
       presenter.sync(wanted: true, spec: spec);
       await pumpEventQueue();
       expect(screen.calls, ['present']);
+    });
+
+    test('une piste image mal peinte rend Flutter, sans retirer le natif',
+        () async {
+      final spec = NativeTvSpecBuilder.build(_state());
+      presenter.sync(wanted: true, spec: spec);
+      screen.events$.add(_event(OnyxAppleNativeEventKind.unavailable,
+          reason: OnyxAppleNativeReason.bitmapSubtitles));
+      await pumpEventQueue();
+
+      expect(presenter.isShown, isFalse);
+      expect(presenter.refusal, OnyxAppleNativeReason.bitmapSubtitles);
+      expect((intents.single as NativeTvUnavailable).reason,
+          OnyxAppleNativeReason.bitmapSubtitles);
+
+      // La règle de repli garde Flutter tant que la piste image est choisie ;
+      // une piste texte reprise, le lecteur le redemande et il revient.
+      presenter.sync(wanted: true, spec: spec);
+      await pumpEventQueue();
+      expect(screen.calls, ['present', 'present']);
     });
 
     test('Menu sur la télécommande remonte au lecteur', () async {

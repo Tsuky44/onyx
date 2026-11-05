@@ -415,7 +415,8 @@ class NativeTvPresenter {
   bool _retired = false;
 
   /// La raison du dernier `unavailable` : un refus vaut pour toute la vie de
-  /// ce lecteur, et la règle de repli la reprend.
+  /// ce lecteur, et la règle de repli la reprend (`bitmapSubtitles` ne vaut
+  /// que pour les pistes image).
   OnyxAppleNativeReason? _refusal;
   OnyxAppleNativeReason? get refusal => _refusal;
 
@@ -481,7 +482,11 @@ class NativeTvPresenter {
     if (intent is NativeTvClosed && !intent.byUser) return;
     if (intent is NativeTvClosed || intent is NativeTvUnavailable) {
       _forget();
-      _retired = true;
+      // Une piste image que le natif n'a pas su peindre ne le condamne pas :
+      // la règle de repli garde Flutter tant qu'elle est choisie, puis le
+      // natif revient avec une piste texte.
+      _retired = !(intent is NativeTvUnavailable &&
+          intent.reason == OnyxAppleNativeReason.bitmapSubtitles);
     }
     if (intent is NativeTvUnavailable) _refusal = intent.reason;
     _onIntent(intent);

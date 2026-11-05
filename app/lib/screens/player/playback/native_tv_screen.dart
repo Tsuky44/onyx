@@ -29,7 +29,7 @@ abstract interface class NativeTvScreen {
   bool get softwareRoute;
 
   /// La piste de sous-titres active du moteur est une image (PGS, VobSub,
-  /// DVB), qu'AVKit ne montre pas.
+  /// DVB), qu'AVKit ne montre pas : le natif la peint dans sa propre couche.
   bool get showsBitmapSubtitle;
 
   /// Les événements de *ce* lecteur seulement : le flux natif est commun à

@@ -94,7 +94,12 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
 
   func setVideoFit(playerId: Int64, fit: OnyxAppleVideoFit) throws {
     let gravity: AVLayerVideoGravity = fit == .cover ? .resizeAspectFill : .resizeAspect
-    try onMain { try require(playerId).engine.videoGravity = gravity }
+    try onMain {
+      try require(playerId).engine.videoGravity = gravity
+      #if os(tvOS)
+        presenters[playerId]?.setVideoGravity(gravity)
+      #endif
+    }
   }
 
   func setPreferredAudioLanguages(playerId: Int64, priorities: [String]) throws {

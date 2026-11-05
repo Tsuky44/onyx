@@ -249,6 +249,10 @@ enum OnyxAppleNativeReason: Int, CaseIterable {
   case presentationFailed = 3
   /// Plateforme sans lecteur natif (iPhone, Mac).
   case unsupported = 4
+  /// Une piste image (PGS, VobSub, DVB) est active et l'écran natif n'a pas
+  /// pu poser sa couche pour la peindre. Il se ferme ; ce n'est un refus que
+  /// tant qu'une piste image reste choisie.
+  case bitmapSubtitles = 5
 }
 
 /// Une piste qu'AetherEngine a énumérée.

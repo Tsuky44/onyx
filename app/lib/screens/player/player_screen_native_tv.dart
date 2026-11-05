@@ -33,9 +33,9 @@ extension _PlayerNativeTv on _PlayerScreenState {
       !_needsFlutterScreen &&
       _nativeTvFallback == null;
 
-  /// Ce que le média demande, relu à chaque construction : une piste image
-  /// choisie, ou la route logicielle qui s'installe en cours de film, rendent
-  /// l'interface Flutter sans couper la lecture.
+  /// Ce que le média demande, relu à chaque construction : la route logicielle
+  /// qui s'installe en cours de film, ou une piste image que le natif n'a pas
+  /// su peindre, rendent l'interface Flutter sans couper la lecture.
   NativeTvFallback? get _nativeTvFallback {
     final controller = _playerController;
     final screen = controller.session.nativeTvScreen;
@@ -135,10 +135,10 @@ extension _PlayerNativeTv on _PlayerScreenState {
       case NativeTvSetAudio():
         break;
       case NativeTvSetSubtitle(:final trackId):
-        // Le menu AVKit ne liste que les pistes du fichier : le même chemin
-        // que le menu Onyx en Direct Play, mémoire des pistes comprise. Le
-        // moteur n'a rien adopté de lui-même, c'est ce rappel qui fait tenir
-        // le choix.
+        // Le menu AVKit ne liste que les pistes du fichier, texte et image :
+        // le même chemin que le menu Onyx en Direct Play, mémoire des pistes
+        // comprise. Le moteur n'a rien adopté de lui-même, c'est ce rappel
+        // qui fait tenir le choix.
         final track = nativeTvSubtitleChoice(
             trackId, _playerController.session.subtitleTracks);
         if (track == null || !_playerController.listsEmbeddedSubtitles) {
