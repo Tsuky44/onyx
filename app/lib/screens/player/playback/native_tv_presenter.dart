@@ -10,7 +10,6 @@ import 'native_tv_intent.dart';
 import 'native_tv_preference.dart';
 import 'native_tv_screen.dart';
 
-export 'native_tv_contract.dart';
 export 'native_tv_fallback.dart';
 export 'native_tv_intent.dart';
 export 'native_tv_panels.dart';

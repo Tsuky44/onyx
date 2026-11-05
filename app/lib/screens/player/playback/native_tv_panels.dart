@@ -1,7 +1,5 @@
 import 'package:onyx_player_apple/onyx_player_apple.dart';
 
-import 'native_tv_contract.dart';
-
 import '../../../l10n/tr.dart';
 import '../../../models/models.dart';
 import '../../../models/watch_party.dart';
