@@ -64,6 +64,8 @@ de geste de balayage natif. AetherEngine publie pourtant un `AVPlayer` (`engine.
   pour rendre Regarder ensemble ou les stats ; rien n'est fait.
 - **Sous-titres image et route logicielle restent sur l'interface Flutter** : une partie des films
   (VC-1, MPEG-2, H.264 10 bits, AV1 sans décodeur matériel) ne verra jamais le lecteur natif.
+  Levé pour la route logicielle par l'[ADR-0106](0106-sources-sans-decodeur-materiel-sur-l-ecran-natif-apple-tv.md) :
+  ces sources passent en HLS transcodé.
 - **Deux points à confirmer sur appareil :** le focus UIKit reste vide une à trois secondes après
   Menu, et le HDR / Dolby Vision (Match Content) n'a pas pu être vérifié au simulateur.
 - La copie tvOS des sources Swift (`tvos/`) est vérifiée par `onyx_player_apple_sources_test.dart`.

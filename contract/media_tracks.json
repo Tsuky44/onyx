@@ -13,9 +13,11 @@
     "dovi_profile": 6,
     "dovi_bl_compat_id": 7,
     "hdr10_plus": true,
+    "field_order": "field_order-value",
     "hdr_format": "dolbyvision",
     "needs_dolby_vision": false,
-    "bit_depth": 5
+    "bit_depth": 5,
+    "interlaced": false
   },
   "audio": [
     {

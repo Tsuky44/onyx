@@ -226,6 +226,12 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 	// behaviour this server had before capabilities existed, which is what keeps
 	// every already-installed build working — see LegacyCapabilities.
 	caps := ParseCapabilities(r.URL.Query())
+	// Le client accepte le HEVC ; encore faut-il que ce serveur sache en
+	// produire. Sinon le HDR est tone-mappé en H.264, comme avant (ADR-0106).
+	var hevcEncoder VideoEncoder
+	if caps.EncodeHEVC {
+		hevcEncoder, caps.EncodeHEVC = SelectedHEVCEncoder()
+	}
 
 	inputPath, err := h.getMediaFilePath(mediaID)
 	if err != nil {
@@ -296,6 +302,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		InputPath:              inputPath,
 		Quality:                quality,
 		Encoder:                SelectedVideoEncoder(),
+		HEVCEncoder:            hevcEncoder,
 		StartSeconds:           startSeconds,
 		TmpDir:                 tmpDir,
 		Probe:                  probe,
@@ -668,10 +675,17 @@ func reasonSuffix(plan VideoPlan) string {
 	if plan.Copy || plan.Reason == "" {
 		return ""
 	}
-	if plan.Tonemap {
-		return fmt.Sprintf(" (%s, tone mapped)", plan.Reason)
+	detail := plan.Reason
+	switch {
+	case plan.Tonemap:
+		detail += ", tone mapped"
+	case plan.HEVC:
+		detail += ", HEVC Main 10 HDR kept"
 	}
-	return fmt.Sprintf(" (%s)", plan.Reason)
+	if plan.Deinterlace {
+		detail += ", deinterlaced"
+	}
+	return " (" + detail + ")"
 }
 
 func atoiDefault(s string, def int) int {

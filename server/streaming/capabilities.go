@@ -48,6 +48,19 @@ type Capabilities struct {
 	// anyway, so the copy ceiling does not apply — without this, a 4K remux
 	// was re-encoded to H.264, a whole core busy for a worse picture.
 	Remux bool
+	// EncodeHEVC accepte un réencodage en HEVC Main 10 quand l'image doit être
+	// réencodée et qu'elle est en HDR : c'est la seule façon de garder le HDR10
+	// ou le HLG d'une source que le client ne décode pas (AV1, VP9). Le reste
+	// part en H.264, deux à trois fois moins cher à encoder. Le serveur l'éteint
+	// quand il n'a pas d'encodeur HEVC qui marche (voir SelectedHEVCEncoder).
+	EncodeHEVC bool
+	// ProgressiveOnly dit un décodeur qui ne prend pas d'image entrelacée :
+	// une telle source est réencodée, désentrelacée, plutôt que recopiée.
+	ProgressiveOnly bool
+	// MaxH264BitDepth borne la profondeur du H.264 seul, quand elle est plus
+	// basse que MaxVideoBitDepth : le décodeur d'Apple lit le HEVC Main 10,
+	// pas le H.264 High 10. 0 : la borne commune vaut.
+	MaxH264BitDepth int
 }
 
 // SegmentContainer is the muxer the HLS segments are written with.
@@ -93,6 +106,7 @@ func LegacyCapabilities() Capabilities {
 // ParseCapabilities reads a client's declaration off the /start query string.
 //
 //	?container=fmp4&vcodec=h264,hevc,av1&acodec=aac,ac3,eac3&channels=6&bitdepth=10&hdr=1
+//	&encode=hevc&progressive=1&h264bitdepth=8
 //
 // Every parameter is optional and each one falls back to its legacy value on
 // its own, so a client can widen exactly the axis it is sure about.
@@ -123,6 +137,11 @@ func ParseCapabilities(q url.Values) Capabilities {
 	caps.HDR = isTruthy(q.Get("hdr"))
 	caps.DolbyVision = isTruthy(q.Get("dv"))
 	caps.Remux = isTruthy(q.Get("remux"))
+	caps.EncodeHEVC = strings.EqualFold(strings.TrimSpace(q.Get("encode")), "hevc")
+	caps.ProgressiveOnly = isTruthy(q.Get("progressive"))
+	if n := atoiDefault(q.Get("h264bitdepth"), 0); n > 0 {
+		caps.MaxH264BitDepth = clampInt(n, 8, 12)
+	}
 	// Dolby Vision without HDR is not a thing a display can be: the flag is
 	// about the metadata layer on top of an HDR signal, so it implies the
 	// signal. Accepting the pair as sent would let a typo produce a client that
@@ -185,6 +204,14 @@ func (c Capabilities) CopyCeiling(configured int64) int64 {
 		return 0
 	}
 	return configured
+}
+
+// MaxBitDepthFor is the deepest stream of codec the client decodes.
+func (c Capabilities) MaxBitDepthFor(codec string) int {
+	if codec == "h264" && c.MaxH264BitDepth > 0 && c.MaxH264BitDepth < c.MaxVideoBitDepth {
+		return c.MaxH264BitDepth
+	}
+	return c.MaxVideoBitDepth
 }
 
 // DecodesVideo / DecodesAudio report what the client itself declared.

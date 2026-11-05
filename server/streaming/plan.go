@@ -21,6 +21,13 @@ type VideoPlan struct {
 	// visibly wrong: PQ code values read as gamma, which is the washed-out,
 	// grey, desaturated picture people describe as "the colours are dead".
 	Tonemap bool
+	// HEVC réencode en HEVC Main 10 et garde le HDR de la source, au lieu du
+	// H.264 SDR. Jamais avec Tonemap. Voir Capabilities.EncodeHEVC.
+	HEVC bool
+	// Deinterlace désentrelace avant tout autre filtre. Tout réencodage d'une
+	// source entrelacée le fait : sans lui, l'image sort peignée chez tous
+	// les clients.
+	Deinterlace bool
 	// Reason names why the copy was refused, for the session log. A copy that
 	// silently did not happen is the hardest kind of performance bug to notice.
 	Reason string
@@ -50,11 +57,18 @@ func PlanVideo(probe *ProbeResult, quality string, burn bool, sourceBitrateBps, 
 		return VideoPlan{Reason: "no video stream probed"}
 	}
 	v := probe.Video
-	// The encoder only ever produces SDR, so an HDR source that is not copied
-	// has to be tone mapped on the way through — whatever the reason it was not
-	// copied.
+	// Le H.264 ne sort qu'en SDR : une source HDR qui n'est pas recopiée est
+	// tone-mappée en route, quelle que soit la raison du refus — sauf pour un
+	// client qui accepte le HEVC Main 10 et sait afficher ce HDR (voir
+	// keepsHDRInHEVC).
 	encodePlan := func(reason string) VideoPlan {
-		return VideoPlan{Tonemap: v.IsHDR(), Reason: reason}
+		hevc := keepsHDRInHEVC(v, caps)
+		return VideoPlan{
+			Tonemap:     v.IsHDR() && !hevc,
+			HEVC:        hevc,
+			Deinterlace: v.Interlaced(),
+			Reason:      reason,
+		}
 	}
 
 	if burn {
@@ -73,8 +87,11 @@ func PlanVideo(probe *ProbeResult, quality string, burn bool, sourceBitrateBps, 
 	if !v.Chroma420() {
 		return encodePlan("chroma layout " + v.PixFmt + " is not 4:2:0")
 	}
-	if v.DepthOrDefault() > caps.MaxVideoBitDepth {
-		return encodePlan(fmt.Sprintf("%d-bit source, client tops out at %d", v.DepthOrDefault(), caps.MaxVideoBitDepth))
+	if depth, top := v.DepthOrDefault(), caps.MaxBitDepthFor(codec); depth > top {
+		return encodePlan(fmt.Sprintf("%d-bit %s source, client tops out at %d", depth, codec, top))
+	}
+	if v.Interlaced() && caps.ProgressiveOnly {
+		return encodePlan("interlaced source, client decodes progressive only")
 	}
 	if v.IsHDR() && !caps.HDR {
 		return encodePlan(v.HDRFormat() + " source, client has no HDR display")
@@ -98,6 +115,21 @@ func PlanVideo(probe *ProbeResult, quality string, burn bool, sourceBitrateBps, 
 		return encodePlan("source bitrate above the " + quality + " rung")
 	}
 	return VideoPlan{Copy: true}
+}
+
+// keepsHDRInHEVC dit si un réencodage de v part en HEVC Main 10 avec son HDR
+// plutôt qu'en H.264 tone-mappé. Il faut une source HDR, un client qui
+// l'affiche en 10 bits et accepte le HEVC, et une couche de base lisible : le
+// profil 5 n'en a pas, il passe par libplacebo et le H.264 (ADR-0060). Une
+// source SDR reste en H.264 : le HEVC n'y garderait rien et coûterait deux à
+// trois fois plus de calcul (ADR-0106).
+func keepsHDRInHEVC(v *VideoStreamInfo, caps Capabilities) bool {
+	return caps.EncodeHEVC &&
+		caps.DecodesVideo("hevc") &&
+		caps.HDR &&
+		caps.MaxBitDepthFor("hevc") >= 10 &&
+		v.IsHDR() &&
+		!needsDolbyVisionDecoder(v)
 }
 
 // needsDolbyVisionDecoder reports a stream whose base layer is not viewable

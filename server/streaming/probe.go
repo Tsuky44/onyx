@@ -21,7 +21,7 @@ import (
 // treat an entry below the current version as a miss. It replaces the
 // PixFmt-is-empty sentinel, which could only ever detect one generation of
 // staleness.
-const probeVersion = 2
+const probeVersion = 3
 
 // VideoStreamInfo holds metadata about the primary video stream.
 type VideoStreamInfo struct {
@@ -61,6 +61,10 @@ type VideoStreamInfo struct {
 	DoviBLCompatID int `json:"dovi_bl_compat_id"`
 	// HDR10Plus reports dynamic SMPTE 2094-40 metadata on the stream.
 	HDR10Plus bool `json:"hdr10_plus"`
+	// FieldOrder est l'ordre des trames tel que ffprobe l'écrit
+	// (« progressive », « tt », « bb », « tb », « bt ») ; vide sur une sonde
+	// d'avant la version 3. Voir Interlaced.
+	FieldOrder string `json:"field_order"`
 }
 
 // EightBit420 reports whether the stream is plain 8-bit 4:2:0, the only
@@ -96,6 +100,20 @@ func (v *VideoStreamInfo) Chroma420() bool {
 		return true
 	}
 	return strings.HasPrefix(f, "yuv420p") || strings.HasPrefix(f, "yuvj420p")
+}
+
+// Interlaced dit une image en deux trames. Le décodeur matériel d'une Apple
+// TV ne la prend pas, et un encodage qui la garde telle quelle sort peigné :
+// les deux trames, prises à deux instants, sont collées dans une seule image.
+// Un ordre inconnu se lit comme progressif, ce qu'est presque tout fichier
+// qui ne le dit pas.
+func (v *VideoStreamInfo) Interlaced() bool {
+	switch strings.ToLower(v.FieldOrder) {
+	case "tt", "bb", "tb", "bt":
+		return true
+	default:
+		return false
+	}
 }
 
 // DepthOrDefault is the stream's bit depth, assuming 8 when nothing said.
@@ -160,13 +178,17 @@ func (v VideoStreamInfo) MarshalJSON() ([]byte, error) {
 		// lui-même : en Direct Play, aucun PlanVideo ne s'interpose.
 		NeedsDolbyVision bool `json:"needs_dolby_vision"`
 		BitDepth         int  `json:"bit_depth"`
+		// Interlaced suit la règle de Interlaced, pour que le client n'ait pas
+		// à relire les noms de ffprobe.
+		Interlaced bool `json:"interlaced"`
 	}{
 		alias:            alias(v),
 		HDRFormat:        v.HDRFormat(),
 		NeedsDolbyVision: needsDolbyVisionDecoder(&v),
 		// Overrides the stored field with the resolved one, so a client never
 		// sees the 0 that means "the container did not say".
-		BitDepth: v.DepthOrDefault(),
+		BitDepth:   v.DepthOrDefault(),
+		Interlaced: v.Interlaced(),
 	})
 }
 
@@ -292,6 +314,7 @@ type ffprobeStream struct {
 	BitRate          string `json:"bit_rate"`
 	AvgFrameRate     string `json:"avg_frame_rate"`
 	RFrameRate       string `json:"r_frame_rate"`
+	FieldOrder       string `json:"field_order"`
 	Disposition      struct {
 		Default int `json:"default"`
 		Forced  int `json:"forced"`
@@ -417,6 +440,7 @@ func videoStreamFrom(s ffprobeStream) *VideoStreamInfo {
 		ColorTransfer:  s.ColorTransfer,
 		ColorPrimaries: s.ColorPrimaries,
 		ColorSpace:     s.ColorSpace,
+		FieldOrder:     s.FieldOrder,
 	}
 
 	for _, sd := range s.SideData {

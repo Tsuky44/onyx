@@ -36,6 +36,9 @@ import (
 type VideoEncoder struct {
 	// Name is the FFmpeg encoder name.
 	Name string
+	// Codec vaut "hevc" pour un encodeur HEVC (encoder_hevc.go) ; vide pour
+	// le H.264, ce qu'étaient tous les encodeurs avant lui.
+	Codec string
 	// Hardware says the encoding leaves the CPU.
 	Hardware bool
 	// PixelFormat is what the filter chain must hand it. Empty for an encoder
@@ -222,18 +225,24 @@ func detectVideoEncoder(works func(name string) bool) VideoEncoder {
 // h264_nvenc and fails the moment a session starts. One frame costs
 // milliseconds and answers the question that matters.
 func encoderWorks(name string) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
 	encoder := VideoEncoder{Name: name}
 	for _, candidate := range hardwareEncoders {
 		if candidate.Name == name {
 			encoder = candidate
 		}
 	}
+	return encoderRuns(encoder)
+}
+
+// encoderRuns est encoderWorks pour un encodeur déjà décrit, avec son format
+// d'image et son envoi : un HEVC est essayé en 10 bits, la profondeur que ses
+// sessions lui demanderont.
+func encoderRuns(encoder VideoEncoder) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
 	cmd := exec.CommandContext(ctx, "ffmpeg", encoderProbeArgs(encoder)...)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("Streaming: encoder %s unusable: %v %s", name, err, strings.TrimSpace(string(output)))
+		log.Printf("Streaming: encoder %s unusable: %v %s", encoder.Name, err, strings.TrimSpace(string(output)))
 		return false
 	}
 	return true
@@ -251,11 +260,22 @@ func encoderProbeArgs(encoder VideoEncoder) []string {
 	if encoder.uploadFilter != "" {
 		args = append(args, "-vf", encoder.uploadFilter)
 	}
-	return append(args, "-c:v", encoder.Name, "-f", "null", "-")
+	args = append(args, "-c:v", encoder.Name)
+	if encoder.isHEVC() {
+		if encoder.PixelFormat != "" {
+			args = append(args, "-pix_fmt", encoder.PixelFormat)
+		}
+		args = append(args, "-profile:v", "main10")
+	}
+	return append(args, "-f", "null", "-")
 }
 
-// encoder resolves what the options asked for, defaulting to software.
+// encoder resolves what the options asked for, defaulting to software. Une
+// image qui garde son HDR prend l'encodeur HEVC (encoder_hevc.go).
 func (o TranscodeOptions) encoder() VideoEncoder {
+	if o.Video.HEVC {
+		return o.hevcEncoder()
+	}
 	if o.Encoder.Name == "" || o.Encoder.rateControl == nil {
 		return softwareEncoder
 	}

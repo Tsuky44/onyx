@@ -96,6 +96,9 @@ type TranscodeOptions struct {
 	// a caller that does not care — every test that predates hardware encoding —
 	// gets exactly the command this server has always built.
 	Encoder VideoEncoder
+	// HEVCEncoder est l'encodeur des images qui gardent leur HDR
+	// (Video.HEVC). Zéro : libx265.
+	HEVCEncoder VideoEncoder
 	// Video is what happens to the picture: repackaged, or re-encoded and
 	// possibly tone mapped. Produced by PlanVideo, which enforces every
 	// condition that makes a copy safe.
@@ -249,6 +252,11 @@ func BuildFFmpegArgs(opt TranscodeOptions) []string {
 		// resolution, so compositing first keeps them correctly positioned and
 		// sized.
 		graph := fmt.Sprintf("[0:v:0][0:s:%d]overlay", burnIdx)
+		// Les deux trames d'abord : incrusté sur l'image entrelacée, le
+		// sous-titre serait coupé une ligne sur deux par le désentrelacement.
+		if opt.Video.Deinterlace {
+			graph = fmt.Sprintf("[0:v:0]%s[di];[di][0:s:%d]overlay", deinterlaceFilter, burnIdx)
+		}
 		if chain != "" {
 			graph += "[ov];[ov]" + chain + "[vout]"
 		} else {
@@ -287,16 +295,24 @@ func BuildFFmpegArgs(opt TranscodeOptions) []string {
 
 	// Force 8-bit 4:2:0 so 10-bit HEVC sources don't yield a "High 10" H.264
 	// stream most clients can't decode. The pixel format comes from the encoder
-	// because Quick Sync wants NV12 and would otherwise convert every frame.
+	// because Quick Sync wants NV12 and would otherwise convert every frame. Un
+	// encodeur HEVC le donne en 10 bits.
 	encoder := opt.encoder()
 	args = append(args, "-c:v", encoder.Name)
 	if encoder.PixelFormat != "" {
 		args = append(args, "-pix_fmt", encoder.PixelFormat)
 	}
-	args = append(args,
-		"-profile:v", "high",
-		"-level", h264LevelFor(preset, opt.Probe),
-	)
+	if encoder.isHEVC() {
+		// Main 10 pour le HDR gardé, `hvc1` pour AVPlayer comme sur la recopie.
+		// Pas de niveau imposé : l'encodeur écrit celui de l'image et du
+		// débit, et seul le H.264 du navigateur s'y fiait.
+		args = append(args, "-profile:v", "main10", "-tag:v", "hvc1")
+	} else {
+		args = append(args,
+			"-profile:v", "high",
+			"-level", h264LevelFor(preset, opt.Probe),
+		)
+	}
 	args = append(args, encoder.rateControl(preset)...)
 
 	// A tone-mapped picture is BT.709 now, and it has to say so. The tags are
@@ -502,11 +518,19 @@ func videoFilterChain(opt TranscodeOptions, preset qualityPreset) string {
 		return "" // copied frames are never filtered, by definition
 	}
 	var parts []string
+	// Le désentrelacement passe avant la mise à l'échelle, qui mélangerait les
+	// deux trames. Avec un sous-titre incrusté, il est déjà fait dans le graphe.
+	if opt.Video.Deinterlace && !(opt.BurnSubtitle && opt.BurnSubtitleTypedIndex >= 0) {
+		parts = append(parts, deinterlaceFilter)
+	}
 	if scale := buildScaleFilter(opt.Probe, preset); scale != "" {
 		parts = append(parts, scale)
 	}
 	if tm := sessionToneMapper(opt).Filter; tm != "" {
 		parts = append(parts, tm)
+	}
+	if opt.Video.HEVC && opt.Probe != nil && opt.Probe.Video != nil {
+		parts = append(parts, hdrTagFilter(opt.Probe.Video))
 	}
 	// Toujours en dernier : passé ce filtre l'image est sur le périphérique, et
 	// plus aucun filtre logiciel ne peut la toucher.
