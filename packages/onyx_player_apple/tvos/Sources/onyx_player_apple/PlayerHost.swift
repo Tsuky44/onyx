@@ -65,19 +65,31 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   }
 
   func open(playerId: Int64, url: String, startPositionMs: Int64, play: Bool) throws {
-    try onMain { try require(playerId).open(url, startMs: startPositionMs, play: play) }
+    try onMain {
+      markHostCommand(playerId, playing: play)
+      try require(playerId).open(url, startMs: startPositionMs, play: play)
+    }
   }
 
   func play(playerId: Int64) throws {
-    try onMain { try require(playerId).play() }
+    try onMain {
+      markHostCommand(playerId, playing: true)
+      try require(playerId).play()
+    }
   }
 
   func pause(playerId: Int64) throws {
-    try onMain { try require(playerId).pause() }
+    try onMain {
+      markHostCommand(playerId, playing: false)
+      try require(playerId).pause()
+    }
   }
 
   func seekTo(playerId: Int64, positionMs: Int64) throws {
-    try onMain { try require(playerId).seek(toMs: positionMs) }
+    try onMain {
+      markHostCommand(playerId, playing: nil)
+      try require(playerId).seek(toMs: positionMs)
+    }
   }
 
   func stop(playerId: Int64) throws {
@@ -89,7 +101,10 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   }
 
   func setRate(playerId: Int64, rate: Double) throws {
-    try onMain { try require(playerId).engine.setRate(Float(rate)) }
+    try onMain {
+      markHostCommand(playerId, playing: nil)
+      try require(playerId).engine.setRate(Float(rate))
+    }
   }
 
   func setVideoFit(playerId: Int64, fit: OnyxAppleVideoFit) throws {
@@ -173,6 +188,15 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
     #endif
   }
 
+  /// Une commande de Dart change le débit de l'`AVPlayer` : l'écran natif ne
+  /// doit pas la lui renvoyer en `transport`, comme un geste de la
+  /// télécommande. [playing] est l'état demandé, nil s'il n'y en a pas.
+  @MainActor private func markHostCommand(_ id: Int64, playing: Bool?) {
+    #if os(tvOS)
+      presenters[id]?.noteHostCommand(playing: playing)
+    #endif
+  }
+
   #if os(tvOS)
     /// Créé au premier `presentNative`, et gardé avec son lecteur : l'affiche
     /// téléchargée sert encore à l'épisode suivant s'il la partage.
@@ -180,8 +204,10 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
       if let presenter = presenters[id] { return presenter }
       guard let player = players[id] else { return nil }
       let events = nativeEvents
+      // Le panneau Stats lit le moteur par la même fonction que `stats()`.
       let presenter = NativePlayerPresenter(
-        playerId: id, engine: player.engine, send: { events.send($0) })
+        playerId: id, engine: player.engine, stats: { [weak player] in player?.stats() },
+        send: { events.send($0) })
       presenters[id] = presenter
       return presenter
     }

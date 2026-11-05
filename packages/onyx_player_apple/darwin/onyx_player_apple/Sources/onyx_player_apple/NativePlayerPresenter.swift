@@ -12,11 +12,13 @@
   /// Le présentateur n'a pas d'état à lui : Dart reste le cerveau, envoie une
   /// spec complète à chaque changement et reçoit les gestes de l'utilisateur
   /// en événements. Voir le compte rendu du spike
-  /// (`docs/agents/spike-native-tv-player.md`).
+  /// (`docs/agents/spike-native-tv-player.md`) et l'inventaire de parité
+  /// (`docs/agents/native-tv-parity.md`).
   @MainActor
   final class NativePlayerPresenter: NSObject, @preconcurrency AVPlayerViewControllerDelegate {
     private let playerId: Int64
     private let engine: AetherEngine
+    private let stats: @MainActor () -> OnyxApplePlaybackStats?
     private let send: (OnyxAppleNativeEvent) -> Void
 
     private var controller: AVPlayerViewController?
@@ -41,10 +43,28 @@
     /// Les sous-titres image, qu'AVKit ne peint pas : une couche à nous dans
     /// son `contentOverlayView`, le temps de la présentation.
     private var bitmapSubtitles: NativeBitmapSubtitles?
+    /// L'annonce de Regarder ensemble, posée au-dessus des sous-titres image.
+    private var overlay: NativeOverlayView?
+    private var panels: NativeInfoPanels?
+    private var nextUp: NativeNextUp?
+    private lazy var transport = NativeTransportWatch { [weak self] playing, positionMs in
+      self?.noteActivity()
+      self?.emit(.transport, playing: playing, positionMs: positionMs)
+    }
 
-    init(playerId: Int64, engine: AetherEngine, send: @escaping (OnyxAppleNativeEvent) -> Void) {
+    /// La question affichée, et la dernière à laquelle l'utilisateur a
+    /// répondu : une spec qui la redit encore ne la repose pas.
+    private var prompt: (id: String, alert: UIAlertController)?
+    private var answeredPrompt: String?
+    private var lastActivity = Date.distantPast
+
+    init(
+      playerId: Int64, engine: AetherEngine, stats: @escaping @MainActor () -> OnyxApplePlaybackStats?,
+      send: @escaping (OnyxAppleNativeEvent) -> Void
+    ) {
       self.playerId = playerId
       self.engine = engine
+      self.stats = stats
       self.send = send
     }
 
@@ -74,20 +94,21 @@
       // tvOS 26.5 refuse sinon les variantes HDR (README AetherEngine, « Host
       // setup on tvOS »).
       controller.appliesPreferredDisplayCriteriaAutomatically = false
+      // Le menu Vitesse d'AVKit règle `defaultRate` sans le moteur ni la
+      // séance partagée, et double celui d'Onyx : une liste vide le masque.
+      controller.speeds = []
+      // Onyx ne propose pas l'image dans l'image sur Apple TV, et
+      // `PlayerScreen` n'est pas prêt à vivre sans écran.
+      controller.allowsPictureInPicturePlayback = false
       controller.player = engine.currentAVPlayer
       // `engine.videoGravity` ne règle que les calques du moteur : celui
       // d'AVKit garde le sien, que le format d'image du menu doit suivre.
       controller.videoGravity = engine.videoGravity
       self.controller = controller
       closingFromHere = false
+      attachLayers(to: controller)
       apply(spec)
       observe()
-      let bitmapSubtitles = NativeBitmapSubtitles(engine: engine) { [weak self] in
-        self?.fallBackToFlutter(.bitmapSubtitles)
-      }
-      bitmapSubtitles.gravity = engine.videoGravity
-      bitmapSubtitles.attach(to: controller)
-      self.bitmapSubtitles = bitmapSubtitles
       // Une demande permanente : tant que l'écran natif est là, chaque
       // `selectSubtitleTrack` de Dart passe aussi au groupe `legible`, que
       // seul AVKit peint ici (Sodalite#156). Sans elle, la piste choisie ne
@@ -102,7 +123,11 @@
           if controller.presentingViewController == nil {
             self.teardown()
             self.emit(.unavailable, reason: .presentationFailed)
+            return
           }
+          // Une question arrivée avec la première spec attendait la fin de
+          // la présentation : UIKit n'en accepte pas deux à la fois.
+          self.syncPrompt()
         }
       }
     }
@@ -123,6 +148,13 @@
       bitmapSubtitles?.gravity = gravity
     }
 
+    /// Dart vient de commander le lecteur : le débit qui change derrière
+    /// n'est pas un geste de la télécommande. [playing] est l'état demandé,
+    /// nil pour une commande qui n'en demande pas (recherche, vitesse).
+    func noteHostCommand(playing: Bool?) {
+      transport.noteHostCommand(playing: playing)
+    }
+
     /// Le lecteur est détruit : Dart n'écoute plus, rien à lui dire.
     func release() {
       close(then: nil)
@@ -130,33 +162,94 @@
 
     // MARK: - Spec
 
+    /// Les couches de `contentOverlayView`, dans l'ordre : les sous-titres
+    /// image d'abord, l'annonce par-dessus.
+    private func attachLayers(to controller: AVPlayerViewController) {
+      let bitmapSubtitles = NativeBitmapSubtitles(engine: engine) { [weak self] in
+        self?.fallBackToFlutter(.bitmapSubtitles)
+      }
+      bitmapSubtitles.gravity = engine.videoGravity
+      bitmapSubtitles.attach(to: controller)
+      self.bitmapSubtitles = bitmapSubtitles
+      let overlay = NativeOverlayView()
+      overlay.attach(to: controller)
+      self.overlay = overlay
+
+      panels = NativeInfoPanels(
+        statsValues: { [weak self] in self?.statsValues() ?? [:] },
+        onGesture: { [weak self] panelId, gesture in self?.panelGesture(panelId, gesture) })
+      let nextUp = NativeNextUp(
+        onPlay: { [weak self] in
+          self?.noteActivity()
+          self?.emit(.action, actionId: NativeNextUp.playActionId)
+        },
+        onLater: { [weak self] in
+          self?.noteActivity()
+          self?.emit(.action, actionId: NativeNextUp.laterActionId)
+        })
+      controller.contentProposalViewController = nextUp.controller
+      self.nextUp = nextUp
+    }
+
+    /// Par morceaux : réaffecter les menus ou les panneaux à chaque spec
+    /// fermerait un menu ouvert ou ferait perdre le focus, alors que la
+    /// plupart des specs ne changent qu'un compte à rebours ou une annonce
+    /// (§1.7 de l'inventaire).
     private func apply(_ spec: OnyxAppleNativeSpec) {
       guard let controller else { return }
+      let old = self.spec
       self.spec = spec
-      controller.transportBarCustomMenuItems = spec.menus.map(menu)
-      controller.contextualActions = spec.actions.map(action)
-      applyMetadata()
-      fetchPosterIfNeeded(spec.posterUrl)
+      if old?.menus != spec.menus {
+        controller.transportBarCustomMenuItems = spec.menus.map(menu)
+      }
+      if old?.actions != spec.actions {
+        controller.contextualActions = spec.actions.map(action)
+      }
+      // Vide, AVKit n'en montre aucune : son « Lire depuis le début »
+      // chercherait sans Dart. L'en-tête en accepte deux au plus.
+      if old?.infoActions != spec.infoActions {
+        controller.infoViewActions = spec.infoActions.prefix(2).map(action)
+      }
+      if old?.title != spec.title || old?.subtitle != spec.subtitle || old?.overview != spec.overview
+        || old?.posterUrl != spec.posterUrl
+      {
+        applyMetadata()
+        fetchPosterIfNeeded(spec.posterUrl)
+      }
+      if old?.chapters != spec.chapters {
+        engine.currentAVPlayerItem?.navigationMarkerGroups = Self.chapterGroups(spec.chapters)
+      }
+      panels?.apply(spec.panels, to: controller)
+      nextUp?.apply(spec.nextUp, item: engine.currentAVPlayerItem)
+      overlay?.toast = spec.toast
+      syncPrompt()
     }
 
     /// Dart reste maître de l'état coché : un choix n'en change rien ici, il
-    /// attend la spec suivante.
+    /// attend la spec suivante. `.singleSelection` ne fait que l'anticiper.
     private func menu(_ menu: OnyxAppleNativeMenu) -> UIMenu {
       let menuId = menu.id
       let children = menu.options.map { option in
-        UIAction(title: option.label, state: option.selected ? .on : .off) { [weak self] _ in
+        let element = UIAction(title: option.label, state: option.selected ? .on : .off) { [weak self] _ in
           MainActor.assumeIsolated {
+            self?.noteActivity()
             self?.emit(.menuSelected, menuId: menuId, optionId: option.id)
           }
         }
+        element.subtitle = option.detail
+        return element
       }
-      return UIMenu(title: menu.label, children: children)
+      let checked = menu.options.contains(where: \.selected)
+      return UIMenu(title: menu.label, options: checked ? .singleSelection : [], children: children)
     }
 
     private func action(_ action: OnyxAppleNativeAction) -> UIAction {
       let actionId = action.id
       return UIAction(title: action.label) { [weak self] _ in
-        MainActor.assumeIsolated { self?.emit(.action, actionId: actionId) }
+        MainActor.assumeIsolated {
+          self?.noteActivity()
+          self?.emit(.action, actionId: actionId)
+        }
       }
     }
 
@@ -213,6 +306,76 @@
       return item
     }
 
+    /// Les chapitres forment le premier groupe, sans titre (en-tête
+    /// `AVPlayerItem.h`) : ils remplacent ceux que le fichier déclare. Une
+    /// liste vide laisse ceux du fichier.
+    private static func chapterGroups(_ chapters: [OnyxAppleNativeChapter]) -> [AVNavigationMarkersGroup] {
+      guard !chapters.isEmpty else { return [] }
+      let markers = chapters.map { chapter in
+        let start = CMTime(value: chapter.startMs, timescale: 1000)
+        let end = CMTime(value: max(chapter.endMs, chapter.startMs), timescale: 1000)
+        return AVTimedMetadataGroup(
+          items: [metadata(.commonIdentifierTitle, chapter.title)],
+          timeRange: CMTimeRange(start: start, end: end))
+      }
+      return [AVNavigationMarkersGroup(title: nil, timedNavigationMarkers: markers)]
+    }
+
+    /// Les mesures du panneau Stats, relues chaque seconde tant qu'il est
+    /// visible, avec la fonction qui sert `stats()` à Dart.
+    private func statsValues() -> [String: String] {
+      guard let stats = stats() else { return [:] }
+      return NativeStatsFormat.values(stats, videoFormat: StatusMapping.videoFormat(engine.videoFormat))
+    }
+
+    private func panelGesture(_ panelId: String, _ gesture: NativeInfoPanelController.Gesture) {
+      noteActivity()
+      switch gesture {
+      case .row(let rowId): emit(.panelRowSelected, panelId: panelId, rowId: rowId)
+      case .tab(let optionId): emit(.panelTabSelected, optionId: optionId, panelId: panelId)
+      case .action(let actionId): emit(.action, actionId: actionId)
+      }
+    }
+
+    // MARK: - Question
+
+    /// La question de Dart, posée par-dessus le lecteur. Elle n'est reprise
+    /// que si son `id` change, et retirée quand la spec n'en porte plus.
+    private func syncPrompt() {
+      guard let controller else { return }
+      let wanted = spec?.prompt
+      if answeredPrompt != wanted?.id { answeredPrompt = nil }
+      if let shown = prompt, shown.id != wanted?.id {
+        prompt = nil
+        if shown.alert.presentingViewController != nil { shown.alert.dismiss(animated: true) }
+      }
+      guard let wanted, prompt == nil, answeredPrompt != wanted.id,
+        controller.viewIfLoaded?.window != nil, !controller.isBeingPresented,
+        controller.presentedViewController == nil
+      else { return }
+
+      let alert = UIAlertController(title: wanted.title, message: wanted.message, preferredStyle: .alert)
+      for (index, action) in wanted.actions.enumerated() {
+        let actionId = action.id
+        // `.cancel` : c'est l'action que déclenche Menu.
+        let style: UIAlertAction.Style = actionId == wanted.cancelActionId ? .cancel : .default
+        let element = UIAlertAction(title: action.label, style: style) { [weak self] _ in
+          MainActor.assumeIsolated { self?.promptAnswered(wanted.id, actionId: actionId) }
+        }
+        alert.addAction(element)
+        if index == 0 { alert.preferredAction = element }
+      }
+      prompt = (wanted.id, alert)
+      controller.present(alert, animated: true)
+    }
+
+    private func promptAnswered(_ promptId: String, actionId: String) {
+      if prompt?.id == promptId { prompt = nil }
+      answeredPrompt = promptId
+      noteActivity()
+      emit(.action, actionId: actionId)
+    }
+
     // MARK: - Moteur
 
     /// Les `@Published` émettent la nouvelle valeur *avant* de l'écrire : on
@@ -221,7 +384,10 @@
       subscriptions.removeAll()
       engine.$currentAVPlayer
         .sink { [weak self] player in
-          MainActor.assumeIsolated { self?.playerChanged(player) }
+          MainActor.assumeIsolated {
+            self?.transport.watch(player)
+            self?.playerChanged(player)
+          }
         }
         .store(in: &subscriptions)
       engine.$videoRoute
@@ -239,9 +405,20 @@
         .store(in: &subscriptions)
       engine.$currentAVPlayerItem
         .sink { [weak self] item in
-          MainActor.assumeIsolated { self?.watchSelection(of: item) }
+          MainActor.assumeIsolated {
+            self?.watchSelection(of: item)
+            self?.decorate(item)
+          }
         }
         .store(in: &subscriptions)
+    }
+
+    /// Le moteur ne rejoue que `externalMetadata` sur l'item neuf d'un
+    /// rechargement (spike, Q2) : chapitres et proposition s'y reposent.
+    private func decorate(_ item: AVPlayerItem?) {
+      guard let item, let spec else { return }
+      item.navigationMarkerGroups = Self.chapterGroups(spec.chapters)
+      nextUp?.attach(to: item)
     }
 
     /// Le même `AVPlayer` survit à un changement d'audio ou de qualité, un
@@ -355,12 +532,14 @@
     private func close(then completion: (() -> Void)?) {
       guard let controller else { return }
       closingFromHere = true
-      guard controller.presentingViewController != nil else {
+      // Depuis celui qui le présente : appelé sur le lecteur, `dismiss` ne
+      // fermerait que la question posée par-dessus.
+      guard let presenting = controller.presentingViewController else {
         teardown()
         completion?()
         return
       }
-      controller.dismiss(animated: true) { [weak self] in
+      presenting.dismiss(animated: true) { [weak self] in
         MainActor.assumeIsolated {
           self?.teardown()
           completion?()
@@ -376,8 +555,17 @@
       }
       stopWatchingSelection()
       subscriptions.removeAll()
+      transport.watch(nil)
       bitmapSubtitles?.detach()
       bitmapSubtitles = nil
+      overlay?.removeFromSuperview()
+      overlay = nil
+      panels = nil
+      nextUp?.detach()
+      nextUp = nil
+      prompt = nil
+      answeredPrompt = nil
+      lastActivity = .distantPast
       posterTask?.cancel()
       posterTask = nil
       posterRequested = nil
@@ -402,17 +590,87 @@
       emit(.dismissed, reason: .userDismissed)
     }
 
+    /// Saut de 10 s, balayage, chapitre : une seule fois par navigation,
+    /// avant la reprise. Avec `interceptSeeks` (HLS, où une recherche peut
+    /// reconstruire la session), la lecture reste où elle était et Dart
+    /// cherche lui-même.
+    func playerViewController(
+      _ playerViewController: AVPlayerViewController,
+      timeToSeekAfterUserNavigatedFrom oldTime: CMTime, to targetTime: CMTime
+    ) -> CMTime {
+      noteActivity()
+      guard spec?.interceptSeeks == true else { return targetTime }
+      emit(.seekRequested, positionMs: Self.milliseconds(targetTime))
+      return oldTime
+    }
+
+    /// La navigation déjà appliquée par AVKit, que Dart annonce à la séance.
+    func playerViewController(
+      _ playerViewController: AVPlayerViewController,
+      willResumePlaybackAfterUserNavigatedFrom oldTime: CMTime, to targetTime: CMTime
+    ) {
+      guard spec?.interceptSeeks != true else { return }
+      emit(
+        .userSeeked, positionMs: Self.milliseconds(targetTime),
+        fromPositionMs: Self.milliseconds(oldTime))
+    }
+
+    func playerViewController(
+      _ playerViewController: AVPlayerViewController,
+      willTransitionToVisibilityOfTransportBar visible: Bool,
+      with coordinator: any AVPlayerViewControllerAnimationCoordinator
+    ) {
+      if visible { noteActivity() }
+    }
+
+    func playerViewController(
+      _ playerViewController: AVPlayerViewController, shouldPresent proposal: AVContentProposal
+    ) -> Bool {
+      nextUp?.shouldPresent(proposal) ?? false
+    }
+
+    func playerViewController(
+      _ playerViewController: AVPlayerViewController, didAccept proposal: AVContentProposal
+    ) {
+      nextUp?.accepted(proposal)
+    }
+
+    /// Implémenté pour qu'AVKit ne ferme pas le lecteur (en-tête) : un refus
+    /// vaut « Plus tard », Dart garde la main sur la suite.
+    func playerViewController(
+      _ playerViewController: AVPlayerViewController, didReject proposal: AVContentProposal
+    ) {
+      nextUp?.deferred(proposal)
+    }
+
     // MARK: - Événements
+
+    /// Quelqu'un se sert de la télécommande : « Vous regardez encore ? » et
+    /// les comptes à rebours de Dart s'en servent. Une fois toutes les 5 s au
+    /// plus, ce qui suffit à ces deux usages.
+    private func noteActivity() {
+      let now = Date()
+      guard now.timeIntervalSince(lastActivity) >= 5 else { return }
+      lastActivity = now
+      emit(.userActivity)
+    }
 
     private func emit(
       _ kind: OnyxAppleNativeEventKind,
       actionId: String? = nil, menuId: String? = nil, optionId: String? = nil,
-      trackId: String? = nil, reason: OnyxAppleNativeReason? = nil
+      trackId: String? = nil, reason: OnyxAppleNativeReason? = nil,
+      playing: Bool? = nil, positionMs: Int64? = nil, fromPositionMs: Int64? = nil,
+      panelId: String? = nil, rowId: String? = nil
     ) {
       send(
         OnyxAppleNativeEvent(
           playerId: playerId, kind: kind, actionId: actionId, menuId: menuId,
-          optionId: optionId, trackId: trackId, reason: reason))
+          optionId: optionId, trackId: trackId, reason: reason, playing: playing,
+          positionMs: positionMs, fromPositionMs: fromPositionMs, panelId: panelId, rowId: rowId))
+    }
+
+    private static func milliseconds(_ time: CMTime) -> Int64 {
+      time.isNumeric ? StatusMapping.milliseconds(time.seconds) : 0
     }
 
     /// Le contrôleur visible le plus haut de la scène de flutter-tvos : la
@@ -428,6 +686,106 @@
         top = presented
       }
       return top
+    }
+  }
+
+  /// Lecture et pause décidées dans AVKit (bouton central, Centre de
+  /// contrôle, app Remote de l'iPhone) : elles vont droit à l'`AVPlayer`,
+  /// sans passer par Dart, qui doit pourtant les annoncer à la séance
+  /// partagée (§1.1 de l'inventaire de parité).
+  ///
+  /// Le débit change aussi pour d'autres raisons, qu'il faut taire : une
+  /// commande de Dart (la marque de `PlayerHost`), le rechargement d'un item
+  /// (le moteur met en pause avant de remplacer l'item, puis relance à
+  /// `readyToPlay`), l'attente du tampon, la fin de l'item. L'état est relu
+  /// après un court délai, pour qu'une rafale de changements n'en fasse qu'un.
+  @MainActor
+  final class NativeTransportWatch {
+    /// Le temps qu'une commande de Dart met à se voir sur l'`AVPlayer`. Il se
+    /// prolonge tant que l'item charge ou que le tampon se remplit.
+    private static let hostWindow: TimeInterval = 2
+    private static let settle: TimeInterval = 0.4
+
+    private let onChange: (_ playing: Bool, _ positionMs: Int64) -> Void
+    private weak var player: AVPlayer?
+    private var rateObserver: NSObjectProtocol?
+    private var statusObservation: NSKeyValueObservation?
+    private var reported: Bool?
+    private var hostCommand: (playing: Bool?, deadline: Date)?
+    private var generation = 0
+
+    init(onChange: @escaping (_ playing: Bool, _ positionMs: Int64) -> Void) {
+      self.onChange = onChange
+    }
+
+    func watch(_ player: AVPlayer?) {
+      if let player, player === self.player, rateObserver != nil { return }
+      if let rateObserver { NotificationCenter.default.removeObserver(rateObserver) }
+      rateObserver = nil
+      statusObservation = nil
+      generation += 1
+      self.player = player
+      guard let player else {
+        reported = nil
+        return
+      }
+      reported = player.rate != 0
+      rateObserver = NotificationCenter.default.addObserver(
+        forName: AVPlayer.rateDidChangeNotification, object: player, queue: .main
+      ) { [weak self] _ in
+        MainActor.assumeIsolated { self?.scheduleCheck() }
+      }
+      statusObservation = player.observe(\.timeControlStatus) { [weak self] _, _ in
+        DispatchQueue.main.async { [weak self] in
+          MainActor.assumeIsolated { self?.scheduleCheck() }
+        }
+      }
+    }
+
+    func noteHostCommand(playing: Bool?) {
+      hostCommand = (playing, Date().addingTimeInterval(Self.hostWindow))
+    }
+
+    private func scheduleCheck() {
+      generation += 1
+      let expected = generation
+      DispatchQueue.main.asyncAfter(deadline: .now() + Self.settle) { [weak self] in
+        MainActor.assumeIsolated {
+          guard let self, self.generation == expected else { return }
+          self.check()
+        }
+      }
+    }
+
+    private func check() {
+      guard let player else { return }
+      // Un item qui charge, ou un tampon qui se remplit, garde le débit
+      // demandé : rien n'est encore décidé, la commande de Dart reste armée.
+      guard let item = player.currentItem, item.status == .readyToPlay,
+        player.timeControlStatus != .waitingToPlayAtSpecifiedRate
+      else {
+        if let command = hostCommand {
+          hostCommand = (command.playing, Date().addingTimeInterval(Self.hostWindow))
+        }
+        return
+      }
+      let playing = player.rate != 0
+      if let command = hostCommand {
+        if Date() > command.deadline {
+          hostCommand = nil
+        } else if command.playing == nil || command.playing == playing {
+          if command.playing != nil { hostCommand = nil }
+          reported = playing
+          return
+        }
+      }
+      guard playing != reported else { return }
+      reported = playing
+      let position = item.currentTime().seconds
+      let duration = item.duration.seconds
+      // La fin de l'item arrête le débit : c'est l'épisode qui finit.
+      if !playing, duration.isFinite, position.isFinite, position >= duration - 1 { return }
+      onChange(playing, position.isFinite ? StatusMapping.milliseconds(position) : 0)
     }
   }
 
