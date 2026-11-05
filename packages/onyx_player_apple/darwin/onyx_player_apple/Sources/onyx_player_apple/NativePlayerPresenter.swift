@@ -347,7 +347,15 @@
       if answeredPrompt != wanted?.id { answeredPrompt = nil }
       if let shown = prompt, shown.id != wanted?.id {
         prompt = nil
-        if shown.alert.presentingViewController != nil { shown.alert.dismiss(animated: true) }
+        // Une question qui en remplace une autre attend la fin de ce retrait :
+        // UIKit n'en présente pas deux à la fois, et aucune spec ne viendrait
+        // forcément la reposer ensuite.
+        if shown.alert.presentingViewController != nil {
+          shown.alert.dismiss(animated: true) { [weak self] in
+            MainActor.assumeIsolated { self?.syncPrompt() }
+          }
+          return
+        }
       }
       guard let wanted, prompt == nil, answeredPrompt != wanted.id,
         controller.viewIfLoaded?.window != nil, !controller.isBeingPresented,
