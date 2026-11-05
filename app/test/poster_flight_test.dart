@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/theme/lite_mode.dart';
+import 'package:onyx/tv/tv_mode.dart';
+import 'package:onyx/tv/tv_ui_scale.dart';
 import 'package:onyx/widgets/global/poster_flight.dart';
 
 /// L'envol d'une affiche vers sa fiche : une route, une horloge, la fiche
@@ -165,5 +167,26 @@ void main() {
     ));
     expect(find.text('Titre'), findsOneWidget);
     expect(find.byType(Opacity), findsNothing);
+  });
+
+  testWidgets(
+      'sur un téléviseur, la fiche ouverte par l’envol est à l’échelle des '
+      'pages', (tester) async {
+    _builds = 0;
+    final key = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(TvScope(
+      isTv: true,
+      child: MaterialApp(
+        navigatorKey: key,
+        home: const Scaffold(body: Text('Catalogue')),
+      ),
+    ));
+    key.currentState!.push(_route());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.ancestor(of: find.text('Fiche'), matching: find.byType(TvUiScale)),
+      findsOneWidget,
+    );
   });
 }

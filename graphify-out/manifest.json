@@ -695,9 +695,9 @@
     "semantic_hash": "8ab4903bca3472f9b8930b708315b362"
   },
   "app/lib/main.dart": {
-    "mtime": 1793802765.5453863,
-    "seen": 1793802991.531578,
-    "ast_hash": "75dbb2e65c9cf3578c5b4717aecfcbdc",
+    "mtime": 1793893305.535824,
+    "seen": 1793904470.348502,
+    "ast_hash": "2bd72d507552fce2d00e476bd1140cf0",
     "semantic_hash": ""
   },
   "app/lib/models/announcement.dart": {
@@ -1913,9 +1913,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/requests/requests_screen.dart": {
-    "mtime": 1793701296.9838135,
-    "seen": 1793701698.9978418,
-    "ast_hash": "0d41888de50cad896af71484d92e1ac2",
+    "mtime": 1793893068.0236857,
+    "seen": 1793904470.348753,
+    "ast_hash": "e97ff37d03d93edeeaf265647aad92b9",
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/my_request_card.dart": {
@@ -2159,10 +2159,10 @@
     "semantic_hash": "f856db9456a55f05b4d2945934e48a5e"
   },
   "app/lib/screens/settings/servers_screen.dart": {
-    "mtime": 1793445393.2986615,
-    "seen": 1793452338.3502562,
-    "ast_hash": "5ac85958576287abcb2889dc651760aa",
-    "semantic_hash": "5ac85958576287abcb2889dc651760aa"
+    "mtime": 1793893222.2926898,
+    "seen": 1793904470.3488,
+    "ast_hash": "79c99013149d1fedb19059a272c45a54",
+    "semantic_hash": ""
   },
   "app/lib/screens/settings/settings_categories.dart": {
     "mtime": 1793552171.5312197,
@@ -2981,10 +2981,10 @@
     "semantic_hash": "13bf4146e25701c80a5be84716371778"
   },
   "app/lib/theme/app_theme.dart": {
-    "mtime": 1793382354.7410555,
-    "seen": 1793382703.336061,
-    "ast_hash": "ab70ba9c59bdfe2ea9e015d04226a64a",
-    "semantic_hash": "ab70ba9c59bdfe2ea9e015d04226a64a"
+    "mtime": 1793903643.398783,
+    "seen": 1793904470.348969,
+    "ast_hash": "bc676cbba65a94fc8bda06c855c4f6a5",
+    "semantic_hash": ""
   },
   "app/lib/theme/app_type.dart": {
     "mtime": 1793382354.7411387,
@@ -3059,28 +3059,28 @@
     "semantic_hash": "3adbf5207572cb26cafc9fe0fb94578d"
   },
   "app/lib/tv/tv_focus_memory.dart": {
-    "mtime": 1793445393.5283766,
-    "seen": 1793452338.350403,
-    "ast_hash": "084683a2c5beed6b5e7ea4d8064c70bf",
-    "semantic_hash": "084683a2c5beed6b5e7ea4d8064c70bf"
+    "mtime": 1793903710.160652,
+    "seen": 1793904470.348982,
+    "ast_hash": "da124b7f8332105c56c191d5a972f93f",
+    "semantic_hash": ""
   },
   "app/lib/tv/tv_focus_panes.dart": {
-    "mtime": 1793445393.532862,
-    "seen": 1793452338.350404,
+    "mtime": 1793903699.2550137,
+    "seen": 1793904470.348983,
     "ast_hash": "73fa7e6795253e839d3555ac21ac1e1c",
     "semantic_hash": "73fa7e6795253e839d3555ac21ac1e1c"
   },
   "app/lib/tv/tv_focus_rows.dart": {
-    "mtime": 1793445393.5376596,
-    "seen": 1793452338.350406,
+    "mtime": 1793903710.1235232,
+    "seen": 1793904470.3489852,
     "ast_hash": "c2532fcf7f9b4e357ee5bb3616c06b72",
     "semantic_hash": "c2532fcf7f9b4e357ee5bb3616c06b72"
   },
   "app/lib/tv/tv_focus_scroll.dart": {
-    "mtime": 1793445393.5421774,
-    "seen": 1793452338.350407,
-    "ast_hash": "b7655f54dfa7d41911ae579e47430d17",
-    "semantic_hash": "b7655f54dfa7d41911ae579e47430d17"
+    "mtime": 1793903365.2303388,
+    "seen": 1793904470.3489852,
+    "ast_hash": "9c31b88e2d8022dd6ba0c9eb03a0b556",
+    "semantic_hash": ""
   },
   "app/lib/tv/tv_key_repeat.dart": {
     "mtime": 1793382354.7433887,
@@ -3107,10 +3107,10 @@
     "semantic_hash": "02783377961587a056c411442a3bd208"
   },
   "app/lib/tv/tv_ui_scale.dart": {
-    "mtime": 1793382354.7440028,
-    "seen": 1793382703.336513,
-    "ast_hash": "2877b9239355e8d1eb2892aa4b3dfd04",
-    "semantic_hash": "2877b9239355e8d1eb2892aa4b3dfd04"
+    "mtime": 1793893298.5628378,
+    "seen": 1793904470.348992,
+    "ast_hash": "d83f8138fc9b3f892a0ddcdedba0d1af",
+    "semantic_hash": ""
   },
   "app/lib/tv/web_tv_field_exit.dart": {
     "mtime": 1793382354.7440941,
@@ -3539,9 +3539,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_flight.dart": {
-    "mtime": 1793445393.6834753,
-    "seen": 1793452338.350492,
-    "ast_hash": "6c72cac6bd5a2e5ac6759cb70a982b3c",
+    "mtime": 1793903643.2066936,
+    "seen": 1793904470.349088,
+    "ast_hash": "92095174510338e0299aac31c0cdea2c",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_grid_zoom_region.dart": {
@@ -4026,10 +4026,10 @@
     "semantic_hash": "582b1593bd870a715c743f2be4f339ec"
   },
   "app/test/file_size_guard_test.dart": {
-    "mtime": 1793382354.7605357,
-    "seen": 1793382703.339916,
-    "ast_hash": "62b05d9c1855e772051233fbdaa62017",
-    "semantic_hash": "62b05d9c1855e772051233fbdaa62017"
+    "mtime": 1793893222.3150628,
+    "seen": 1793904470.349207,
+    "ast_hash": "5b27681918d305008ca604fedeba31b0",
+    "semantic_hash": ""
   },
   "app/test/flutter_test_config.dart": {
     "mtime": 1793382354.7607167,
@@ -4512,9 +4512,9 @@
     "semantic_hash": "47f54f325217703cbec8f0125f979e7d"
   },
   "app/test/poster_flight_test.dart": {
-    "mtime": 1793445393.9984596,
-    "seen": 1793452338.350667,
-    "ast_hash": "c4f426438abf34ceb0ef9df638bbf52d",
+    "mtime": 1793903753.701133,
+    "seen": 1793904470.349321,
+    "ast_hash": "35410b80a8d48c5a864e0fcb16405de5",
     "semantic_hash": ""
   },
   "app/test/poster_grid_zoom_test.dart": {
@@ -4866,10 +4866,10 @@
     "semantic_hash": "2ae5eb2dec0567c6201fb7c4f85b95e9"
   },
   "app/test/tv_focus_memory_test.dart": {
-    "mtime": 1793382354.7711604,
-    "seen": 1793382703.342734,
-    "ast_hash": "c315047c737339a6115f4784462767a9",
-    "semantic_hash": "c315047c737339a6115f4784462767a9"
+    "mtime": 1793893031.5040724,
+    "seen": 1793904470.3494139,
+    "ast_hash": "0f2830802a82a0a0cfbfd95819229ec7",
+    "semantic_hash": ""
   },
   "app/test/tv_focus_panes_test.dart": {
     "mtime": 1793445394.1017003,
@@ -4878,10 +4878,10 @@
     "semantic_hash": "4a6bdedf83fee66c6175c36a84df5224"
   },
   "app/test/tv_focus_scroll_test.dart": {
-    "mtime": 1793382354.771341,
-    "seen": 1793382703.342777,
-    "ast_hash": "15f8f95ad66fa98766ba5d92b93d25a4",
-    "semantic_hash": "15f8f95ad66fa98766ba5d92b93d25a4"
+    "mtime": 1793903351.7343304,
+    "seen": 1793904470.349417,
+    "ast_hash": "3892da7720fe01fc5979bad7937d4a68",
+    "semantic_hash": ""
   },
   "app/test/tv_focus_test.dart": {
     "mtime": 1793445394.106513,
@@ -9127,9 +9127,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/detail_hero.dart": {
-    "mtime": 1793554342.229733,
-    "seen": 1793609839.926076,
-    "ast_hash": "8649b6a62678c1ca295c6874fe3286e3",
+    "mtime": 1793893150.3370361,
+    "seen": 1793904470.34904,
+    "ast_hash": "92f6defd946db551374fa7e7d61b56a2",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/detail_info_table.dart": {
@@ -12013,9 +12013,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/request_type_switch.dart": {
-    "mtime": 1793700476.8234859,
-    "seen": 1793701698.997878,
-    "ast_hash": "e5c93388daa6a5f090b003b98e3f6e71",
+    "mtime": 1793904143.1672444,
+    "seen": 1793904470.348767,
+    "ast_hash": "02fac65720e00337b16daa3b2ad5c822",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_grid_display_menu.dart": {
@@ -12181,8 +12181,8 @@
     "semantic_hash": ""
   },
   "app/tvos/Flutter/GeneratedPluginRegistrant.swift": {
-    "mtime": 1793887824.1876233,
-    "seen": 1793888078.146911,
+    "mtime": 1793904208.5160048,
+    "seen": 1793904470.349451,
     "ast_hash": "672fbc9b56b1e605216eb0b2edb22b2c",
     "semantic_hash": ""
   },
@@ -12424,6 +12424,42 @@
     "mtime": 1793887792.6065361,
     "seen": 1793888078.146854,
     "ast_hash": "9cbc1c4e523cf190bdb860419efaeb52",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/settings/server_account_tile.dart": {
+    "mtime": 1793903643.4061315,
+    "seen": 1793904470.348799,
+    "ast_hash": "0d18858484233c45cf70d31668bb621a",
+    "semantic_hash": ""
+  },
+  "app/lib/tv/tv_semantics_scroll_guard.dart": {
+    "mtime": 1793903500.828048,
+    "seen": 1793904470.34899,
+    "ast_hash": "228b5e3f457ac7e9953c9945eec2d85a",
+    "semantic_hash": ""
+  },
+  "app/test/requests_screen_tv_test.dart": {
+    "mtime": 1793904187.129074,
+    "seen": 1793904470.349354,
+    "ast_hash": "1c6f68a5c7a55bcda45d6ff81d68d276",
+    "semantic_hash": ""
+  },
+  "app/test/tv_focus_ring_test.dart": {
+    "mtime": 1793903435.1651227,
+    "seen": 1793904470.349416,
+    "ast_hash": "42e304dc83e98b4265a1b2f0acffc28e",
+    "semantic_hash": ""
+  },
+  "app/test/tv_semantics_scroll_guard_test.dart": {
+    "mtime": 1793903389.326342,
+    "seen": 1793904470.349427,
+    "ast_hash": "e902afd152fd7fa104bc021057ecac16",
+    "semantic_hash": ""
+  },
+  "docs/adr/0108-le-pont-d-accessibilite-de-l-apple-tv-ne-fait-plus-defiler.md": {
+    "mtime": 1793903500.5691438,
+    "seen": 1793904470.350535,
+    "ast_hash": "96a3d8b635ebf1ed304d987533f06862",
     "semantic_hash": ""
   }
 }

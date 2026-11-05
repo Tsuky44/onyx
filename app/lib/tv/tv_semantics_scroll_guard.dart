@@ -19,7 +19,7 @@ import '../utils/app_platform.dart';
 /// Sur un téléviseur, c'est le focus de l'app qui place la page (voir
 /// [TvFocusScroll]). Ces actions sont donc ignorées tant que VoiceOver ne
 /// pilote pas l'écran ; avec VoiceOver, elles restent le seul moyen qu'il a de
-/// faire défiler.
+/// faire défiler. Voir ADR-0108.
 abstract final class TvSemanticsScrollGuard {
   static bool _installed = false;
 

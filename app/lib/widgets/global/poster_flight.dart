@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../tv/tv_mode.dart';
+import '../../tv/tv_ui_scale.dart';
 import 'app_network_image.dart';
 
 /// L'envol d'une affiche vers sa fiche, porté d'OnyxHub (`MotionDirector`,
@@ -122,10 +124,18 @@ class PosterFlightRoute<T> extends PageRoute<T> {
   @override
   String? get barrierLabel => null;
 
+  /// Sur un téléviseur, la fiche se met à l'échelle comme toutes les pages.
+  ///
+  /// Cette route ne passe pas par le thème des transitions, qui pose
+  /// [TvUiScale] sur chaque page : la fiche ouverte depuis une affiche
+  /// s'affichait à sa taille brute — aux deux tiers sur l'Apple TV, illisible
+  /// du canapé — et celle ouverte sans envol, à la bonne taille.
   @override
   Widget buildPage(BuildContext context, Animation<double> animation,
           Animation<double> secondaryAnimation) =>
-      builder(context);
+      TvScope.of(context)
+          ? TvUiScale(child: Builder(builder: builder))
+          : builder(context);
 
   @override
   Widget buildTransitions(BuildContext context, Animation<double> animation,
@@ -169,8 +179,16 @@ class PosterFlightRoute<T> extends PageRoute<T> {
                       timeline: t,
                       a: a,
                       from: from,
+                      // La hauteur est mesurée dans la page, à l'échelle du
+                      // téléviseur ; l'envol se dessine, lui, à taille brute.
                       to: Rect.fromLTWH(
-                          0, 0, constraints.maxWidth, backdropHeight),
+                          0,
+                          0,
+                          constraints.maxWidth,
+                          backdropHeight *
+                              (TvScope.of(context)
+                                  ? TvUiScale.factorFor(constraints.maxWidth)
+                                  : 1)),
                       radius: radius,
                       posterUrl: posterUrl,
                       backdropUrl: backdropUrl,

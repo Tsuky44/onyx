@@ -2273,10 +2273,10 @@
     "semantic_hash": "f671d8e714af1dd7c961455a6cbad53f"
   },
   "app/lib/screens/settings/widgets/settings_ui.dart": {
-    "mtime": 1793445393.3597796,
-    "seen": 1793452338.350274,
-    "ast_hash": "b12eb1e422bbb67ff7f93f4e63a4ccad",
-    "semantic_hash": "b12eb1e422bbb67ff7f93f4e63a4ccad"
+    "mtime": 1793888007.3709543,
+    "seen": 1793888078.146362,
+    "ast_hash": "c8cde883a550704729667161172b685d",
+    "semantic_hash": ""
   },
   "app/lib/screens/settings/widgets/share_viewers.dart": {
     "mtime": 1793445393.3646083,
@@ -12181,8 +12181,8 @@
     "semantic_hash": ""
   },
   "app/tvos/Flutter/GeneratedPluginRegistrant.swift": {
-    "mtime": 1793883820.2173376,
-    "seen": 1793884551.582913,
+    "mtime": 1793887824.1876233,
+    "seen": 1793888078.146911,
     "ast_hash": "672fbc9b56b1e605216eb0b2edb22b2c",
     "semantic_hash": ""
   },
@@ -12412,6 +12412,18 @@
     "mtime": 1793869494.3635955,
     "seen": 1793884551.5832589,
     "ast_hash": "c3f84cc6fea555eced74b402892f7a5a",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/settings/widgets/settings_choice_focus.dart": {
+    "mtime": 1793887792.6096792,
+    "seen": 1793888078.1463559,
+    "ast_hash": "8ce36aa8b88c206b1ef9953c42c3bb2c",
+    "semantic_hash": ""
+  },
+  "app/test/settings_choice_tile_tv_test.dart": {
+    "mtime": 1793887792.6065361,
+    "seen": 1793888078.146854,
+    "ast_hash": "9cbc1c4e523cf190bdb860419efaeb52",
     "semantic_hash": ""
   }
 }

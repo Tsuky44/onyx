@@ -286,8 +286,8 @@ abstract final class AppTheme {
   /// position reste celle que calcule Flutter.
   static PopupMenuThemeData popupMenuThemeScaled(double scale) {
     final base = dark.popupMenuTheme;
-    TextStyle? grow(TextStyle? style) => style?.copyWith(
-        fontSize: (style.fontSize ?? AppType.body) * scale);
+    TextStyle? grow(TextStyle? style) =>
+        style?.copyWith(fontSize: (style.fontSize ?? AppType.body) * scale);
     return base.copyWith(
       textStyle: grow(base.textStyle),
       labelTextStyle: WidgetStatePropertyAll(

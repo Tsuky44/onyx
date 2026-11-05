@@ -95,7 +95,7 @@ extension on List<({String value, String label})> {
   }
 }
 
-class _Segment extends StatelessWidget {
+class _Segment extends StatefulWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -107,23 +107,47 @@ class _Segment extends StatelessWidget {
   });
 
   @override
+  State<_Segment> createState() => _SegmentState();
+}
+
+class _SegmentState extends State<_Segment> {
+  bool _focused = false;
+
+  @override
   Widget build(BuildContext context) {
+    final label = widget.label;
+    final selected = widget.selected;
     return Semantics(
       button: true,
       selected: selected,
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
+        onFocusChange: (focused) {
+          if (_focused != focused) setState(() => _focused = focused);
+        },
         borderRadius: BorderRadius.circular(999),
-        child: Center(
-          child: AnimatedDefaultTextStyle(
-            duration: AppMotion.fade(context, AppMotion.micro),
-            curve: AppMotion.curve,
-            style: TextStyle(
-              color: selected ? AppColors.textPrimary : AppColors.textMuted,
-              fontWeight: FontWeight.w600,
-              fontSize: AppType.subhead,
+        // Le focus n'était que le voile de 10 % de Material, sur une pilule
+        // déjà grise : à la télécommande, aucun des trois choix ne montrait
+        // qu'il était visé. Même anneau que les autres boutons de l'app.
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: _focused ? AppColors.accent : Colors.transparent,
+              width: 2.5,
             ),
-            child: Text(label),
+          ),
+          child: Center(
+            child: AnimatedDefaultTextStyle(
+              duration: AppMotion.fade(context, AppMotion.micro),
+              curve: AppMotion.curve,
+              style: TextStyle(
+                color: selected ? AppColors.textPrimary : AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+                fontSize: AppType.subhead,
+              ),
+              child: Text(label),
+            ),
           ),
         ),
       ),

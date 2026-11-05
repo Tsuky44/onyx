@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/tv/tv_focus.dart';
@@ -18,6 +19,7 @@ void main() {
   Future<(List<FocusNode>, ScrollController)> pumpList(
     WidgetTester tester, {
     required bool tvFocusable,
+    bool keepAll = false,
   }) async {
     final nodes = [for (var i = 0; i < 6; i++) FocusNode(debugLabel: 'row$i')];
     final controller = ScrollController();
@@ -46,6 +48,10 @@ void main() {
             height: 300,
             child: ListView(
               controller: controller,
+              // Garde construites les rangées hors de l'écran, pour qu'une
+              // rangée défilée hors de la vue garde son focus.
+              scrollCacheExtent:
+                  keepAll ? const ScrollCacheExtent.pixels(2000) : null,
               children: [
                 for (final node in nodes)
                   tvFocusable
@@ -111,5 +117,41 @@ void main() {
 
     expect(nodes[2].hasFocus, isTrue);
     expect(controller.offset, greaterThan(0));
+  });
+
+  testWidgets(
+      'Haut sur le premier élément resté hors de l’écran le ramène, au lieu '
+      'de défiler d’un demi-écran', (tester) async {
+    final (nodes, controller) =
+        await pumpList(tester, tvFocusable: false, keepAll: true);
+    // Le focus est en haut, mais la page est en bas : l'état où un second
+    // appui arrivait pendant que la page montait vers le bouton retour.
+    controller.jumpTo(controller.position.maxScrollExtent);
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+
+    expect(nodes[0].hasFocus, isTrue);
+    expect(controller.offset, 0);
+  });
+
+  testWidgets(
+      'Bas vers une cible restée au-dessus de l’écran la fait apparaître',
+      (tester) async {
+    final (nodes, controller) =
+        await pumpList(tester, tvFocusable: false, keepAll: true);
+    nodes[1].requestFocus();
+    await tester.pump();
+    controller.jumpTo(controller.position.maxScrollExtent);
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    expect(nodes[2].hasFocus, isTrue);
+    // La rangée 2 occupe 400 à 600 : elle doit être dans la fenêtre de 300.
+    expect(controller.offset, lessThanOrEqualTo(400));
+    expect(controller.offset, greaterThanOrEqualTo(300));
   });
 }

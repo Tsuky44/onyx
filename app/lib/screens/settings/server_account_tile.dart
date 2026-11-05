@@ -115,8 +115,7 @@ class ServerAccountTile extends StatelessWidget {
                     : tr('Démarrer sur ce serveur')),
               ),
               if (onLink != null)
-                PopupMenuItem(
-                    value: 'link', child: Text(tr('Lier un compte'))),
+                PopupMenuItem(value: 'link', child: Text(tr('Lier un compte'))),
               if (links.isNotEmpty)
                 PopupMenuItem(
                     value: 'unlink', child: Text(tr('Dissocier ce compte'))),
