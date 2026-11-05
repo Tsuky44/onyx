@@ -36,3 +36,12 @@ bool get engineOpensFiles => !AppPlatform.isWeb || AppPlatform.isWebOS;
 /// navigateur — Direct Play d'un téléviseur LG compris — les sous-titres
 /// viennent toujours des WebVTT du serveur.
 bool get engineReadsEmbeddedSubtitles => !AppPlatform.isWeb;
+
+/// Si le moteur d'ici change de piste audio dans une session HLS sans la
+/// rouvrir.
+///
+/// Pas AetherEngine : il confie une session HLS à `AVPlayer` (route
+/// `remoteBypass`), qui garde le choix de la rendition audio et ignore
+/// `selectAudioTrack` (« AVPlayer owns the audio selection on the remote-HLS
+/// bypass »). Changer de langue y rouvre la session avec la piste demandée.
+bool get engineSwitchesHlsAudio => !AppPlatform.isApple;

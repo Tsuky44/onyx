@@ -10,7 +10,7 @@ extension PlayerControllerTracks on PlayerController {
     required PlayerPlaybackPreferences? inheritedPreferences,
   }) async {
     try {
-      final tracks = await _loadTracks(apiClient, mediaId);
+      final tracks = await _loadTracksOnce(apiClient, mediaId);
       if (_disposed || tracks == null) return;
       // Arrivée pendant le démarrage, la liste peut faire changer de piste
       // audio — ce qui relance le chargement : la ligne doit le situer.
@@ -36,7 +36,7 @@ extension PlayerControllerTracks on PlayerController {
       // The track list is what carries the source resolution, so this is the
       // first moment the web can pick a quality. Nothing is playing yet on that
       // platform — init deliberately opened nothing.
-      if (await _startWebTranscode()) return;
+      if (await _startHlsFirst()) return;
 
       if (_directPlayCannotDecodeAudio(_selectedAudioIndex)) {
         _notifyTracksChanged();
@@ -350,7 +350,8 @@ extension PlayerControllerTracks on PlayerController {
       await _transcodeForUndecodableAudio();
       return;
     }
-    if (currentQuality != null && _playerAudioPosition(index) == null) {
+    if (currentQuality != null &&
+        (!engineSwitchesHlsAudio || _playerAudioPosition(index) == null)) {
       await reloadHlsAtPosition(position.inSeconds);
       return;
     }

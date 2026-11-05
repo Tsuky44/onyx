@@ -193,6 +193,7 @@ extension PlayerControllerHls on PlayerController {
             audioIndex: _selectedAudioIndex,
             burnSubtitleIndex: _hlsBurnedSubTypedIndex,
             access: access,
+            capabilities: _nativeTvSource.capabilities,
           );
       pendingSession = hls;
       if (_disposed) return;

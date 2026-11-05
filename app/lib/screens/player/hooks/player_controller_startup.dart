@@ -37,6 +37,10 @@ extension PlayerControllerStartup on PlayerController {
     // L'échec est relu à l'`await` plus bas ; sans ceci, une sortie anticipée
     // (moteur qui échoue, écran fermé) le laisserait remonter sans preneur.
     accessFuture?.ignore();
+    // Sur l'écran natif d'Apple TV, la liste des pistes décide de la source :
+    // elle part avec le ticket (voir [NativeTvSource]).
+    _nativeTvSource.prefetch(() => _loadTracks(apiClient, media.id),
+        streaming: _localFilePath == null);
     // Un moteur repris au vestiaire peut encore décharger le film précédent.
     // Ouvrir par-dessus est ce qui laissait une lecture derrière un indicateur
     // qui ne s'arrêtait jamais.
@@ -221,7 +225,9 @@ extension PlayerControllerStartup on PlayerController {
     // silent — picture, no sound, no message. Rather than open the file and back
     // out of it a moment later, the web waits for the track list and starts
     // straight in HLS, at the source's own resolution.
-    if (!_hlsOnly) {
+    // Une source que la puce d'Apple TV ne décode pas n'est pas ouverte : sa
+    // session HLS part avec la liste des pistes, comme sur le web.
+    if (!_hlsOnly && !await _nativeTvSource.defersOpen()) {
       // Which audio track to load with. The episode being carried over from
       // knows best; otherwise it is the user's standing preference, which lives
       // on this machine and costs nothing to read.
@@ -351,7 +357,7 @@ extension PlayerControllerStartup on PlayerController {
     int resumeAtSeconds = 0,
   }) async {
     if (_disposed) return;
-    if (_hlsOnly) {
+    if (_hlsOnly || _awaitsNativeTvSession) {
       // On the web the resume point is part of the session: the server was asked
       // to start transcoding at that second, so there is nothing to seek to —
       // and a seek would land outside the window it is producing anyway. When

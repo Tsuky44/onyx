@@ -310,6 +310,7 @@ extension PlayerControllerAuto on PlayerController {
         audioIndex: _selectedAudioIndex,
         burnSubtitleIndex: burn,
         access: access,
+        capabilities: _nativeTvSource.capabilities,
         standby: true,
       );
       _preparedSessionId = prepared.sessionId;

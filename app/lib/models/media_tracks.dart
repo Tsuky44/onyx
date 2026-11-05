@@ -191,6 +191,20 @@ class MediaVideoTrack {
   /// serveur, comme [hdrFormat].
   final bool needsDolbyVision;
 
+  /// Le format d'image de ffprobe (`yuv420p10le`, `yuv422p`…), vide quand le
+  /// serveur ne l'a pas dit.
+  final String pixFmt;
+
+  /// Le profil du codec tel que ffprobe le nomme (`High 10`, `Main 10`).
+  final String profile;
+
+  /// Le profil Dolby Vision (5, 7, 8…), 0 sans Dolby Vision.
+  final int doviProfile;
+
+  /// Une image en deux trames. Décidé par le serveur, comme [hdrFormat] ;
+  /// faux face à un serveur qui ne le dit pas.
+  final bool interlaced;
+
   MediaVideoTrack({
     required this.codec,
     required this.width,
@@ -198,6 +212,10 @@ class MediaVideoTrack {
     this.hdrFormat = '',
     this.bitDepth = 8,
     this.needsDolbyVision = false,
+    this.pixFmt = '',
+    this.profile = '',
+    this.doviProfile = 0,
+    this.interlaced = false,
   });
 
   factory MediaVideoTrack.fromJson(Map<String, dynamic> json) {
@@ -208,6 +226,10 @@ class MediaVideoTrack {
       hdrFormat: json['hdr_format'] as String? ?? '',
       bitDepth: json['bit_depth'] as int? ?? 8,
       needsDolbyVision: json['needs_dolby_vision'] as bool? ?? false,
+      pixFmt: json['pix_fmt'] as String? ?? '',
+      profile: json['profile'] as String? ?? '',
+      doviProfile: json['dovi_profile'] as int? ?? 0,
+      interlaced: json['interlaced'] as bool? ?? false,
     );
   }
 

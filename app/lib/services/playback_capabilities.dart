@@ -31,6 +31,9 @@ class PlaybackCapabilities {
     required this.label,
     this.missingDirectPlayAudio = const {},
     bool? dolbyVisionInDirectPlay,
+    this.encodeHevc = false,
+    this.progressiveOnly = false,
+    this.maxH264BitDepth = 0,
   }) : dolbyVisionInDirectPlay = dolbyVisionInDirectPlay ?? dolbyVision;
 
   /// `fmp4` ou `ts`. Le format de segment décide autant que le décodeur : le
@@ -84,6 +87,18 @@ class PlaybackCapabilities {
   /// Faux, un profil 5 ouvert en Direct Play sort rose et vert sans la moindre
   /// erreur : il part en HLS, où le serveur applique la RPU (ADR-0060).
   final bool dolbyVisionInDirectPlay;
+
+  /// Le client accepte une image réencodée en HEVC Main 10, que le serveur ne
+  /// produit que pour garder le HDR d'une source qu'il doit réencoder
+  /// (ADR-0106). Sans elle, ce HDR est tone-mappé en H.264.
+  final bool encodeHevc;
+
+  /// Le décodeur ne prend pas d'image entrelacée : le serveur la désentrelace.
+  final bool progressiveOnly;
+
+  /// La profondeur du H.264 seul quand elle est sous [maxVideoBitDepth] ;
+  /// 0 sinon. Le décodeur d'Apple lit le HEVC Main 10, pas le H.264 High 10.
+  final int maxH264BitDepth;
 
   /// Si le moteur local sait décoder [codec] (nom ffprobe) en Direct Play.
   bool decodesInDirectPlay(String codec) {
@@ -185,6 +200,26 @@ class PlaybackCapabilities {
     dolbyVision: false,
     dolbyVisionInDirectPlay: true,
     label: 'aetherengine',
+  );
+
+  /// [aether] pour l'écran natif d'Apple TV, quand la puce ne décode pas la
+  /// source (`native_tv_decoding.dart`) : ce qu'AVPlayer décode **en
+  /// matériel**, puisque c'est à lui que la session est confiée. Le serveur
+  /// réencode donc le H.264 10 bits et désentrelace, et garde un HDR en HEVC
+  /// Main 10 au lieu de le tone-mapper (ADR-0106).
+  static const aetherNativeTv = PlaybackCapabilities(
+    container: 'fmp4',
+    videoCodecs: {'h264', 'hevc'},
+    audioCodecs: {'aac', 'ac3', 'eac3', 'alac', 'flac'},
+    maxAudioChannels: 8,
+    maxVideoBitDepth: 10,
+    hdr: true,
+    dolbyVision: false,
+    dolbyVisionInDirectPlay: true,
+    encodeHevc: true,
+    progressiveOnly: true,
+    maxH264BitDepth: 8,
+    label: 'aetherengine (écran natif Apple TV)',
   );
 
   /// Ce qu'ExoPlayer a mesuré sur cet appareil.
@@ -331,6 +366,11 @@ class PlaybackCapabilities {
         'bitdepth': '$maxVideoBitDepth',
         'hdr': hdr ? '1' : '0',
         'dv': dolbyVision ? '1' : '0',
+        // Absents quand ils ne disent rien : la requête des autres clients
+        // reste celle d'avant.
+        if (encodeHevc) 'encode': 'hevc',
+        if (progressiveOnly) 'progressive': '1',
+        if (maxH264BitDepth > 0) 'h264bitdepth': '$maxH264BitDepth',
       };
 
   @override
