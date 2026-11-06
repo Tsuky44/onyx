@@ -2,6 +2,7 @@ import 'package:dpad/dpad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:onyx/tv/input/tv_dpad_log.dart';
 import 'package:onyx/tv/nav/onyx_dpad.dart';
 import 'package:onyx/tv/nav/tv_nav_engine.dart';
 import 'package:onyx/tv/nav/tv_nav_root.dart';
@@ -73,6 +74,12 @@ class TvNavHarness {
 
     TvKeyRepeat.debugReset();
     addTearDown(TvKeyRepeat.debugReset);
+    // Les traces `[DPAD]` du portail ne vont pas dans la sortie des tests ;
+    // un test qui les lit pose son propre réceptacle avant de monter.
+    if (TvDpadLog.debugSink == null) {
+      TvDpadLog.debugSink = <String>[];
+      addTearDown(() => TvDpadLog.debugSink = null);
+    }
     // La mémoire persistante de dpad est une table statique (constat C7) :
     // sans ce vidage, un test reprendrait la carte où le précédent s'était
     // arrêté.
@@ -171,6 +178,53 @@ class TvNavHarness {
     ));
     await tester.pump();
     return handled;
+  }
+
+  /// Une **rafale** : [count] flèches vers [direction], appuyées et relâchées
+  /// dans la même tâche, sans laisser passer une microtâche entre elles.
+  ///
+  /// C'est le cas du constat N2 (phase 0) : des flèches qui arrivent avant
+  /// que le focus de la précédente soit posé. `tester.sendKeyEvent` attend
+  /// entre deux touches, ce qui laisse le focus se poser : il ne sait pas
+  /// fabriquer une rafale.
+  Future<void> burst(TraversalDirection direction, int count) async {
+    final logical = arrowKeyFor(direction);
+    final physical = switch (direction) {
+      TraversalDirection.up => PhysicalKeyboardKey.arrowUp,
+      TraversalDirection.down => PhysicalKeyboardKey.arrowDown,
+      TraversalDirection.left => PhysicalKeyboardKey.arrowLeft,
+      TraversalDirection.right => PhysicalKeyboardKey.arrowRight,
+    };
+    sendBurst(<(LogicalKeyboardKey, PhysicalKeyboardKey)>[
+      for (var i = 0; i < count; i++) (logical, physical),
+    ]);
+    await settle(tester);
+  }
+
+  /// Envoie [keys] (appui puis relâchement de chacune) dans la même tâche :
+  /// voir [burst].
+  static void sendBurst(List<(LogicalKeyboardKey, PhysicalKeyboardKey)> keys) {
+    // Le chemin d'une touche venue du moteur, comme [sendKey].
+    // ignore: deprecated_member_use
+    final handler = ServicesBinding.instance.keyEventManager.keyMessageHandler!;
+    void send(KeyEvent event) {
+      HardwareKeyboard.instance.handleKeyEvent(event);
+      // ignore: deprecated_member_use
+      handler(KeyMessage(<KeyEvent>[event], null));
+    }
+
+    for (final (logical, physical) in keys) {
+      send(KeyDownEvent(
+        physicalKey: physical,
+        logicalKey: logical,
+        timeStamp: Duration.zero,
+      ));
+      send(KeyUpEvent(
+        physicalKey: physical,
+        logicalKey: logical,
+        timeStamp: Duration.zero,
+      ));
+    }
   }
 
   /// Le Retour du système : ce que le moteur envoie pour Menu/‹ sur Apple TV

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../utils/app_platform.dart';
+import 'input/tv_dpad_log.dart';
 import 'siri_remote_touches.dart';
 import 'touchpad_motion.dart';
 import 'tv_mode.dart';
@@ -43,12 +44,23 @@ abstract final class TvTouchpad {
 
   /// Premier intervalle de l'élan, puis chaque suivant s'allonge : la liste
   /// ralentit au lieu de s'arrêter d'un coup.
+  ///
+  /// Valeurs de l'ADR-0039, les mêmes avec dpad. À valider sur vraie Apple
+  /// TV : rapport de phase 0, §5.3.
   static const Duration _glideFirstInterval = Duration(milliseconds: 60);
   static const double _glideSlowdown = 1.15;
 
   /// La flèche du geste lui-même peut arriver juste après que le doigt s'est
-  /// levé : elle ne doit pas couper l'élan qu'elle accompagne.
+  /// levé : elle ne doit pas couper l'élan qu'elle accompagne. À valider sur
+  /// vraie Apple TV : rapport de phase 0, §5.3.
   static const Duration _glideGrace = Duration(milliseconds: 120);
+
+  /// Qui fait un pas d'élan, et dit si le focus a bougé.
+  ///
+  /// Sous dpad, `TvArrowGate` s'inscrit ici : le pas passe par `StepTarget`
+  /// et reste dans la rangée (ADR-0110, phase 6). Nul avec l'ancien système,
+  /// où le pas est une `DirectionalFocusIntent` comme une flèche.
+  static bool Function(TraversalDirection direction)? glideStepper;
 
   static Timer? _glideTimer;
   static TraversalDirection? _glideDirection;
@@ -80,6 +92,12 @@ abstract final class TvTouchpad {
     if (_stepping) return 1;
     return _motion.boostFor(direction, _now);
   }
+
+  /// Combien de pas vaut la flèche partie de [from] vers [direction] : celle
+  /// d'un glissé vif, dans une rangée, en vaut plusieurs ([boostFor]) ;
+  /// toute autre, un seul. Ce que `TvArrowGate` demande sous dpad.
+  static int stepsFrom(FocusNode from, TraversalDirection direction) =>
+      acceleratesFrom(from, direction) ? boostFor(direction) : 1;
 
   /// Vrai quand le doigt glisse en ce moment sur le trackpad : la flèche qui
   /// arrive maintenant est née de ce glissé.
@@ -117,7 +135,7 @@ abstract final class TvTouchpad {
     // Poser le doigt, ou cliquer, arrête la liste là où elle est : c'est le
     // geste que l'Apple TV apprend à ses utilisateurs.
     if (phase == TouchpadPhase.began || phase == TouchpadPhase.clickDown) {
-      stopGlide();
+      _stopGlide('doigt posé');
     }
     final fling = _motion.add(phase, x, y, _now);
     if (fling != null) _startGlide(fling);
@@ -129,7 +147,13 @@ abstract final class TvTouchpad {
     }
   }
 
-  static void stopGlide() {
+  static void stopGlide() => _stopGlide('demandé');
+
+  static void _stopGlide(String reason) {
+    if (_glideTimer != null && glideStepper != null) {
+      TvDpadLog.log(() => 'élan coupé : $reason, '
+          '$_glideRemaining pas non faits');
+    }
     _glideTimer?.cancel();
     _glideTimer = null;
     _glideDirection = null;
@@ -137,7 +161,7 @@ abstract final class TvTouchpad {
   }
 
   static void _startGlide(TouchpadFling fling) {
-    stopGlide();
+    _stopGlide('nouveau glissé');
     if (!TvMode.isTv) return;
     final focus = FocusManager.instance.primaryFocus;
     if (focus == null || !acceleratesFrom(focus, fling.direction)) return;
@@ -146,6 +170,11 @@ abstract final class TvTouchpad {
     _glideStartedAt = _now;
     _glideInterval = _glideFirstInterval;
     _glideTimer = Timer(_glideInterval, _glideStep);
+    if (glideStepper != null) {
+      TvDpadLog.log(() => 'élan : ${fling.direction.name}, '
+          '${fling.steps} pas, premier dans '
+          '${_glideFirstInterval.inMilliseconds} ms');
+    }
   }
 
   static void _glideStep() {
@@ -157,16 +186,21 @@ abstract final class TvTouchpad {
         context == null ||
         !TvMode.isTv ||
         !acceleratesFrom(focus, direction)) {
-      stopGlide();
+      _stopGlide('hors rangée');
       return;
     }
 
     _stepping = true;
     try {
-      Actions.maybeInvoke<DirectionalFocusIntent>(
-        context,
-        DirectionalFocusIntent(direction),
-      );
+      final stepper = glideStepper;
+      if (stepper != null) {
+        stepper(direction);
+      } else {
+        Actions.maybeInvoke<DirectionalFocusIntent>(
+          context,
+          DirectionalFocusIntent(direction),
+        );
+      }
     } finally {
       _stepping = false;
     }
@@ -174,10 +208,12 @@ abstract final class TvTouchpad {
     FocusManager.instance.applyFocusChangesIfNeeded();
 
     // Le focus n'a pas bougé : bout de la rangée, la lancée s'arrête là.
-    _glideRemaining--;
-    if (identical(FocusManager.instance.primaryFocus, focus) ||
-        _glideRemaining <= 0) {
-      stopGlide();
+    if (identical(FocusManager.instance.primaryFocus, focus)) {
+      _stopGlide('bout de la rangée');
+      return;
+    }
+    if (--_glideRemaining <= 0) {
+      _stopGlide('fini');
       return;
     }
     _glideInterval = _glideInterval * _glideSlowdown;
@@ -190,7 +226,7 @@ abstract final class TvTouchpad {
     if (event is! KeyDownEvent || !isGliding) return false;
     final ownArrow = _arrowDirection(event.logicalKey) == _glideDirection &&
         _now - _glideStartedAt < _glideGrace;
-    if (!ownArrow) stopGlide();
+    if (!ownArrow) _stopGlide('touche ${event.logicalKey.keyLabel}');
     return false;
   }
 

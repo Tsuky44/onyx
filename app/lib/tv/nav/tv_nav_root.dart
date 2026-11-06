@@ -2,7 +2,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../input/tv_arrow_gate.dart';
+import '../input/tv_repeat_cadence.dart';
 import '../tv_focus.dart' show TvBackAction;
+import '../tv_touchpad.dart';
 import 'onyx_dpad.dart';
 import 'tv_back.dart';
 
@@ -65,13 +67,19 @@ abstract final class TvNavRoot {
         TvBackKeyIntent: TvBackKeyAction(),
       };
 
-  /// [OnyxDpad] et [TvArrowGate] autour du navigateur.
+  /// [OnyxDpad] et [TvArrowGate] autour du navigateur. Le portail régule la
+  /// répétition là où la plateforme ne le fait pas ([TvRepeatCadence]) et
+  /// donne plusieurs pas à un glissé vif du trackpad ([TvTouchpad.stepsFrom]).
   static Widget belowApp({
     required String? profileKey,
     required Widget child,
   }) =>
       OnyxDpad(
         profileKey: profileKey,
-        child: TvArrowGate(child: child),
+        child: TvArrowGate(
+          repeatInterval: TvRepeatCadence.gateRepeatInterval,
+          stepsFor: TvTouchpad.stepsFrom,
+          child: child,
+        ),
       );
 }

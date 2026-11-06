@@ -4,3 +4,6 @@ import 'touchpad_motion.dart';
 void listenToSiriRemote(
   void Function(TouchpadPhase phase, double x, double y) onTouch,
 ) {}
+
+/// Ni Siri Remote ni cadence à régler.
+void configureSiriRemoteRepeat(Duration interval) {}

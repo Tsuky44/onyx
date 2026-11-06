@@ -30,7 +30,9 @@ typedef TouchpadMove = ({double dx, double dy, double speed});
 /// le bas. Aucune dépendance au temps réel : l'horloge est passée à chaque
 /// appel, ce qui rend le modèle testable à la milliseconde.
 ///
-/// Les seuils se règlent sur une vraie Apple TV (voir ADR-0039). Premier
+/// Les seuils se règlent sur une vraie Apple TV (voir ADR-0039), les mêmes avec
+/// l'ancien système et avec dpad : à valider sur vraie Apple TV, rapport de
+/// phase 0 §5.3, traces `[DPAD]` du §5.11. Premier
 /// réglage, après essai : la navigation s'emballait à l'accueil, les seuils
 /// ont doublé et l'élan a été divisé par deux.
 class TouchpadMotion {

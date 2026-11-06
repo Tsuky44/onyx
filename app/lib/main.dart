@@ -44,6 +44,7 @@ import 'tv/tv_focus_guard.dart';
 import 'tv/tv_focus_entry.dart';
 import 'tv/tv_key_repeat.dart';
 import 'tv/tv_mode.dart';
+import 'tv/input/tv_repeat_cadence.dart';
 import 'tv/nav/tv_nav_engine.dart';
 import 'tv/nav/tv_nav_root.dart';
 import 'tv/tv_pairing_link.dart';
@@ -181,6 +182,9 @@ void main() async {
   // Sur Apple TV, la force d'un glissé sur le trackpad accélère la navigation
   // et l'avance rapide. Voir [TvTouchpad].
   TvTouchpad.install();
+  // Sous dpad, sur Apple TV, le moteur répète une flèche maintenue à la
+  // cadence d'Onyx ; ailleurs, `TvArrowGate` la régule. Voir [TvRepeatCadence].
+  if (TvNavEngine.current == TvNavEngine.dpad) TvRepeatCadence.install();
   // Sur Apple TV, le pont d'accessibilité ne fait plus défiler les pages dans
   // le dos du focus. Voir [TvSemanticsScrollGuard].
   TvSemanticsScrollGuard.install();
