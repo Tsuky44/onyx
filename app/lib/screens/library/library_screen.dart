@@ -138,20 +138,32 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         horizontalPadding,
                         0,
                       ),
-                      child: CatalogHeader<_SortOption>(
-                        title: ShellTabs.label(library),
-                        countLabel: loading
-                            ? null
-                            : tr('{0} titre{1}', [count, count > 1 ? 's' : '']),
-                        sortOptions: {
-                          for (final option in _sortLabels.entries)
-                            // Une série n'a pas de position de lecture à elle.
-                            if (!_isShows || option.key != _SortOption.progress)
-                              option.key: option.value,
-                        },
-                        sort: _sort,
-                        onSortChanged: (v) => setState(() => _sort = v),
-                        compact: compact,
+                      // Pendant le chargement, le tri n'a rien à trier, et il
+                      // était la seule cible sous l'en-tête : Bas depuis
+                      // l'onglet sautait au bout de la ligne, sur ce petit
+                      // menu, et l'on croyait l'appui perdu (vu au simulateur
+                      // Apple TV, phase 2 de la refonte dpad). La grille
+                      // arrivée, Bas tombait alors sur l'affiche la plus à
+                      // droite, sous le menu.
+                      child: ExcludeFocus(
+                        excluding: loading,
+                        child: CatalogHeader<_SortOption>(
+                          title: ShellTabs.label(library),
+                          countLabel: loading
+                              ? null
+                              : tr('{0} titre{1}',
+                                  [count, count > 1 ? 's' : '']),
+                          sortOptions: {
+                            for (final option in _sortLabels.entries)
+                              // Une série n'a pas de position de lecture à elle.
+                              if (!_isShows ||
+                                  option.key != _SortOption.progress)
+                                option.key: option.value,
+                          },
+                          sort: _sort,
+                          onSortChanged: (v) => setState(() => _sort = v),
+                          compact: compact,
+                        ),
                       ),
                     ),
                   ),
