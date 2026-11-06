@@ -73,6 +73,10 @@ l'`AVPlayer` remontent maintenant à Dart, qui les fait passer par les chemins d
   d'AVKit repartirait de zéro.
 - **Menus.** Secondes lignes (`UIMenuElement.subtitle`) pour Qualité, Audio et Format d'image ;
   menu Minuterie de veille. Le menu Vitesse d'AVKit et l'image dans l'image sont coupés.
+  Tous passent sous un seul bouton Réglages (engrenage, `OnyxAppleNativeSpec.settingsLabel`),
+  chaque sous-menu avec son symbole SF (`OnyxAppleNativeMenu.icon`) et la valeur choisie en
+  seconde ligne : la barre de transport de tvOS ne montre que les éléments qui ont une image, et
+  les menus posés à plat sans icône n'apparaissaient pas du tout (2026-11-05).
 - **Épisodes.** Chapitres en `navigationMarkerGroups`, reposés sur chaque item ; épisode précédent
   et suivant en `infoViewActions` (ce qui retire « Lire depuis le début ») ; épisode suivant en
   `AVContentProposal` avec le compte à rebours de Dart, jamais accepté de lui-même (« Plus tard »
@@ -82,6 +86,9 @@ l'`AVPlayer` remontent maintenant à Dart, qui les fait passer par les chemins d
   le démarrage bloqué rend encore l'écran Flutter (`_needsFlutterScreen`).
 - **Panneau d'infos.** Onglets Épisodes (saisons, épisodes, avancement), Regarder ensemble
   (démarrer, code, participants, quitter) et Stats (lues sur le moteur chaque seconde par Swift).
+  Un panneau sans ligne focalisable (Regarder ensemble) pose un `UIFocusGuide` sur toute sa largeur
+  vers son premier bouton : à droite de l'en-tête, hors de la trajectoire du focus qui descend de
+  l'onglet, « Démarrer une séance » était injoignable (2026-11-05).
 - **Annonces de la séance** dans le `contentOverlayView`, au-dessus des sous-titres image.
 
 Le transcodage des sources sans décodeur matériel (VC-1, MPEG-2, AV1, H.264 10 bits, entrelacé) est

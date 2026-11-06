@@ -346,6 +346,7 @@ class OnyxAppleNativeMenu {
     required this.id,
     required this.label,
     required this.options,
+    this.icon,
   });
 
   /// Identifiant stable choisi par Dart (`speed`, `fit`, `quality`, `audio`,
@@ -353,6 +354,10 @@ class OnyxAppleNativeMenu {
   final String id;
   final String label;
   final List<OnyxAppleNativeOption> options;
+
+  /// Le nom d'un symbole SF (`speedometer`, `4k.tv`…) posé devant le
+  /// sous-menu dans le menu Réglages. Choisi par Dart, comme le reste.
+  final String? icon;
 }
 
 /// Un bouton contextuel posé sur le lecteur : « Passer l'intro », « Épisode
@@ -516,6 +521,7 @@ class OnyxAppleNativePanel {
 class OnyxAppleNativeSpec {
   OnyxAppleNativeSpec({
     required this.title,
+    required this.settingsLabel,
     required this.menus,
     required this.actions,
     required this.chapters,
@@ -537,6 +543,13 @@ class OnyxAppleNativeSpec {
   final String? posterUrl;
   /// Le synopsis (`description` est réservé en Swift).
   final String? overview;
+
+  /// Le titre du bouton Réglages (engrenage) qui porte [menus] dans la barre
+  /// de transport. tvOS n'y montre que les éléments qui ont une image : posés
+  /// à plat et sans icône, les menus n'apparaissaient pas du tout.
+  final String settingsLabel;
+
+  /// Les sous-menus du bouton Réglages : vitesse, format, qualité, audio…
   final List<OnyxAppleNativeMenu> menus;
   final List<OnyxAppleNativeAction> actions;
 

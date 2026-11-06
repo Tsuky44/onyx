@@ -27,6 +27,7 @@ import '../../navigation/media_link.dart';
 import '../../navigation/play_link.dart';
 import '../../navigation/shell_navigator.dart';
 import '../../tv/tv_deferred_keyboard.dart';
+import '../../tv/tv_focus_entry.dart';
 import '../../tv/tv_mode.dart';
 import '../../tv/tv_pairing_link.dart';
 import '../settings/tv_pairing_screen.dart';
@@ -64,13 +65,20 @@ class _MainShellState extends State<MainShell> {
   FocusNode _tabNode(String tab) => _tabNodes.putIfAbsent(
       tab, () => FocusNode(debugLabel: 'nav-tab-$tab'));
 
-  /// Observe l'en-tête entier — onglets, recherche, compte — sans jamais
-  /// prendre le focus lui-même.
+  /// L'en-tête entier — onglets, recherche, compte —, sans jamais prendre le
+  /// focus lui-même. Il s'inscrit comme zone d'entrée ([_enterHeader]) et sert
+  /// à Retour pour savoir si la télécommande y est.
   final FocusNode _headerNode = FocusNode(
     debugLabel: 'shell-header',
     canRequestFocus: false,
     skipTraversal: true,
   );
+
+  /// L'ordre de l'en-tête est celui de ses widgets : la marque, les onglets,
+  /// la recherche, le compte. Gardée d'un build à l'autre pour que le groupe
+  /// ne change pas de politique en cours de route.
+  final TvWidgetOrderTraversalPolicy _headerPolicy =
+      TvWidgetOrderTraversalPolicy();
 
   /// Le moment où Retour a été pressé une première fois sur l'accueil. Un
   /// second appui dans [_exitWindow] quitte l'app.
@@ -239,6 +247,7 @@ class _MainShellState extends State<MainShell> {
     for (final node in _tabNodes.values) {
       node.dispose();
     }
+    TvFocusEntries.unregister(_headerNode);
     _headerNode.dispose();
     super.dispose();
   }
@@ -246,6 +255,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    TvFocusEntries.register(_headerNode, _enterHeader);
     // A QR scanned on the TV parks its code before the app even knows whether
     // anyone is signed in. This is the first moment there is both a session and
     // a navigator, so it is where the approval screen opens.
@@ -448,14 +458,16 @@ class _MainShellState extends State<MainShell> {
   /// verticale : depuis le bouton du bandeau on montait sur « Films » en étant
   /// sur l'accueil, et l'on ne savait plus quel onglet était ouvert. La
   /// recherche et le compte, à droite, restent atteignables tels quels.
-  void _landOnSelectedTab(String selectedTab) {
-    final landed = FocusManager.instance.primaryFocus;
-    final selected = _tabNodes[selectedTab];
-    if (landed == null || selected == null || identical(landed, selected)) {
-      return;
-    }
-    if (!_tabNodes.values.contains(landed) || selected.context == null) return;
-    selected.requestFocus();
+  ///
+  /// Réponse de zone, donnée avant que le focus ne se pose ([TvFocusEntries]) :
+  /// l'ancienne rustine attendait le focus sur le mauvais onglet pour le
+  /// déplacer ensuite, soit deux pas à chaque montée.
+  FocusNode? _enterHeader(FocusNode landed, FocusNode? from) {
+    if (from != null && from.ancestors.contains(_headerNode)) return null;
+    final selected = _tabNodes[_selectedTab];
+    if (selected == null || selected.context == null) return null;
+    if (!_tabNodes.values.contains(landed)) return null;
+    return selected;
   }
 
   void _focusTab(String tab) {
@@ -584,18 +596,20 @@ class _MainShellState extends State<MainShell> {
                 focusNode: _headerNode,
                 canRequestFocus: false,
                 skipTraversal: true,
-                onFocusChange: (focused) {
-                  if (focused && isTv) _landOnSelectedTab(selectedTab);
-                },
-                child: ShellDesktopHeader(
-                  selected: selectedTab,
-                  onTabSelected: _selectTab,
-                  libraries: libraries,
-                  homeProvider: homeProvider,
-                  authProvider: authProvider,
-                  canDownload: downloads.isSupported,
-                  canUseLists: canUseLists,
-                  nodeFor: _tabNode,
+                // Un groupe à lui : l'en-tête a son propre ordre de parcours
+                // et ne subit plus celui du contenu dessous.
+                child: FocusTraversalGroup(
+                  policy: _headerPolicy,
+                  child: ShellDesktopHeader(
+                    selected: selectedTab,
+                    onTabSelected: _selectTab,
+                    libraries: libraries,
+                    homeProvider: homeProvider,
+                    authProvider: authProvider,
+                    canDownload: downloads.isSupported,
+                    canUseLists: canUseLists,
+                    nodeFor: _tabNode,
+                  ),
                 ),
               ),
             ),

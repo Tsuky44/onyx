@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'tv_focus_entry.dart';
 import 'tv_focus_panes.dart';
 import 'tv_focus_scroll.dart';
 import 'tv_mode.dart';
@@ -139,7 +140,7 @@ class TvDirectionalFocusAction extends DirectionalFocusAction {
       target = next;
     }
     if (target == null) return;
-    TvFocusScroll.requestFocus(
+    TvFocusEntries.requestFocus(
       target,
       alignmentPolicy: direction == TraversalDirection.left
           ? ScrollPositionAlignmentPolicy.keepVisibleAtStart

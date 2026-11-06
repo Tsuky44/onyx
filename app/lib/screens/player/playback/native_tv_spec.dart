@@ -275,6 +275,8 @@ abstract final class NativeTvSpecBuilder {
       subtitle: state.subtitle,
       posterUrl: state.posterUrl,
       overview: state.overview,
+      // Le libellé du bouton de l'interface Onyx (`onyx_controls_layer.dart`).
+      settingsLabel: tr('Réglages'),
       menus: [
         _speedMenu(state),
         _fitMenu(state),
@@ -329,6 +331,7 @@ abstract final class NativeTvSpecBuilder {
       OnyxAppleNativeMenu(
         id: NativeTvIds.speed,
         label: tr('Vitesse de lecture'),
+        icon: 'speedometer',
         options: [
           for (final rate in state.rates)
             OnyxAppleNativeOption(
@@ -343,6 +346,7 @@ abstract final class NativeTvSpecBuilder {
       OnyxAppleNativeMenu(
         id: NativeTvIds.fit,
         label: tr('Format d’image'),
+        icon: 'aspectratio',
         options: [
           for (final mode in VideoDisplayMode.values)
             OnyxAppleNativeOption(
@@ -365,6 +369,7 @@ abstract final class NativeTvSpecBuilder {
     return OnyxAppleNativeMenu(
       id: NativeTvIds.quality,
       label: tr('Qualité'),
+      icon: 'sparkles.tv',
       options: [
         if (quality.autoAvailable)
           OnyxAppleNativeOption(
@@ -443,6 +448,7 @@ abstract final class NativeTvSpecBuilder {
     return OnyxAppleNativeMenu(
       id: NativeTvIds.audio,
       label: tr('Audio'),
+      icon: 'speaker.wave.2',
       options: options,
     );
   }
@@ -455,6 +461,7 @@ abstract final class NativeTvSpecBuilder {
     return OnyxAppleNativeMenu(
       id: NativeTvIds.sleep,
       label: tr('Minuterie de veille'),
+      icon: 'moon.zzz',
       options: [
         OnyxAppleNativeOption(
           id: NativeTvIds.sleepOff,

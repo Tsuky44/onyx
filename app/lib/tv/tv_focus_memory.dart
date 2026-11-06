@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'tv_focus_entry.dart';
 import 'tv_mode.dart';
 
 /// Une zone qui se souvient de l'élément sur lequel la télécommande était.
@@ -15,10 +16,12 @@ import 'tv_mode.dart';
 /// y redescendre ramène à l'endroit exact d'où l'on est parti.
 ///
 /// Le principe : chaque [TvFocusable] déclare à la mémoire la plus proche qu'il
-/// vient de prendre le focus. Quand le focus *entre* dans la zone depuis
-/// l'extérieur, la zone le redirige vers l'élément mémorisé s'il existe encore.
-/// La première visite, rien n'est mémorisé, et le parcours directionnel de
-/// Flutter garde la main.
+/// vient de prendre le focus. La zone s'inscrit auprès de [TvFocusEntries] ;
+/// quand le parcours directionnel a trouvé un élément de la zone depuis
+/// l'extérieur, la politique de parcours lui demande l'élément mémorisé et ne
+/// pose le focus qu'une fois, dessus — la redirection ne passe plus par un
+/// second `requestFocus` après coup (ADR-0109). La première visite, rien n'est
+/// mémorisé, et le parcours directionnel de Flutter garde la main.
 ///
 /// Les mémoires s'emboîtent : une rangée dans un onglet signale aussi l'élément
 /// à l'onglet. Hors téléviseur, la zone ne redirige jamais rien.
@@ -46,9 +49,7 @@ class TvFocusMemory extends StatefulWidget {
   /// Sans dépendance : un élément qui prend le focus n'a pas à se reconstruire
   /// quand la mémoire change.
   static TvFocusMemoryState? maybeOf(BuildContext context) {
-    return context
-        .getInheritedWidgetOfExactType<_TvFocusMemoryScope>()
-        ?.state;
+    return context.getInheritedWidgetOfExactType<_TvFocusMemoryScope>()?.state;
   }
 
   @override
@@ -70,6 +71,12 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
   FocusNode? get remembered => _remembered;
 
   @override
+  void initState() {
+    super.initState();
+    TvFocusEntries.register(_node, entryFor);
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _parent = TvFocusMemory.maybeOf(context);
@@ -77,6 +84,11 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
 
   @override
   void dispose() {
+    TvFocusEntries.unregister(_node);
+    // Plus aucun nœud à rendre : la zone et ses éléments partent ensemble, et
+    // une référence gardée ici retiendrait le dernier nœud mémorisé.
+    _remembered = null;
+    _parent = null;
     _node.dispose();
     super.dispose();
   }
@@ -94,14 +106,17 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
     _parent?.forget(node);
   }
 
-  void _handleFocusChange(bool hasFocus) {
-    if (!hasFocus || !TvMode.isTv) return;
+  /// Où le focus entre dans la zone, quand le parcours a trouvé [landed] depuis
+  /// [from] : l'élément mémorisé, ou le premier visible à la première visite
+  /// d'une zone [TvFocusMemory.entersAtTop]. Nul pour garder [landed] — un
+  /// déplacement interne à la zone, ou rien à rendre.
+  @visibleForTesting
+  FocusNode? entryFor(FocusNode landed, FocusNode? from) {
+    if (!TvMode.isTv) return null;
+    if (from != null && from.ancestors.contains(_node)) return null;
     final target = _remembered;
-    if (target == null) {
-      if (widget.entersAtTop) _enterAtTop();
-      return;
-    }
-    if (identical(FocusManager.instance.primaryFocus, target)) return;
+    if (target == null) return widget.entersAtTop ? _enterAtTop() : null;
+    if (identical(landed, target)) return null;
     // Encore dans l'arbre, encore dans cette zone, encore atteignable. Une
     // rangée rechargée a pu reconstruire ses cartes : on laisse alors le
     // parcours directionnel choisir, plutôt que de viser un fantôme.
@@ -109,12 +124,12 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
         !target.canRequestFocus ||
         !target.ancestors.contains(_node)) {
       _remembered = null;
-      return;
+      return null;
     }
-    target.requestFocus();
+    return target;
   }
 
-  void _enterAtTop() {
+  FocusNode? _enterAtTop() {
     final zone = _node.rect;
     final visible = _node.traversalDescendants
         .where((node) =>
@@ -123,7 +138,7 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
             node.rect.top >= zone.top &&
             node.rect.top < zone.bottom)
         .toList();
-    if (visible.isEmpty) return;
+    if (visible.isEmpty) return null;
     // Le plus proche du coin haut-gauche, et non le plus haut : un bouton posé
     // à droite du titre (le tri « Récents », « Mes demandes », « Nouvelle
     // liste ») est plus haut que la première affiche de quelques pixels, et il
@@ -131,14 +146,11 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
     // l'écran, et Bas descendait sur la dernière affiche de la rangée.
     double distance(FocusNode node) =>
         (node.rect.top - zone.top) + (node.rect.left - zone.left).abs();
-    final first = visible.reduce((best, node) {
+    return visible.reduce((best, node) {
       final byDistance = distance(node).compareTo(distance(best));
       if (byDistance != 0) return byDistance < 0 ? node : best;
       return node.rect.top < best.rect.top ? node : best;
     });
-    if (!identical(FocusManager.instance.primaryFocus, first)) {
-      first.requestFocus();
-    }
   }
 
   @override
@@ -147,7 +159,6 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
       focusNode: _node,
       canRequestFocus: false,
       skipTraversal: true,
-      onFocusChange: _handleFocusChange,
       child: _TvFocusMemoryScope(state: this, child: widget.child),
     );
   }

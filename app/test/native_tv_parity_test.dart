@@ -134,6 +134,37 @@ void main() {
   setUp(AppLanguage.resetForTest);
   tearDown(AppLanguage.resetForTest);
 
+  // tvOS ne montre dans la barre de transport que les éléments qui ont une
+  // image : sans icône, Qualité, Audio et les autres menus n'apparaissaient
+  // pas du tout. Ils passent sous l'engrenage Réglages.
+  test('chaque menu passe sous Réglages avec son icône', () {
+    final spec = _build(_state(
+      quality: const NativeTvQuality(
+        tiers: [],
+        current: null,
+        isAuto: false,
+        autoAvailable: false,
+        isLocalPlayback: false,
+      ),
+      serverAudio: [
+        MediaAudioTrack(index: 1, typedIndex: 0, codec: 'aac', channels: 2),
+      ],
+      sleep: const NativeTvSleep(offersEpisodes: false),
+    ));
+
+    expect(spec.settingsLabel, 'Réglages');
+    expect(spec.menus.map((m) => m.id), [
+      NativeTvIds.speed,
+      NativeTvIds.fit,
+      NativeTvIds.quality,
+      NativeTvIds.audio,
+      NativeTvIds.sleep,
+    ]);
+    for (final menu in spec.menus) {
+      expect(menu.icon, isNotNull, reason: 'le menu ${menu.id} sans icône');
+    }
+  });
+
   group('les secondes lignes des menus', () {
     test('l’audio du serveur se coupe en deux lignes, comme le menu Onyx', () {
       final track = MediaAudioTrack(

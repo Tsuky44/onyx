@@ -12,6 +12,7 @@ import '../../../theme/app_theme.dart';
 import '../widgets/media_thumb.dart';
 import '../widgets/settings_ui.dart';
 import '../../../theme/app_type.dart';
+import '../../../tv/tv_focus.dart';
 import '../../../l10n/tr.dart';
 
 class StatsPage extends StatefulWidget {
@@ -333,33 +334,48 @@ class _DailyChartState extends State<_DailyChart> {
                     child: MouseRegion(
                       onEnter: (_) => setState(() => _hovered = i),
                       onExit: (_) => setState(() => _hovered = null),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () =>
-                            setState(() => _hovered = _hovered == i ? null : i),
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: TweenAnimationBuilder<double>(
-                            tween: Tween(
-                              end: maxValue == 0
-                                  ? 0
-                                  : day.watchedSeconds / maxValue,
-                            ),
-                            duration: AppMotion.move(context, Duration(milliseconds: 350 + i * 6)),
-                            curve: Curves.easeOutCubic,
-                            builder: (_, value, __) => Container(
-                              height: math.max(3, 150 * value),
-                              decoration: BoxDecoration(
-                                color: day.watchedSeconds == 0
-                                    ? Colors.white.withValues(alpha: 0.06)
-                                    : _hovered == i
-                                        ? AppColors.accentMuted
-                                        : AppColors.primary.withValues(
-                                            alpha:
-                                                _hovered == null ? 0.9 : 0.5),
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(
-                                      daily.length > 60 ? 1 : 4),
+                      // Chaque jour se lit au survol ou au toucher ; à la
+                      // télécommande, c'est le focus qui le désigne (le chiffre
+                      // du dessus suit la barre), sans anneau sur une barre de
+                      // quelques pixels.
+                      child: TvFocusable(
+                        showRing: false,
+                        focusScale: 1.0,
+                        onFocusChange: (focused) => setState(() {
+                          if (focused) {
+                            _hovered = i;
+                          } else if (_hovered == i) {
+                            _hovered = null;
+                          }
+                        }),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () =>
+                              setState(() => _hovered = _hovered == i ? null : i),
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: TweenAnimationBuilder<double>(
+                              tween: Tween(
+                                end: maxValue == 0
+                                    ? 0
+                                    : day.watchedSeconds / maxValue,
+                              ),
+                              duration: AppMotion.move(context, Duration(milliseconds: 350 + i * 6)),
+                              curve: Curves.easeOutCubic,
+                              builder: (_, value, __) => Container(
+                                height: math.max(3, 150 * value),
+                                decoration: BoxDecoration(
+                                  color: day.watchedSeconds == 0
+                                      ? Colors.white.withValues(alpha: 0.06)
+                                      : _hovered == i
+                                          ? AppColors.accentMuted
+                                          : AppColors.primary.withValues(
+                                              alpha:
+                                                  _hovered == null ? 0.9 : 0.5),
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(
+                                        daily.length > 60 ? 1 : 4),
+                                  ),
                                 ),
                               ),
                             ),

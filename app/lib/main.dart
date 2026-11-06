@@ -41,7 +41,7 @@ import 'screens/auth/tv_login_screen.dart';
 import 'screens/auth/user_choice_screen.dart';
 import 'tv/tv_focus.dart';
 import 'tv/tv_focus_guard.dart';
-import 'tv/tv_focus_scroll.dart';
+import 'tv/tv_focus_entry.dart';
 import 'tv/tv_key_repeat.dart';
 import 'tv/tv_mode.dart';
 import 'tv/tv_pairing_link.dart';
@@ -542,11 +542,12 @@ class OnyxApp extends StatelessWidget {
                   builder: (context, child) {
                     // Au-dessus du Navigator, qui hérite de cette politique : un
                     // seul défilement par pas de télécommande, animé, au lieu
-                    // d'un saut suivi d'une animation. Voir [TvFocusScroll].
+                    // d'un saut suivi d'une animation (voir [TvFocusScroll]).
+                    // La politique ne décide pas où le focus entre dans une
+                    // zone : mémoire d'une rangée, onglet de l'en-tête, chacune
+                    // répond pour elle-même (voir [TvFocusEntries]).
                     return FocusTraversalGroup(
-                      policy: ReadingOrderTraversalPolicy(
-                        requestFocusCallback: TvFocusScroll.requestFocus,
-                      ),
+                      policy: TvTraversalPolicy(),
                       child: Listener(
                         behavior: HitTestBehavior.translucent,
                         onPointerDown: _handleMouseBackButton,

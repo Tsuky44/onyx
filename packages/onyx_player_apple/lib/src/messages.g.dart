@@ -970,6 +970,7 @@ class OnyxAppleNativeMenu {
     required this.id,
     required this.label,
     required this.options,
+    this.icon,
   });
 
   /// Identifiant stable choisi par Dart (`speed`, `fit`, `quality`, `audio`,
@@ -980,11 +981,16 @@ class OnyxAppleNativeMenu {
 
   List<OnyxAppleNativeOption> options;
 
+  /// Le nom d'un symbole SF (`speedometer`, `4k.tv`…) posé devant le
+  /// sous-menu dans le menu Réglages. Choisi par Dart, comme le reste.
+  String? icon;
+
   List<Object?> _toList() {
     return <Object?>[
       id,
       label,
       options,
+      icon,
     ];
   }
 
@@ -997,6 +1003,7 @@ class OnyxAppleNativeMenu {
       id: result[0]! as String,
       label: result[1]! as String,
       options: (result[2]! as List<Object?>).cast<OnyxAppleNativeOption>(),
+      icon: result[3] as String?,
     );
   }
 
@@ -1009,7 +1016,7 @@ class OnyxAppleNativeMenu {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(id, other.id) && _deepEquals(label, other.label) && _deepEquals(options, other.options);
+    return _deepEquals(id, other.id) && _deepEquals(label, other.label) && _deepEquals(options, other.options) && _deepEquals(icon, other.icon);
   }
 
   @override
@@ -1018,7 +1025,7 @@ class OnyxAppleNativeMenu {
 
   @override
   String toString() {
-    return 'OnyxAppleNativeMenu(id: $id, label: $label, options: $options)';
+    return 'OnyxAppleNativeMenu(id: $id, label: $label, options: $options, icon: $icon)';
   }
 }
 
@@ -1474,6 +1481,7 @@ class OnyxAppleNativeSpec {
     this.subtitle,
     this.posterUrl,
     this.overview,
+    required this.settingsLabel,
     required this.menus,
     required this.actions,
     required this.chapters,
@@ -1495,6 +1503,12 @@ class OnyxAppleNativeSpec {
   /// Le synopsis (`description` est réservé en Swift).
   String? overview;
 
+  /// Le titre du bouton Réglages (engrenage) qui porte [menus] dans la barre
+  /// de transport. tvOS n'y montre que les éléments qui ont une image : posés
+  /// à plat et sans icône, les menus n'apparaissaient pas du tout.
+  String settingsLabel;
+
+  /// Les sous-menus du bouton Réglages : vitesse, format, qualité, audio…
   List<OnyxAppleNativeMenu> menus;
 
   List<OnyxAppleNativeAction> actions;
@@ -1532,6 +1546,7 @@ class OnyxAppleNativeSpec {
       subtitle,
       posterUrl,
       overview,
+      settingsLabel,
       menus,
       actions,
       chapters,
@@ -1554,15 +1569,16 @@ class OnyxAppleNativeSpec {
       subtitle: result[1] as String?,
       posterUrl: result[2] as String?,
       overview: result[3] as String?,
-      menus: (result[4]! as List<Object?>).cast<OnyxAppleNativeMenu>(),
-      actions: (result[5]! as List<Object?>).cast<OnyxAppleNativeAction>(),
-      chapters: (result[6]! as List<Object?>).cast<OnyxAppleNativeChapter>(),
-      infoActions: (result[7]! as List<Object?>).cast<OnyxAppleNativeAction>(),
-      nextUp: result[8] as OnyxAppleNativeNextUp?,
-      prompt: result[9] as OnyxAppleNativePrompt?,
-      panels: (result[10]! as List<Object?>).cast<OnyxAppleNativePanel>(),
-      toast: result[11] as String?,
-      interceptSeeks: result[12]! as bool,
+      settingsLabel: result[4]! as String,
+      menus: (result[5]! as List<Object?>).cast<OnyxAppleNativeMenu>(),
+      actions: (result[6]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      chapters: (result[7]! as List<Object?>).cast<OnyxAppleNativeChapter>(),
+      infoActions: (result[8]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      nextUp: result[9] as OnyxAppleNativeNextUp?,
+      prompt: result[10] as OnyxAppleNativePrompt?,
+      panels: (result[11]! as List<Object?>).cast<OnyxAppleNativePanel>(),
+      toast: result[12] as String?,
+      interceptSeeks: result[13]! as bool,
     );
   }
 
@@ -1575,7 +1591,7 @@ class OnyxAppleNativeSpec {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(posterUrl, other.posterUrl) && _deepEquals(overview, other.overview) && _deepEquals(menus, other.menus) && _deepEquals(actions, other.actions) && _deepEquals(chapters, other.chapters) && _deepEquals(infoActions, other.infoActions) && _deepEquals(nextUp, other.nextUp) && _deepEquals(prompt, other.prompt) && _deepEquals(panels, other.panels) && _deepEquals(toast, other.toast) && _deepEquals(interceptSeeks, other.interceptSeeks);
+    return _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(posterUrl, other.posterUrl) && _deepEquals(overview, other.overview) && _deepEquals(settingsLabel, other.settingsLabel) && _deepEquals(menus, other.menus) && _deepEquals(actions, other.actions) && _deepEquals(chapters, other.chapters) && _deepEquals(infoActions, other.infoActions) && _deepEquals(nextUp, other.nextUp) && _deepEquals(prompt, other.prompt) && _deepEquals(panels, other.panels) && _deepEquals(toast, other.toast) && _deepEquals(interceptSeeks, other.interceptSeeks);
   }
 
   @override
@@ -1584,7 +1600,7 @@ class OnyxAppleNativeSpec {
 
   @override
   String toString() {
-    return 'OnyxAppleNativeSpec(title: $title, subtitle: $subtitle, posterUrl: $posterUrl, overview: $overview, menus: $menus, actions: $actions, chapters: $chapters, infoActions: $infoActions, nextUp: $nextUp, prompt: $prompt, panels: $panels, toast: $toast, interceptSeeks: $interceptSeeks)';
+    return 'OnyxAppleNativeSpec(title: $title, subtitle: $subtitle, posterUrl: $posterUrl, overview: $overview, settingsLabel: $settingsLabel, menus: $menus, actions: $actions, chapters: $chapters, infoActions: $infoActions, nextUp: $nextUp, prompt: $prompt, panels: $panels, toast: $toast, interceptSeeks: $interceptSeeks)';
   }
 }
 

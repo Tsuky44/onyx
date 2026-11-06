@@ -199,8 +199,8 @@
       guard let controller else { return }
       let old = self.spec
       self.spec = spec
-      if old?.menus != spec.menus {
-        controller.transportBarCustomMenuItems = spec.menus.map(menu)
+      if old?.menus != spec.menus || old?.settingsLabel != spec.settingsLabel {
+        controller.transportBarCustomMenuItems = settingsMenu(spec)
       }
       if old?.actions != spec.actions {
         controller.contextualActions = spec.actions.map(action)
@@ -225,6 +225,19 @@
       syncPrompt()
     }
 
+    /// Un seul bouton, l'engrenage, qui ouvre les sous-menus. La barre de
+    /// transport de tvOS ne montre que les éléments qui ont une image : les
+    /// menus posés à plat, sans icône, n'y apparaissaient pas, et Qualité
+    /// comme Audio restaient hors d'atteinte.
+    private func settingsMenu(_ spec: OnyxAppleNativeSpec) -> [UIMenuElement] {
+      guard !spec.menus.isEmpty else { return [] }
+      return [
+        UIMenu(
+          title: spec.settingsLabel, image: UIImage(systemName: "gearshape"),
+          children: spec.menus.map(menu))
+      ]
+    }
+
     /// Dart reste maître de l'état coché : un choix n'en change rien ici, il
     /// attend la spec suivante. `.singleSelection` ne fait que l'anticiper.
     private func menu(_ menu: OnyxAppleNativeMenu) -> UIMenu {
@@ -240,7 +253,14 @@
         return element
       }
       let checked = menu.options.contains(where: \.selected)
-      return UIMenu(title: menu.label, options: checked ? .singleSelection : [], children: children)
+      let submenu = UIMenu(
+        title: menu.label, image: menu.icon.flatMap { UIImage(systemName: $0) },
+        options: checked ? .singleSelection : [], children: children)
+      // La valeur choisie sous le titre du sous-menu, comme « Qualité ·
+      // Auto » dans l'interface Onyx : sans elle, il faudrait ouvrir chaque
+      // sous-menu pour savoir où on en est.
+      submenu.subtitle = menu.options.first(where: \.selected)?.label
+      return submenu
     }
 
     private func action(_ action: OnyxAppleNativeAction) -> UIAction {

@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/tv/tv_focus.dart';
+import 'package:onyx/tv/tv_focus_entry.dart';
 import 'package:onyx/tv/tv_focus_memory.dart';
 import 'package:onyx/tv/tv_mode.dart';
+
+/// La politique de l'app, posée au-dessus de la page comme `main.dart` le fait.
+Widget _withPolicy(BuildContext context, Widget? child) =>
+    FocusTraversalGroup(policy: TvTraversalPolicy(), child: child!);
 
 /// Deux rangées de cartes l'une sous l'autre, chacune avec sa mémoire.
 Widget _rows({required List<FocusNode> top, required List<FocusNode> bottom}) {
@@ -27,6 +32,7 @@ Widget _rows({required List<FocusNode> top, required List<FocusNode> bottom}) {
   return TvScope(
     isTv: true,
     child: MaterialApp(
+      builder: _withPolicy,
       home: Scaffold(
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,6 +92,42 @@ void main() {
             'qui se trouve géométriquement au-dessus');
   });
 
+  testWidgets(
+      'la mémoire route le focus en une passe, sans le poser d’abord ailleurs',
+      (tester) async {
+    final top = _nodes('top', 5);
+    final bottom = _nodes('bottom', 5);
+    await tester.pumpWidget(_rows(top: top, bottom: bottom));
+
+    top[0].requestFocus();
+    await tester.pump();
+    for (var i = 0; i < 3; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    for (var i = 0; i < 3; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+    }
+    expect(bottom[0].hasFocus, isTrue);
+
+    // Haut mène géométriquement à top[0], pas à top[3] : il ne doit jamais
+    // l'avoir, même une frame.
+    var landedOnGeometricNeighbour = false;
+    void spy() => landedOnGeometricNeighbour |= top[0].hasPrimaryFocus;
+    top[0].addListener(spy);
+    addTearDown(() => top[0].removeListener(spy));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+
+    expect(top[3].hasFocus, isTrue);
+    expect(landedOnGeometricNeighbour, isFalse,
+        reason: 'un focus posé puis déplacé coûte deux défilements');
+  });
+
   testWidgets('la première visite laisse le parcours directionnel choisir',
       (tester) async {
     final top = _nodes('top', 3);
@@ -126,6 +168,7 @@ void main() {
     Widget build({required bool withCard}) => TvScope(
           isTv: true,
           child: MaterialApp(
+            builder: _withPolicy,
             home: Column(
               children: [
                 Focus(focusNode: outside, child: const SizedBox(height: 10)),
@@ -163,6 +206,7 @@ void main() {
     await tester.pumpWidget(TvScope(
       isTv: true,
       child: MaterialApp(
+        builder: _withPolicy,
         home: Scaffold(
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -217,6 +261,7 @@ void main() {
     await tester.pumpWidget(TvScope(
       isTv: true,
       child: MaterialApp(
+        builder: _withPolicy,
         home: Scaffold(
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

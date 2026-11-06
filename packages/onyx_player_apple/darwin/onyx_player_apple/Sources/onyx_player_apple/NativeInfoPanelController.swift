@@ -68,6 +68,12 @@
     private let actionsStack = UIStackView()
     private let messageLabel = UILabel()
     private let spinner = UIActivityIndicatorView(style: .large)
+    /// Toute la largeur du panneau, active quand aucune ligne ne prend le
+    /// focus (Regarder ensemble, sans séance ou avec ses participants) : le
+    /// seul bouton est alors à droite de l'en-tête, hors de la trajectoire
+    /// du focus qui descend de l'onglet d'AVKit, et « Démarrer une séance »
+    /// restait injoignable — l'appui ne faisait rien.
+    private let actionsFocusGuide = UIFocusGuide()
     private lazy var collection = UICollectionView(frame: .zero, collectionViewLayout: layout(cards: false))
     private var dataSource: UICollectionViewDiffableDataSource<Int, String>?
     private var rows: [String: OnyxAppleNativePanelRow] = [:]
@@ -117,7 +123,9 @@
       header.alignment = .center
       messageLabel.font = .preferredFont(forTextStyle: .callout)
       messageLabel.textColor = UIColor(white: 1, alpha: 0.8)
-      messageLabel.numberOfLines = 3
+      // Sans limite : l'erreur suit le texte d'accueil, et trois lignes la
+      // coupaient, si bien qu'un échec ne se voyait pas.
+      messageLabel.numberOfLines = 0
 
       collection.backgroundColor = .clear
       collection.delegate = self
@@ -139,13 +147,20 @@
       spinner.translatesAutoresizingMaskIntoConstraints = false
       view.addSubview(column)
       view.addSubview(spinner)
+      view.addLayoutGuide(actionsFocusGuide)
       NSLayoutConstraint.activate([
+        actionsFocusGuide.topAnchor.constraint(equalTo: view.topAnchor),
+        actionsFocusGuide.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        actionsFocusGuide.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+        actionsFocusGuide.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         column.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
         column.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
         column.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
         column.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
-        spinner.centerXAnchor.constraint(equalTo: collection.centerXAnchor),
-        spinner.centerYAnchor.constraint(equalTo: collection.centerYAnchor),
+        // Au centre du panneau, pas de la grille : vide pendant l'attente,
+        // elle est masquée et la pile la réduit à rien, roue comprise.
+        spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor),
       ])
       render(old: nil)
     }
@@ -194,6 +209,19 @@
       messageLabel.isHidden = panel.message == nil
       if panel.loading { spinner.startAnimating() } else { spinner.stopAnimating() }
       renderRows(old: old)
+      let firstAction = actionsStack.arrangedSubviews.first
+      let rowsTakeFocus = panel.rows.contains(where: \.selectable)
+      actionsFocusGuide.preferredFocusEnvironments = firstAction.map { [$0] } ?? []
+      actionsFocusGuide.isEnabled = firstAction != nil && !rowsTakeFocus
+    }
+
+    /// Où le focus entre dans le panneau : la ligne en cours s'il y en a,
+    /// sinon le premier bouton.
+    override var preferredFocusEnvironments: [UIFocusEnvironment] {
+      if actionsFocusGuide.isEnabled, let first = actionsStack.arrangedSubviews.first {
+        return [first]
+      }
+      return super.preferredFocusEnvironments
     }
 
     private func rebuild(_ stack: UIStackView, with items: [(String, String)], onTap: @escaping (String) -> Void) {

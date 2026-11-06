@@ -5,6 +5,7 @@ import '../../models/models.dart';
 import '../../models/offline_download.dart';
 import '../../services/download_manager.dart';
 import '../../theme/app_colors.dart';
+import '../../tv/tv_focus.dart';
 import '../../utils/format.dart';
 import '../../widgets/global/bulk_download_delete.dart';
 import '../../widgets/global/local_file_image.dart';
@@ -43,6 +44,8 @@ class DownloadShowHeader extends StatefulWidget {
 
 class _DownloadShowHeaderState extends State<DownloadShowHeader> {
   bool _expanded = false;
+
+  void _toggleOverview() => setState(() => _expanded = !_expanded);
 
   @override
   Widget build(BuildContext context) {
@@ -121,16 +124,23 @@ class _DownloadShowHeaderState extends State<DownloadShowHeader> {
                 const SizedBox(height: 6),
                 // Le synopsis complet en tête de chaque série repousserait les
                 // épisodes hors de l'écran : deux lignes, le reste sur demande.
-                GestureDetector(
-                  onTap: () => setState(() => _expanded = !_expanded),
-                  child: Text(
-                    overview,
-                    maxLines: _expanded ? null : 2,
-                    overflow: _expanded ? null : TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: AppType.subhead,
-                      height: 1.4,
+                // Atteignable à la télécommande : le GestureDetector seul
+                // laissait le « déplier » au doigt et à la souris.
+                TvFocusable(
+                  onSelect: _toggleOverview,
+                  focusScale: 1.0,
+                  borderRadius: BorderRadius.circular(6),
+                  child: GestureDetector(
+                    onTap: _toggleOverview,
+                    child: Text(
+                      overview,
+                      maxLines: _expanded ? null : 2,
+                      overflow: _expanded ? null : TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: AppType.subhead,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ),

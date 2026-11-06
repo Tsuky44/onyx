@@ -280,6 +280,10 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
                       mainAxisSize: MainAxisSize.min,
                       children: List.generate(widget.slides.length, (index) {
                         final active = index == _currentIndex;
+                        // Des repères au toucher et à la souris, pas des
+                        // boutons : à la télécommande le bandeau change de
+                        // diapositive aux flèches (Droite au bord), et ces
+                        // points restent volontairement hors du parcours.
                         return GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _pageController.animateToPage(
