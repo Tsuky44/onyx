@@ -12,6 +12,7 @@ import '../../l10n/tr.dart';
 import 'add_user_screen.dart';
 import 'avatar_picker_screen.dart';
 import 'widgets/profile_tile.dart';
+import '../../tv/nav/tv_region.dart';
 
 /// « Qui regarde ? » : les personnes de cet appareil sur un serveur.
 ///
@@ -140,32 +141,37 @@ class _UserChoiceScreenState extends State<UserChoiceScreen> {
                       ),
                     ],
                     SizedBox(height: compact ? 32 : 48),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: compact ? 16 : 32,
-                      runSpacing: compact ? 20 : 32,
-                      children: [
-                        for (final (index, account) in users.indexed)
-                          ProfileTile(
-                            account: account,
-                            size: size,
-                            current:
-                                !widget.atStartup && account.id == active?.id,
-                            editing: _editing,
-                            // Le premier au lancement, la personne en cours
-                            // depuis le menu : au D-pad, on part de là.
-                            autofocus: _autofocus(index, account, active),
-                            enabled: !busy,
-                            onSelect: () => _choose(account),
-                            onEdit: () => _editAvatar(account),
-                          ),
-                        if (anchor != null && !_editing)
-                          AddProfileTile(
-                            size: size,
-                            enabled: !busy,
-                            onSelect: () => _addUser(anchor),
-                          ),
-                      ],
+                    // Gauche et droite s'arrêtent au bord de la rangée : sous
+                    // dpad, gauche depuis le premier profil partait sur « ‹ »,
+                    // en haut à gauche de l'écran (vu au simulateur).
+                    TvRegion.rail(
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: compact ? 16 : 32,
+                        runSpacing: compact ? 20 : 32,
+                        children: [
+                          for (final (index, account) in users.indexed)
+                            ProfileTile(
+                              account: account,
+                              size: size,
+                              current:
+                                  !widget.atStartup && account.id == active?.id,
+                              editing: _editing,
+                              // Le premier au lancement, la personne en cours
+                              // depuis le menu : au D-pad, on part de là.
+                              autofocus: _autofocus(index, account, active),
+                              enabled: !busy,
+                              onSelect: () => _choose(account),
+                              onEdit: () => _editAvatar(account),
+                            ),
+                          if (anchor != null && !_editing)
+                            AddProfileTile(
+                              size: size,
+                              enabled: !busy,
+                              onSelect: () => _addUser(anchor),
+                            ),
+                        ],
+                      ),
                     ),
                     SizedBox(height: compact ? 36 : 56),
                     _editing
