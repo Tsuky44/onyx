@@ -1,6 +1,6 @@
 # Refonte de la navigation TV sur dpad 3.3.0 — plan de migration
 
-- **Statut :** plan, pas encore une décision. L'ADR-0110 (fin de phase 1) le transformera en décision.
+- **Statut :** plan, décision proposée par l'ADR-0110. Phase 1 faite (fondations non montées), phase 2 faite derrière le drapeau `ONYX_TV_NAV` (défaut `legacy`) ; ni l'une ni l'autre n'est essayée sur une vraie Apple TV.
 - **Date :** 2026-11-06
 - **Branche d'essai :** `spike/dpad-tvos` (banc d'essai `app/lib/spike/dpad_spike_main.dart`, supprimé en fin de phase 1).
 - **Prolonge / remplace :** remplace en pratique le mécanisme de l'ADR-0109 (entrées de zone) ; garde l'ADR-0008 (focus toujours visible), l'ADR-0039 (un défilement par pas, force du geste) et l'ADR-0108 (garde-fou du pont d'accessibilité tvOS).
@@ -65,6 +65,7 @@ les redécouvrir sur la télé.
 | C12 | *Lu.* `DpadThemeData.scrollPadding` est **un seul nombre**, pas des marges par côté. | La zone sûre tvOS (HIG : 60 pt en haut et en bas, 80 pt sur les côtés, en 1920 × 1080) se règle à 80 × `TvUiScale` ; le haut/bas reste porté par le padding des écrans. |
 | C13 | *Lu.* Aucune régulation de la touche maintenue dans dpad. `TvRemoteConfig` (cadence de répétition) n'existe **que sur tvOS**. | La régulation d'Android (répétition ≈ 50 ms, origine de `TvKeyRepeat`) ne peut pas venir de `flutter_tvos` : elle reste chez nous, dans `TvArrowGate`. Sur tvOS, essayer d'abord `TvRemoteConfig`. |
 | C14 | *Mesuré (phase 0, N1).* À la reprise (`resumed`), `restoreFocus` redonne le focus au dernier nœud encore monté, sans vérifier que sa route est au premier plan. Une route poussée en arrière-plan sans `autofocus` garde donc le focus **sous** elle. | `OnyxDpad` remet le focus dans la route au premier plan à chaque reprise (§3) ; ticket upstream chez `fluttercandies/dpad` (texte dans `refonte-navigation-dpad-phase0.md` §4). |
+| C15 | *Mesuré (phase 2, simulateur Apple TV).* Les régions de dpad ne s'emboîtent pas : un élément appartient à la région la plus proche, et une flèche cherche d'abord **dans la région du focus** avant d'en sortir. Une région autour de toute la page de l'accueil faisait donc préférer, sous le bandeau, « Tout voir » de la deuxième rangée (élément direct de la page) aux cartes de la première (qui appartiennent à leur rangée). | Une page n'est pas une région sous dpad : `TvRegion.page` ne pose rien (il garde `TvFocusMemory(entersAtTop)` avec l'ancien système). Épinglé par `shell_navigation_map_test` (« depuis Bandeau, Bas → Reprendre 0 »). La mémoire « où j'étais dans cet onglet », qui remontait jusqu'à l'onglet avec l'ancien système, n'existe plus que par rangée. |
 
 ## 3. Architecture cible
 
@@ -139,7 +140,8 @@ Règles d'architecture (gardées par un test, voir §6) :
 | Revenir | `kTvBackKeys`, `TvBackIntent` | `TvBack` (popRoute + touche) ; `DpadKeySet.back` sans `goBack` sur Android (C1, C2) ; `browserBack` / touche 461 pour webOS |
 | Flèche maintenue régulée | `TvKeyRepeat` | `TvArrowGate` (Android, web) ; `TvRemoteConfig` en premier sur tvOS (C13) |
 | Glissé fort = plusieurs pas, élan | `TvDirectionalFocusAction` + `TvTouchpad` | `TvArrowGate` + `StepTarget` → un seul `requestFocus` |
-| Focus perdu | `TvFocusGuard` | `restoreFocus` de dpad **ou** `TvFocusGuard`, pas les deux : à trancher en phase 2 (le plus simple gagne) |
+| Focus perdu | `TvFocusGuard` | `restoreFocus` de dpad seul, `TvFocusGuard` non monté (tranché en phase 2, ADR-0110) |
+| Contenu d'un onglet (`entersAtTop`) | `TvFocusMemory(entersAtTop: true)` | `TvRegion.page` : pas de région sous dpad (C15) ; l'entrée est celle de la rangée où le focus arrive |
 | Lecture/Pause hors du lecteur | rien | décision §10 |
 
 ## 5. Phases
@@ -237,6 +239,25 @@ un Select = un `onSelect` (C9).
 **Sortie :** accueil et onglets à la télécommande sur Android TV, simulateur
 et vraie Apple TV, webOS ; plus de saut double ; la mémoire de rangée marche
 et ne fuit pas d'un profil à l'autre.
+
+**Fait (2026-11-06), branche `claude/dpad-phase2-6a8b60` :** drapeau lu une
+fois par `main.dart` (`TvNavEngine`), qui monte soit `TvNavRoot` (`TvBack`
+au-dessus de `MaterialApp`, `OnyxDpad` + `TvArrowGate` dans le `builder`,
+raccourcis sans rien de directionnel), soit l'ancien système à l'identique.
+`TvFocusable` est une façade qui suit ce qui est monté (`TvNavScope`), avec
+`entry`. Zones du shell sur `TvRegion` ; en-tête dans `ShellHeaderZone`
+(`TvRegion.tabs`, l'onglet affiché en `entry`). Écarts au plan, et pourquoi :
+le contenu d'un onglet est un `TvRegion.page`, pas une région (C15) ; les
+rangées de fiche (`poster_rail`, casting, saisons) n'ont pas de clé de
+mémoire, pour que la mémoire ne passe pas d'une fiche à l'autre (C7) ; la clé
+par média (`TvRegion.itemKey`) ne se pose que sous dpad et sans
+`findChildIndexCallback` (sinon le nœud focalisé suit sa carte hors de
+l'écran) ; `cacheExtent` des rangées gardé à un écran de part et d'autre
+(`AppLayout.imageCacheExtent`), dans la fourchette mesurée en phase 0. Vu au
+simulateur Apple TV en `ONYX_TV_NAV=dpad` : accueil, rangées, mémoire,
+en-tête, onglet Films, fiche, retour par le bouton ‹. Menu/‹ de la Siri
+Remote n'est pas injectable au simulateur. Reste : Android TV, webOS, vraie
+Apple TV.
 
 ### Phase 3 — Écrans de contenu
 
@@ -404,18 +425,21 @@ la régulation de la touche maintenue doit se faire dans `_move`. Dans ce cas :
 **un seul patch minimal** (par exemple un hook de pas), proposé aussi en PR
 upstream ; tout le reste du pont reste dans `tv/input/`.
 
-## 10. Décisions à prendre avant la phase 2
+## 10. Décisions prises avant la phase 2
 
-1. **Highlight** : on garde notre anneau (recommandé), sans highlight volant
-   ni effet « soulevé » tvOS pour cette refonte ?
-2. **Racine imbriquée** pour le chrome du lecteur : oui seulement si une
-   région ne suffit pas ?
-3. **Bêta** de la phase 2 derrière `ONYX_TV_NAV=dpad` avant le déploiement
-   général (recommandé) ?
+Prises le 2026-11-06 sur les recommandations, l'utilisateur ayant demandé de
+continuer ; inscrites dans l'ADR-0110.
+
+1. **Highlight** : on garde notre anneau, sans highlight volant
+   (`DpadHighlight`) ni effet « soulevé » tvOS pour cette refonte. Un
+   changement de design se décidera à part.
+2. **Racine imbriquée** pour le chrome du lecteur : non ; seulement si une
+   région ne suffit pas, avec sa propre ADR (phase 7).
+3. **Bêta** de la phase 2 derrière `ONYX_TV_NAV=dpad`, défaut `legacy`, avant
+   le déploiement général. Le drapeau est retiré avant la phase 3.
 4. **Entrée d'une rangée par le haut ou le bas** : mémoire de la rangée
-   (`restore`, comportement des apps TV, recommandé) ou carte la plus proche
-   géométriquement (`nearest`) ?
+   (`restore`), comme les apps TV ; sans mémoire, l'élément marqué `entry`,
+   sinon le plus proche (C8).
 5. **Menu dans le contenu d'un onglet** : remonter d'abord à l'en-tête
-   (convention tvOS, recommandé) ou dépiler directement ?
-6. **Lecture/Pause sur une affiche** hors du lecteur : lancer ou reprendre la
-   lecture (convention tvOS), ou ne rien faire ?
+   (convention tvOS). Implémenté en phase 5, pas avant.
+6. **Lecture/Pause sur une affiche** hors du lecteur : rien pour l'instant.

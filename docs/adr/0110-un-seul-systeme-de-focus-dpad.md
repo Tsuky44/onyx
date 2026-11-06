@@ -1,9 +1,10 @@
 # ADR-0110 — Un seul système de focus : dpad
 
 - **Statut :** proposé. La phase 0 (rapport [`refonte-navigation-dpad-phase0.md`](../refonte-navigation-dpad-phase0.md))
-  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. Les fondations de la
-  phase 1 sont écrites et testées mais **montées nulle part** : l'app tourne toujours sur l'ancien
-  système.
+  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. La phase 2 monte dpad
+  **derrière le drapeau de compilation `ONYX_TV_NAV=dpad`** (défaut `legacy` : sans lui, l'app
+  est celle d'avant la refonte) ; vue au simulateur Apple TV seulement. Aucun essai sur une vraie
+  Apple TV n'a été fait : l'utilisateur ne peut pas tester pour le moment.
   - **Passe à « accepté »** quand les cases du rapport §5 sont vertes sur une vraie Apple TV avec les
     deux générations de Siri Remote (Menu/‹ en un seul Retour et rendu au système à la racine,
     `onLongSelect` sur les deux générations, touche maintenue sans pas perdu à la cadence native,
@@ -58,7 +59,8 @@ impose (plan §2, rapport §3) :
 | N2 | Des touches qui arrivent plus vite que l'application du focus partent toutes du même focus. Mesuré au simulateur : 12 pressions → 1 pas. | Rôle de `TvArrowGate` en phase 6 : regrouper une rafale en N pas et un seul `requestFocus`. |
 | N3 | dpad note la mémoire à la **demande** de focus, pas à l'arrivée. | Sans effet hors rafale ; disparaît avec N2. |
 | N4 | Un `DpadFocusable` rend son enfant non focalisable : le `onPressed` d'un bouton enveloppé n'est jamais appelé par Select. | `TvFocusable` reçoit l'action en `onSelect` ; le guard test l'exige de chaque `TvFocusable`. |
-| N5 | `restoreFocus` ne repose pas le focus après un `unfocus()` explicite. | `TvFocusGuard` (ou un équivalent) reste utile pour le focus garé ; tranché en phase 2. |
+| N5 | `restoreFocus` ne repose pas le focus après un `unfocus()` explicite. | Tranché en phase 2 : `restoreFocus` seul, voir plus bas. |
+| C15 | Les régions de dpad ne s'emboîtent pas ; une flèche cherche d'abord dans la région du focus (mesuré au simulateur, phase 2). | Une page n'est pas une région : `TvRegion.page`. Voir plus bas. |
 
 ## Décision
 
@@ -105,6 +107,56 @@ impose (plan §2, rapport §3) :
 - **`pubspec.lock` :** produit par le Flutter standard. flutter-tvos (Flutter 3.44) le réécrit au
   build ; ce lock-là ne se commite jamais.
 
+## Phase 2 : décisions et constats
+
+**Décisions du plan §10**, prises le 2026-11-06 sur les recommandations : notre anneau, sans
+highlight volant ni effet « soulevé » ; pas de racine `Dpad` imbriquée (le chrome du lecteur en
+demanderait une ADR) ; bêta derrière `ONYX_TV_NAV=dpad` ; entrée d'une rangée par sa mémoire
+(`restore`), sinon par l'élément `entry` ; Menu dans le contenu d'un onglet remonte d'abord à
+l'en-tête (phase 5) ; Lecture/Pause sur une affiche : rien pour l'instant.
+
+**Le drapeau.** `TvNavEngine` (`lib/tv/nav/tv_nav_engine.dart`) lit
+`String.fromEnvironment('ONYX_TV_NAV')` une fois ; une valeur inconnue retombe sur `legacy`.
+Seul `main.dart` le consulte : il monte `TvNavRoot` (`TvBack` au-dessus de `MaterialApp`,
+`OnyxDpad` puis `TvArrowGate` dans son `builder`, raccourcis sans rien de directionnel, plus
+de `TvTraversalPolicy` ni de `TvDirectionalFocusAction`) ou l'ancien système tel quel.
+`TvFocusable` et `TvRegion` suivent ce qui est monté (`TvNavScope`) : les écrans ne changent pas,
+et un test monte l'un ou l'autre système sans recompiler (`TvNavHarness.forEachEngine`).
+
+**`restoreFocus` de dpad gagne, `TvFocusGuard` n'est pas monté sous dpad.** Les deux reposent le
+focus quand il se perd ; montés ensemble, c'est deux `requestFocus` pour une perte. dpad couvre
+ce que le garde-fou couvrait (carte détruite, avec en plus la position à l'écran ; route poussée
+sans `autofocus` ; reprise, complétée par la parade N1) et le fait sans code à nous. Reste N5 :
+après un `unfocus()` explicite (les appels de l'app suivent l'envoi d'un formulaire, la fermeture
+d'une recherche ou la sortie d'un champ sur le web LG), dpad ne repose rien ; mais la flèche suivante part de la portée vide et
+`DpadTraversalPolicy` pose alors son candidat initial, et une vue qui a perdu le focus de la
+plateforme (focus « garé », téléviseur LG) le retrouve à la première flèche (`_move` restaure le
+dernier nœud). Ce qui est perdu : un OK pressé dans cet état ne fait rien, la première touche
+utile doit être une flèche. À rejouer sur le web LG en phase 4.
+
+**C15, mesuré au simulateur : une page n'est pas une région.** Les régions de dpad ne
+s'emboîtent pas, et une flèche cherche d'abord dans la région du focus. Posée autour de tout
+l'accueil (le `TvFocusMemory(entersAtTop: true)` de l'onglet traduit tel quel), une région faisait
+sauter, sous le bandeau, toute la première rangée pour « Tout voir » de la deuxième : un élément
+direct de la page, quand les cartes appartiennent à leur rangée. `TvRegion.page` ne pose donc
+rien sous dpad. Conséquence assumée : la mémoire « où j'étais dans cet onglet », qui remontait
+avec l'ancien système d'une rangée à l'onglet, ne vit plus que par rangée ; à la première visite,
+on entre dans un onglet par l'élément le plus proche de l'onglet de l'en-tête, pas par le coin
+haut-gauche.
+
+**Mémoire et clés.** Les rangées de l'accueil ont une clé de mémoire (`home/<titre>`, sous le
+profil) ; celles d'une fiche (titres similaires, casting, saisons) n'en ont pas : la mémoire
+persistante de dpad se retrouve par position à l'écran, et une clé partagée par toutes les fiches
+poserait le focus, dans le casting d'un film, là où on l'avait laissé dans un autre (C7). Les
+cartes de l'accueil sont clées par média, sous dpad seulement (`TvRegion.itemKey`) : l'ancien
+garde-fou, devant une carte recréée, renvoyait le focus en haut de la page. Pas de
+`findChildIndexCallback` : le nœud focalisé suivrait sa carte déplacée hors de l'écran au
+rechargement de « Reprendre la lecture ».
+
+**Le lecteur** garde `TvFocusRows` : ses rangées traitent toutes les flèches dans un
+`onKeyEvent`, qui passe avant dpad (C4) ; ses `TvFocusable` deviennent des `TvDpadFocusable`
+(OK par `onSelect`, même anneau, y compris sur un nœud qui arrive déjà focalisé).
+
 ## Conséquences
 
 - Phase 1 : aucun changement visible. `TvFocusable` est réexporté tel quel par
@@ -123,5 +175,8 @@ impose (plan §2, rapport §3) :
   et les zones du shell d'un seul coup, derrière `--dart-define=ONYX_TV_NAV=dpad`.
 - Une montée de dpad se fait dans `lib/tv/nav/` et `lib/tv/input/` seulement, après relecture de
   `root.dart`, `region.dart` et `focusable.dart` contre les constats ci-dessus.
+- Phase 2 : sans drapeau, aucun changement visible ; avec `ONYX_TV_NAV=dpad`, la racine, la cible
+  et les zones du shell passent sur dpad d'un seul coup. Les tests de focus tournent dans les deux
+  modes ; la carte de navigation de l'accueil et de l'en-tête est `shell_navigation_map_test`.
 - Reste ouvert, et à écrire ici : les mesures de la recette sur machine réelle (statut), les critères
-  du plan §1 mesurés en phase 8, et ce qui reste de `TvFocusGuard` (N5).
+  du plan §1 mesurés en phase 8, et le retrait de `TvFocusGuard` avec le drapeau.
