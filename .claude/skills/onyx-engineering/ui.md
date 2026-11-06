@@ -41,6 +41,7 @@ Chaque écran atteignable sur TV se pilote entièrement au D-pad.
 - L'échelle vient de `tv_ui_scale.dart`, et la répétition des touches de `tv_key_repeat.dart`.
 - Un seul défilement par pas de focus, celui de `TvFocusScroll` (ou de `TvFocusable`) : n'appelle pas `Scrollable.ensureVisible` à côté. Sur Apple TV, la force d'un glissé passe par `TvTouchpad.boostFor` (ADR-0039).
 - Le lecteur à la télécommande suit ADR-0006.
+- Refonte en cours vers un seul système de focus, dpad (ADR-0110, `docs/refonte-navigation-dpad.md`) : n'ajoute ni `FocusTraversalGroup`, ni politique de parcours, ni `Shortcuts`, ni `onKeyEvent`, ni gestionnaire global de touches, ni widget de l'ancien système (`TvFocusMemory`, `TvFocusPanes`…). Les écrans n'emploient que `TvFocusable` (action en `onSelect`) et `TvRegion` ; dpad ne s'importe que dans `lib/tv/`. Gardé par `test/no_parallel_focus_system_test.dart`.
 - Un écran TV nouveau ou modifié reçoit un test de focus sur le modèle de `tv_focus_test.dart` ou `onyx_settings_menu_tv_test.dart`.
 
 ## Qualité d'écran
