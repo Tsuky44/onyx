@@ -40,6 +40,7 @@ class TvFocusable extends StatelessWidget {
     this.onFocusChange,
     this.onDirection,
     this.childFocus = false,
+    this.wide = false,
   });
 
   final Widget child;
@@ -96,6 +97,13 @@ class TvFocusable extends StatelessWidget {
   /// repartent de la carte (voir `TvCardDirections`).
   final bool childFocus;
 
+  /// La carte prend toute la largeur de la page, entre des cibles calées à
+  /// gauche (le bandeau « Reprendre » de l'accueil). Sous dpad, une porte
+  /// invisible à son bord gauche la rend atteignable par Haut et Bas
+  /// (`TvWideCard`). Sans effet avec l'ancien système, dont le parcours la
+  /// trouvait déjà.
+  final bool wide;
+
   @override
   Widget build(BuildContext context) {
     if (TvNavScope.isActive(context)) {
@@ -113,6 +121,7 @@ class TvFocusable extends StatelessWidget {
         onFocusChange: onFocusChange,
         onDirection: onDirection,
         childFocus: childFocus,
+        wide: wide,
         child: child,
       );
     }

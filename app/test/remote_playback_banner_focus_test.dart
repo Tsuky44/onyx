@@ -8,11 +8,10 @@ import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/home_provider.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/tv/tv_focus.dart';
-import 'package:onyx/tv/tv_focus_guard.dart';
-import 'package:onyx/tv/tv_key_repeat.dart';
-import 'package:onyx/tv/tv_mode.dart';
 import 'package:onyx/widgets/global/remote_playback_banner.dart';
 import 'package:provider/provider.dart';
+
+import 'support/tv_nav_harness.dart';
 
 /// Sur télévision, un bandeau posé par-dessus l'accueil n'entre dans aucune
 /// rangée de la télécommande : « Reprendre » restait hors d'atteinte. Il est
@@ -52,102 +51,85 @@ Widget _app(_Api api, FocusNode poster, FocusNode card) {
       ChangeNotifierProvider<AuthProvider>(create: (_) => _Auth(api)),
       ChangeNotifierProvider(create: (_) => HomeProvider(api)),
     ],
-    child: TvScope(
-      isTv: true,
-      child: MaterialApp(
-        shortcuts: <ShortcutActivator, Intent>{
-          ...WidgetsApp.defaultShortcuts,
-          ...tvSelectShortcuts,
-        },
-        actions: <Type, Action<Intent>>{
-          ...WidgetsApp.defaultActions,
-          DirectionalFocusIntent: TvDirectionalFocusAction(),
-        },
-        builder: (context, child) => TvFocusGuard(child: child!),
-        home: Scaffold(
-          // Le carrousel au-dessus et une rangée en dessous, tous deux calés à
-          // gauche : c'est ce qui laissait un bandeau étroit hors d'atteinte.
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ElevatedButton(
-                focusNode: poster,
-                autofocus: true,
-                onPressed: () {},
-                child: const Text('Lecture'),
-              ),
-              const RemotePlaybackBanner(inline: true),
-              ElevatedButton(
-                focusNode: card,
-                onPressed: () {},
-                child: const Text('Affiche'),
-              ),
-            ],
+    child: Scaffold(
+      // Le carrousel au-dessus et une rangée en dessous, tous deux calés à
+      // gauche : c'est ce qui laissait un bandeau étroit hors d'atteinte.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ElevatedButton(
+            focusNode: poster,
+            autofocus: true,
+            onPressed: () {},
+            child: const Text('Lecture'),
           ),
-        ),
+          const RemotePlaybackBanner(inline: true),
+          ElevatedButton(
+            focusNode: card,
+            onPressed: () {},
+            child: const Text('Affiche'),
+          ),
+        ],
       ),
     ),
   );
 }
 
 void main() {
-  setUp(() => TvMode.enabled.value = true);
-  tearDown(() => TvMode.enabled.value = false);
+  TvNavHarness.forEachEngine((engine) {
+    testWidgets('le bandeau se rejoint depuis le haut comme depuis le bas', (
+      tester,
+    ) async {
+      final poster = FocusNode();
+      final card = FocusNode();
+      addTearDown(poster.dispose);
+      addTearDown(card.dispose);
+      final nav = await TvNavHarness.pump(tester, _app(_Api(), poster, card),
+          engine: engine);
+      await tester.pumpAndSettle();
+      expect(find.byType(TvFocusable), findsOneWidget);
+      expect(poster.hasFocus, isTrue);
 
-  testWidgets('le bandeau se rejoint depuis le haut comme depuis le bas', (
-    tester,
-  ) async {
-    final poster = FocusNode();
-    final card = FocusNode();
-    addTearDown(poster.dispose);
-    addTearDown(card.dispose);
-    await tester.pumpWidget(_app(_Api(), poster, card));
-    await tester.pumpAndSettle();
-    expect(find.byType(TvFocusable), findsOneWidget);
-    expect(poster.hasFocus, isTrue);
+      bool onBanner() =>
+          FocusManager.instance.primaryFocus?.context
+              ?.findAncestorWidgetOfExactType<TvFocusable>() !=
+          null;
 
-    bool onBanner() =>
-        FocusManager.instance.primaryFocus?.context
-            ?.findAncestorWidgetOfExactType<TvFocusable>() !=
-        null;
+      await nav.press(TraversalDirection.down);
+      expect(onBanner(), isTrue,
+          reason: 'bas depuis « Lecture » mène au bandeau');
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
-    expect(onBanner(), isTrue,
-        reason: 'bas depuis « Lecture » mène au bandeau');
+      await nav.press(TraversalDirection.down);
+      expect(card.hasFocus, isTrue);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
-    expect(card.hasFocus, isTrue);
+      await nav.press(TraversalDirection.up);
+      expect(onBanner(), isTrue,
+          reason: 'haut depuis une affiche à gauche mène au bandeau, pas au '
+              'carrousel');
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-    await tester.pump();
-    expect(onBanner(), isTrue,
-        reason: 'haut depuis une affiche à gauche mène au bandeau, pas au '
-            'carrousel');
+      await tester.pumpWidget(const SizedBox());
+    });
 
-    await tester.pumpWidget(const SizedBox());
-  });
+    testWidgets('lecture/pause de la télécommande reprend la lecture', (
+      tester,
+    ) async {
+      final poster = FocusNode();
+      final card = FocusNode();
+      addTearDown(poster.dispose);
+      addTearDown(card.dispose);
+      final api = _Api();
+      await TvNavHarness.pump(tester, _app(api, poster, card), engine: engine);
+      await tester.pumpAndSettle();
+      TvFocusable banner() => tester.widget(find.byType(TvFocusable));
+      expect(banner().onSelect, isNotNull);
 
-  testWidgets('lecture/pause de la télécommande reprend la lecture', (
-    tester,
-  ) async {
-    final poster = FocusNode();
-    final card = FocusNode();
-    addTearDown(poster.dispose);
-    addTearDown(card.dispose);
-    final api = _Api();
-    await tester.pumpWidget(_app(api, poster, card));
-    await tester.pumpAndSettle();
-    TvFocusable banner() => tester.widget(find.byType(TvFocusable));
-    expect(banner().onSelect, isNotNull);
+      api.holdNext = true;
+      await tester.sendKeyEvent(LogicalKeyboardKey.mediaPlayPause);
+      await tester.pump();
 
-    api.holdNext = true;
-    await tester.sendKeyEvent(LogicalKeyboardKey.mediaPlayPause);
-    await tester.pump();
-
-    expect(banner().onSelect, isNull,
-        reason: 'la reprise est lancée : le bandeau ne se valide plus');
-    await tester.pumpWidget(const SizedBox());
+      expect(banner().onSelect, isNull,
+          reason: 'la reprise est lancée : le bandeau ne se valide plus');
+      await tester.pumpWidget(const SizedBox());
+    });
   });
 }

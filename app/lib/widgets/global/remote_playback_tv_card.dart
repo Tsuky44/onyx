@@ -56,6 +56,7 @@ class _RemotePlaybackTvCardState extends State<RemotePlaybackTvCard> {
         onFocusChange: (focused) => setState(() => _focused = focused),
         focusScale: 1,
         showRing: false,
+        wide: true,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _maxWidth),

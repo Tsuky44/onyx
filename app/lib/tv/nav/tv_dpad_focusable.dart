@@ -8,6 +8,7 @@ import '../tv_mode.dart';
 import 'tv_card_directions.dart';
 import 'tv_contained_steps.dart';
 import 'tv_nav_theme.dart';
+import 'tv_wide_card.dart';
 
 /// `TvFocusable` posé sur dpad : même API, même anneau, mais c'est dpad qui
 /// décide où va le focus, quand la page défile et ce que vaut OK.
@@ -44,6 +45,7 @@ class TvDpadFocusable extends StatefulWidget {
     this.onFocusChange,
     this.onDirection,
     this.childFocus = false,
+    this.wide = false,
   });
 
   final Widget child;
@@ -86,6 +88,9 @@ class TvDpadFocusable extends StatefulWidget {
   /// [onDirection], droite entre dans ses boutons et gauche en ressort
   /// ([TvContainedSteps]).
   final bool childFocus;
+
+  /// Voir `TvFocusable.wide` ([TvWideCard]).
+  final bool wide;
 
   static final Expando<VoidCallback> _contextMenus = Expando<VoidCallback>(
     'tv-context-menu',
@@ -180,7 +185,7 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
       // le clavier et dessine un anneau que personne n'a demandé.
       autofocus: widget.autofocus && widget.enabled && isTv,
       enabled: widget.enabled,
-      entry: widget.entry,
+      entry: widget.entry || widget.wide,
       onSelect: widget.onSelect,
       onLongSelect: isTv && widget.enabled ? widget.onContextMenu : null,
       onFocusChange: widget.onFocusChange,
@@ -202,12 +207,14 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
       ),
       child: widget.child,
     );
-    if (onDirection == null || !widget.childFocus) return focusable;
-    return TvCardDirections.dpad(
-      card: _node,
-      onDirection: onDirection,
-      child: focusable,
-    );
+    final card = onDirection == null || !widget.childFocus
+        ? focusable
+        : TvCardDirections.dpad(
+            card: _node,
+            onDirection: onDirection,
+            child: focusable,
+          );
+    return widget.wide && isTv ? TvWideCard(card: _node, child: card) : card;
   }
 }
 
