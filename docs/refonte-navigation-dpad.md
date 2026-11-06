@@ -1,6 +1,6 @@
 # Refonte de la navigation TV sur dpad 3.3.0 — plan de migration
 
-- **Statut :** plan, décision proposée par l'ADR-0110. Phase 1 faite (fondations non montées), phase 2 faite derrière le drapeau `ONYX_TV_NAV` (défaut `legacy`) ; ni l'une ni l'autre n'est essayée sur une vraie Apple TV.
+- **Statut :** plan, décision proposée par l'ADR-0110. Phase 1 faite (fondations non montées), phases 2 et 3 faites derrière le drapeau `ONYX_TV_NAV` (défaut `legacy`), qui reste jusqu'à la recette sur vraie Apple TV ; aucune n'est essayée sur une vraie Apple TV.
 - **Date :** 2026-11-06
 - **Branche d'essai :** `spike/dpad-tvos` (banc d'essai `app/lib/spike/dpad_spike_main.dart`, supprimé en fin de phase 1).
 - **Prolonge / remplace :** remplace en pratique le mécanisme de l'ADR-0109 (entrées de zone) ; garde l'ADR-0008 (focus toujours visible), l'ADR-0039 (un défilement par pas, force du geste) et l'ADR-0108 (garde-fou du pont d'accessibilité tvOS).
@@ -216,8 +216,9 @@ Un seul changement, parce que l'ancienne politique et dpad ne cohabitent pas
 dans une même zone. Pour pouvoir revenir en arrière sans revert, le choix du
 moteur passe par un drapeau de compilation `--dart-define=ONYX_TV_NAV=dpad`
 (défaut `legacy`) lu **une fois** au démarrage par `TvFocusable`, `TvRegion`
-et `OnyxDpad`. Il vit le temps de la bêta de cette phase, puis est retiré
-avant la phase 3.
+et `OnyxDpad`. Il devait vivre le temps de la bêta de cette phase et être
+retiré avant la phase 3 ; il **reste** tant que la recette sur vraie Apple TV
+n'est pas verte (voir phase 3), et disparaît au plus tard en phase 8.
 
 - `main.dart` : `OnyxDpad` dans `MaterialApp.builder` ; retrait des
   `shortcuts`/`actions` directionnels, de `TvTraversalPolicy` et de
@@ -274,6 +275,25 @@ Apple TV.
 
 **Tests :** `requests_screen_tv_test`, `remote_playback_banner_focus_test` et
 une carte de navigation par écran (§6).
+
+**Fait (2026-11-06), branche `claude/dpad-phase3-00be1f` :** le drapeau
+`ONYX_TV_NAV` reste (voir phase 2), chaque écran marche dans les deux modes,
+et ce qu'un écran faisait de l'ancien système est déplacé à l'identique dans
+la branche `legacy` de la façade. Nouvelles formes et options :
+`TvRegion.panes`/`.pane` (`TvPaneRegion` : premier élément sans souvenir,
+dernier focalisé, bouton contenu dans une ligne), `TvRegion.slide` (une zone
+par diapositive, bord `stop` + `onEdge`), `TvFocusable.onDirection` (le
+`onDirection` de dpad), `.childFocus` (cibles internes hors du parcours,
+atteintes par Droite) et `.wide` (porte au quart gauche d'une carte pleine
+largeur). Écarts au plan, et pourquoi : « Lire » garde son `autofocus` (une
+pastille Material, la marquer `entry` changerait l'ancien mode) ;
+`TvFocusCaption` reste (il n'agit pas sur le focus) ; le Bas « perdu » de
+l'onglet Films venait du menu de tri, seule cible pendant le chargement, et se
+corrige dans les deux modes. Le guard test perd `settings_screen`,
+`episode_tile` et `hero_carousel`. Cartes de navigation : réglages, fiche,
+téléchargements, listes, profils, bibliothèque. Reste : mémoire des grilles en
+sliver (listes, bibliothèques), vraie Apple TV, Android TV, webOS. Constats
+détaillés dans l'ADR-0110, « Phase 3 ».
 
 ### Phase 4 — Champs texte, clavier, web LG
 
@@ -436,7 +456,11 @@ continuer ; inscrites dans l'ADR-0110.
 2. **Racine imbriquée** pour le chrome du lecteur : non ; seulement si une
    région ne suffit pas, avec sa propre ADR (phase 7).
 3. **Bêta** de la phase 2 derrière `ONYX_TV_NAV=dpad`, défaut `legacy`, avant
-   le déploiement général. Le drapeau est retiré avant la phase 3.
+   le déploiement général. Le drapeau devait être retiré avant la phase 3 ;
+   **révisé le 2026-11-06** : il reste, défaut `legacy`, tant qu'aucun essai
+   sur vraie Apple TV n'a été fait (l'utilisateur ne peut pas tester pour le
+   moment). Il disparaît quand cette recette est verte, au plus tard en
+   phase 8. Chaque écran migré marche donc dans les deux modes.
 4. **Entrée d'une rangée par le haut ou le bas** : mémoire de la rangée
    (`restore`), comme les apps TV ; sans mémoire, l'élément marqué `entry`,
    sinon le plus proche (C8).

@@ -1,10 +1,12 @@
 # ADR-0110 — Un seul système de focus : dpad
 
 - **Statut :** proposé. La phase 0 (rapport [`refonte-navigation-dpad-phase0.md`](../refonte-navigation-dpad-phase0.md))
-  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. La phase 2 monte dpad
-  **derrière le drapeau de compilation `ONYX_TV_NAV=dpad`** (défaut `legacy` : sans lui, l'app
-  est celle d'avant la refonte) ; vue au simulateur Apple TV seulement. Aucun essai sur une vraie
-  Apple TV n'a été fait : l'utilisateur ne peut pas tester pour le moment.
+  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. Les phases 2 et 3 montent
+  dpad **derrière le drapeau de compilation `ONYX_TV_NAV=dpad`** (défaut `legacy` : sans lui, l'app
+  est celle d'avant la refonte) ; vues au simulateur Apple TV seulement. Aucun essai sur une vraie
+  Apple TV n'a été fait : l'utilisateur ne peut pas tester pour le moment. **Le drapeau reste**
+  jusqu'à ce que cette recette soit verte, et disparaît au plus tard en phase 8 (le plan le
+  retirait avant la phase 3).
   - **Passe à « accepté »** quand les cases du rapport §5 sont vertes sur une vraie Apple TV avec les
     deux générations de Siri Remote (Menu/‹ en un seul Retour et rendu au système à la racine,
     `onLongSelect` sur les deux générations, touche maintenue sans pas perdu à la cadence native,
@@ -16,7 +18,8 @@
     `pubspec.yaml`, `lib/tv/nav/`, `lib/tv/input/` et le guard test, et l'ADR-0109 redevient pleine.
 - **Date :** 2026-11-06
 - **Portée :** `pubspec.yaml` (`dpad: 3.3.0`), `lib/tv/nav/` (`OnyxDpad`, `TvBack`, `TvFocusable`,
-  `TvRegion`, `TvDpadFocusable`, `TvForegroundRoute`, `tv_nav_theme.dart`), `lib/tv/input/`
+  `TvRegion`, `TvDpadFocusable`, `TvForegroundRoute`, `tv_nav_theme.dart` ; en phase 3
+  `TvPaneRegion`, `TvContainedSteps`, `TvCardDirections`, `TvSlideEdges`, `TvWideCard`), `lib/tv/input/`
   (`TvArrowGate`, `StepTarget`), `test/support/tv_nav_harness.dart`,
   `test/no_parallel_focus_system_test.dart`. Plan : [`refonte-navigation-dpad.md`](../refonte-navigation-dpad.md).
 - **Remplace :** [ADR-0109](0109-le-focus-tv-entre-une-fois-ou-la-zone-le-decide.md) pour ce qui
@@ -157,6 +160,90 @@ rechargement de « Reprendre la lecture ».
 `onKeyEvent`, qui passe avant dpad (C4) ; ses `TvFocusable` deviennent des `TvDpadFocusable`
 (OK par `onSelect`, même anneau, y compris sur un nœud qui arrive déjà focalisé).
 
+## Phase 3 : décisions et constats
+
+**Le drapeau reste.** Le plan retirait `ONYX_TV_NAV` avant la phase 3. Décidé le 2026-11-06 : il
+reste, défaut `legacy`, parce qu'aucun essai n'a été fait sur une vraie Apple TV et que
+l'utilisateur ne peut pas tester pour le moment ; sans lui, l'app doit rester celle de `main`.
+Il disparaît quand la recette sur vraie Apple TV est verte, au plus tard en phase 8. Chaque
+écran migré marche donc dans les deux modes, et ce que l'ancien système faisait dans un écran
+(un `Focus(onKeyEvent:)`) est **déplacé à l'identique** dans la branche `legacy` de la façade
+(`TvCardDirections.legacy`, `TvSlideEdges`), qui part avec le drapeau. La liste du guard test
+rétrécit d'autant : `settings_screen`, `episode_tile` et `hero_carousel` en sortent.
+
+**Volets (`TvRegion.panes` / `.pane`).** Sous dpad, `TvRegion.panes` ne pose rien (C15) et
+chaque volet est une `TvPaneRegion`, une `DpadRegion` qui reprend trois règles de
+`TvFocusPanes` que dpad n'a pas : sans souvenir, on entre sur le **premier** élément du volet
+(le plus haut), pas sur celui à la même hauteur ; le souvenir est le dernier élément focalisé
+du volet, même focalisé hors de dpad (une ligne de réglage est un `InkWell`, que dpad ne note
+pas) ; droite entre dans le bouton posé au bout d'une ligne cliquable et gauche en ressort
+(`TvContainedSteps` : dpad ne cherche que ce qui est *à droite* du rectangle quitté, et un
+bouton contenu dans sa ligne ne l'est jamais). Elle surcharge `DpadRegionState.resolveEnter`
+(`@internal` dans 3.3.0) et pose une sous-classe de `DpadTraversalPolicy` sous le groupe de la
+région : deux points à relire à chaque montée de dpad.
+
+**Puces des réglages (`SettingsChoiceFocus`).** Le parcours de dpad préfère aussi ce qui est
+dans le faisceau, mais, entre deux cibles du faisceau, c'est la plus proche *en travers* qui
+gagne, au centre près. Depuis un menu aligné à droite, la porte d'entrée de la rangée (toute la
+ligne, centre au milieu) perdait contre le menu suivant, et Bas sautait la rangée. Une seconde
+porte au quart droit de la ligne la rend atteignable ; avec l'ancien système, les deux portes
+mènent à la même puce.
+
+**Cartes à boutons (`TvFocusable.onDirection`, `childFocus`).** Sous dpad, l'enfant d'un
+`TvFocusable` est exclu du focus (N4) : les icônes d'une ligne d'épisode, le menu d'une ligne de
+téléchargement n'étaient plus atteignables. `childFocus` les garde focalisables ;
+`onDirection` est le `DpadFocusable.onDirection` de dpad (une flèche que la carte prend avant le
+parcours), étendu aux cibles internes de la carte pour gauche et droite. Sans `onDirection`,
+une carte `childFocus` entre dans ses boutons à droite et en ressort à gauche. Sous dpad, tout
+ce que contient une carte `childFocus` sort du parcours directionnel : haut et bas passent de
+carte en carte sans s'arrêter sur le menu de la ligne suivante ni sur l'`InkWell` qui double la
+carte (vu sur les téléchargements), et depuis une icône ils vont à la carte voisine, puisque la
+carte contient l'icône. Le menu d'un téléchargement en cours est
+atteignable sous dpad ; avec l'ancien système, la ligne inactive le rendait inatteignable.
+
+**Bandeau (`TvRegion.slide`).** Une zone par diapositive, posée **dans** la page : au bord
+(`stop`), dpad fait d'abord défiler ce qui défile entre le focus et la zone, et autour du
+`PageView` ce serait lui, de 80 % de page, avant l'`onEdge` qui tourne la diapositive. Le
+défilement automatique ne tourne que si rien du bandeau n'a le focus : il ne déplace pas le
+focus (épinglé par `tv_navigation_test`).
+
+**Cartes pleine largeur (`TvFocusable.wide`).** Même cause que les puces : le bandeau
+« Reprendre » d'une lecture en cours ailleurs, centré sur toute la largeur entre le bouton du
+bandeau et la première rangée, tous deux calés à gauche, était sauté par Haut comme par Bas.
+Sous dpad, `TvWideCard` pose une porte invisible au quart gauche de la carte, dans une zone dont
+la carte est l'entrée : dpad trouve la porte et pose le focus sur la carte en un seul
+`requestFocus`. Sans effet avec l'ancien système.
+
+**Entrées de rangée.** La bulle de la saison affichée est l'entrée de sa rangée (`entry`) : Bas
+depuis « Ajouter à une liste » tombait sur la saison 8, sous l'icône. Les avatars du sélecteur
+sont une `TvRegion.rail` : gauche depuis le premier partait sur « Retour ».
+
+**Reste ouvert : les grilles en sliver.** Une `TvRegion` ne s'enveloppe pas autour d'un sliver
+(son `Focus` y pose un nœud de sémantique) : les grilles des listes et des bibliothèques n'ont pas
+de mémoire sous dpad, et revenir de « Nouvelle liste » ramène à la tuile la plus proche du bouton,
+pas à celle qu'on regardait (case sautée dans `lists_navigation_map_test`). À traiter avec une
+forme sliver de `TvRegion`.
+
+**« Lire » sur une fiche.** C'est une pastille Material (`HeroPill`, un `InkWell`), pas un
+`TvFocusable` : la marquer `entry` demanderait de l'envelopper, ce qui changerait l'ancien mode.
+Elle garde son `autofocus`, que dpad laisse passer avant sa propre restauration ; la parade N1
+(reprise) retombe, elle, sur le premier élément de la fiche. À reprendre quand le drapeau part.
+
+**`TvFocusCaption` gardé.** Il n'agit pas sur le focus : il écoute `FocusManager` et écrit le
+nom de l'icône focalisée. Il marche tel quel sous les deux systèmes.
+
+**Le Bas perdu de l'onglet Films** (phase 2) : ce n'était pas dpad. Pendant le chargement, le
+menu de tri était la seule cible sous l'en-tête ; Bas sautait au bout de la ligne, sur ce petit
+menu à peine marqué, et le Bas suivant tombait sur l'affiche la plus à droite. Le tri sort du
+parcours tant que la grille charge, dans les deux modes (seul changement visible sans le
+drapeau), épinglé par `library_screen_tv_test`.
+
+**Restent hors navigation**, dans la liste du guard test : la touche lecture/pause du bandeau
+« Reprendre » (`remote_playback_banner`), le suivi de la bulle de saison qui grandit
+(`season_bubbles`, un défilement à la fin de l'animation, pas par flèche), le défilement du
+texte d'un document (`legal_document_screen`) et le zoom de la grille au clavier
+(`poster_grid_zoom_region`).
+
 ## Conséquences
 
 - Phase 1 : aucun changement visible. `TvFocusable` est réexporté tel quel par
@@ -178,5 +265,9 @@ rechargement de « Reprendre la lecture ».
 - Phase 2 : sans drapeau, aucun changement visible ; avec `ONYX_TV_NAV=dpad`, la racine, la cible
   et les zones du shell passent sur dpad d'un seul coup. Les tests de focus tournent dans les deux
   modes ; la carte de navigation de l'accueil et de l'en-tête est `shell_navigation_map_test`.
+- Phase 3 : sans drapeau, un seul changement visible (le tri d'une bibliothèque hors du parcours
+  pendant son chargement) ; avec `ONYX_TV_NAV=dpad`, les réglages, la fiche, le bandeau, les
+  téléchargements et les écrans de contenu passent sur dpad. Une carte de navigation par écran.
 - Reste ouvert, et à écrire ici : les mesures de la recette sur machine réelle (statut), les critères
-  du plan §1 mesurés en phase 8, et le retrait de `TvFocusGuard` avec le drapeau.
+  du plan §1 mesurés en phase 8, et le retrait du drapeau (avec lui `TvFocusGuard`,
+  `TvCardDirections.legacy` et `TvSlideEdges`).
