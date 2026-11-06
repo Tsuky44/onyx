@@ -5,6 +5,8 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/lite_mode.dart';
 import '../tv_mode.dart';
+import 'tv_card_directions.dart';
+import 'tv_contained_steps.dart';
 import 'tv_nav_theme.dart';
 
 /// `TvFocusable` posé sur dpad : même API, même anneau, mais c'est dpad qui
@@ -40,6 +42,8 @@ class TvDpadFocusable extends StatefulWidget {
     this.scrollAlignment = 0.5,
     this.showRing = true,
     this.onFocusChange,
+    this.onDirection,
+    this.childFocus = false,
   });
 
   final Widget child;
@@ -75,8 +79,17 @@ class TvDpadFocusable extends StatefulWidget {
 
   final ValueChanged<bool>? onFocusChange;
 
-  static final Expando<VoidCallback> _contextMenus =
-      Expando<VoidCallback>('tv-context-menu');
+  /// Voir `TvFocusable.onDirection`.
+  final bool Function(TraversalDirection direction)? onDirection;
+
+  /// Voir `TvFocusable.childFocus` : l'enfant n'est pas exclu du focus. Sans
+  /// [onDirection], droite entre dans ses boutons et gauche en ressort
+  /// ([TvContainedSteps]).
+  final bool childFocus;
+
+  static final Expando<VoidCallback> _contextMenus = Expando<VoidCallback>(
+    'tv-context-menu',
+  );
 
   /// Le menu de la carte focalisée, pour la touche menu que dpad remonte à
   /// la racine (`OnyxDpad`). Le nœud focalisé peut être celui de la carte ou
@@ -121,6 +134,32 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
     super.dispose();
   }
 
+  /// Le [TvFocusable.onDirection] d'une carte qui garde ses boutons
+  /// ([TvFocusable.childFocus]) sans en donner un : droite y entre, gauche
+  /// en ressort, et l'on s'arrête au bord de la carte.
+  bool _containedStep(TraversalDirection direction) {
+    final current = FocusManager.instance.primaryFocus;
+    if (current == null) return false;
+    final onCard = identical(current, _node);
+    switch (direction) {
+      case TraversalDirection.right:
+        final target = onCard
+            ? TvContainedSteps.into(_node)
+            : TvContainedSteps.beside(current, _node, direction);
+        if (onCard && target == null) return false;
+        target?.requestFocus();
+        return true;
+      case TraversalDirection.left:
+        if (onCard) return false;
+        (TvContainedSteps.beside(current, _node, direction) ?? _node)
+            .requestFocus();
+        return true;
+      case TraversalDirection.up:
+      case TraversalDirection.down:
+        return false;
+    }
+  }
+
   void _registerMenu(FocusNode? previous) {
     if (previous != null && !identical(previous, _node)) {
       TvDpadFocusable._contextMenus[previous] = null;
@@ -132,7 +171,10 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
   @override
   Widget build(BuildContext context) {
     final isTv = TvScope.of(context);
-    return DpadFocusable(
+    final onDirection = !isTv
+        ? null
+        : widget.onDirection ?? (widget.childFocus ? _containedStep : null);
+    final focusable = DpadFocusable(
       focusNode: _node,
       // Sur téléviseur seulement : prendre le focus sur un téléphone ouvre
       // le clavier et dessine un anneau que personne n'a demandé.
@@ -144,6 +186,8 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
       onFocusChange: widget.onFocusChange,
       scrollAlignment: TvNavTheme.alignmentFor(widget.scrollAlignment),
       tapToSelect: false,
+      excludeChildFocus: !widget.childFocus,
+      onDirection: onDirection,
       builder: (context, state, child) => _TvFocusRing(
         // dpad ne lit pas le nœud qu'on lui donne : il attend un changement.
         // Le menu du lecteur passe un même nœud, déjà focalisé, d'une rangée
@@ -157,6 +201,12 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
         child: child,
       ),
       child: widget.child,
+    );
+    if (onDirection == null || !widget.childFocus) return focusable;
+    return TvCardDirections.dpad(
+      card: _node,
+      onDirection: onDirection,
+      child: focusable,
     );
   }
 }

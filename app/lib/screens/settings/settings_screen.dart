@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/client_identity.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
-import '../../tv/tv_focus_panes.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../tv/tv_mode.dart';
 import 'settings_categories.dart';
 import 'settings_search.dart';
@@ -110,12 +110,13 @@ class _WideSettings extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         // À la télécommande, droite entre dans la page et gauche revient à la
-        // liste, quelle que soit la hauteur des réglages. Voir [TvFocusPanes].
-        child: TvFocusPanes(
+        // liste, quelle que soit la hauteur des réglages. Voir
+        // [TvRegion.pane].
+        child: TvRegion.panes(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TvFocusPane(
+              TvRegion.pane(
                 child: _Sidebar(
                   categories: categories,
                   searchIndex: searchIndex,
@@ -124,7 +125,7 @@ class _WideSettings extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: TvFocusPane(
+                child: TvRegion.pane(
                   child: DecoratedBox(
                     decoration:
                         const BoxDecoration(color: AppColors.background),

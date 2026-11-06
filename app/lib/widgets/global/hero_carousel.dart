@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../models/models.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_colors.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../utils/hero_slides.dart';
 import '../../utils/on_screen.dart';
 import 'hero_banner.dart';
@@ -158,36 +158,15 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
   /// La page change sous la télécommande : son bouton doit suivre.
   bool _refocusAfterPaging = false;
 
-  /// Gauche et droite au bord du bandeau changent de diapositive.
+  /// Gauche et droite au bord de la diapositive affichée la tournent (voir
+  /// [TvRegion.slide]).
   ///
   /// Sans ça, la télécommande ne voyait que la diapositive affichée : droite
   /// depuis « Plus d'infos » sautait n'importe où à droite de l'écran (la
   /// recherche de l'en-tête), et les autres titres n'étaient atteignables
   /// qu'en attendant que le carrousel tourne.
-  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
-      return KeyEventResult.ignored;
-    }
-    final key = event.logicalKey;
-    final step = key == LogicalKeyboardKey.arrowRight
-        ? 1
-        : key == LogicalKeyboardKey.arrowLeft
-            ? -1
-            : 0;
-    if (step == 0 || widget.slides.length <= 1) return KeyEventResult.ignored;
-    final focused = FocusManager.instance.primaryFocus;
-    if (focused == null) return KeyEventResult.ignored;
-    final from = focused.rect;
-    // Un voisin dans le bandeau, sur la même ligne : la flèche lui revient.
-    final hasNeighbour = node.traversalDescendants.any((other) {
-      if (identical(other, focused)) return false;
-      final rect = other.rect;
-      final ahead =
-          step > 0 ? rect.left >= from.right - 1 : rect.right <= from.left + 1;
-      return ahead && rect.top < from.bottom && rect.bottom > from.top;
-    });
-    if (hasNeighbour) return KeyEventResult.ignored;
-
+  void _turn(TraversalDirection direction) {
+    final step = direction == TraversalDirection.right ? 1 : -1;
     final count = widget.slides.length;
     _refocusAfterPaging = true;
     _pageController.animateToPage(
@@ -195,7 +174,6 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
       duration: AppMotion.move(context, AppMotion.emphasis),
       curve: AppMotion.curve,
     );
-    return KeyEventResult.handled;
   }
 
   @override
@@ -212,7 +190,6 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
       focusNode: _observer,
       canRequestFocus: false,
       skipTraversal: true,
-      onKeyEvent: _handleKey,
       onFocusChange: (focused) {
         _focused = focused;
         _scheduleAutoAdvance();
@@ -250,22 +227,25 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
                     // l'en-tête pouvait y poser le focus — invisible.
                     return ExcludeFocus(
                       excluding: index != _currentIndex,
-                      child: HeroBanner(
-                        media: slide.media,
-                        titleOverride: slide.title,
-                        subtitle: slide.subtitle,
-                        backgroundUrlOverride: slide.backgroundUrl,
-                        detailsMediaId: slide.media.type == MediaType.episode
-                            ? slide.continueItem?.showId
-                            : slide.media.id,
-                        playLabel: slide.playLabel,
-                        onPlay: () => widget.onPlay(slide),
-                        onInfo: slide.showInfoButton && widget.onInfo != null
-                            ? () => widget.onInfo!(slide)
-                            : null,
-                        // Only the slide on screen: an autofocus on a page the
-                        // PageView has built ahead would pull the focus off-screen.
-                        autofocusPlay: widget.autofocusPlay && index == 0,
+                      child: TvRegion.slide(
+                        onEdge: widget.slides.length > 1 ? _turn : null,
+                        child: HeroBanner(
+                          media: slide.media,
+                          titleOverride: slide.title,
+                          subtitle: slide.subtitle,
+                          backgroundUrlOverride: slide.backgroundUrl,
+                          detailsMediaId: slide.media.type == MediaType.episode
+                              ? slide.continueItem?.showId
+                              : slide.media.id,
+                          playLabel: slide.playLabel,
+                          onPlay: () => widget.onPlay(slide),
+                          onInfo: slide.showInfoButton && widget.onInfo != null
+                              ? () => widget.onInfo!(slide)
+                              : null,
+                          // Only the slide on screen: an autofocus on a page the
+                          // PageView has built ahead would pull the focus off-screen.
+                          autofocusPlay: widget.autofocusPlay && index == 0,
+                        ),
                       ),
                     );
                   },

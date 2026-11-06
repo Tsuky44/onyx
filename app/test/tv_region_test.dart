@@ -55,6 +55,17 @@ void main() {
       expect(find.byType(TvFocusPane), findsOneWidget);
       expect(find.byType(DpadRegion), findsNothing);
     });
+
+    testWidgets('des volets sont un TvFocusPanes', (tester) async {
+      await mount(
+        tester,
+        const TvRegion.panes(
+          child: TvRegion.pane(child: TvFocusable(child: Text('a'))),
+        ),
+      );
+      expect(find.byType(TvFocusPanes), findsOneWidget);
+      expect(find.byType(TvFocusPane), findsOneWidget);
+    });
   });
 
   group('sous OnyxDpad : une DpadRegion', () {
@@ -86,6 +97,52 @@ void main() {
         expect(region(id).enter, DpadEnterBehavior.restore, reason: id);
       }
       expect(find.byType(TvFocusMemory), findsNothing);
+    });
+
+    testWidgets('des volets ne sont pas une zone, chaque volet l’est',
+        (tester) async {
+      await TvNavHarness.pump(
+        tester,
+        Scaffold(
+          body: TvRegion.panes(
+            child: Row(
+              children: [
+                TvRegion.pane(child: _row('a', 1)),
+                TvRegion.pane(child: _row('b', 1)),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.byWidgetPredicate((w) => w is DpadRegion), findsNWidgets(2));
+      expect(find.byType(TvFocusPanes), findsNothing);
+    });
+
+    testWidgets('au bord d’une diapositive, gauche et droite la tournent',
+        (tester) async {
+      final edges = <TraversalDirection>[];
+      final nav = await TvNavHarness.pump(
+        tester,
+        Scaffold(
+          body: Column(
+            children: [
+              TvRegion.slide(onEdge: edges.add, child: _row('s', 2)),
+              TvRegion.rail(child: _row('r', 2)),
+            ],
+          ),
+        ),
+      );
+      expect(nav.focusedLabel, 's0');
+      await nav.press(TraversalDirection.left);
+      await nav.press(TraversalDirection.right);
+      await nav.press(TraversalDirection.right);
+      expect(nav.focusedLabel, 's1');
+      expect(edges, [TraversalDirection.left, TraversalDirection.right]);
+
+      // Le bord est un mur : la flèche tourne la page, elle ne file pas
+      // ailleurs sur l'écran.
+      final slide = tester.widget<DpadRegion>(find.byType(DpadRegion).first);
+      expect(slide.horizontalEdge, DpadEdgeBehavior.stop);
     });
 
     testWidgets('au bout d’une rangée, le focus reste dans la rangée',

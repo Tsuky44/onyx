@@ -16,16 +16,6 @@ import 'support/tv_nav_harness.dart';
 
 /// Le parcours à la télécommande des écrans corrigés sur l'émulateur Android
 /// TV : un appui, un pas, et le focus toujours là où on le voit.
-/// Sous dpad, `EpisodeTile` garde ses icônes dans l'ancien système (`Focus` +
-/// `onKeyEvent`) : Droite ne quitte pas la ligne (obtenu `onRow: true`,
-/// attendu `false`). L'écran est de la phase 3.
-bool _skipUnderDpad(TvNavEngine engine) {
-  if (engine != TvNavEngine.dpad) return false;
-  markTestSkipped('phase 3 : les icônes d’EpisodeTile ne sont pas encore '
-      'atteintes sous dpad (Droite reste sur la ligne)');
-  return true;
-}
-
 void main() {
   /// Monte [child] dans le banc commun, sous le système de navigation
   /// [engine], avec les fournisseurs que les écrans lisent.
@@ -126,7 +116,6 @@ void main() {
 
       testWidgets('droite entre dans les icônes, gauche en ressort',
           (tester) async {
-        if (_skipUnderDpad(engine)) return;
         final nav = await pumpTv(tester, engine, episodes());
         await focusFirst(tester);
 
@@ -140,7 +129,6 @@ void main() {
 
       testWidgets('bas depuis une icône mène à l’épisode suivant',
           (tester) async {
-        if (_skipUnderDpad(engine)) return;
         final nav = await pumpTv(tester, engine, episodes());
         await focusFirst(tester);
         await press(tester, nav, LogicalKeyboardKey.arrowRight);
@@ -213,6 +201,54 @@ void main() {
         expect(controller.page, 1);
         // Le focus a suivi : il est sur la nouvelle page, pas perdu.
         expect(focusOnShownSlide(), isTrue);
+      });
+
+      testWidgets('gauche depuis Lecture revient à la diapositive précédente',
+          (tester) async {
+        final nav = await pumpTv(tester, engine, carousel());
+        await focusFirst(tester);
+
+        // Lecture est le premier bouton : rien à sa gauche dans la page.
+        await press(tester, nav, LogicalKeyboardKey.arrowLeft);
+
+        final controller =
+            tester.widget<PageView>(find.byType(PageView)).controller!;
+        // Le bandeau boucle : avant la première vient la dernière.
+        expect(controller.page, 2);
+        expect(focusOnShownSlide(), isTrue);
+      });
+
+      testWidgets('le défilement automatique ne déplace pas le focus',
+          (tester) async {
+        final below = FocusNode(debugLabel: 'sous le bandeau');
+        addTearDown(below.dispose);
+        await pumpTv(
+          tester,
+          engine,
+          Column(
+            children: [
+              carousel(),
+              TextButton(
+                focusNode: below,
+                onPressed: () {},
+                child: const Text('Sous le bandeau'),
+              ),
+            ],
+          ),
+        );
+        below.requestFocus();
+        await tester.pump();
+
+        // Une diapositive toutes les sept secondes, une seconde de trajet.
+        await tester.pump(const Duration(seconds: 8));
+        await tester.pumpAndSettle();
+
+        final controller =
+            tester.widget<PageView>(find.byType(PageView)).controller!;
+        expect(controller.page, 1);
+        // La page détruite sous le bandeau n'avait pas le focus : dpad n'a
+        // rien à restaurer, et rien ne le tire vers le bandeau.
+        expect(below.hasPrimaryFocus, isTrue);
       });
     });
 

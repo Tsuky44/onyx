@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../models/models.dart';
 import '../../theme/app_colors.dart';
-import '../../tv/tv_focus.dart';
+import '../../tv/nav/tv_focusable.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/format.dart';
 import '../../utils/responsive.dart';
@@ -69,8 +68,8 @@ class _EpisodeTileState extends State<EpisodeTile> {
   /// Bas depuis un épisode tombait sur l'icône de téléchargement du suivant,
   /// puis sur sa ligne : deux appuis par épisode, et l'on ne savait jamais
   /// lequel des deux on tenait. Les icônes ne s'atteignent plus que par la
-  /// droite depuis la ligne ([_handleKey]) ; haut et bas passent d'une ligne à
-  /// l'autre.
+  /// droite depuis la ligne ([_onDirection]) ; haut et bas passent d'une ligne
+  /// à l'autre.
   final FocusNode _actionsNode = FocusNode(
     debugLabel: 'episode-actions',
     canRequestFocus: false,
@@ -84,50 +83,29 @@ class _EpisodeTileState extends State<EpisodeTile> {
     super.dispose();
   }
 
-  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
-      return KeyEventResult.ignored;
+  /// Gauche et droite depuis la ligne ou l'une de ses icônes : droite entre
+  /// dans les icônes, gauche en ressort. Haut et bas ne passent pas ici : ils
+  /// vont d'une ligne à l'autre, même depuis une icône (voir
+  /// [TvFocusable.childFocus]).
+  bool _onDirection(TraversalDirection direction) {
+    if (direction != TraversalDirection.left &&
+        direction != TraversalDirection.right) {
+      return false;
     }
-    final key = event.logicalKey;
     final current = FocusManager.instance.primaryFocus;
-    final vertical = key == LogicalKeyboardKey.arrowUp
-        ? TraversalDirection.up
-        : key == LogicalKeyboardKey.arrowDown
-            ? TraversalDirection.down
-            : null;
-    if (vertical != null) {
-      // Depuis une icône, le parcours partait de son rectangle, en haut de la
-      // ligne : Bas tombait sur la ligne elle-même. On part de la ligne.
-      if (current == null || identical(current, _rowNode)) {
-        return KeyEventResult.ignored;
-      }
-      if (!current.ancestors.contains(_actionsNode)) {
-        return KeyEventResult.ignored;
-      }
-      _rowNode.requestFocus();
-      // Après la microtâche qui applique ce focus, pas avant.
-      Future.microtask(() {
-        if (_rowNode.hasPrimaryFocus) _rowNode.focusInDirection(vertical);
-      });
-      return KeyEventResult.handled;
-    }
-    if (key != LogicalKeyboardKey.arrowRight &&
-        key != LogicalKeyboardKey.arrowLeft) {
-      return KeyEventResult.ignored;
-    }
     final actions = _actionsNode.descendants
         .where((n) => n.canRequestFocus && n.context != null)
         .toList();
     if (identical(current, _rowNode)) {
-      if (key != LogicalKeyboardKey.arrowRight || actions.isEmpty) {
-        return KeyEventResult.ignored;
+      if (direction != TraversalDirection.right || actions.isEmpty) {
+        return false;
       }
       actions.first.requestFocus();
-      return KeyEventResult.handled;
+      return true;
     }
     final index = current == null ? -1 : actions.indexOf(current);
-    if (index < 0) return KeyEventResult.ignored;
-    if (key == LogicalKeyboardKey.arrowRight) {
+    if (index < 0) return false;
+    if (direction == TraversalDirection.right) {
       if (index + 1 < actions.length) actions[index + 1].requestFocus();
     } else if (index > 0) {
       actions[index - 1].requestFocus();
@@ -135,7 +113,7 @@ class _EpisodeTileState extends State<EpisodeTile> {
       _rowNode.requestFocus();
     }
     // Arrêté au bord de la ligne : la flèche ne doit pas filer ailleurs.
-    return KeyEventResult.handled;
+    return true;
   }
 
   Future<void> _toggleWatched() async {
@@ -183,7 +161,7 @@ class _EpisodeTileState extends State<EpisodeTile> {
       dimmed: !_isAvailable,
     );
 
-    final row = TvFocusable(
+    return TvFocusable(
       focusNode: _rowNode,
       // An episode that has not aired is shown but not reachable: the remote
       // skips straight over it instead of landing on a dead row.
@@ -195,6 +173,8 @@ class _EpisodeTileState extends State<EpisodeTile> {
       focusScale: 1.0,
       scrollAlignment: 0.3,
       showRing: false,
+      onDirection: _onDirection,
+      childFocus: true,
       onFocusChange: (focused) {
         if (_focused == focused) return;
         setState(() => _focused = focused);
@@ -449,13 +429,6 @@ class _EpisodeTileState extends State<EpisodeTile> {
           ),
         ),
       ),
-    );
-    if (!isTv) return row;
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onKeyEvent: _handleKey,
-      child: row,
     );
   }
 }

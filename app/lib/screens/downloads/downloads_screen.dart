@@ -80,10 +80,9 @@ class DownloadsScreen extends StatelessWidget {
               child: EmptyStateView(
                 icon: AppIcons.cloudOff,
                 title: tr('Indisponible ici'),
-                message:
-                    tr('Le téléchargement hors ligne demande un espace de '
-                        'stockage propre à l\'application. Utilisez l\'app '
-                        'installée sur votre appareil.'),
+                message: tr('Le téléchargement hors ligne demande un espace de '
+                    'stockage propre à l\'application. Utilisez l\'app '
+                    'installée sur votre appareil.'),
               ),
             )
           else if (items.isEmpty)
@@ -92,10 +91,9 @@ class DownloadsScreen extends StatelessWidget {
               child: EmptyStateView(
                 icon: AppIcons.offline,
                 title: tr('Aucun téléchargement'),
-                message:
-                    tr('Depuis la fiche d\'un film ou d\'une série, le '
-                        'bouton de téléchargement garde le média sur cet '
-                        'appareil. Il reste lisible même sans serveur.'),
+                message: tr('Depuis la fiche d\'un film ou d\'une série, le '
+                    'bouton de téléchargement garde le média sur cet '
+                    'appareil. Il reste lisible même sans serveur.'),
               ),
             )
           else
@@ -159,13 +157,12 @@ class DownloadsScreen extends StatelessWidget {
     for (final title in showTitles) {
       final entries = byShow[title]!
         ..sort((a, b) {
-          final season =
-              (a.seasonNumber ?? 0).compareTo(b.seasonNumber ?? 0);
+          final season = (a.seasonNumber ?? 0).compareTo(b.seasonNumber ?? 0);
           if (season != 0) return season;
           return (a.episodeNumber ?? 0).compareTo(b.episodeNumber ?? 0);
         });
-      groups.add(_Group(title, entries,
-          infoId: entries.first.infoId, isShow: true));
+      groups.add(
+          _Group(title, entries, infoId: entries.first.infoId, isShow: true));
     }
     if (movies.isNotEmpty) {
       movies.sort((a, b) => a.title.compareTo(b.title));
@@ -281,8 +278,10 @@ class _Header extends StatelessWidget {
             icon: AppIcons.wifiOff,
             color: AppColors.warning,
             text: queuedCount > 1
-                ? tr('{0} téléchargements attendent le Wi-Fi : le réseau '
-                    'actuel se paie à l’octet.', [queuedCount])
+                ? tr(
+                    '{0} téléchargements attendent le Wi-Fi : le réseau '
+                    'actuel se paie à l’octet.',
+                    [queuedCount])
                 : tr('Un téléchargement attend le Wi-Fi : le réseau actuel se '
                     'paie à l’octet.'),
             action: TextButton(
@@ -297,7 +296,13 @@ class _Header extends StatelessWidget {
             icon: AppIcons.cloudOff,
             color: AppColors.warning,
             text: pendingSync > 0
-                ? tr('Serveur injoignable. {0} {1} au retour de la connexion.', [pendingSync, pendingSync > 1 ? tr('lectures seront synchronisées') : tr('lecture sera synchronisée')])
+                ? tr(
+                    'Serveur injoignable. {0} {1} au retour de la connexion.', [
+                    pendingSync,
+                    pendingSync > 1
+                        ? tr('lectures seront synchronisées')
+                        : tr('lecture sera synchronisée')
+                  ])
                 : tr('Serveur injoignable. Vous pouvez regarder ce qui est '
                     'sur cet appareil.'),
           ),
@@ -306,8 +311,10 @@ class _Header extends StatelessWidget {
           _Banner(
             icon: AppIcons.sync,
             color: AppColors.accent,
-            text:
-                tr('Synchronisation de {0} {1} avec le serveur…', [pendingSync, pendingSync > 1 ? tr('lectures') : tr('lecture')]),
+            text: tr('Synchronisation de {0} {1} avec le serveur…', [
+              pendingSync,
+              pendingSync > 1 ? tr('lectures') : tr('lecture')
+            ]),
           ),
         ],
       ],
@@ -323,7 +330,14 @@ class _Header extends StatelessWidget {
         backgroundColor: AppColors.surface,
         title: Text(tr('Supprimer les médias vus ?')),
         content: Text(
-          tr('{0} {1} de cet appareil. Ils restent disponibles sur le serveur.', [count, count > 1 ? tr('éléments seront effacés') : tr('élément sera effacé')]),
+          tr(
+              '{0} {1} de cet appareil. Ils restent disponibles sur le serveur.',
+              [
+                count,
+                count > 1
+                    ? tr('éléments seront effacés')
+                    : tr('élément sera effacé')
+              ]),
         ),
         actions: [
           TextButton(
@@ -341,7 +355,8 @@ class _Header extends StatelessWidget {
     if (confirmed != true) return;
     final deleted = await manager.deleteWatched();
     messenger.showSnackBar(SnackBar(
-      content: Text('$deleted ${deleted > 1 ? 'éléments supprimés' : 'élément supprimé'}'),
+      content: Text(
+          '$deleted ${deleted > 1 ? 'éléments supprimés' : 'élément supprimé'}'),
     ));
   }
 }
@@ -415,6 +430,9 @@ class _DownloadRow extends StatelessWidget {
       focusScale: 1.0,
       scrollAlignment: 0.3,
       showRing: false,
+      // Le menu de la ligne (suspendre, supprimer) reste une cible : droite
+      // y entre, gauche en ressort.
+      childFocus: true,
       child: InkWell(
         onTap: playable ? () => _play(context) : null,
         child: Padding(
@@ -486,18 +504,20 @@ class _DownloadRow extends StatelessWidget {
         final size = formatBytes(entry.bytesTotal);
         if (entry.isFinished) return tr('Vu · {0}', [size]);
         if (entry.positionSeconds > 0) {
-          return tr('{0}% visionné · {1}', [(entry.watchedFraction * 100).round(), size]);
+          return tr('{0}% visionné · {1}',
+              [(entry.watchedFraction * 100).round(), size]);
         }
         return size;
       case DownloadStatus.downloading:
-        final total = entry.bytesTotal > 0
-            ? ' sur ${formatBytes(entry.bytesTotal)}'
-            : '';
-        return tr('{0}{1} téléchargés', [formatBytes(entry.bytesReceived), total]);
+        final total =
+            entry.bytesTotal > 0 ? ' sur ${formatBytes(entry.bytesTotal)}' : '';
+        return tr(
+            '{0}{1} téléchargés', [formatBytes(entry.bytesReceived), total]);
       case DownloadStatus.queued:
         return tr('En attente');
       case DownloadStatus.paused:
-        return tr('En pause · {0} téléchargés', [formatBytes(entry.bytesReceived)]);
+        return tr(
+            'En pause · {0} téléchargés', [formatBytes(entry.bytesReceived)]);
       case DownloadStatus.failed:
         return entry.error ?? tr('Échec du téléchargement');
     }
@@ -573,8 +593,7 @@ class _Thumbnail extends StatelessWidget {
                   value: entry.watchedFraction,
                   minHeight: 3,
                   backgroundColor: Colors.black.withValues(alpha: 0.4),
-                  valueColor:
-                      const AlwaysStoppedAnimation(AppColors.progress),
+                  valueColor: const AlwaysStoppedAnimation(AppColors.progress),
                 ),
               ),
           ],

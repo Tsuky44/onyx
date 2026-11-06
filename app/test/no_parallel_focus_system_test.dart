@@ -108,9 +108,6 @@ const Map<String, Map<String, int>> _legacy = {
   'lib/screens/settings/legal_document_screen.dart': {
     'onKeyEvent': 1,
   },
-  'lib/screens/settings/settings_screen.dart': {
-    'TvFocusLegacy': 3,
-  },
   // Sorti de main_shell.dart en phase 2, à l'identique, pour que les cartes
   // de navigation l'éprouvent : déplacé, pas ajouté.
   'lib/screens/shell/shell_header_zone.dart': {
@@ -159,12 +156,6 @@ const Map<String, Map<String, int>> _legacy = {
     'KeyboardHandler': 1,
   },
   'lib/widgets/global/app_slider.dart': {
-    'onKeyEvent': 1,
-  },
-  'lib/widgets/global/episode_tile.dart': {
-    'onKeyEvent': 1,
-  },
-  'lib/widgets/global/hero_carousel.dart': {
     'onKeyEvent': 1,
   },
   'lib/widgets/global/interface_tour/tour_anchor.dart': {

@@ -13,6 +13,13 @@ import 'package:flutter/widgets.dart';
 /// Ce nœud couvre toute la ligne, donc il est toujours dans la bande, et rend
 /// aussitôt le focus à la puce choisie. Tant que le focus est dans la rangée,
 /// il s'efface du parcours : haut depuis une puce ne retombe pas sur lui.
+///
+/// Un second nœud, au quart droit de la ligne, fait la même chose pour ce qui
+/// est aligné à droite. Sous dpad (ADR-0110), être dans la bande ne suffit
+/// pas : entre deux cibles de la bande, la plus proche *en travers* gagne, au
+/// centre près. Depuis un menu au bout de la ligne, le centre de la ligne
+/// entière était trop loin, et Bas sautait la rangée pour le menu suivant ;
+/// celui du quart droit est assez près.
 class SettingsChoiceFocus extends StatefulWidget {
   const SettingsChoiceFocus({
     super.key,
@@ -31,17 +38,21 @@ class SettingsChoiceFocus extends StatefulWidget {
 
 class _SettingsChoiceFocusState extends State<SettingsChoiceFocus> {
   final FocusNode _node = FocusNode(debugLabel: 'settings-choice');
+  final FocusNode _edge = FocusNode(debugLabel: 'settings-choice-edge');
   bool _inside = false;
 
   @override
   void dispose() {
     _node.dispose();
+    _edge.dispose();
     super.dispose();
   }
 
   void _onFocusChange(bool hasFocus) {
-    if (hasFocus && _node.hasPrimaryFocus) {
-      final choices = _node.traversalDescendants.toList();
+    if (hasFocus && (_node.hasPrimaryFocus || _edge.hasPrimaryFocus)) {
+      final choices = _node.traversalDescendants
+          .where((node) => !identical(node, _edge))
+          .toList();
       if (choices.isNotEmpty) {
         final index =
             widget.selectedIndex < 0 || widget.selectedIndex >= choices.length
@@ -58,6 +69,25 @@ class _SettingsChoiceFocusState extends State<SettingsChoiceFocus> {
         focusNode: _node,
         skipTraversal: _inside,
         onFocusChange: _onFocusChange,
-        child: widget.child,
+        child: Stack(
+          children: [
+            widget.child,
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: FractionallySizedBox(
+                  widthFactor: 0.25,
+                  heightFactor: 1,
+                  child: Focus(
+                    focusNode: _edge,
+                    skipTraversal: _inside,
+                    includeSemantics: false,
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       );
 }
