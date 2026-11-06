@@ -1,7 +1,7 @@
 # ADR-0110 — Un seul système de focus : dpad
 
 - **Statut :** proposé. La phase 0 (rapport [`refonte-navigation-dpad-phase0.md`](../refonte-navigation-dpad-phase0.md))
-  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. Les phases 2 et 3 montent
+  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. Les phases 2 à 5 montent
   dpad **derrière le drapeau de compilation `ONYX_TV_NAV=dpad`** (défaut `legacy` : sans lui, l'app
   est celle d'avant la refonte) ; vues au simulateur Apple TV seulement. Aucun essai sur une vraie
   Apple TV n'a été fait : l'utilisateur ne peut pas tester pour le moment. **Le drapeau reste**
@@ -19,7 +19,8 @@
 - **Date :** 2026-11-06
 - **Portée :** `pubspec.yaml` (`dpad: 3.3.0`), `lib/tv/nav/` (`OnyxDpad`, `TvBack`, `TvFocusable`,
   `TvRegion`, `TvDpadFocusable`, `TvForegroundRoute`, `tv_nav_theme.dart` ; en phase 3
-  `TvPaneRegion`, `TvContainedSteps`, `TvCardDirections`, `TvSlideEdges`, `TvWideCard`), `lib/tv/input/`
+  `TvPaneRegion`, `TvContainedSteps`, `TvCardDirections`, `TvSlideEdges`, `TvWideCard` ; en phase 5
+  `TvBackStep`, `TvBackKeyAction`), `lib/screens/shell/shell_tv_back.dart`, `lib/tv/input/`
   (`TvArrowGate`, `StepTarget`), `test/support/tv_nav_harness.dart`,
   `test/no_parallel_focus_system_test.dart`. Plan : [`refonte-navigation-dpad.md`](../refonte-navigation-dpad.md).
 - **Remplace :** [ADR-0109](0109-le-focus-tv-entre-une-fois-ou-la-zone-le-decide.md) pour ce qui
@@ -87,8 +88,9 @@ impose (plan §2, rapport §3) :
   `WidgetsApp` dépile sans demander. Deux entrées (`didPopRoute`, `onBack` de dpad), une règle : ce
   qui peut se fermer se ferme, ce qui est poussé se dépile (`maybePop` du navigateur racine), et à la
   racine Retour est rendu au système — on ne retient jamais Menu à la racine (App Review tvOS). Deux
-  Retours d'origines différentes à moins de 300 ms sont un seul appui. La remontée du contenu d'un
-  onglet vers l'en-tête s'ajoute en phase 5.
+  Retours d'origines différentes à moins de 300 ms sont un seul appui. Depuis la phase 5, le contenu
+  d'un onglet remonte d'abord à l'en-tête, et l'en-tête, quel que soit l'onglet, rend Retour au
+  système (voir « Phase 5 »).
 - **`TvArrowGate`** (`lib/tv/input/tv_arrow_gate.dart`) est le seul intercepteur de flèches, juste
   sous `Dpad` : il laisse passer, retient une répétition trop rapprochée (C6, C13), ou fait N pas
   d'un coup vers la carte que calcule **`StepTarget`** (horizontal seulement, borné aux cartes
@@ -299,6 +301,87 @@ sur le banc en mode TV, ses quatre tests de chaîne ne passent qu'avec dpad et s
 l'identique, et la correction (ne pas reprendre le focus quand il est sur un autre champ) change
 son comportement. À décider.
 
+## Phase 5 : Retour, Menu, dialogues
+
+**`TvBack` décide seul, sous dpad.** Ses entrées : `didPopRoute` (Menu/‹ de l'Apple TV, Retour
+d'Android) et les touches Retour. Une touche arrive par l'`onBack` de dpad, ou, quand dpad se
+tait (champ de saisie focalisé, ou touche rendue par `TvBack` à la racine), par `TvBackKeyAction`
+dans les raccourcis de `MaterialApp`. Les deux voies lisent la même liste de touches
+(`OnyxDpad.backKeysFor`, sans `goBack` sur Android). `TvBackAction` n'est plus monté sous dpad :
+il dépilait la coquille et retenait Menu à la racine. L'ordre :
+
+1. le clavier d'un champ différé se referme (`TvDeferredKeyboardState.releaseFocused`, que la
+   coquille seule appelait), puis le dialogue, la feuille ou le menu du dessus se ferme ;
+2. ce qui est poussé se dépile. 1 et 2 sont un seul geste : le `maybePop` du navigateur racine,
+   quand sa route du dessus prend Retour (elle se dépile, ou un `PopScope` la retient, comme le
+   lecteur). Sur téléviseur, la coquille n'a pas de navigateur imbriqué : fiches, feuilles et menus,
+   même ceux qui prennent le navigateur le plus proche, sont des routes du navigateur racine. La
+   route du dessus se lit par `popUntil` avec un prédicat qui accepte la première route : c'est la
+   seule lecture publique et synchrone, et une touche doit savoir tout de suite si elle est
+   consommée ;
+3. les marches des écrans (`TvBackStep`, la plus récente d'abord, seulement si sa route est au
+   premier plan) : la coquille (`ShellTvBack`) remonte le focus du contenu vers l'onglet affiché ;
+4. sinon c'est la racine : `didPopRoute` rend faux, la touche n'est pas consommée, et l'appareil
+   revient à son écran d'accueil.
+
+**Décision : sur l'en-tête de n'importe quel onglet, Retour est rendu au système.** On ne revient
+pas d'abord à l'accueil. C'est la convention tvOS : le `UITabBarController` de tvOS ne ramène pas à
+son premier onglet, et Menu pressé sur la barre d'onglets quitte l'app vers l'écran d'accueil de
+l'Apple TV, quel que soit l'onglet affiché. L'en-tête est la racine de l'app : y retenir Menu pour
+changer d'onglet, c'est retenir Menu à la racine, ce que l'App Review tvOS refuse. La règle est la
+même sur Android TV, webOS et au clavier : une seule règle se teste en une table, et quitter l'app
+depuis son niveau le plus haut est aussi le comportement d'Android TV. Ce qui disparaît sous dpad,
+et seulement là : le retour à l'accueil depuis un autre onglet, et le « appuyez de nouveau sur
+Retour pour quitter » de l'accueil, qui retenait le premier Menu. L'ancien système garde les deux à
+l'identique (`ShellTvBack`, branche `legacy`).
+
+**Menu en `popRoute`, en Échap, ou les deux.** Rien n'a été essayé sur vraie Apple TV. Le
+dédoublonnage par origine (deux Retours d'origines différentes à moins de 300 ms) couvre les trois
+cas, dans les deux ordres, figés par `tv_back_rules_test`. Le lecteur lit encore ses touches
+lui-même (phase 7), avant dpad (C4) : un Menu reçu en touche *et* en `popRoute` y défaisait deux
+couches, avec les deux systèmes. Sous dpad, ses trois lectures de touche (`PlayerKeyBack`, le menu
+ouvert, une section du menu de réglages) passent par `TvBack.claimKey`, qui note l'appui et avale la
+seconde moitié. Sans `TvBack` (ancien système), `claimKey` rend toujours vrai : rien ne change.
+
+**Dialogues, feuilles, menus.** L'inventaire de l'app compte une soixantaine de fenêtres. Toutes
+sont des routes, sauf les menus du lecteur (`PlayerPopupHost`, un `OverlayEntry`), migrés en phase
+7. Les menus de recherche du bureau et les aperçus au survol ne sont pas atteignables au D-pad. Sous
+dpad, le focus entre dans la route (son `autofocus`, ou l'entrée que pose dpad), n'en sort pas aux
+flèches, et Retour la ferme en rendant le focus à l'élément d'origine. C'est épinglé par
+`tv_modal_focus_test` pour chaque mécanisme (`showDialog`, `showModalBottomSheet` sur le navigateur
+proche et racine, `showMenu`, `DropdownButton`, route transparente de la présentation) et pour les
+dialogues partagés qui se montent sans fournisseur (`confirmSettingsAction`, `showSynopsisDialog`,
+`confirmDeleteRequest`, `askDeclineReason`, `showWatchListEditor`, `showRecoveryCodesDialog`). Aucun
+dialogue n'a eu à être corrigé.
+
+**Vu au simulateur Apple TV**, en `ONYX_TV_NAV=dpad`, `popRoute` rejoué par une extension de service
+temporaire, non commitée, comme en phase 0. Échap est passé par le `keyMessageHandler`, comme une
+touche du moteur ; le bouton Menu ne s'injecte pas.
+
+| État | `popRoute` | Échap |
+|---|---|---|
+| Contenu de l'accueil (« Reprendre » du bandeau) | focus sur « Accueil » | idem, touche consommée |
+| Contenu de Films (une affiche) | — | focus sur « Films », pas sur « Accueil » |
+| Feuille « Ajouter à une liste » | fermée, focus rendu au signet ; flèches piégées avant | — |
+| Dialogue « Relancer la détection » ouvert depuis un menu | fermé, focus rendu au crayon ; flèches piégées avant | — |
+| Fiche (série, film) | dépilée, focus rendu à « Plus d'infos » | dépilée, focus rendu à l'affiche d'origine |
+| En-tête, onglet Accueil | l'app passe à l'écran d'accueil de l'Apple TV | — |
+| En-tête, onglet Films | l'app passe à l'écran d'accueil de l'Apple TV | touche non consommée |
+
+**Constat sur le banc, corrigé.** `TvNavHarness.sendKey` livrait `goBack` à `HardwareKeyboard` seul,
+que le `FocusManager` n'écoute pas : les tests de `goBack` passaient sans que la touche arrive nulle
+part. Livrée pour de vrai, elle a montré un second jeu de touches Retour sous dpad : `TvNavRoot`
+reprenait celles de l'ancien `tvRemoteShortcuts`, réglées sur `AppPlatform.isAndroid` et non sur la
+liste d'`OnyxDpad`. Sur l'hôte de test, `goBack` y fermait un dialogue Android avant que `popRoute`
+ne dépile la page dessous. `TvNavRoot` ne garde plus que OK et A, et la liste d'`OnyxDpad`.
+
+**Guard test.** `no_parallel_focus_system_test` gagne « un seul Retour : TvBack ». Il recense les
+`PopScope`, `NavigatorPopHandler` et touches Retour lues à la main hors de `lib/tv/nav/`. Chaque
+entrée de la liste dit pourquoi : `TvBack` atteint le `PopScope` par `maybePop`, ou la touche passe
+par `TvBack.claimKey`, ou c'est l'ancien système. La liste ne fait que rétrécir. `tv_back_action_test`
+est porté sur le banc et tourne dans les deux modes. La classe `TvBackAction` reste, l'ancien
+système la monte encore.
+
 ## Conséquences
 
 - Phase 1 : aucun changement visible. `TvFocusable` est réexporté tel quel par
@@ -326,6 +409,10 @@ son comportement. À décider.
 - Phase 4 : sans drapeau, aucun changement visible ; avec `ONYX_TV_NAV=dpad`, les champs texte
   s'ouvrent à OK et se quittent par les flèches, et webOS n'installe plus `WebTvFieldExit`. Le
   guard test ne grandit pas : `web_tv_field_exit.dart` y reste (Android TV, Apple TV).
+- Phase 5 : sans drapeau, aucun changement visible ; avec `ONYX_TV_NAV=dpad`, Retour ne retient
+  plus jamais Menu à la racine (plus de confirmation avant de quitter, plus de retour à l'accueil
+  depuis un autre onglet), et un Menu reçu en touche et en `popRoute` ne défait qu'une couche, lecteur
+  compris. Reste à mesurer sur vraie Apple TV : la voie par laquelle Menu arrive (rapport §5.1).
 - Reste ouvert, et à écrire ici : les mesures de la recette sur machine réelle (statut), les critères
   du plan §1 mesurés en phase 8, et le retrait du drapeau (avec lui `TvFocusGuard`,
   `TvCardDirections.legacy` et `TvSlideEdges`).

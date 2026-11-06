@@ -1,6 +1,6 @@
 # Refonte de la navigation TV sur dpad 3.3.0 — plan de migration
 
-- **Statut :** plan, décision proposée par l'ADR-0110. Phase 1 faite (fondations non montées), phases 2, 3 et 4 faites derrière le drapeau `ONYX_TV_NAV` (défaut `legacy`), qui reste jusqu'à la recette sur vraie Apple TV ; aucune n'est essayée sur une vraie Apple TV.
+- **Statut :** plan, décision proposée par l'ADR-0110. Phase 1 faite (fondations non montées), phases 2 à 5 faites derrière le drapeau `ONYX_TV_NAV` (défaut `legacy`), qui reste jusqu'à la recette sur vraie Apple TV ; aucune n'est essayée sur une vraie Apple TV.
 - **Date :** 2026-11-06
 - **Branche d'essai :** `spike/dpad-tvos` (banc d'essai `app/lib/spike/dpad_spike_main.dart`, supprimé en fin de phase 1).
 - **Prolonge / remplace :** remplace en pratique le mécanisme de l'ADR-0109 (entrées de zone) ; garde l'ADR-0008 (focus toujours visible), l'ADR-0039 (un défilement par pas, force du geste) et l'ADR-0108 (garde-fou du pont d'accessibilité tvOS).
@@ -337,6 +337,26 @@ Reste : essai sur Android TV, webOS et vraie Apple TV.
 - `tv_back_action_test` porté ou supprimé avec la classe ; nouveau test
   table-driven « état → effet du Retour » par plateforme.
 
+**Faite** (ADR-0110, « Phase 5 »). Le drapeau reste. Sous dpad, `TvBack` suit
+l'ordre ci-dessus : `maybePop` du navigateur racine pour 1 et 2 (sur
+téléviseur, la coquille n'a pas de navigateur imbriqué), puis les marches des
+écrans (`TvBackStep`, celle de la coquille dans `ShellTvBack`), puis le
+système. **Sur l'en-tête de n'importe quel onglet, Retour est rendu au
+système**, comme la barre d'onglets de tvOS ; plus de retour à l'accueil
+d'abord, plus de « appuyez de nouveau ». Une touche que dpad laisse passer (champ
+focalisé) va à `TvBack` par `TvBackKeyAction`, avec la même liste de touches
+qu'`OnyxDpad`. Les trois lectures de touche du lecteur passent par
+`TvBack.claimKey`, pour qu'un Menu reçu en touche et en `popRoute` ne défasse
+qu'une couche. Tests : `tv_back_rules_test` (table par plateforme et par voie,
+Menu en `popRoute`, en Échap ou les deux), `tv_modal_focus_test` (focus piégé
+puis rendu, par mécanisme et sur les dialogues partagés),
+`tv_back_action_test` porté dans les deux modes, guard test « un seul
+Retour ». Le banc livre enfin `goBack` au `FocusManager`, ce qui a mis au jour un
+second jeu de touches Retour dans `TvNavRoot`, retiré. Vu au simulateur Apple TV
+(`popRoute` rejoué, Échap injecté) : contenu, feuille, dialogue, fiche,
+en-tête de l'accueil et de Films. Reste : la voie de Menu sur vraie Apple TV,
+le Retour d'Android TV et de webOS sur machine.
+
 ### Phase 6 — Apple TV : le pont du trackpad
 
 - `TvArrowGate` reçoit chaque flèche avant dpad et choisit : laisser passer
@@ -477,5 +497,6 @@ continuer ; inscrites dans l'ADR-0110.
    (`restore`), comme les apps TV ; sans mémoire, l'élément marqué `entry`,
    sinon le plus proche (C8).
 5. **Menu dans le contenu d'un onglet** : remonter d'abord à l'en-tête
-   (convention tvOS). Implémenté en phase 5, pas avant.
+   (convention tvOS). Implémenté en phase 5 ; depuis l'en-tête, quel que soit
+   l'onglet, Retour est rendu au système (ADR-0110, « Phase 5 »).
 6. **Lecture/Pause sur une affiche** hors du lecteur : rien pour l'instant.
