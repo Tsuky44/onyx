@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../tv/tv_focus_memory.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../utils/responsive.dart';
 import 'detail_metadata.dart';
 import 'poster_card.dart';
@@ -33,8 +33,10 @@ class PosterRail extends StatelessWidget {
               EdgeInsets.fromLTRB(pad, 8, pad, 16 - PosterCard.liftHeadroom),
           child: Text(title, style: detailSectionTitleStyle(context)),
         ),
-        // Même mémoire que les rangées de l'accueil — voir [TvFocusMemory].
-        TvFocusMemory(
+        // Même mémoire que les rangées de l'accueil, le temps de la fiche :
+        // sans clé, elle ne passe pas d'une fiche à l'autre — voir
+        // [TvRegion.id].
+        TvRegion.rail(
           child: SizedBox(
             height: cardWidth / AppLayout.posterOnlyAspectRatio +
                 PosterCard.liftHeadroom,

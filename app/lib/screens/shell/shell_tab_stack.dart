@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../../tv/tv_focus_memory.dart';
+import '../../tv/nav/tv_region.dart';
 
 /// Les onglets principaux, tous gardés vivants, un seul à l'écran.
 ///
@@ -65,9 +65,14 @@ class _ShellTabStackState extends State<ShellTabStack> {
                 excluding: position != index,
                 // Redescendre de l'en-tête ramène là où l'on était dans cet
                 // onglet, et en haut de la page la première fois — voir
-                // [TvFocusMemory].
+                // [TvRegion.entersAtTop]. Une page se parcourt en colonne :
+                // une liste, pas une rangée.
                 child: mounted.contains(id)
-                    ? TvFocusMemory(entersAtTop: true, child: tabs[id]!)
+                    ? TvRegion.list(
+                        id: 'shell/$id',
+                        entersAtTop: true,
+                        child: tabs[id]!,
+                      )
                     : const SizedBox.shrink(),
               ),
             ),

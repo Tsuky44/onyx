@@ -6,7 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../tv/tv_focus.dart';
-import '../../tv/tv_focus_memory.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../utils/poster_url.dart';
 import '../../utils/responsive.dart';
 import 'app_network_image.dart';
@@ -48,8 +48,8 @@ class CastSection extends StatelessWidget {
           child: Text(tr('Casting'), style: detailSectionTitleStyle(context)),
         ),
         // La rangée se souvient de la personne sur laquelle la télécommande
-        // était — voir [TvFocusMemory].
-        TvFocusMemory(
+        // était, le temps de la fiche — voir [TvRegion.id].
+        TvRegion.rail(
           child: SizedBox(
             height: _rowHeight,
             child: ListView.separated(

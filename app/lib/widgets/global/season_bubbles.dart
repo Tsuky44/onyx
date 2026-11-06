@@ -5,7 +5,7 @@ import '../../theme/app_icons.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_type.dart';
 import '../../tv/tv_focus.dart';
-import '../../tv/tv_focus_memory.dart';
+import '../../tv/nav/tv_region.dart';
 import 'app_network_image.dart';
 import 'season_liquid.dart';
 import 'season_progress_ring.dart';
@@ -287,8 +287,9 @@ class _SeasonBubbleRowState extends State<SeasonBubbleRow>
   Widget build(BuildContext context) {
     final entries = widget.entries;
     final wrap = widget.wrap;
-    // La rangée se souvient de la bulle où était la télécommande.
-    return TvFocusMemory(
+    // La rangée se souvient de la bulle où était la télécommande, le temps de
+    // la fiche — voir [TvRegion.id].
+    return TvRegion.rail(
       child: SingleChildScrollView(
         controller: _scroll,
         scrollDirection: Axis.horizontal,

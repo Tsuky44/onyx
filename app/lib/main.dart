@@ -44,6 +44,8 @@ import 'tv/tv_focus_guard.dart';
 import 'tv/tv_focus_entry.dart';
 import 'tv/tv_key_repeat.dart';
 import 'tv/tv_mode.dart';
+import 'tv/nav/tv_nav_engine.dart';
+import 'tv/nav/tv_nav_root.dart';
 import 'tv/tv_pairing_link.dart';
 import 'navigation/media_link.dart';
 import 'navigation/play_link.dart';
@@ -479,6 +481,9 @@ class OnyxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Le moteur de navigation au D-pad, choisi à la compilation et lu une
+    // fois : dpad (`ONYX_TV_NAV=dpad`) ou l'ancien système. Voir ADR-0110.
+    final dpad = TvNavEngine.current == TvNavEngine.dpad;
     // One listener at the root republishes the mode through the tree, so a
     // toggle in the settings takes effect everywhere at once instead of on the
     // next cold start.
@@ -492,63 +497,65 @@ class OnyxApp extends StatelessWidget {
             builder: (context, isLite, child) =>
                 LiteScope(isLite: isLite, child: child!),
             // Le focus est le seul moyen d'agir avec une télécommande : s'il se
-            // perd, l'app a l'air gelée. Voir [TvFocusGuard].
-            child: TvFocusGuard(
+            // perd, l'app a l'air gelée. Voir [TvFocusGuard]. Sous dpad, c'est
+            // la restauration de dpad qui tient ce rôle (ADR-0110).
+            child: _focusSafetyNet(
+              dpad: dpad,
               child: SearchOverlayScope(
                 routeObserver: searchRouteObserver,
                 navigatorKey: rootNavigatorKey,
-                child: MaterialApp(
-                  navigatorKey: rootNavigatorKey,
-                  title: 'Onyx',
-                  debugShowCheckedModeBanner: false,
-                  // Sur un téléviseur, chaque page est mise en page sur une
-                  // largeur fixe puis mise à l'échelle de l'écran, pour que l'app
-                  // ait la même taille quelle que soit la densité annoncée —
-                  // voir [TvUiScale]. Le lecteur n'est pas concerné.
-                  theme: isTv
-                      ? AppTheme.dark.copyWith(
-                          popupMenuTheme: AppTheme.popupMenuThemeScaled(
-                            TvUiScale.factorFor(
-                                View.of(context).physicalSize.width /
-                                    View.of(context).devicePixelRatio),
-                          ),
-                          pageTransitionsTheme: PageTransitionsTheme(
-                            builders: <TargetPlatform, PageTransitionsBuilder>{
-                              for (final platform in TargetPlatform.values)
-                                platform:
-                                    const TvScaledPageTransitionsBuilder(),
-                            },
-                          ),
-                        )
-                      : AppTheme.dark,
-                  scrollBehavior: AppScrollBehavior(),
-                  navigatorObservers: [searchRouteObserver],
-                  // The D-pad's centre button and a controller's A, folded into the
-                  // bindings Flutter already has for Enter. Everything that was
-                  // keyboard-activatable becomes remote-activatable, app-wide,
-                  // without a single widget knowing about it.
-                  shortcuts: <ShortcutActivator, Intent>{
-                    ...WidgetsApp.defaultShortcuts,
-                    ...tvSelectShortcuts,
-                  },
-                  // Les flèches maintenues sont régulées, sans quoi le focus
-                  // dépasse les cartes qu'une rangée n'a pas encore construites.
-                  actions: <Type, Action<Intent>>{
-                    ...WidgetsApp.defaultActions,
-                    DirectionalFocusIntent: TvDirectionalFocusAction(),
-                    // Retour à la télécommande hors Android — voir [TvBackAction].
-                    TvBackIntent: TvBackAction(),
-                  },
-                  builder: (context, child) {
-                    // Au-dessus du Navigator, qui hérite de cette politique : un
-                    // seul défilement par pas de télécommande, animé, au lieu
-                    // d'un saut suivi d'une animation (voir [TvFocusScroll]).
-                    // La politique ne décide pas où le focus entre dans une
-                    // zone : mémoire d'une rangée, onglet de l'en-tête, chacune
-                    // répond pour elle-même (voir [TvFocusEntries]).
-                    return FocusTraversalGroup(
-                      policy: TvTraversalPolicy(),
-                      child: Listener(
+                child: _aboveApp(
+                  dpad: dpad,
+                  child: MaterialApp(
+                    navigatorKey: rootNavigatorKey,
+                    title: 'Onyx',
+                    debugShowCheckedModeBanner: false,
+                    // Sur un téléviseur, chaque page est mise en page sur une
+                    // largeur fixe puis mise à l'échelle de l'écran, pour que l'app
+                    // ait la même taille quelle que soit la densité annoncée —
+                    // voir [TvUiScale]. Le lecteur n'est pas concerné.
+                    theme: isTv
+                        ? AppTheme.dark.copyWith(
+                            popupMenuTheme: AppTheme.popupMenuThemeScaled(
+                              TvUiScale.factorFor(
+                                  View.of(context).physicalSize.width /
+                                      View.of(context).devicePixelRatio),
+                            ),
+                            pageTransitionsTheme: PageTransitionsTheme(
+                              builders: <TargetPlatform,
+                                  PageTransitionsBuilder>{
+                                for (final platform in TargetPlatform.values)
+                                  platform:
+                                      const TvScaledPageTransitionsBuilder(),
+                              },
+                            ),
+                          )
+                        : AppTheme.dark,
+                    scrollBehavior: AppScrollBehavior(),
+                    navigatorObservers: [searchRouteObserver],
+                    // The D-pad's centre button and a controller's A, folded into the
+                    // bindings Flutter already has for Enter. Everything that was
+                    // keyboard-activatable becomes remote-activatable, app-wide,
+                    // without a single widget knowing about it.
+                    shortcuts: dpad
+                        ? TvNavRoot.shortcuts
+                        : <ShortcutActivator, Intent>{
+                            ...WidgetsApp.defaultShortcuts,
+                            ...tvSelectShortcuts,
+                          },
+                    // Les flèches maintenues sont régulées, sans quoi le focus
+                    // dépasse les cartes qu'une rangée n'a pas encore construites.
+                    actions: dpad
+                        ? TvNavRoot.actions
+                        : <Type, Action<Intent>>{
+                            ...WidgetsApp.defaultActions,
+                            DirectionalFocusIntent: TvDirectionalFocusAction(),
+                            // Retour à la télécommande hors Android — voir
+                            // [TvBackAction].
+                            TvBackIntent: TvBackAction(),
+                          },
+                    builder: (context, child) {
+                      final content = Listener(
                         behavior: HitTestBehavior.translucent,
                         onPointerDown: _handleMouseBackButton,
                         child: Column(
@@ -574,39 +581,55 @@ class OnyxApp extends StatelessWidget {
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
-                  home: Consumer<AuthProvider>(
-                    builder: (context, authProvider, _) {
-                      if (authProvider.isInitializing) {
-                        return const SplashScreen();
+                      );
+                      if (dpad) {
+                        return TvNavRoot.belowApp(
+                          profileKey: _navProfileKey(context),
+                          child: content,
+                        );
                       }
-                      // Le serveur principal n'a pas répondu et il y a un
-                      // ailleurs : l'app demande où aller plutôt que de se
-                      // rabattre en silence sur le cache.
-                      if (authProvider.needsServerChoice) {
-                        return const ServerChoiceScreen();
-                      }
-                      // Plusieurs personnes sur ce serveur : la session attend
-                      // de savoir laquelle ouvrir (ADR-0078).
-                      if (authProvider.needsUserChoice) {
-                        return const UserChoiceScreen(atStartup: true);
-                      }
-                      if (!authProvider.isAuthenticated) {
-                        // A television gets the QR pairing instead of a password
-                        // form. The form is still reachable from it, for the first
-                        // account on a server and for anyone without a phone.
-                        //
-                        // Unless the TV cannot listen for the phone — the page
-                        // an LG television opens (ADR-0076): its login screen
-                        // offers the server pairing QR instead (ADR-0020).
-                        return isTv && TvLinkHost.isSupported
-                            ? const TvLoginScreen()
-                            : const LoginScreen();
-                      }
-                      return const MainShell();
+                      // Au-dessus du Navigator, qui hérite de cette politique : un
+                      // seul défilement par pas de télécommande, animé, au lieu
+                      // d'un saut suivi d'une animation (voir [TvFocusScroll]).
+                      // La politique ne décide pas où le focus entre dans une
+                      // zone : mémoire d'une rangée, onglet de l'en-tête, chacune
+                      // répond pour elle-même (voir [TvFocusEntries]).
+                      return FocusTraversalGroup(
+                        policy: TvTraversalPolicy(),
+                        child: content,
+                      );
                     },
+                    home: Consumer<AuthProvider>(
+                      builder: (context, authProvider, _) {
+                        if (authProvider.isInitializing) {
+                          return const SplashScreen();
+                        }
+                        // Le serveur principal n'a pas répondu et il y a un
+                        // ailleurs : l'app demande où aller plutôt que de se
+                        // rabattre en silence sur le cache.
+                        if (authProvider.needsServerChoice) {
+                          return const ServerChoiceScreen();
+                        }
+                        // Plusieurs personnes sur ce serveur : la session attend
+                        // de savoir laquelle ouvrir (ADR-0078).
+                        if (authProvider.needsUserChoice) {
+                          return const UserChoiceScreen(atStartup: true);
+                        }
+                        if (!authProvider.isAuthenticated) {
+                          // A television gets the QR pairing instead of a password
+                          // form. The form is still reachable from it, for the first
+                          // account on a server and for anyone without a phone.
+                          //
+                          // Unless the TV cannot listen for the phone — the page
+                          // an LG television opens (ADR-0076): its login screen
+                          // offers the server pairing QR instead (ADR-0020).
+                          return isTv && TvLinkHost.isSupported
+                              ? const TvLoginScreen()
+                              : const LoginScreen();
+                        }
+                        return const MainShell();
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -616,6 +639,26 @@ class OnyxApp extends StatelessWidget {
       },
     );
   }
+
+  /// Le garde-fou du focus de l'ancien système. Sous dpad, la restauration de
+  /// dpad le remplace : deux filets qui reposent chacun le focus, c'est deux
+  /// `requestFocus` pour une perte (ADR-0110, constat N5).
+  static Widget _focusSafetyNet({required bool dpad, required Widget child}) =>
+      dpad ? child : TvFocusGuard(child: child);
+
+  /// Sous dpad, le Retour se décide au-dessus de `MaterialApp` ([TvNavRoot]).
+  static Widget _aboveApp({required bool dpad, required Widget child}) => dpad
+      ? TvNavRoot.aboveApp(navigatorKey: rootNavigatorKey, child: child)
+      : child;
+
+  /// Qui navigue, pour ranger la mémoire des zones de dpad sous son nom
+  /// (constat C7) : le compte du serveur ouvert et la personne choisie.
+  static String? _navProfileKey(BuildContext context) =>
+      context.select<AuthProvider, String?>((auth) {
+        final server = auth.activeServer?.id;
+        final user = auth.currentUser?.id;
+        return server == null || user == null ? null : '$server:$user';
+      });
 }
 
 class SplashScreen extends StatelessWidget {

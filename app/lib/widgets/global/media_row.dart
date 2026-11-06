@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../theme/app_colors.dart';
-import '../../tv/tv_focus_memory.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../utils/responsive.dart';
 import 'continue_watching_card.dart';
 import 'media_card.dart';
@@ -98,11 +98,17 @@ class MediaRow extends StatelessWidget {
         // est reprise ici, pour que l'écart visible sous le titre ne change pas.
         const SizedBox(height: 14 - PosterCard.liftHeadroom),
         // Revenir sur cette rangée ramène à la carte où l'on était — voir
-        // [TvFocusMemory].
-        TvFocusMemory(
+        // [TvRegion]. Le titre la nomme : l'accueil n'a pas deux rangées du
+        // même nom, et la mémoire la retrouve après un rechargement.
+        TvRegion.rail(
+          id: 'home/$title',
           child: SizedBox(
             height: rowHeight,
             child: ListView.builder(
+              // Borné à un écran de part et d'autre (la valeur d'`AppLayout`,
+              // qui précharge les affiches) : chaque flèche de dpad parcourt
+              // toutes les cartes construites (constat C5, 1,7 à 4,3 ms au
+              // simulateur jusqu'à 120 cartes).
               scrollCacheExtent: AppLayout.imageCacheExtent(context),
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.only(
@@ -114,6 +120,8 @@ class MediaRow extends StatelessWidget {
               itemBuilder: (context, index) {
                 final item = items[index];
                 return Padding(
+                  // Une carte, un média (constat C7) : voir [TvRegion.itemKey].
+                  key: TvRegion.itemKey(context, _mediaIdOf(item)),
                   padding:
                       EdgeInsets.only(right: index < items.length - 1 ? 12 : 0),
                   child: isContinueWatching
@@ -149,4 +157,8 @@ class MediaRow extends StatelessWidget {
       ],
     );
   }
+
+  /// L'identifiant du média d'une carte, qu'elle soit à reprendre ou non.
+  static int _mediaIdOf(dynamic item) =>
+      item is HomeMediaItem ? item.media.id : (item as Media).id;
 }

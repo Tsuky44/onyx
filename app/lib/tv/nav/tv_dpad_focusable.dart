@@ -10,8 +10,8 @@ import 'tv_nav_theme.dart';
 /// `TvFocusable` posé sur dpad : même API, même anneau, mais c'est dpad qui
 /// décide où va le focus, quand la page défile et ce que vaut OK.
 ///
-/// Écrit et testé en phase 1, branché en phase 2 (ADR-0110) : d'ici là les
-/// écrans gardent l'ancien `TvFocusable` (`tv/nav/tv_focusable.dart`).
+/// Les écrans ne l'emploient pas directement : `TvFocusable`
+/// (`tv/nav/tv_focusable.dart`) le monte sous `OnyxDpad` (ADR-0110).
 ///
 /// Ce qui change pour qui l'emploie :
 ///
@@ -34,6 +34,7 @@ class TvDpadFocusable extends StatefulWidget {
     this.focusNode,
     this.autofocus = false,
     this.enabled = true,
+    this.entry = false,
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
     this.focusScale = 1.05,
     this.scrollAlignment = 0.5,
@@ -55,6 +56,9 @@ class TvDpadFocusable extends StatefulWidget {
 
   /// Faux pour une carte présente mais inactive : visible et inatteignable.
   final bool enabled;
+
+  /// L'entrée de sa zone quand elle n'a rien en mémoire (constat C8).
+  final bool entry;
 
   /// Suit l'arrondi de l'enfant, pour que l'anneau épouse l'affiche.
   final BorderRadius borderRadius;
@@ -134,13 +138,18 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
       // le clavier et dessine un anneau que personne n'a demandé.
       autofocus: widget.autofocus && widget.enabled && isTv,
       enabled: widget.enabled,
+      entry: widget.entry,
       onSelect: widget.onSelect,
       onLongSelect: isTv && widget.enabled ? widget.onContextMenu : null,
       onFocusChange: widget.onFocusChange,
       scrollAlignment: TvNavTheme.alignmentFor(widget.scrollAlignment),
       tapToSelect: false,
       builder: (context, state, child) => _TvFocusRing(
-        focused: state.focused,
+        // dpad ne lit pas le nœud qu'on lui donne : il attend un changement.
+        // Le menu du lecteur passe un même nœud, déjà focalisé, d'une rangée
+        // à l'autre ; sans cette lecture, la rangée qui l'hérite n'aurait pas
+        // d'anneau (comme l'ancien `TvFocusable`, voir son `initState`).
+        focused: state.focused || _node.hasFocus,
         isTv: isTv,
         borderRadius: widget.borderRadius,
         focusScale: widget.focusScale,

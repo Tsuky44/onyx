@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/lite_mode.dart';
+import '../../tv/nav/onyx_dpad.dart' show TvNavScope;
+import '../../tv/nav/tv_focusable.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/responsive.dart';
@@ -336,8 +338,31 @@ class _GlassNavTabState extends State<GlassNavTab> {
   bool _focused = false;
   bool _hovered = false;
 
+  void _handleFocusChange(bool focused) {
+    if (_focused != focused) setState(() => _focused = focused);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Sous dpad, c'est dpad qui tient le focus de l'onglet, pour en faire
+    // l'entrée de l'en-tête quand il est affiché (ADR-0110) : l'`InkWell`
+    // ne garde que le toucher et le survol. L'onglet dessine toujours son
+    // propre focus, d'où ni anneau ni agrandissement de [TvFocusable].
+    final dpad = TvNavScope.isActive(context);
+    final tab = _buildTab(context, ownsFocus: !dpad);
+    if (!dpad) return tab;
+    return TvFocusable(
+      focusNode: widget.focusNode,
+      entry: widget.selected,
+      onSelect: widget.onTap,
+      onFocusChange: _handleFocusChange,
+      showRing: false,
+      focusScale: 1.0,
+      child: tab,
+    );
+  }
+
+  Widget _buildTab(BuildContext context, {required bool ownsFocus}) {
     final selected = widget.selected;
     // Le voile de focus de Material (10 % de blanc) ne se lit pas depuis un
     // canapé : sur un téléviseur l'onglet visé porte l'anneau de l'app.
@@ -354,10 +379,9 @@ class _GlassNavTabState extends State<GlassNavTab> {
           color: Colors.transparent,
           child: InkWell(
             onTap: widget.onTap,
-            focusNode: widget.focusNode,
-            onFocusChange: (focused) {
-              if (_focused != focused) setState(() => _focused = focused);
-            },
+            focusNode: ownsFocus ? widget.focusNode : null,
+            canRequestFocus: ownsFocus,
+            onFocusChange: ownsFocus ? _handleFocusChange : null,
             onHover: (hovered) {
               if (_hovered != hovered) setState(() => _hovered = hovered);
             },

@@ -58,6 +58,12 @@ const List<String> _home = <String>['lib/tv/nav/', 'lib/tv/input/'];
 /// L'existant au début de la migration (phase 1), et ce qu'il reste à
 /// migrer : fichier → construit → nombre d'occurrences.
 ///
+/// Phase 2 : les rangées du shell (`shell_tab_stack`, `media_row`,
+/// `poster_rail`, `detail_cast_section`, `season_bubbles`) sont passées à
+/// `TvRegion`. `main.dart` et `main_shell.dart` gardent leurs entrées tant que
+/// le drapeau `ONYX_TV_NAV` existe : la politique de parcours et l'action des
+/// flèches de l'ancien système y sont encore montées quand il vaut `legacy`.
+///
 /// **La liste ne fait que rétrécir.** Un fichier qui y figure n'en gagne pas
 /// une de plus ; un fichier qui en perd voit son plafond baissé dans le même
 /// changement (le second test l'exige), pour qu'il ne puisse plus y remonter.
@@ -110,9 +116,6 @@ const Map<String, Map<String, int>> _legacy = {
     'TraversalPolicy': 2,
     'TvFocusLegacy': 2,
   },
-  'lib/screens/shell/shell_tab_stack.dart': {
-    'TvFocusLegacy': 1,
-  },
   'lib/tv/tv_focus.dart': {
     'DirectionalFocus': 4,
     'KeyboardHandler': 1,
@@ -156,9 +159,6 @@ const Map<String, Map<String, int>> _legacy = {
   'lib/widgets/global/app_slider.dart': {
     'onKeyEvent': 1,
   },
-  'lib/widgets/global/detail_cast_section.dart': {
-    'TvFocusLegacy': 1,
-  },
   'lib/widgets/global/episode_tile.dart': {
     'onKeyEvent': 1,
   },
@@ -168,20 +168,13 @@ const Map<String, Map<String, int>> _legacy = {
   'lib/widgets/global/interface_tour/tour_anchor.dart': {
     'ensureVisible': 1,
   },
-  'lib/widgets/global/media_row.dart': {
-    'TvFocusLegacy': 1,
-  },
   'lib/widgets/global/poster_grid_zoom_region.dart': {
     'KeyboardHandler': 1,
-  },
-  'lib/widgets/global/poster_rail.dart': {
-    'TvFocusLegacy': 1,
   },
   'lib/widgets/global/remote_playback_banner.dart': {
     'KeyboardHandler': 1,
   },
   'lib/widgets/global/season_bubbles.dart': {
-    'TvFocusLegacy': 1,
     'ensureVisible': 1,
   },
 };

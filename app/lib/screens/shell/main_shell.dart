@@ -26,6 +26,8 @@ import '../../desktop_window.dart';
 import '../../navigation/media_link.dart';
 import '../../navigation/play_link.dart';
 import '../../navigation/shell_navigator.dart';
+import '../../tv/nav/onyx_dpad.dart' show TvNavScope;
+import '../../tv/nav/tv_region.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import '../../tv/tv_focus_entry.dart';
 import '../../tv/tv_mode.dart';
@@ -470,6 +472,18 @@ class _MainShellState extends State<MainShell> {
     return selected;
   }
 
+  /// La zone de l'en-tête, selon le système de navigation monté (ADR-0110).
+  ///
+  /// Sous dpad, une zone d'onglets : on y entre par l'onglet affiché
+  /// (`GlassNavTab` le marque comme entrée), et gauche/droite s'arrêtent à ses
+  /// bords. Avec l'ancien système, un groupe à lui : l'en-tête a son propre
+  /// ordre de parcours et ne subit plus celui du contenu dessous, et
+  /// [_enterHeader] choisit l'onglet d'entrée. Les deux ne cohabitent pas :
+  /// la politique du groupe déciderait des flèches à la place de dpad.
+  Widget _headerZone(Widget header) => TvNavScope.isActive(context)
+      ? TvRegion.tabs(id: 'shell/header', child: header)
+      : FocusTraversalGroup(policy: _headerPolicy, child: header);
+
   void _focusTab(String tab) {
     // Un onglet absent de l'en-tête (pas de droit de demande, pas de
     // téléchargements sur cet appareil, bibliothèque retirée) n'a pas de nœud
@@ -596,11 +610,8 @@ class _MainShellState extends State<MainShell> {
                 focusNode: _headerNode,
                 canRequestFocus: false,
                 skipTraversal: true,
-                // Un groupe à lui : l'en-tête a son propre ordre de parcours
-                // et ne subit plus celui du contenu dessous.
-                child: FocusTraversalGroup(
-                  policy: _headerPolicy,
-                  child: ShellDesktopHeader(
+                child: _headerZone(
+                  ShellDesktopHeader(
                     selected: selectedTab,
                     onTabSelected: _selectTab,
                     libraries: libraries,

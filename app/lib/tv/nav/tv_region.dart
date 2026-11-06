@@ -27,10 +27,9 @@ enum TvRegionKind {
 /// l'endroit où l'on était (ADR-0110).
 ///
 /// C'est, avec `TvFocusable`, le seul widget de navigation que les écrans
-/// emploient. Sous un [OnyxDpad], la zone est une `DpadRegion` ; ailleurs,
-/// elle délègue à l'ancien système (`TvFocusMemory`, `TvFocusPane`), à
-/// l'identique. En phase 1 de la refonte, `OnyxDpad` n'est pas monté : toutes
-/// les zones de l'app suivent donc encore l'ancien système.
+/// emploient. Sous un [OnyxDpad] (compilation `ONYX_TV_NAV=dpad`), la zone est
+/// une `DpadRegion` ; ailleurs, elle délègue à l'ancien système
+/// (`TvFocusMemory`, `TvFocusPane`), à l'identique.
 ///
 /// Sous dpad, chaque forme règle l'entrée et les bords :
 ///
@@ -42,66 +41,89 @@ enum TvRegionKind {
 /// | [tabs] | onglet marqué `entry` (l'onglet affiché) | reste | sort |
 /// | [pane] | mémoire | sort (vers le volet voisin) | sort |
 ///
-/// « Mémoire » sans souvenir retombe sur l'élément marqué `entry`, puis sur
-/// le plus proche (constat C8).
+/// « Mémoire » sans souvenir retombe sur l'élément marqué `entry`
+/// (`TvFocusable.entry`), puis sur le plus proche (constat C8).
+///
+/// Sous dpad, les zones ne s'emboîtent pas : un élément appartient à la zone
+/// la plus proche au-dessus de lui, et c'est elle seule qui décide de l'entrée.
+/// L'ancien système, lui, faisait parler la zone la plus extérieure d'abord
+/// (un onglet avant sa rangée).
 class TvRegion extends StatelessWidget {
   const TvRegion.rail({
     super.key,
-    required this.id,
+    this.id,
     required this.child,
     this.entersAtTop = false,
   }) : kind = TvRegionKind.rail;
 
   const TvRegion.grid({
     super.key,
-    required this.id,
+    this.id,
     required this.child,
     this.entersAtTop = false,
   }) : kind = TvRegionKind.grid;
 
   const TvRegion.list({
     super.key,
-    required this.id,
+    this.id,
     required this.child,
     this.entersAtTop = false,
   }) : kind = TvRegionKind.list;
 
-  const TvRegion.tabs({
-    super.key,
-    required this.id,
-    required this.child,
-  })  : kind = TvRegionKind.tabs,
+  const TvRegion.tabs({super.key, this.id, required this.child})
+      : kind = TvRegionKind.tabs,
         entersAtTop = false;
 
   /// Un volet. Avec l'ancien système, il doit vivre sous un `TvFocusPanes`.
-  const TvRegion.pane({
-    super.key,
-    required this.id,
-    required this.child,
-  })  : kind = TvRegionKind.pane,
+  const TvRegion.pane({super.key, this.id, required this.child})
+      : kind = TvRegionKind.pane,
         entersAtTop = false;
 
   final TvRegionKind kind;
 
   /// `"<écran>/<zone>"`, stable d'une visite à l'autre (`home/continue`,
   /// `settings/categories`). Sous dpad, c'est la clé de mémoire, rangée sous
-  /// le profil qui navigue (voir [OnyxDpad.memoryKeyFor]).
-  final String id;
+  /// le profil qui navigue (voir [OnyxDpad.memoryKeyFor]) : la zone retrouve
+  /// sa carte même reconstruite.
+  ///
+  /// Nul : la zone ne se souvient que tant qu'elle est montée, comme avec
+  /// l'ancien système. C'est ce que veut une zone de fiche : la mémoire de dpad
+  /// est retrouvée par position à l'écran (constat C7), et une clé partagée
+  /// par toutes les fiches poserait le focus, dans le casting d'un film, à
+  /// l'endroit où on l'avait laissé dans celui d'un autre.
+  final String? id;
 
   final Widget child;
 
   /// À la première visite, le focus entre sur le premier élément visible de
   /// la zone plutôt que sur le plus proche de celui qu'on quitte (le
-  /// `TvFocusMemory.entersAtTop` de l'ancien système). Sous dpad, c'est
-  /// l'élément marqué `entry` qui joue ce rôle.
+  /// `TvFocusMemory.entersAtTop` de l'ancien système). Sous dpad, toute zone
+  /// entre par sa mémoire, et sans mémoire par l'élément marqué
+  /// `TvFocusable.entry` (l'index 0 d'une rangée) : ce drapeau n'y change
+  /// rien (constat C8).
   final bool entersAtTop;
+
+  /// La clé d'un élément de zone qui se reconstruit sous le focus (une
+  /// rangée de l'accueil rechargée au retour d'un film), sous dpad.
+  ///
+  /// La carte d'un autre média est alors une autre carte : son nœud n'hérite
+  /// pas du focus ni de la mémoire de celle qui était là, et dpad, qui voit le
+  /// nœud focalisé disparaître, pose le focus sur la carte arrivée au même
+  /// endroit de l'écran (constat C7). Pas de `findChildIndexCallback` : le
+  /// nœud suivrait sa carte déplacée hors de l'écran, et le focus avec lui.
+  ///
+  /// Nulle avec l'ancien système : son garde-fou, devant une carte détruite,
+  /// renvoie le focus en haut de la page.
+  static Key? itemKey(BuildContext context, Object id) =>
+      TvNavScope.isActive(context) ? ValueKey<Object>(id) : null;
 
   @override
   Widget build(BuildContext context) {
     if (!TvNavScope.isActive(context)) return _legacy();
+    final id = this.id;
     return DpadRegion(
-      memoryKey: OnyxDpad.memoryKeyFor(context, id),
-      debugLabel: id,
+      memoryKey: id == null ? null : OnyxDpad.memoryKeyFor(context, id),
+      debugLabel: id ?? kind.name,
       enter: kind == TvRegionKind.tabs
           ? DpadEnterBehavior.entry
           : DpadEnterBehavior.restore,

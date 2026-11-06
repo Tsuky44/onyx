@@ -9,6 +9,8 @@ import 'tv_focus_memory.dart';
 import 'tv_focus_scroll.dart';
 import 'tv_mode.dart';
 
+export 'nav/tv_focusable.dart' show TvFocusable;
+
 /// Keys that mean "activate the thing under the cursor".
 ///
 /// A television remote sends `select` (KEYCODE_DPAD_CENTER); a game controller
@@ -65,6 +67,14 @@ bool isSelfHandledBackKey(LogicalKeyboardKey key) =>
 /// A television driven through a browser (an LG set, ADR-0076) also gets
 /// [webTvShortcuts]: see there.
 Map<ShortcutActivator, Intent> get tvSelectShortcuts =>
+    tvRemoteShortcuts(webTv: AppPlatform.isWeb && TvMode.isTv);
+
+/// [tvSelectShortcuts], avec ou sans [webTvShortcuts].
+///
+/// Sous dpad (`ONYX_TV_NAV=dpad`), les flèches et Entrée d'un téléviseur LG
+/// passent par le jeu de touches de dpad : les raccourcis directionnels du
+/// navigateur n'ont plus lieu d'être (ADR-0110).
+Map<ShortcutActivator, Intent> tvRemoteShortcuts({required bool webTv}) =>
     <ShortcutActivator, Intent>{
       const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
       const SingleActivator(LogicalKeyboardKey.gameButtonA):
@@ -75,7 +85,7 @@ Map<ShortcutActivator, Intent> get tvSelectShortcuts =>
       if (!AppPlatform.isAndroid)
         const SingleActivator(LogicalKeyboardKey.goBack): _dismissThenBack,
       const SingleActivator(LogicalKeyboardKey.gameButtonB): _dismissThenBack,
-      if (AppPlatform.isWeb && TvMode.isTv) ...webTvShortcuts,
+      if (webTv) ...webTvShortcuts,
     };
 
 /// What the D-pad means on a television, put back over the browser defaults.
@@ -130,6 +140,12 @@ class TvBackAction extends Action<TvBackIntent> {
   }
 }
 
+/// L'ancien `TvFocusable`, celui d'avant dpad (ADR-0110).
+///
+/// Les écrans n'emploient pas cette classe : ils prennent [TvFocusable]
+/// (`nav/tv_focusable.dart`), qui la monte hors de `OnyxDpad` et monte
+/// `TvDpadFocusable` dessous. Elle disparaît avec le drapeau `ONYX_TV_NAV`.
+///
 /// Makes an arbitrary widget reachable and activatable with a D-pad.
 ///
 /// The app's cards are `InkWell`s inside custom layouts: they take taps and
@@ -143,7 +159,7 @@ class TvBackAction extends Action<TvBackIntent> {
 /// highlight is warranted. Nothing about the touch path changes — the child
 /// keeps its own gesture handling, and [onSelect] is the remote's way in, not a
 /// replacement for it.
-class TvFocusable extends StatefulWidget {
+class TvLegacyFocusable extends StatefulWidget {
   final Widget child;
 
   /// Invoked on `select` / Enter / A. Usually the same callback the child's
@@ -181,7 +197,7 @@ class TvFocusable extends StatefulWidget {
 
   final ValueChanged<bool>? onFocusChange;
 
-  const TvFocusable({
+  const TvLegacyFocusable({
     super.key,
     required this.child,
     this.onSelect,
@@ -197,10 +213,10 @@ class TvFocusable extends StatefulWidget {
   });
 
   @override
-  State<TvFocusable> createState() => _TvFocusableState();
+  State<TvLegacyFocusable> createState() => _TvLegacyFocusableState();
 }
 
-class _TvFocusableState extends State<TvFocusable> {
+class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
   bool _focused = false;
 
   /// Créé quand l'appelant n'en fournit pas : la mémoire de la rangée a besoin
@@ -245,7 +261,7 @@ class _TvFocusableState extends State<TvFocusable> {
   /// Same case, one step later: the node was handed to a row that already
   /// exists. No rebuild is needed — [didUpdateWidget] is followed by [build].
   @override
-  void didUpdateWidget(TvFocusable oldWidget) {
+  void didUpdateWidget(TvLegacyFocusable oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.focusNode == oldWidget.focusNode) return;
     if (oldWidget.focusNode != null) _memory?.forget(oldWidget.focusNode!);
