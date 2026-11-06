@@ -60,8 +60,8 @@ const List<String> _home = <String>['lib/tv/nav/', 'lib/tv/input/'];
 ///
 /// Phase 2 : les rangées du shell (`shell_tab_stack`, `media_row`,
 /// `poster_rail`, `detail_cast_section`, `season_bubbles`) sont passées à
-/// `TvRegion`. `main.dart` et `main_shell.dart` gardent leurs entrées tant que
-/// le drapeau `ONYX_TV_NAV` existe : la politique de parcours et l'action des
+/// `TvRegion`. `main.dart` et `shell_header_zone.dart` gardent leurs entrées
+/// tant que le drapeau `ONYX_TV_NAV` existe : la politique de parcours et l'action des
 /// flèches de l'ancien système y sont encore montées quand il vaut `legacy`.
 ///
 /// **La liste ne fait que rétrécir.** Un fichier qui y figure n'en gagne pas
@@ -111,7 +111,9 @@ const Map<String, Map<String, int>> _legacy = {
   'lib/screens/settings/settings_screen.dart': {
     'TvFocusLegacy': 3,
   },
-  'lib/screens/shell/main_shell.dart': {
+  // Sorti de main_shell.dart en phase 2, à l'identique, pour que les cartes
+  // de navigation l'éprouvent : déplacé, pas ajouté.
+  'lib/screens/shell/shell_header_zone.dart': {
     'FocusTraversalGroup': 1,
     'TraversalPolicy': 2,
     'TvFocusLegacy': 2,

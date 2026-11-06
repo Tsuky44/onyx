@@ -1,15 +1,33 @@
+import 'package:dpad/dpad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/tv/nav/onyx_dpad.dart';
-import 'package:onyx/tv/nav/tv_back.dart';
+import 'package:onyx/tv/nav/tv_nav_engine.dart';
+import 'package:onyx/tv/nav/tv_nav_root.dart';
+import 'package:onyx/tv/tv_focus.dart';
+import 'package:onyx/tv/tv_focus_entry.dart';
+import 'package:onyx/tv/tv_focus_guard.dart';
+import 'package:onyx/tv/tv_key_repeat.dart';
 import 'package:onyx/tv/tv_mode.dart';
 
 /// Le banc commun des tests de navigation TV (plan de refonte §6.1).
 ///
-/// Il monte un écran comme l'app le fera après la phase 2 : [TvBack] au-dessus
-/// de `MaterialApp`, [OnyxDpad] dans son `builder`, sur une surface de
-/// 1920 × 1080. dpad raisonne en rectangles globaux : sur la surface de
+/// Il monte un écran comme `main.dart` monte l'app, avec l'un ou l'autre
+/// système de navigation ([TvNavEngine]) :
+///
+/// - **dpad** (défaut) : `TvBack` au-dessus de `MaterialApp`, [OnyxDpad] et
+///   `TvArrowGate` dans son `builder`, les raccourcis et actions de
+///   [TvNavRoot] — les mêmes appels que `main.dart` ;
+/// - **legacy** : l'ancien système tel que `main.dart` le monte sans le
+///   drapeau — `TvFocusGuard`, `TvTraversalPolicy`, `TvDirectionalFocusAction`,
+///   `tvSelectShortcuts`. Recopié ici : `main.dart` ne s'importe pas dans un
+///   test. Il disparaît avec le drapeau `ONYX_TV_NAV`.
+///
+/// Un test qui porte un comportement le fait tourner sur les deux
+/// ([forEachEngine]) tant que le drapeau existe.
+///
+/// La surface fait 1920 × 1080. dpad raisonne en rectangles globaux : sur la surface de
 /// 800 × 600 des tests, les voisins ne sont plus les mêmes qu'à l'écran.
 /// Les animations sont coupées (`disableAnimations`) : dpad saute au lieu de
 /// défiler, et un test ne dépend pas du nombre d'images pompées.
@@ -29,6 +47,7 @@ class TvNavHarness {
   static Future<TvNavHarness> pump(
     WidgetTester tester,
     Widget home, {
+    TvNavEngine engine = TvNavEngine.dpad,
     bool isTv = true,
     bool android = false,
     String? profileKey = 'test-profile',
@@ -45,9 +64,18 @@ class TvNavHarness {
     OnyxDpad.debugIsAndroidOverride = android;
     addTearDown(() => OnyxDpad.debugIsAndroidOverride = null);
 
+    TvKeyRepeat.debugReset();
+    addTearDown(TvKeyRepeat.debugReset);
+    // La mémoire persistante de dpad est une table statique (constat C7) :
+    // sans ce vidage, un test reprendrait la carte où le précédent s'était
+    // arrêté.
+    DpadRegionState.clearPersistentMemory();
+    addTearDown(DpadRegionState.clearPersistentMemory);
+
     final navigatorKey = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       TvNavHarnessApp(
+        engine: engine,
         navigatorKey: navigatorKey,
         profileKey: profileKey,
         navigatorObservers: navigatorObservers,
@@ -64,6 +92,14 @@ class TvNavHarness {
   static Future<void> settle(WidgetTester tester) async {
     for (var i = 0; i < 4; i++) {
       await tester.pump();
+    }
+  }
+
+  /// Déclare [body] une fois par système de navigation, dans un groupe qui
+  /// porte son nom : `legacy` et `dpad` doivent tenir la même promesse.
+  static void forEachEngine(void Function(TvNavEngine engine) body) {
+    for (final engine in TvNavEngine.values) {
+      group(engine.name, () => body(engine));
     }
   }
 
@@ -182,17 +218,19 @@ String? focusedLabelOf(FocusNode? node) {
   return text ?? node.debugLabel;
 }
 
-/// L'app du banc : [TvBack] au-dessus de `MaterialApp` (il doit voir
-/// `popRoute` avant le navigateur), [OnyxDpad] dans le `builder`.
+/// L'app du banc, montée comme `main.dart` monte la sienne : voir
+/// [TvNavHarness].
 class TvNavHarnessApp extends StatelessWidget {
   const TvNavHarnessApp({
     super.key,
+    this.engine = TvNavEngine.dpad,
     required this.navigatorKey,
     required this.home,
     this.profileKey,
     this.navigatorObservers = const <NavigatorObserver>[],
   });
 
+  final TvNavEngine engine;
   final GlobalKey<NavigatorState> navigatorKey;
   final Widget home;
   final String? profileKey;
@@ -204,24 +242,62 @@ class TvNavHarnessApp extends StatelessWidget {
       valueListenable: TvMode.enabled,
       builder: (context, isTv, _) => TvScope(
         isTv: isTv,
-        child: TvBack(
-          navigatorKey: navigatorKey,
-          child: MaterialApp(
-            navigatorKey: navigatorKey,
-            navigatorObservers: navigatorObservers,
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(disableAnimations: true),
-              child: OnyxDpad(
-                profileKey: profileKey,
-                child: child ?? const SizedBox.shrink(),
-              ),
-            ),
-            home: home,
-          ),
-        ),
+        child: switch (engine) {
+          TvNavEngine.dpad => _dpad(),
+          TvNavEngine.legacy => _legacy(),
+        },
       ),
     );
   }
+
+  /// Sans animation : dpad saute au lieu de défiler, et un test ne dépend pas
+  /// du nombre d'images pompées.
+  static Widget _still(BuildContext context, Widget child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(disableAnimations: true),
+        child: child,
+      );
+
+  Widget _dpad() => TvNavRoot.aboveApp(
+        navigatorKey: navigatorKey,
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: navigatorObservers,
+          shortcuts: TvNavRoot.shortcuts,
+          actions: TvNavRoot.actions,
+          builder: (context, child) => _still(
+            context,
+            TvNavRoot.belowApp(
+              profileKey: profileKey,
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+          home: home,
+        ),
+      );
+
+  Widget _legacy() => TvFocusGuard(
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: navigatorObservers,
+          shortcuts: <ShortcutActivator, Intent>{
+            ...WidgetsApp.defaultShortcuts,
+            ...tvSelectShortcuts,
+          },
+          actions: <Type, Action<Intent>>{
+            ...WidgetsApp.defaultActions,
+            DirectionalFocusIntent: TvDirectionalFocusAction(),
+            TvBackIntent: TvBackAction(),
+          },
+          builder: (context, child) => _still(
+            context,
+            FocusTraversalGroup(
+              policy: TvTraversalPolicy(),
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+          home: home,
+        ),
+      );
 }
 
 /// Le contenu d'une carte de test : un bloc de taille fixe qui porte son

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/shell/shell_tab_stack.dart';
+import 'package:onyx/tv/nav/tv_focusable.dart';
+
+import 'support/tv_nav_harness.dart';
 
 /// Un onglet qui dit si ses animations ont le droit de tourner.
 class _TickerProbe extends StatelessWidget {
@@ -128,5 +131,52 @@ void main() {
     final log = <String, bool>{};
     await tester.pumpWidget(_stack('library:9', log));
     expect(log, {'home': true, 'requests': false});
+  });
+
+  // Le parcours au D-pad lit l'arbre, pas l'écran : sans l'exclusion du focus,
+  // une flèche entrait dans les affiches d'un onglet que personne ne voit.
+  TvNavHarness.forEachEngine((engine) {
+    Widget tile(String label) => TvFocusable(
+          onSelect: () {},
+          child: TvTestTile(label),
+        );
+
+    Widget stack(String selected) => Column(
+          children: [
+            tile('en-tête'),
+            Expanded(
+              child: ShellTabStack(
+                selected: selected,
+                mounted: const {'home', 'requests'},
+                tabs: {
+                  'home': Align(
+                    alignment: Alignment.topLeft,
+                    child: tile('accueil'),
+                  ),
+                  'requests': Align(
+                    alignment: Alignment.topRight,
+                    child: tile('demandes'),
+                  ),
+                },
+              ),
+            ),
+          ],
+        );
+
+    testWidgets('le D-pad n’entre que dans l’onglet affiché', (tester) async {
+      final nav =
+          await TvNavHarness.pump(tester, stack('home'), engine: engine);
+      FocusManager.instance.rootScope.traversalDescendants
+          .firstWhere((node) => focusedLabelOf(node) == 'en-tête')
+          .requestFocus();
+      await TvNavHarness.settle(tester);
+
+      await nav.press(TraversalDirection.down);
+      expect(nav.focusedLabel, 'accueil');
+
+      await nav.press(TraversalDirection.down);
+      expect(nav.focusedLabel, 'accueil',
+          reason: 'rien en dessous : l’onglet caché ne compte pas');
+    });
   });
 }
