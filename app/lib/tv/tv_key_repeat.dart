@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'input/step_target.dart';
+import 'input/tv_arrow_gate.dart';
 import 'tv_focus_entry.dart';
 import 'tv_focus_panes.dart';
 import 'tv_focus_scroll.dart';
@@ -21,9 +23,8 @@ import 'tv_touchpad.dart';
 /// plus un déplacement par [repeatInterval] tant qu'elle l'est. Un appui simple
 /// n'est jamais retenu.
 abstract final class TvKeyRepeat {
-  /// Assez lent pour que la carte suivante soit construite et à l'écran, assez
-  /// rapide pour qu'une longue rangée se parcoure d'un seul geste.
-  static const Duration repeatInterval = Duration(milliseconds: 110);
+  /// La cadence de `TvArrowGate`, qui reprend ce rôle avec dpad (ADR-0110).
+  static const Duration repeatInterval = TvArrowGate.defaultRepeatInterval;
 
   static bool _installed = false;
   static bool _repeating = false;
@@ -132,7 +133,7 @@ class TvDirectionalFocusAction extends DirectionalFocusAction {
     FocusNode? target;
     for (var i = 0; i < steps; i++) {
       final from = target ?? current;
-      final onLine = nextOnLine(from, direction);
+      final onLine = StepTarget.nextOnLine(from, direction);
       final panes = TvFocusPanes.maybeOf(from);
       final next =
           panes == null ? onLine : panes.next(from, direction, onLine: onLine);
@@ -146,82 +147,5 @@ class TvDirectionalFocusAction extends DirectionalFocusAction {
           ? ScrollPositionAlignmentPolicy.keepVisibleAtStart
           : ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
     );
-  }
-
-  /// Le voisin le plus proche de [current] dans [direction], parmi ce qui
-  /// partage sa ligne — ce qui chevauche verticalement sa hauteur. Nul quand il
-  /// n'y en a pas.
-  ///
-  /// Sans voisin, la flèche entre dans [current] : une ligne de réglages
-  /// cliquable qui porte un bouton à son bord droit l'*englobe*, et ce bouton,
-  /// qui n'est « à droite » de rien, n'était atteignable d'aucun côté.
-  @visibleForTesting
-  static FocusNode? nextOnLine(
-      FocusNode current, TraversalDirection direction) {
-    final scope = current.nearestScope;
-    if (scope == null) return null;
-    final from = current.rect;
-    final right = direction == TraversalDirection.right;
-
-    final candidates = scope.traversalDescendants.where((node) {
-      if (identical(node, current) || node.context == null) return false;
-      final rect = node.rect;
-      if (rect.isEmpty) return false;
-      // Même règle que Flutter pour « à droite de » / « à gauche de ».
-      final beyond =
-          right ? rect.center.dx >= from.right : rect.center.dx <= from.left;
-      return beyond && rect.top < from.bottom && rect.bottom > from.top;
-    }).toList();
-    if (candidates.isEmpty) return _enclosedBy(current, direction);
-
-    // Ce qui défile avec l'élément d'abord : dans une rangée, la carte
-    // suivante, et pas un bouton posé à côté de la rangée.
-    final scrollable =
-        Scrollable.maybeOf(current.context!, axis: Axis.horizontal);
-    if (scrollable != null) {
-      final sameScrollable = candidates
-          .where((node) =>
-              Scrollable.maybeOf(node.context!, axis: Axis.horizontal) ==
-              scrollable)
-          .toList();
-      if (sameScrollable.isNotEmpty) {
-        candidates
-          ..clear()
-          ..addAll(sameScrollable);
-      }
-    }
-
-    double distance(FocusNode node) {
-      final rect = node.rect;
-      final dx = right ? rect.left - from.right : from.left - rect.right;
-      final dy = (rect.center.dy - from.center.dy).abs();
-      // L'écart horizontal d'abord ; à égalité, le mieux aligné.
-      return dx.abs() * 1000 + dy;
-    }
-
-    candidates.sort((a, b) => distance(a).compareTo(distance(b)));
-    return candidates.first;
-  }
-
-  /// Le premier élément focalisable contenu dans [current], du côté de
-  /// [direction] par rapport à son centre.
-  static FocusNode? _enclosedBy(
-      FocusNode current, TraversalDirection direction) {
-    final from = current.rect;
-    final right = direction == TraversalDirection.right;
-    FocusNode? best;
-    for (final node in current.traversalDescendants) {
-      if (node.context == null || node.rect.isEmpty) continue;
-      final rect = node.rect;
-      final beyond = right
-          ? rect.center.dx > from.center.dx
-          : rect.center.dx < from.center.dx;
-      if (!beyond) continue;
-      if (best == null ||
-          (right ? rect.left < best.rect.left : rect.right > best.rect.right)) {
-        best = node;
-      }
-    }
-    return best;
   }
 }

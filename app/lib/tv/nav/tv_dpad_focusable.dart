@@ -1,0 +1,221 @@
+import 'package:dpad/dpad.dart';
+import 'package:flutter/material.dart';
+
+import '../../theme/app_colors.dart';
+import '../../theme/app_motion.dart';
+import '../../theme/lite_mode.dart';
+import '../tv_mode.dart';
+import 'tv_nav_theme.dart';
+
+/// `TvFocusable` posé sur dpad : même API, même anneau, mais c'est dpad qui
+/// décide où va le focus, quand la page défile et ce que vaut OK.
+///
+/// Écrit et testé en phase 1, branché en phase 2 (ADR-0110) : d'ici là les
+/// écrans gardent l'ancien `TvFocusable` (`tv/nav/tv_focusable.dart`).
+///
+/// Ce qui change pour qui l'emploie :
+///
+/// - **l'action passe par [onSelect]** (constat N4). dpad rend l'enfant non
+///   focalisable : un bouton Material enveloppé ne reçoit plus OK, son
+///   `onPressed` n'est jamais appelé par la télécommande ;
+/// - **un appui sur OK, un [onSelect]** (constat C9) : tvOS envoie Select en
+///   `enter`, que dpad et l'`ActivateIntent` de Flutter reconnaissent tous
+///   deux, et dpad ne le compte qu'une fois ;
+/// - **le toucher ne passe pas par ici** : `tapToSelect` est coupé, l'enfant
+///   garde ses propres gestes, comme avec l'ancien `TvFocusable` ;
+/// - l'appui long (menu de la carte) se mesure entre l'appui et le relâchement
+///   ([TvNavTheme.longSelectDuration]), plus aux répétitions.
+class TvDpadFocusable extends StatefulWidget {
+  const TvDpadFocusable({
+    super.key,
+    required this.child,
+    this.onSelect,
+    this.onContextMenu,
+    this.focusNode,
+    this.autofocus = false,
+    this.enabled = true,
+    this.borderRadius = const BorderRadius.all(Radius.circular(12)),
+    this.focusScale = 1.05,
+    this.scrollAlignment = 0.5,
+    this.showRing = true,
+    this.onFocusChange,
+  });
+
+  final Widget child;
+
+  /// OK, Entrée, A d'une manette. Le seul chemin de la télécommande vers
+  /// l'action : voir N4 plus haut.
+  final VoidCallback? onSelect;
+
+  /// L'appui long sur OK, la touche menu ou Y d'une manette.
+  final VoidCallback? onContextMenu;
+
+  final FocusNode? focusNode;
+  final bool autofocus;
+
+  /// Faux pour une carte présente mais inactive : visible et inatteignable.
+  final bool enabled;
+
+  /// Suit l'arrondi de l'enfant, pour que l'anneau épouse l'affiche.
+  final BorderRadius borderRadius;
+
+  /// L'agrandissement au focus, sur téléviseur seulement. 1.0 l'éteint.
+  final double focusScale;
+
+  /// 0,5 centre la cible dans ce qui défile ; toute autre valeur la ramène
+  /// juste assez (voir [TvNavTheme.alignmentFor]).
+  final double scrollAlignment;
+
+  /// Faux quand l'enfant dessine son propre focus (l'affiche s'éclaire).
+  final bool showRing;
+
+  final ValueChanged<bool>? onFocusChange;
+
+  static final Expando<VoidCallback> _contextMenus =
+      Expando<VoidCallback>('tv-context-menu');
+
+  /// Le menu de la carte focalisée, pour la touche menu que dpad remonte à
+  /// la racine (`OnyxDpad`). Le nœud focalisé peut être celui de la carte ou
+  /// l'un de ses descendants.
+  static VoidCallback? contextMenuFor(FocusNode? node) {
+    for (FocusNode? current = node; current != null; current = current.parent) {
+      final menu = _contextMenus[current];
+      if (menu != null) return menu;
+    }
+    return null;
+  }
+
+  @override
+  State<TvDpadFocusable> createState() => _TvDpadFocusableState();
+}
+
+class _TvDpadFocusableState extends State<TvDpadFocusable> {
+  /// Créé quand l'appelant n'en fournit pas : le menu de la carte s'y
+  /// attache, et dpad a besoin d'un nœud stable pour s'en souvenir.
+  FocusNode? _ownedNode;
+
+  FocusNode get _node =>
+      widget.focusNode ??
+      (_ownedNode ??= FocusNode(debugLabel: 'tv-dpad-focusable'));
+
+  @override
+  void initState() {
+    super.initState();
+    _registerMenu(null);
+  }
+
+  @override
+  void didUpdateWidget(TvDpadFocusable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _registerMenu(oldWidget.focusNode ?? _ownedNode);
+  }
+
+  @override
+  void dispose() {
+    TvDpadFocusable._contextMenus[_node] = null;
+    _ownedNode?.dispose();
+    super.dispose();
+  }
+
+  void _registerMenu(FocusNode? previous) {
+    if (previous != null && !identical(previous, _node)) {
+      TvDpadFocusable._contextMenus[previous] = null;
+    }
+    TvDpadFocusable._contextMenus[_node] =
+        widget.enabled ? widget.onContextMenu : null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isTv = TvScope.of(context);
+    return DpadFocusable(
+      focusNode: _node,
+      // Sur téléviseur seulement : prendre le focus sur un téléphone ouvre
+      // le clavier et dessine un anneau que personne n'a demandé.
+      autofocus: widget.autofocus && widget.enabled && isTv,
+      enabled: widget.enabled,
+      onSelect: widget.onSelect,
+      onLongSelect: isTv && widget.enabled ? widget.onContextMenu : null,
+      onFocusChange: widget.onFocusChange,
+      scrollAlignment: TvNavTheme.alignmentFor(widget.scrollAlignment),
+      tapToSelect: false,
+      builder: (context, state, child) => _TvFocusRing(
+        focused: state.focused,
+        isTv: isTv,
+        borderRadius: widget.borderRadius,
+        focusScale: widget.focusScale,
+        showRing: widget.showRing,
+        child: child,
+      ),
+      child: widget.child,
+    );
+  }
+}
+
+/// L'anneau d'Onyx (ADR-0008), le même que celui de l'ancien `TvFocusable`.
+class _TvFocusRing extends StatelessWidget {
+  const _TvFocusRing({
+    required this.focused,
+    required this.isTv,
+    required this.borderRadius,
+    required this.focusScale,
+    required this.showRing,
+    required this.child,
+  });
+
+  final bool focused;
+  final bool isTv;
+  final BorderRadius borderRadius;
+  final double focusScale;
+  final bool showRing;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final lite = LiteScope.of(context);
+    // La pile ne dépend pas du focus : basculer l'enfant entre « enveloppé »
+    // et « nu » reconstruirait tout son sous-arbre, et chaque affiche
+    // relancerait son fondu à chaque pas.
+    Widget content = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        // Par-dessus l'enfant plutôt qu'autour : une bordure dans la mise en
+        // page décalerait chaque voisin de deux pixels à chaque pas.
+        if (focused && showRing)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: borderRadius,
+                  border: Border.all(color: AppColors.accent, width: 3),
+                  // Le halo est un flou de plus à chaque pas de focus ;
+                  // l'anneau seul se lit aussi bien du canapé (ADR-0086).
+                  boxShadow: lite
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: AppColors.accent.withValues(alpha: 0.35),
+                            blurRadius: 18,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+    // L'agrandissement est un geste de téléviseur : sur téléphone ou bureau,
+    // il se battrait avec le survol des cartes.
+    if (isTv && focusScale != 1.0) {
+      content = AnimatedScale(
+        scale: focused ? focusScale : 1.0,
+        duration: lite ? Duration.zero : AppMotion.focus,
+        curve: Curves.easeOutCubic,
+        child: content,
+      );
+    }
+    return content;
+  }
+}

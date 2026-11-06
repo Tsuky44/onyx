@@ -46,7 +46,18 @@ dependencies:
   intl: ^0.20.2
   audio_video_progress_bar: ^2.0.3
   flutter_animate: ^4.5.0
-  
+  # La navigation au D-pad (ADR-0110, plan docs/refonte-navigation-dpad.md) :
+  # où va le focus, la mémoire des zones, le défilement jusqu'à la cible. Tout
+  # passe par lib/tv/nav/ (OnyxDpad, TvFocusable, TvRegion) ; aucun écran ne
+  # l'importe en direct, un guard test le vérifie. Pur Dart, donc identique
+  # sur chaque cible, tvOS et web compris.
+  # Version exacte : le paquet a quelques jours de vie et son API bouge d'une
+  # version à l'autre. Une montée se fait à un seul endroit (lib/tv/nav/),
+  # après relecture de root.dart, region.dart et focusable.dart contre les
+  # constats C1–C14 du plan, et retrait de la parade N1 d'OnyxDpad si la
+  # correction amont y est.
+  dpad: 3.3.0
+
   # Media Player (BasÃ© sur MPV via media-kit)
   media_kit: ^1.2.6
   media_kit_video: ^2.0.1
