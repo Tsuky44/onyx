@@ -1,6 +1,6 @@
 # Refonte de la navigation TV sur dpad 3.3.0 — plan de migration
 
-- **Statut :** plan, décision proposée par l'ADR-0110. Phase 1 faite (fondations non montées), phases 2 et 3 faites derrière le drapeau `ONYX_TV_NAV` (défaut `legacy`), qui reste jusqu'à la recette sur vraie Apple TV ; aucune n'est essayée sur une vraie Apple TV.
+- **Statut :** plan, décision proposée par l'ADR-0110. Phase 1 faite (fondations non montées), phases 2, 3 et 4 faites derrière le drapeau `ONYX_TV_NAV` (défaut `legacy`), qui reste jusqu'à la recette sur vraie Apple TV ; aucune n'est essayée sur une vraie Apple TV.
 - **Date :** 2026-11-06
 - **Branche d'essai :** `spike/dpad-tvos` (banc d'essai `app/lib/spike/dpad_spike_main.dart`, supprimé en fin de phase 1).
 - **Prolonge / remplace :** remplace en pratique le mécanisme de l'ADR-0109 (entrées de zone) ; garde l'ADR-0008 (focus toujours visible), l'ADR-0039 (un défilement par pas, force du geste) et l'ADR-0108 (garde-fou du pont d'accessibilité tvOS).
@@ -304,6 +304,18 @@ détaillés dans l'ADR-0110, « Phase 3 ».
 - Web LG (ADR-0076) : plus de `webTvShortcuts` ; Retour de la télécommande LG
   ajouté au jeu `back` ; `web_tv_dpad_test` porté.
 - `login_screen_keyboard_test`, `tv_login_screen_test`, `tv_deferred_keyboard_test`.
+
+**Faite** (ADR-0110, « Phase 4 »). `TvFocusable.editable` laisse le champ d'un
+`TvDeferredKeyboard` prendre le focus sous dpad (il en était exclu, N4) ;
+`TvDeferredKeyboard` ne reprend plus le focus au voisin sous dpad.
+`web_tv_field_exit` : remplacé sur webOS (non installé sous dpad), gardé pour
+Gauche et Droite sur Android TV et Apple TV, avec la mesure dans l'ADR. Web LG :
+plus de `webTvShortcuts` sous dpad ; le Retour LG (461) arrive en Échap par
+`webos_remote.js`, déjà dans le jeu `back` avec `browserBack` et `goBack` hors
+Android, donc rien à ajouter, seulement à épingler. Quatre tests portés sur le
+banc, dans les deux modes ; l'ancien système ne tient pas le passage d'un champ
+au suivant sur téléviseur (tests ignorés avec la raison), laissé tel quel.
+Reste : essai sur Android TV, webOS et vraie Apple TV.
 
 ### Phase 5 — Retour, Menu, dialogues
 

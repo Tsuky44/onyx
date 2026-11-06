@@ -41,6 +41,7 @@ class TvFocusable extends StatelessWidget {
     this.onDirection,
     this.childFocus = false,
     this.wide = false,
+    this.editable = false,
   });
 
   final Widget child;
@@ -104,6 +105,14 @@ class TvFocusable extends StatelessWidget {
   /// trouvait déjà.
   final bool wide;
 
+  /// L'enfant est un champ de saisie que la carte ouvre (`TvDeferredKeyboard`)
+  /// et qui prend lui-même le focus. Sous dpad, il reste focalisable au lieu
+  /// d'être exclu, et les flèches lui restent : dpad laisse le curseur
+  /// avancer dans le texte et ne sort du champ qu'à ses bords, Haut et Bas
+  /// toujours pour une ligne (ADR-0110, phase 4). Sans effet avec l'ancien
+  /// système, dont `WebTvFieldExit` fait la même sortie.
+  final bool editable;
+
   @override
   Widget build(BuildContext context) {
     if (TvNavScope.isActive(context)) {
@@ -122,6 +131,7 @@ class TvFocusable extends StatelessWidget {
         onDirection: onDirection,
         childFocus: childFocus,
         wide: wide,
+        editable: editable,
         child: child,
       );
     }

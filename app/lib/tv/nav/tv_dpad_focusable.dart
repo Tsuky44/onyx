@@ -46,6 +46,7 @@ class TvDpadFocusable extends StatefulWidget {
     this.onDirection,
     this.childFocus = false,
     this.wide = false,
+    this.editable = false,
   });
 
   final Widget child;
@@ -91,6 +92,11 @@ class TvDpadFocusable extends StatefulWidget {
 
   /// Voir `TvFocusable.wide` ([TvWideCard]).
   final bool wide;
+
+  /// Voir `TvFocusable.editable` : le champ enveloppé garde le focus, et
+  /// aucune flèche n'est prise avant dpad (`excludeChildFocus: false`, le
+  /// montage que dpad prévoit pour un champ de saisie).
+  final bool editable;
 
   static final Expando<VoidCallback> _contextMenus = Expando<VoidCallback>(
     'tv-context-menu',
@@ -191,7 +197,7 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
       onFocusChange: widget.onFocusChange,
       scrollAlignment: TvNavTheme.alignmentFor(widget.scrollAlignment),
       tapToSelect: false,
-      excludeChildFocus: !widget.childFocus,
+      excludeChildFocus: !widget.childFocus && !widget.editable,
       onDirection: onDirection,
       builder: (context, state, child) => _TvFocusRing(
         // dpad ne lit pas le nœud qu'on lui donne : il attend un changement.

@@ -43,7 +43,12 @@ class TvNavHarness {
   ///
   /// [isTv] règle [TvMode.enabled] pour la durée du test ; [android] fait
   /// croire à `OnyxDpad` qu'il tourne sur Android (le jeu de touches en
-  /// dépend, constat C2). [profileKey] est le profil qui navigue.
+  /// dépend, constat C2). [profileKey] est le profil qui navigue. [browser]
+  /// monte les raccourcis qu'a une page web (`WidgetsApp.defaultShortcuts` sous
+  /// `kIsWeb`) : un test tourne hors navigateur et aurait sinon ceux du natif.
+  /// C'est l'app d'un téléviseur LG (ADR-0076). [around] enveloppe l'app
+  /// entière, au-dessus de `MaterialApp` : les fournisseurs que toutes les
+  /// routes lisent, comme `main.dart` les pose.
   static Future<TvNavHarness> pump(
     WidgetTester tester,
     Widget home, {
@@ -52,6 +57,8 @@ class TvNavHarness {
     bool android = false,
     String? profileKey = 'test-profile',
     List<NavigatorObserver> navigatorObservers = const <NavigatorObserver>[],
+    bool browser = false,
+    Widget Function(Widget app)? around,
   }) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
@@ -79,6 +86,8 @@ class TvNavHarness {
         navigatorKey: navigatorKey,
         profileKey: profileKey,
         navigatorObservers: navigatorObservers,
+        browser: browser,
+        around: around,
         home: home,
       ),
     );
@@ -228,7 +237,28 @@ class TvNavHarnessApp extends StatelessWidget {
     required this.home,
     this.profileKey,
     this.navigatorObservers = const <NavigatorObserver>[],
+    this.browser = false,
+    this.around,
   });
+
+  /// Voir [TvNavHarness.pump].
+  final bool browser;
+  final Widget Function(Widget app)? around;
+
+  /// Les raccourcis de `WidgetsApp.defaultShortcuts` sous `kIsWeb`, pour les
+  /// touches en cause.
+  static const Map<ShortcutActivator, Intent> browserShortcuts =
+      <ShortcutActivator, Intent>{
+    SingleActivator(LogicalKeyboardKey.arrowLeft):
+        ScrollIntent(direction: AxisDirection.left),
+    SingleActivator(LogicalKeyboardKey.arrowRight):
+        ScrollIntent(direction: AxisDirection.right),
+    SingleActivator(LogicalKeyboardKey.arrowUp):
+        ScrollIntent(direction: AxisDirection.up),
+    SingleActivator(LogicalKeyboardKey.arrowDown):
+        ScrollIntent(direction: AxisDirection.down),
+    SingleActivator(LogicalKeyboardKey.enter): ButtonActivateIntent(),
+  };
 
   final TvNavEngine engine;
   final GlobalKey<NavigatorState> navigatorKey;
@@ -238,7 +268,7 @@ class TvNavHarnessApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
+    final app = ValueListenableBuilder<bool>(
       valueListenable: TvMode.enabled,
       builder: (context, isTv, _) => TvScope(
         isTv: isTv,
@@ -248,6 +278,7 @@ class TvNavHarnessApp extends StatelessWidget {
         },
       ),
     );
+    return around?.call(app) ?? app;
   }
 
   /// Sans animation : dpad saute au lieu de défiler, et un test ne dépend pas
@@ -262,7 +293,10 @@ class TvNavHarnessApp extends StatelessWidget {
         child: MaterialApp(
           navigatorKey: navigatorKey,
           navigatorObservers: navigatorObservers,
-          shortcuts: TvNavRoot.shortcuts,
+          shortcuts: <ShortcutActivator, Intent>{
+            if (browser) ...browserShortcuts,
+            ...TvNavRoot.shortcuts,
+          },
           actions: TvNavRoot.actions,
           builder: (context, child) => _still(
             context,
@@ -281,7 +315,8 @@ class TvNavHarnessApp extends StatelessWidget {
           navigatorObservers: navigatorObservers,
           shortcuts: <ShortcutActivator, Intent>{
             ...WidgetsApp.defaultShortcuts,
-            ...tvSelectShortcuts,
+            if (browser) ...browserShortcuts,
+            ...(browser ? tvRemoteShortcuts(webTv: true) : tvSelectShortcuts),
           },
           actions: <Type, Action<Intent>>{
             ...WidgetsApp.defaultActions,

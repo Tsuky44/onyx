@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'nav/onyx_dpad.dart' show TvNavScope;
 import 'tv_focus.dart';
 import 'tv_mode.dart';
 
@@ -104,8 +105,24 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
     // sur le champ-bouton, pour ne laisser la télécommande nulle part.
     setState(() => _keyboardRequested = false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _remoteNode.requestFocus();
+      if (!mounted) return;
+      // Sous dpad, une flèche qui sort du champ a déjà posé le focus sur le
+      // voisin : le rendre ici l'y reprendrait (ADR-0110, phase 4). Seul un
+      // champ qui n'a mené nulle part (le clavier s'est refermé) revient au
+      // champ-bouton.
+      if (TvNavScope.isActive(context) && _focusWentElsewhere) return;
+      _remoteNode.requestFocus();
     });
+  }
+
+  /// Le focus est sur une vraie cible hors de ce widget.
+  bool get _focusWentElsewhere {
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary == null || primary is FocusScopeNode) return false;
+    if (primary.context == null) return false;
+    return !identical(primary, _remoteNode) &&
+        !identical(primary, _fieldNode) &&
+        !primary.ancestors.contains(_remoteNode);
   }
 
   /// Ouvre le clavier sur ce champ.
@@ -178,6 +195,9 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
       // Pas d'agrandissement : ces champs vivent dans des formulaires serrés,
       // et grandir les ferait chevaucher leurs voisins.
       focusScale: 1.0,
+      // Le champ prend le focus quand OK ouvre le clavier ; sous dpad il ne
+      // doit pas en être exclu.
+      editable: true,
       child: widget.builder(context, _fieldNode, _keyboardRequested),
     );
   }

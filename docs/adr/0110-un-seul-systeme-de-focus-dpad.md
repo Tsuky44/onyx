@@ -244,6 +244,61 @@ drapeau), épinglé par `library_screen_tv_test`.
 texte d'un document (`legal_document_screen`) et le zoom de la grille au clavier
 (`poster_grid_zoom_region`).
 
+## Phase 4 : champs texte, clavier à l'écran, web LG
+
+**Le champ d'une carte `TvDeferredKeyboard` était exclu du focus sous dpad.** `DpadFocusable`
+rend son enfant non focalisable (`excludeChildFocus`, N4) : OK sur le cadre du champ demandait le
+clavier, mais le champ ne prenait jamais le focus, et le clavier restait fermé. Mesuré avec le
+banc : après OK, `editable=false`. dpad prévoit le montage inverse pour un champ de saisie
+(`excludeChildFocus: false`), que la façade expose en `TvFocusable.editable`. Sans effet avec
+l'ancien système.
+
+**`TvDeferredKeyboard` reprenait le focus au voisin.** Quand le champ perdait le focus, il rendait
+le focus à son cadre à l'image suivante, pour ne laisser la télécommande nulle part. Sous dpad, une
+flèche qui sort du champ pose déjà le focus sur le voisin : il le lui reprenait, et la
+télécommande rebondissait sur la barre qu'elle venait de quitter. Sous dpad seulement, le champ ne
+reprend plus le focus quand il est déjà sur une vraie cible hors du widget. Avec l'ancien système
+la reprise reste inconditionnelle : `TvFocusGuard` donne parfois le focus lâché à l'élément
+suivant avant elle, et c'est elle qui le corrige.
+
+**`web_tv_field_exit`, mesuré** (`web_tv_field_exit_test`, dans les deux modes) :
+
+| Touche, champ d'une ligne, clavier refermé | Ancien système (`WebTvFieldExit`) | dpad seul |
+|---|---|---|
+| Haut, Bas | sort, cadre du champ (webOS) ou voisin (Android, Apple TV) | sort vers le voisin, d'un seul appui |
+| Gauche, Droite | webOS : reste au texte. Android, Apple TV : sort aussitôt | sort au bord du texte seulement |
+| Texte sur plusieurs lignes | garde ses flèches | garde ses flèches, sort du tout début ou de toute fin |
+
+- **webOS : dpad remplace `WebTvFieldExit`**, qui n'y est plus installé sous dpad
+  (`TvMode.initialize`). Haut et Bas sortent par la règle de dpad, Gauche et Droite à ses bords.
+- **Android TV et Apple TV : le filet reste, pour Gauche et Droite seulement.** Leur clavier ouvert
+  garde la télécommande, et un champ resté focalisé après Retour laissait Gauche au curseur jusqu'au
+  début du texte (« http://192.168.1.50 » : dix-neuf appuis). Sous dpad, `WebTvFieldExit` laisse
+  Haut et Bas à dpad et ne prend plus que les deux flèches horizontales. Pas essayé sur machine
+  réelle : ce sont les tests et le simulateur Apple TV qui l'établissent.
+
+**Web LG.** Plus de `webTvShortcuts` sous dpad : `TvNavRoot.shortcuts` ne les monte pas
+(`tvRemoteShortcuts(webTv: false)`) et l'ancien jeu ne vit plus que dans la branche `legacy`.
+Les flèches et Entrée passent par le jeu de touches d'`OnyxDpad`, posé plus près du focus que les
+raccourcis de page de `WidgetsApp` ; un interrupteur s'active à OK (`web_tv_dpad_test`).
+
+**Retour de la télécommande LG.** Flutter web ne lit que `key` et `code` (`keyCode` n'entre pas
+dans sa table) : un 461 resté `Unidentified` devient une touche inconnue. `web/webos_remote.js`
+le réécrit en Échap avant Flutter (ADR-0076) ; Échap est déjà dans le jeu `back` d'`OnyxDpad`,
+avec `browserBack` (nom que le moteur web donne au Retour d'un navigateur) et `goBack` (le nom
+que le simulateur de LG lui donne), hors Android (C2). **Il n'y avait donc rien à ajouter** : la
+phase 1 avait posé les trois, la phase 4 les épingle (`web_tv_dpad_test`). `flutter_test` ne
+sait pas simuler `browserBack` ni `goBack`, le test de bout en bout est celui d'Échap.
+
+**Constat sur l'ancien système, laissé tel quel.** Sur téléviseur, passer d'un champ au suivant
+(touche d'action du clavier : `_focusNext`) rend le focus au cadre du champ quitté, pas au champ
+suivant : la reprise inconditionnelle de `TvDeferredKeyboard` passe après la demande de focus du
+suivant. `login_screen_keyboard_test` ne le voyait pas, ses champs n'étant pas différés ; porté
+sur le banc en mode TV, ses quatre tests de chaîne ne passent qu'avec dpad et sont ignorés
+(`skip`) avec l'ancien système, avec la raison. Pas corrigé : le plan demande l'ancien système à
+l'identique, et la correction (ne pas reprendre le focus quand il est sur un autre champ) change
+son comportement. À décider.
+
 ## Conséquences
 
 - Phase 1 : aucun changement visible. `TvFocusable` est réexporté tel quel par
@@ -268,6 +323,9 @@ texte d'un document (`legal_document_screen`) et le zoom de la grille au clavier
 - Phase 3 : sans drapeau, un seul changement visible (le tri d'une bibliothèque hors du parcours
   pendant son chargement) ; avec `ONYX_TV_NAV=dpad`, les réglages, la fiche, le bandeau, les
   téléchargements et les écrans de contenu passent sur dpad. Une carte de navigation par écran.
+- Phase 4 : sans drapeau, aucun changement visible ; avec `ONYX_TV_NAV=dpad`, les champs texte
+  s'ouvrent à OK et se quittent par les flèches, et webOS n'installe plus `WebTvFieldExit`. Le
+  guard test ne grandit pas : `web_tv_field_exit.dart` y reste (Android TV, Apple TV).
 - Reste ouvert, et à écrire ici : les mesures de la recette sur machine réelle (statut), les critères
   du plan §1 mesurés en phase 8, et le retrait du drapeau (avec lui `TvFocusGuard`,
   `TvCardDirections.legacy` et `TvSlideEdges`).

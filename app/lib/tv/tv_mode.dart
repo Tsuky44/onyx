@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/app_platform.dart';
 import '../l10n/tr.dart';
+import 'nav/tv_nav_engine.dart';
 import 'web_tv_field_exit.dart';
 
 /// What the user asked for, which is not always what the hardware says.
@@ -61,7 +62,11 @@ abstract final class TvMode {
     // `web/webos_remote.js` ; reste à ne pas la laisser prisonnière d'un champ.
     if (AppPlatform.isWebOS) {
       _detected = true;
-      WebTvFieldExit.install();
+      // Sous dpad, Haut et Bas sortent d'un champ d'une ligne et Gauche et
+      // Droite à ses bords, sans filet (ADR-0110, phase 4).
+      if (TvNavEngine.current == TvNavEngine.legacy) {
+        WebTvFieldExit.install();
+      }
     }
     if (AppPlatform.isAndroid || AppPlatform.isIOS || AppPlatform.isTvOS) {
       try {

@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../utils/app_platform.dart';
+import 'nav/onyx_dpad.dart' show TvNavScope;
 import 'tv_deferred_keyboard.dart';
 import 'tv_mode.dart';
 
@@ -51,20 +52,26 @@ abstract final class WebTvFieldExit {
       _ => null,
     };
     if (direction == null) return KeyEventResult.ignored;
+    final horizontal = direction == TraversalDirection.left ||
+        direction == TraversalDirection.right;
     // Sur Android TV et Apple TV, le clavier ouvert garde la télécommande
     // pour lui (le pavé, le trackpad) : une flèche qui arrive ici veut dire
     // qu'il est fermé, et le curseur n'a plus rien à faire dans le texte.
     // Sur webOS, gauche et droite restent au texte.
     final keyboardOwnsRemote = debugKeyboardOwnsRemote ??
         (AppPlatform.isAndroid || AppPlatform.isTvOS);
-    final horizontal = direction == TraversalDirection.left ||
-        direction == TraversalDirection.right;
     if (horizontal && !keyboardOwnsRemote) return KeyEventResult.ignored;
     final focus = FocusManager.instance.primaryFocus;
     final context = focus?.context;
     final editable = context?.findAncestorWidgetOfExactType<EditableText>();
     // Un texte sur plusieurs lignes a l'usage des flèches verticales.
     if (focus == null || editable == null || editable.maxLines != 1) {
+      return KeyEventResult.ignored;
+    }
+    // Sous dpad, Haut et Bas sortent déjà d'un champ d'une ligne : seules
+    // Gauche et Droite ont besoin de ce filet, parce que dpad ne les laisse
+    // sortir qu'au bord du texte (ADR-0110, phase 4).
+    if (!horizontal && TvNavScope.isActive(context!)) {
       return KeyEventResult.ignored;
     }
     if (event is KeyDownEvent) {
