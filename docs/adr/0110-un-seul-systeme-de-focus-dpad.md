@@ -1,7 +1,7 @@
 # ADR-0110 — Un seul système de focus : dpad
 
 - **Statut :** proposé. La phase 0 (rapport [`refonte-navigation-dpad-phase0.md`](../refonte-navigation-dpad-phase0.md))
-  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. Les phases 2 à 5 montent
+  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. Les phases 2 à 6 montent
   dpad **derrière le drapeau de compilation `ONYX_TV_NAV=dpad`** (défaut `legacy` : sans lui, l'app
   est celle d'avant la refonte) ; vues au simulateur Apple TV seulement. Aucun essai sur une vraie
   Apple TV n'a été fait : l'utilisateur ne peut pas tester pour le moment. **Le drapeau reste**
@@ -21,7 +21,8 @@
   `TvRegion`, `TvDpadFocusable`, `TvForegroundRoute`, `tv_nav_theme.dart` ; en phase 3
   `TvPaneRegion`, `TvContainedSteps`, `TvCardDirections`, `TvSlideEdges`, `TvWideCard` ; en phase 5
   `TvBackStep`, `TvBackKeyAction`), `lib/screens/shell/shell_tv_back.dart`, `lib/tv/input/`
-  (`TvArrowGate`, `StepTarget`), `test/support/tv_nav_harness.dart`,
+  (`TvArrowGate`, `StepTarget` ; en phase 6 `TvRepeatCadence`, `TvDpadLog`), `lib/tv/tv_touchpad.dart`
+  (élan sous dpad), `test/support/tv_nav_harness.dart`,
   `test/no_parallel_focus_system_test.dart`. Plan : [`refonte-navigation-dpad.md`](../refonte-navigation-dpad.md).
 - **Remplace :** [ADR-0109](0109-le-focus-tv-entre-une-fois-ou-la-zone-le-decide.md) pour ce qui
   touche aux entrées de zone (`TvFocusEntries`, `TvTraversalPolicy`), une fois la phase 2 fusionnée.
@@ -382,6 +383,78 @@ par `TvBack.claimKey`, ou c'est l'ancien système. La liste ne fait que rétréc
 est porté sur le banc et tourne dans les deux modes. La classe `TvBackAction` reste, l'ancien
 système la monte encore.
 
+## Phase 6 : le pont du trackpad
+
+**Le portail consomme chaque flèche et l'applique à la microtâche suivante.** C'est la parade au
+constat N2. Flutter ne pose le focus demandé qu'en microtâche : des flèches arrivées dans la même
+tâche partent toutes de la même carte, et seule la dernière compte (12 pressions → 1 pas au
+simulateur en phase 0). Sous dpad, `TvArrowGate` les compte au lieu de les laisser passer. À la
+microtâche, une flèche seule va à `Dpad.of(context).move` : c'est le même chemin que le raccourci de
+dpad (`_move`), donc la même politique, les mêmes zones et le même `onBlockedMove`. Plusieurs pas
+(une rafale, ou un glissé vif par `TvTouchpad.stepsFrom`) vont à `StepTarget.after`, puis à **un
+seul** `Dpad.requestFocus`. Cela fait un seul défilement, et la mémoire de la zone note la carte
+d'arrivée, ce qui règle N3. Une flèche dans l'autre sens applique d'abord la rafale en cours.
+Écartée : laisser passer la première flèche et corriger ensuite. Cela fait deux `requestFocus` par
+rafale (celui de dpad, puis le nôtre qui le remplace) pour un seul changement de focus, et
+`requestFocus` ne s'annule pas.
+
+**`StepTarget.after` ne compte que dans la rangée.** Chaque pas doit rester dans le `Scrollable`
+horizontal de la carte de départ. Rien à côté (un bouton, l'en-tête, une autre zone) ne compte, et le
+compte s'arrête à la dernière carte construite. Au-delà, la flèche suivante, partie de là, laisse
+dpad faire défiler puis réessayer (C6). À la verticale, hors d'une rangée, ou au bout de ce qu'elle a
+construit, `after` rend nul : le portail fait **un** pas par dpad, et les autres flèches de la
+rafale tombent. Une rafale verticale vaut donc un pas (ADR-0039). Une rafale horizontale dans une
+grille ou une barre de boutons aussi : l'ancien système les perdait de même. L'ancien
+`StepTarget.nextOnLine` reste à l'identique pour `TvDirectionalFocusAction`.
+
+**L'élan passe par le portail.** `TvArrowGate` s'inscrit comme `TvTouchpad.glideStepper` à son
+montage. Chaque pas d'élan est un `StepTarget.after(…, 1)` puis un `Dpad.requestFocus`, et la lancée
+s'arrête faute de carte construite devant. Le fond ne change pas : mêmes seuils, même premier
+intervalle (60 ms), même ralentissement (× 1,15), même grâce (120 ms). Toute autre touche coupe
+l'élan (l'observateur de `TvTouchpad`, inchangé), et un doigt posé l'arrête. Sans portail monté
+(l'ancien système), `glideStepper` est nul et l'élan reste une `DirectionalFocusIntent`.
+
+**Une seule couche règle la répétition, par plateforme (C13).** Sur Apple TV, `TvRepeatCadence`
+pousse au démarrage `TvRemoteConfig.keyRepeatInterval` = 110 ms, la valeur de l'ancien système,
+sans toucher au reste du réglage, et le portail ne retient rien (`repeatInterval` nul). Avec
+l'ancien système, les 110 ms du portail tombaient sur les 80 ms natifs : un pas toutes les 160 ms.
+Ailleurs (Android TV, web LG), rien n'est poussé et le portail retient les répétitions à moins de
+110 ms. Le délai avant la première répétition reste celui de flutter-tvos (400 ms), que l'ancien
+système ne touchait pas non plus.
+
+**Traces `[DPAD]`.** En debug seulement (`kDebugMode`), `TvDpadLog` écrit la cadence reçue (écart
+entre deux flèches), les répétitions retenues, les pas faits (et ceux demandés), les rafales
+regroupées, l'élan (départ, chaque pas, arrêt et sa raison) et la cadence poussée au moteur. La
+lecture sur l'app réelle est au rapport de phase 0, §5.11. Le banc de test les capte, pour qu'elles
+n'encombrent pas la sortie des tests.
+
+**Vu au simulateur Apple TV** (`ONYX_TV_NAV=dpad`, accueil chargé). Les traces sont lues dans
+`xcrun simctl spawn <udid> log show`.
+
+| Geste | Traces | Focus |
+|---|---|---|
+| Démarrage | `TvRemoteConfig keyRepeatInterval=110 ms, portail sans régulation` | — |
+| Bas, puis deux Droite envoyées ensemble | `rafale #2`, `pas 2/2 (rafale de 2)` | Reprendre c0 → c2, aucun pas perdu |
+| `press_key right count:4` | `pas 1 par dpad`, puis `pas 3/3 (rafale de 3)` | c2 → c6 |
+| `count:8` près du bout | `pas 2/7 … borné : bout de la rangée` | dernière carte (c9), pas au-delà |
+| `press_key down count:3` | `pas 1/3 (rafale de 3) par dpad (verticale)` | une rangée plus bas, pas trois |
+| `count:20` sur Séries, puis `left count:20` sur À découvrir | `pas 7/20 … borné`, `pas 4/18 … borné` | bout de la rangée, un défilement par résolution |
+
+Le simulateur livre `count` comme des appuis à 2 ou 3 ms d'écart, et coupe parfois une rafale en
+deux (« 5 » arrive en 2 + 3). Les rangées de l'accueil de test (10 à 15 cartes) sont toutes
+construites : la borne au cache n'a été vue qu'au banc (`tv_arrow_gate_test`, 40 cartes). Ni le
+trackpad ni la vraie cadence de la Siri Remote ne passent par le simulateur.
+
+**Tests.** `tv_arrow_gate_test` couvre les rafales (N pas et un `requestFocus`, un seul défilement
+pour une rafale qui sort de l'écran, la mémoire de la carte d'arrivée, la borne aux cartes
+construites puis la reprise par dpad, le changement de sens, aucun effet à la verticale ni hors
+rangée), la répétition sans intervalle (Apple TV) et `StepTarget` borné à la rangée.
+`tv_touchpad_test` et `tv_key_repeat_test` tournent dans les deux modes sur le banc : accélération,
+élan, arrêt par un doigt, par OK, par une flèche dans l'autre sens et au bout de la rangée.
+`tv_key_repeat_test` vérifie aussi la cadence poussée selon la plateforme. Le banc gagne `burst`,
+des flèches dans la même tâche. `touchpad_motion_test` est un modèle pur, sans focus : il ne dépend
+d'aucun moteur et reste tel quel. Le guard test ne grandit pas.
+
 ## Conséquences
 
 - Phase 1 : aucun changement visible. `TvFocusable` est réexporté tel quel par
@@ -413,6 +486,13 @@ système la monte encore.
   plus jamais Menu à la racine (plus de confirmation avant de quitter, plus de retour à l'accueil
   depuis un autre onglet), et un Menu reçu en touche et en `popRoute` ne défait qu'une couche, lecteur
   compris. Reste à mesurer sur vraie Apple TV : la voie par laquelle Menu arrive (rapport §5.1).
+- Phase 6 : sans drapeau, aucun changement visible (`glideStepper` nul, `TvRepeatCadence` jamais
+  installé, `nextOnLine` inchangé). Avec `ONYX_TV_NAV=dpad`, une rafale de flèches avance d'autant de
+  cartes qu'elle compte de flèches dans une rangée, la touche maintenue d'une Apple TV suit la
+  cadence du moteur (110 ms) sans seconde régulation, et l'élan reste dans sa rangée. Reste à régler
+  sur vraie Apple TV, traces `[DPAD]` à l'appui (rapport §5.2, §5.3, §5.11) : la cadence de
+  répétition, les seuils d'accélération et d'élan, l'intervalle et la grâce de l'élan, et la forme
+  réelle des rafales de la Siri Remote.
 - Reste ouvert, et à écrire ici : les mesures de la recette sur machine réelle (statut), les critères
   du plan §1 mesurés en phase 8, et le retrait du drapeau (avec lui `TvFocusGuard`,
   `TvCardDirections.legacy` et `TvSlideEdges`).

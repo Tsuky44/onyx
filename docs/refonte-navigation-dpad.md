@@ -372,6 +372,21 @@ le Retour d'Android TV et de webOS sur machine.
 - Le lecteur continue de lire le doigt directement (`addMoveListener`).
 - `touchpad_motion_test`, `tv_touchpad_test`, `tv_key_repeat_test` portés.
 
+**Faite** (ADR-0110, « Phase 6 »). Le drapeau reste. Sous dpad, le portail
+consomme chaque flèche et l'applique à la microtâche suivante. Les flèches
+arrivées avant ce moment forment une **rafale** (N2), qui devient N pas : une
+flèche seule passe par `Dpad.move` (la politique de dpad), plusieurs pas par
+`StepTarget.after` puis un seul `requestFocus`. `StepTarget.after` ne compte
+que dans la rangée de départ et s'arrête à la dernière carte construite. À la
+verticale ou hors rangée, une rafale vaut un pas. L'élan passe par le portail
+(`TvTouchpad.glideStepper`). Sur Apple TV, `TvRepeatCadence` pousse
+`TvRemoteConfig.keyRepeatInterval` = 110 ms et le portail ne retient rien ;
+ailleurs, le portail régule à 110 ms. Traces `[DPAD]` en debug, à lire selon
+le rapport de phase 0, §5.11. Vu au simulateur Apple TV : rafales de 2 à 20
+flèches sur les rangées de l'accueil, sans pas perdu ni double défilement,
+bornées au bout de la rangée. Reste : tous les réglages sur vraie Apple TV
+(§5.2, §5.3 du rapport).
+
 ### Phase 7 — Lecteur
 
 À faire en dernier : c'est la zone la plus chargée (ADR-0006, 0008).

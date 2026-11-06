@@ -213,6 +213,10 @@ touche seule, les deux) : c'est la règle tvOS de `TvBack` (phase 5).
 
 ### 5.2 Touche maintenue (C6, C13)
 
+Avec l'app réelle en `dpad` depuis la phase 6, cette case se lit avec les
+traces `[DPAD]` (§5.11). La cadence par défaut, 110 ms, est déjà poussée au
+démarrage par `TvRepeatCadence`.
+
 1. En-tête › **Chargé**. Focus sur L0 c0.
 2. Maintenir → 3 s (2e génération : anneau, côté droit ; 1re génération :
    appuyer-maintenir le bord droit de la surface).
@@ -227,6 +231,9 @@ suit le réglage (≈ 80, 150, 250 ms). Noter la plus petite cadence sans pas
 perdu : c'est le réglage par défaut de `TvRemoteConfig` à retenir.
 
 ### 5.3 Glissé vif et élan (N2)
+
+Avec l'app réelle en `dpad` depuis la phase 6, cette case se lit avec les
+traces `[DPAD]` (§5.11).
 
 1. **Chargé**, focus sur L2 c0.
 2. Glisser vite vers la droite sur la surface, une fois, puis trois fois de
@@ -328,6 +335,60 @@ une flèche = un pas, Entrée = `evt onSelect`, Retour = une seule ligne
 `back via …`. NB : le jeu de touches du banc n'a pas `browserBack` ; s'il
 reste muet, c'est le constat attendu pour la phase 4 (ajouter le Retour LG au
 jeu `back`).
+
+### 5.11 L'app réelle en `dpad` : lire les traces `[DPAD]` (phase 6)
+
+Le banc de la phase 0 a été supprimé en phase 1. Les cases 5.2 et 5.3 se
+rejouent donc sur l'app elle-même, avec les traces de la couche CADENCE
+(`lib/tv/input/tv_dpad_log.dart`). Elles sont écrites en **debug seulement**,
+et coupées en profile et en release.
+
+**Installer.** Sur l'Apple TV appairée, depuis `app/` :
+`~/flutter-tvos/bin/flutter-tvos run -d <apple-tv> --debug --dart-define=ONYX_TV_NAV=dpad`.
+Les lignes `flutter: [DPAD] …` défilent dans cette console. Autre voie : la
+console de l'appareil dans Xcode (Window › Devices and Simulators), filtrée sur
+`[DPAD]`. Au simulateur : `xcrun simctl spawn <udid> log show --last 1m
+--style compact --predicate 'eventMessage CONTAINS "[DPAD]"'`.
+
+**Les lignes.**
+
+| Ligne | Ce qu'elle dit |
+|---|---|
+| `TvRemoteConfig keyRepeatInterval=110 ms, portail sans régulation` | au démarrage, sur Apple TV : la cadence donnée au moteur. Le portail ne retient plus rien. |
+| `right appui +412 ms` / `right rep +110 ms` | une flèche reçue : sens, appui ou répétition, écart depuis la flèche précédente. **C'est la cadence réelle.** |
+| `… glissé ×3` | la flèche arrive pendant un glissé vif et vaut 3 pas (`TouchpadMotion.boostFor`). |
+| `… rafale #4` | la 4e flèche arrivée avant que le focus de la 1re soit posé (N2). |
+| `right rep +50 ms retenue (< 110 ms)` | hors Apple TV : une répétition trop proche, retenue par le portail. |
+| `pas 1 par dpad` / `pas 1 par dpad : bloqué` | une flèche, un pas, choisi par dpad (ou bord de zone). |
+| `pas 4/4 (rafale de 4) → tv-dpad-focusable x=1764` | 4 pas demandés, 4 faits, un seul `requestFocus` ; `x` est le bord gauche de la carte d'arrivée **avant** défilement. |
+| `pas 7/20 … borné : bout de la rangée ou de ses cartes construites` | moins de pas que demandés : la rangée s'arrête là, ou n'a pas construit plus loin (C6). |
+| `pas 1/3 (rafale de 3) par dpad (verticale)` | rafale verticale, ou hors rangée : un seul pas (ADR-0039). |
+| `élan : right, 5 pas, premier dans 60 ms` | un doigt lâché en pleine vitesse : départ de l'élan. |
+| `élan : pas → … x=…` | chaque pas de l'élan. |
+| `élan coupé : fini` / `doigt posé` / `touche Select` / `bout de la rangée`, `N pas non faits` | fin de l'élan et sa raison. |
+
+**Ce qu'on en tire.**
+
+- **§5.2 (touche maintenue).** Lire les écarts `rep +… ms`. Ils doivent
+  suivre `keyRepeatInterval` (110 ms) après un premier délai d'environ 400 ms.
+  Chaque `rep` doit être suivie de `pas 1 par dpad`, sans `bloqué` avant la
+  dernière carte, et le focus doit avancer d'une carte par `rep`. Si des pas
+  se perdent, augmenter `TvRepeatCadence.interval`. Si la rangée paraît lente
+  et qu'aucun pas ne se perd, le baisser, jamais sous 80 ms (C6). La valeur
+  retenue s'écrit dans l'ADR-0110.
+- **§5.3 (glissé vif et élan).** Un glissé vif doit donner des lignes
+  `glissé ×2` ou `×3`, puis `élan : … N pas` et autant de `élan : pas →`. Un
+  glissé lent doit donner des `appui` sans `glissé`. Les seuils sont
+  `TouchpadMotion._boostSpeeds` (8 et 13), `_flingSpeed` (10),
+  `_flingSpeedPerStep` (3), `_maxFlingSteps` (6), et pour l'élan
+  `TvTouchpad._glideFirstInterval` (60 ms), `_glideSlowdown` (× 1,15) et
+  `_glideGrace` (120 ms). Poser le doigt doit donner `élan coupé : doigt
+  posé`.
+- **Rafales (N2).** Noter si la Siri Remote en produit d'elle-même (des
+  `rafale #n` sans `count` injecté), et à quel écart. Le simulateur les
+  livre à 2 ou 3 ms d'écart.
+- **Un seul défilement par pas.** À l'œil : la rangée glisse une fois par
+  ligne `pas …`, sans à-coup ni retour en arrière.
 
 ## 6. Reproduire les mesures de ce rapport
 
