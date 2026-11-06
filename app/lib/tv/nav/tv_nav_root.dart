@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../input/tv_arrow_gate.dart';
-import '../tv_focus.dart' show TvBackAction, TvBackIntent, tvRemoteShortcuts;
+import '../tv_focus.dart' show TvBackAction, tvRemoteShortcuts;
 import 'onyx_dpad.dart';
 import 'tv_back.dart';
 
@@ -17,8 +17,8 @@ import 'tv_back.dart';
 ///    verrait Menu qu'à la racine ;
 /// 2. [shortcuts] et [actions] de `MaterialApp`, sans rien de directionnel :
 ///    les flèches sont à dpad. Restent OK (`select`, A d'une manette) pour les
-///    boutons Material que rien n'enveloppe, et Retour pour ce que [TvBack]
-///    rend au reste de l'app (voir [actions]) ;
+///    boutons Material que rien n'enveloppe, et Retour pour un champ de
+///    saisie focalisé, où dpad se tait (voir [shortcuts]) ;
 /// 3. [belowApp] : [OnyxDpad] dans `MaterialApp.builder`, et [TvArrowGate]
 ///    juste sous lui, le seul intercepteur de flèches.
 ///
@@ -36,22 +36,26 @@ abstract final class TvNavRoot {
   /// la télécommande. Pas les raccourcis directionnels du navigateur d'un
   /// téléviseur LG : sous dpad, ses flèches et Entrée passent par le jeu de
   /// touches d'`OnyxDpad`.
+  ///
+  /// Les touches Retour (celles d'`OnyxDpad`, sans `goBack` sur Android)
+  /// n'arrivent ici que si dpad les a laissées : il se tait quand un champ de
+  /// saisie a le focus, et rend la touche quand [TvBack] ne l'a pas prise (la
+  /// racine). Elles vont encore à [TvBack], par [TvBackKeyAction], et à lui
+  /// seul : plus de `DismissIntent` avant lui, plus de [TvBackAction] après,
+  /// qui dépilait la coquille et retenait Menu à la racine.
   static Map<ShortcutActivator, Intent> get shortcuts =>
       <ShortcutActivator, Intent>{
         ...WidgetsApp.defaultShortcuts,
         ...tvRemoteShortcuts(webTv: false),
+        for (final key in OnyxDpad.backKeysFor(isAndroid: OnyxDpad.isAndroid))
+          SingleActivator(key): const TvBackKeyIntent(),
       };
 
   /// Les actions de `MaterialApp` : celles de Flutter, sans l'ancienne action
-  /// des flèches (`TvDirectionalFocusAction`).
-  ///
-  /// [TvBackAction] reste : quand [TvBack] rend une touche Retour (rien à
-  /// dépiler sur le navigateur racine), elle continue vers la coquille, dont
-  /// le `PopScope` remonte à l'en-tête puis demande avant de quitter, comme
-  /// avant la refonte. La règle de la racine change en phase 5.
+  /// des flèches (`TvDirectionalFocusAction`), avec [TvBackKeyAction].
   static Map<Type, Action<Intent>> get actions => <Type, Action<Intent>>{
         ...WidgetsApp.defaultActions,
-        TvBackIntent: TvBackAction(),
+        TvBackKeyIntent: TvBackKeyAction(),
       };
 
   /// [OnyxDpad] et [TvArrowGate] autour du navigateur.

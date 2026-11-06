@@ -24,6 +24,7 @@ import '../../services/watch_party.dart';
 import 'chrome_auto_hide.dart';
 import 'display_cutouts.dart';
 import 'video_display_mode.dart';
+import '../../tv/nav/tv_back.dart';
 import '../../tv/tv_mode.dart';
 import '../../tv/touchpad_motion.dart';
 import '../../tv/tv_touchpad.dart';

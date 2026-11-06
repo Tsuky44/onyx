@@ -110,6 +110,91 @@ void main() {
     expect(find.text('B'), findsOneWidget);
   });
 
+  testWidgets('une marche n’est consultée que si sa route est au premier plan',
+      (tester) async {
+    var steps = 0;
+    final nav = await TvNavHarness.pump(
+      tester,
+      TvBackStep(onBack: () => ++steps > 0, child: _page('A')),
+    );
+    final state = tester.state<TvBackState>(find.byType(TvBack));
+    expect(state.handleKey(), isTrue, reason: 'la marche de A a répondu');
+    expect(steps, 1);
+
+    nav.navigatorKey.currentState!
+        .push(MaterialPageRoute<void>(builder: (_) => _page('B')));
+    await TvNavHarness.settle(tester);
+    now += TvBack.defaultWindow;
+    await nav.popRoute();
+    expect(find.text('B'), findsNothing, reason: 'B se dépile d’abord');
+    expect(steps, 1, reason: 'la marche de A, couverte, n’a pas été appelée');
+  });
+
+  testWidgets('une route qui garde son Retour (PopScope) le reçoit, une fois',
+      (tester) async {
+    var ownBacks = 0;
+    final nav = await _stack(tester, ['A']);
+    nav.navigatorKey.currentState!.push(MaterialPageRoute<void>(
+      builder: (_) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) ownBacks++;
+        },
+        child: _page('Lecteur'),
+      ),
+    ));
+    await TvNavHarness.settle(tester);
+    await nav.popRoute();
+    expect(ownBacks, 1);
+    expect(find.text('Lecteur'), findsOneWidget);
+  });
+
+  group('un écran qui lit lui-même la touche Retour (le lecteur)', () {
+    testWidgets('touche puis popRoute du même appui : popRoute est absorbé',
+        (tester) async {
+      var ownBacks = 0;
+      final nav = await _stack(tester, ['A']);
+      nav.navigatorKey.currentState!.push(MaterialPageRoute<void>(
+        builder: (_) => PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) ownBacks++;
+          },
+          child: _page('Lecteur'),
+        ),
+      ));
+      await TvNavHarness.settle(tester);
+      final context = tester.element(find.text('Lecteur'));
+
+      expect(TvBack.claimKey(context), isTrue, reason: 'appui neuf');
+      now += const Duration(milliseconds: 20);
+      await nav.popRoute();
+      expect(ownBacks, 0, reason: 'la seconde moitié du même appui');
+    });
+
+    testWidgets('popRoute puis touche du même appui : la touche est avalée',
+        (tester) async {
+      final nav = await _stack(tester, ['A', 'B']);
+      await nav.popRoute();
+      now += const Duration(milliseconds: 20);
+      expect(TvBack.claimKey(tester.element(find.text('A'))), isFalse);
+    });
+
+    testWidgets('deux touches de suite sont deux appuis', (tester) async {
+      await _stack(tester, ['A']);
+      final context = tester.element(find.text('A'));
+      expect(TvBack.claimKey(context), isTrue);
+      now += const Duration(milliseconds: 20);
+      expect(TvBack.claimKey(context), isTrue);
+    });
+
+    testWidgets('sans TvBack (ancien système), la touche agit toujours',
+        (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: Text('seul')));
+      expect(TvBack.claimKey(tester.element(find.text('seul'))), isTrue);
+    });
+  });
+
   testWidgets('hors téléviseur, TvBack ne décide de rien', (tester) async {
     final nav = await _stack(tester, ['A', 'B'], isTv: false);
     final state = tester.state<TvBackState>(find.byType(TvBack));

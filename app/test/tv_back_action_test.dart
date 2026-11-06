@@ -1,79 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:onyx/tv/tv_focus.dart';
-import 'package:onyx/tv/tv_mode.dart';
+import 'package:onyx/tv/nav/tv_focusable.dart';
 
-/// The root the app builds: remote shortcuts plus [TvBackAction]. The test
-/// host is not Android, which is the case the action exists for (iOS).
-Widget _app() {
-  return MaterialApp(
-    shortcuts: <ShortcutActivator, Intent>{
-      ...WidgetsApp.defaultShortcuts,
-      ...tvSelectShortcuts,
-    },
-    actions: <Type, Action<Intent>>{
-      ...WidgetsApp.defaultActions,
-      TvBackIntent: TvBackAction(),
-    },
-    home: Builder(
+import 'support/tv_nav_harness.dart';
+
+/// Une touche Retour dépile une page sur un téléviseur qui n'est pas Android
+/// (Apple TV, téléviseur LG), avec les deux systèmes de navigation : l'ancien
+/// par `TvBackAction`, dpad par `TvBack` (ADR-0110). Hors téléviseur, Échap
+/// garde son sens de bureau.
+///
+/// Porté sur le banc en phase 5 : il montait `TvBackAction` seul, que dpad ne
+/// monte plus. La classe reste tant que le drapeau `ONYX_TV_NAV` existe.
+Widget _home() => Builder(
       builder: (context) => Scaffold(
-        body: TextButton(
+        body: TvFocusable(
           autofocus: true,
-          onPressed: () => Navigator.of(context).push(
+          onSelect: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => const Scaffold(
-                body: TextButton(
+              builder: (_) => Scaffold(
+                body: TvFocusable(
                   autofocus: true,
-                  onPressed: null,
-                  child: Text('détail'),
+                  onSelect: () {},
+                  child: const TvTestTile('détail'),
                 ),
               ),
             ),
           ),
-          child: const Text('accueil'),
+          child: const TvTestTile('accueil'),
         ),
       ),
-    ),
-  );
-}
+    );
 
-Future<void> _openDetail(WidgetTester tester) async {
-  await tester.pumpWidget(_app());
-  await tester.tap(find.text('accueil'));
+Future<TvNavHarness> _openDetail(WidgetTester tester, TvNavHarness nav) async {
+  nav.navigatorKey.currentState!.push(MaterialPageRoute<void>(
+    builder: (_) => const Scaffold(body: Text('détail')),
+  ));
   await tester.pumpAndSettle();
   expect(find.text('détail'), findsOneWidget);
+  return nav;
 }
 
 void main() {
-  tearDown(() => TvMode.enabled.value = false);
+  TvNavHarness.forEachEngine((engine) {
+    // Échap : un clavier, le Retour d'un téléviseur LG, et peut-être le Menu
+    // de la Siri Remote ; B : une manette. (goBack est celui d'Android, où le
+    // système fait le travail.)
+    for (final key in [
+      LogicalKeyboardKey.escape,
+      LogicalKeyboardKey.gameButtonB,
+    ]) {
+      testWidgets('${key.debugName} recule d’une page sur téléviseur',
+          (tester) async {
+        final nav = await TvNavHarness.pump(tester, _home(), engine: engine);
+        await nav.select();
+        await tester.pumpAndSettle();
+        expect(find.text('détail'), findsOneWidget);
 
-  // Escape is what the Siri Remote's Menu button and a keyboard send, B what a
-  // controller sends. (goBack is Android's, where the system does the work.)
-  for (final key in [
-    LogicalKeyboardKey.escape,
-    LogicalKeyboardKey.gameButtonB,
-  ]) {
-    testWidgets('${key.debugName} goes back one page in TV mode',
+        await nav.back(key: key);
+        await tester.pumpAndSettle();
+
+        expect(find.text('détail'), findsNothing);
+        expect(nav.focusedLabel, 'accueil');
+      });
+    }
+
+    testWidgets('Échap garde son sens de bureau hors téléviseur',
         (tester) async {
-      TvMode.enabled.value = true;
-      await _openDetail(tester);
+      final nav = await TvNavHarness.pump(tester, _home(),
+          engine: engine, isTv: false);
+      await _openDetail(tester, nav);
 
-      await tester.sendKeyEvent(key);
+      await nav.back();
       await tester.pumpAndSettle();
 
-      expect(find.text('détail'), findsNothing);
-      expect(find.text('accueil'), findsOneWidget);
+      expect(find.text('détail'), findsOneWidget);
     });
-  }
-
-  testWidgets('Escape keeps its desktop meaning outside TV mode',
-      (tester) async {
-    await _openDetail(tester);
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-
-    expect(find.text('détail'), findsOneWidget);
   });
 }

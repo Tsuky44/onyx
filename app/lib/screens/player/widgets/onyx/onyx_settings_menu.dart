@@ -6,6 +6,7 @@ import '../../playback/playback_session.dart';
 import '../../playback/sleep_timer.dart';
 
 import '../../../../models/models.dart';
+import '../../../../tv/nav/tv_back.dart';
 import '../../../../tv/tv_focus.dart';
 import '../../../../tv/tv_mode.dart';
 import '../../../../utils/app_platform.dart';
@@ -222,8 +223,13 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
     if (_section == OnyxMenuSection.root) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
-    if (isSelfHandledBackKey(key) || key == LogicalKeyboardKey.arrowLeft) {
+    if (key == LogicalKeyboardKey.arrowLeft) {
       _backToRoot();
+      return KeyEventResult.handled;
+    }
+    if (isSelfHandledBackKey(key)) {
+      // Voir [TvBack.claimKey] : pas deux couches pour un appui.
+      if (TvBack.claimKey(context)) _backToRoot();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;

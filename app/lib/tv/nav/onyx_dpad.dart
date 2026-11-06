@@ -59,7 +59,8 @@ class OnyxDpad extends StatefulWidget {
   @visibleForTesting
   static bool? debugIsAndroidOverride;
 
-  static bool get _isAndroid => debugIsAndroidOverride ?? AppPlatform.isAndroid;
+  /// Vrai sur Android, ou ce que le test a demandé ([debugIsAndroidOverride]).
+  static bool get isAndroid => debugIsAndroidOverride ?? AppPlatform.isAndroid;
 
   /// Un jeu où aucune touche n'a de sens pour dpad : hors téléviseur, les
   /// flèches, Tab et Entrée gardent le sens que leur donne Flutter.
@@ -90,13 +91,20 @@ class OnyxDpad extends StatefulWidget {
     LogicalKeyboardKey.gameButtonY,
   ];
 
+  /// Les touches Retour d'un téléviseur : sans `goBack` sur Android, qui
+  /// l'envoie aussi en `popRoute` (constat C2). Une seule liste : le jeu de
+  /// dpad et les raccourcis de `TvNavRoot` (pour un champ de saisie
+  /// focalisé, où dpad se tait) la partagent.
+  static List<LogicalKeyboardKey> backKeysFor({required bool isAndroid}) =>
+      isAndroid
+          ? _back.where((key) => key != LogicalKeyboardKey.goBack).toList()
+          : _back;
+
   /// Le jeu de touches de dpad selon l'appareil.
   static DpadKeySet keySetFor({required bool isTv, required bool isAndroid}) {
     if (!isTv) return inertKeySet;
     return DpadKeySet(
-      back: isAndroid
-          ? _back.where((key) => key != LogicalKeyboardKey.goBack).toList()
-          : _back,
+      back: backKeysFor(isAndroid: isAndroid),
       menu: _menu,
     );
   }
@@ -191,7 +199,7 @@ class _OnyxDpadState extends State<OnyxDpad> with WidgetsBindingObserver {
       child: Dpad(
         keySet: OnyxDpad.keySetFor(
           isTv: isTv,
-          isAndroid: OnyxDpad._isAndroid,
+          isAndroid: OnyxDpad.isAndroid,
         ),
         restoreFocus: isTv,
         theme: TvNavTheme.data(lite: LiteScope.of(context)),

@@ -181,6 +181,68 @@ const Map<String, Map<String, int>> _legacy = {
   },
 };
 
+/// Ce qui traite Retour soi-même : un `PopScope` (ou ses cousins), une touche
+/// Retour lue à la main.
+final RegExp _ownBackPattern = RegExp(
+  r'\b(PopScope|WillPopScope|NavigatorPopHandler)\s*(<[^>(]*>)?\(|'
+  r'\bisSelfHandledBackKey\(|\bkTvBackKeys\b|'
+  r'\bLogicalKeyboardKey\.(escape|goBack|browserBack|gameButtonB)\b',
+);
+
+/// Ceux qui traitent Retour eux-mêmes, hors de `TvBack` (phase 5) : fichier
+/// → (occurrences, pourquoi). Sous dpad, `TvBack` décide seul ; un `PopScope`
+/// n'y est admis que si `TvBack` l'atteint par le `maybePop` du navigateur
+/// racine, et une touche lue à la main que si elle passe par
+/// `TvBack.claimKey`, qui la dédoublonne d'avec `popRoute`.
+///
+/// **La liste ne fait que rétrécir**, comme [_legacy].
+const Map<String, (int, String)> _ownBack = {
+  'lib/tv/tv_focus.dart': (
+    11,
+    'les touches Retour de l’ancien système (kTvBackKeys, raccourcis, '
+        'TvBackAction) ; partent avec le drapeau ONYX_TV_NAV',
+  ),
+  'lib/screens/shell/shell_tv_back.dart': (
+    1,
+    'le PopScope de l’ancien système, à l’identique ; sous dpad, la coquille '
+        'est une marche de TvBack (TvBackStep)',
+  ),
+  'lib/screens/shell/main_shell.dart': (
+    1,
+    'NavigatorPopHandler des fiches hors téléviseur (sur téléviseur, pas de '
+        'navigateur imbriqué) ; TvBack l’atteindrait par maybePop',
+  ),
+  'lib/screens/shared_link/shared_link_guest.dart': (
+    1,
+    'PopScope du navigateur imbriqué d’un lien partagé : TvBack l’atteint par '
+        'maybePop, il dépile chez lui sans décider de la racine',
+  ),
+  'lib/screens/player/player_screen.dart': (
+    1,
+    'lecteur, migré en phase 7 : son PopScope reçoit popRoute par TvBack',
+  ),
+  'lib/screens/player/player_key_routing.dart': (
+    1,
+    'lecteur, phase 7 : la touche est lue avant dpad (C4), et l’action '
+        'passe par TvBack.claimKey',
+  ),
+  'lib/screens/player/hooks/use_player_popup.dart': (
+    1,
+    'menus du lecteur (pas des routes), phase 7 : TvBack.claimKey',
+  ),
+  'lib/screens/player/widgets/onyx/onyx_settings_menu.dart': (
+    1,
+    'remontée d’une section du menu du lecteur, phase 7 : TvBack.claimKey',
+  ),
+};
+
+Map<String, int> _ownBackCensus() => {
+      for (final (path, code) in _sources())
+        if (!_home.any(path.startsWith) &&
+            _ownBackPattern.allMatches(code).isNotEmpty)
+          path: _ownBackPattern.allMatches(code).length,
+    };
+
 /// Ce que dpad expose et que seul `lib/tv/` emploie : les écrans n'ont que
 /// `TvFocusable` et `TvRegion`. Une montée de version de dpad se fait alors à
 /// un seul endroit.
@@ -297,6 +359,41 @@ void main() {
           'ouverte : le prochain changement pourrait y remettre ce que la '
           'migration vient d’enlever.\n\n${stale.join('\n')}\n\n'
           'Recensement actuel, à recopier dans _legacy :\n${_asDart(census)}',
+    );
+  });
+
+  test('un seul Retour : TvBack', () {
+    final census = _ownBackCensus();
+    final offenders = <String>[];
+    final stale = <String>[];
+    census.forEach((path, count) {
+      final ceiling = _ownBack[path]?.$1 ?? 0;
+      if (count > ceiling) {
+        offenders.add('$path × $count (toléré : $ceiling)');
+      }
+    });
+    _ownBack.forEach((path, entry) {
+      final count = census[path] ?? 0;
+      if (count < entry.$1) {
+        stale.add('$path × $count, plafond ${entry.$1} → '
+            '${count == 0 ? 'retirez l’entrée' : 'baissez-le à $count'}');
+      }
+    });
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'Sous dpad, TvBack est le seul à décider du Retour (ADR-0110, '
+          'phase 5) : popRoute et touche, dédoublonnés, et rendu au système '
+          'à la racine. Un PopScope ou une touche Retour lue à côté, c’est '
+          'un double Retour sur Android, ou Menu retenu à la racine sur '
+          'Apple TV (refus de l’App Review). Passez par TvBackStep, ou par '
+          'TvBack.claimKey pour une touche lue avant dpad, ou inscrivez dans '
+          '_ownBack pourquoi :\n\n${offenders.join('\n')}',
+    );
+    expect(
+      stale,
+      isEmpty,
+      reason: 'La liste _ownBack ne fait que rétrécir :\n\n${stale.join('\n')}',
     );
   });
 

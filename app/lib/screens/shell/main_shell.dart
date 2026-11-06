@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_download.dart';
 import '../../models/models.dart';
@@ -26,7 +25,6 @@ import '../../desktop_window.dart';
 import '../../navigation/media_link.dart';
 import '../../navigation/play_link.dart';
 import '../../navigation/shell_navigator.dart';
-import '../../tv/tv_deferred_keyboard.dart';
 import '../../tv/tv_mode.dart';
 import '../../tv/tv_pairing_link.dart';
 import '../settings/tv_pairing_screen.dart';
@@ -43,6 +41,7 @@ import 'shell_header_zone.dart';
 import 'shell_page_open_listener.dart';
 import 'shell_tab_stack.dart';
 import 'shell_tabs.dart';
+import 'shell_tv_back.dart';
 import '../../theme/app_icons.dart';
 import '../../l10n/tr.dart';
 
@@ -73,11 +72,6 @@ class _MainShellState extends State<MainShell> {
     canRequestFocus: false,
     skipTraversal: true,
   );
-
-  /// Le moment où Retour a été pressé une première fois sur l'accueil. Un
-  /// second appui dans [_exitWindow] quitte l'app.
-  DateTime? _exitArmedAt;
-  static const Duration _exitWindow = Duration(seconds: 3);
 
   /// Les onglets réellement montés dans [ShellTabStack].
   ///
@@ -397,40 +391,6 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  /// La touche Retour d'une télécommande, sur l'écran principal.
-  ///
-  /// Elle remonte d'un cran à la fois, comme sur Android TV : du contenu vers
-  /// l'onglet affiché dans l'en-tête, d'un autre onglet vers l'accueil, et de
-  /// l'accueil vers la sortie — après confirmation, parce qu'un appui de trop
-  /// en remontant ne doit pas fermer l'app.
-  void _handleTvBack() {
-    // Le champ de recherche gardait le focus clavier fermé : Retour proposait
-    // de quitter l'app au lieu de rendre la télécommande à la barre.
-    if (TvDeferredKeyboardState.releaseFocused()) return;
-    if (!_headerNode.hasFocus) {
-      _focusTab(_selectedTab);
-      return;
-    }
-    if (_selectedTab != ShellTabs.home) {
-      _selectTab(ShellTabs.home);
-      _focusTab(ShellTabs.home);
-      return;
-    }
-    final now = DateTime.now();
-    final armed = _exitArmedAt;
-    if (armed != null && now.difference(armed) < _exitWindow) {
-      SystemNavigator.pop();
-      return;
-    }
-    _exitArmedAt = now;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(tr('Appuyez de nouveau sur Retour pour quitter')),
-        duration: _exitWindow,
-      ));
-  }
-
   /// Les onglets dont la liste a quitté son haut : la barre du haut mobile y
   /// prend son verre ([MobileTopBar]).
   final Set<String> _scrolledTabs = {};
@@ -549,7 +509,7 @@ class _MainShellState extends State<MainShell> {
                 Expanded(
                   // Pas de navigateur imbriqué sur un téléviseur : les fiches
                   // y restent en plein écran, avec le parcours au D-pad et le
-                  // Retour de [_handleTvBack] tels qu'ils sont réglés.
+                  // Retour de [ShellTvBack] tels qu'ils sont réglés.
                   child: isTv
                       ? tabs
                       : _buildPageNavigator(context,
@@ -606,15 +566,14 @@ class _MainShellState extends State<MainShell> {
 
     if (!isTv) return shell;
 
-    // Sur un téléviseur, Retour sur l'écran principal ne ferme plus l'app du
-    // premier coup : il remonte vers l'en-tête, puis vers l'accueil, puis
-    // demande confirmation. Voir [_handleTvBack].
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        _handleTvBack();
-      },
+    // Sur un téléviseur, Retour sur l'écran principal remonte d'abord vers
+    // l'en-tête. Voir [ShellTvBack].
+    return ShellTvBack(
+      headerNode: _headerNode,
+      selectedTab: _selectedTab,
+      homeTab: ShellTabs.home,
+      focusTab: _focusTab,
+      selectTab: _selectTab,
       child: shell,
     );
   }

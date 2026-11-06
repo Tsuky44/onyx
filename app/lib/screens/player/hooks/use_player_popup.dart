@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../tv/nav/tv_back.dart';
 import '../../../tv/tv_focus.dart';
 import '../../../tv/tv_mode.dart';
 
@@ -71,7 +72,8 @@ class PlayerPopupHost {
         onKeyEvent: (node, event) {
           if (event is! KeyDownEvent) return KeyEventResult.ignored;
           if (isSelfHandledBackKey(event.logicalKey)) {
-            back();
+            // Voir [TvBack.claimKey] : pas deux couches pour un appui.
+            if (TvBack.claimKey(ctx)) back();
             return KeyEventResult.handled;
           }
           return KeyEventResult.ignored;

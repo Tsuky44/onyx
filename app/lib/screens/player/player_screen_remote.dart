@@ -201,6 +201,10 @@ extension _PlayerRemote on _PlayerScreenState {
       case PlayerKeyVolume(:final delta):
         _adjustVolume(delta);
       case PlayerKeyBack():
+        // Sous dpad, la seconde moitié d'un Menu déjà reçu en `popRoute`
+        // (l'Apple TV peut envoyer les deux) : avalée, sans quoi un appui
+        // défait deux couches. Voir [TvBack.claimKey].
+        if (!TvBack.claimKey(context)) break;
         // Innermost first: a menu opened from the chrome, then the episode
         // panel, then the control bar, and only then the player itself.
         if (_popups.back()) break;

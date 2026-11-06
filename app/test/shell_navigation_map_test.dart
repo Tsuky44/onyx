@@ -20,7 +20,7 @@ import 'support/tv_nav_harness.dart';
 /// toucher. Le banc assemble les vrais morceaux du shell : la zone de
 /// l'en-tête ([ShellHeaderZone]) et ses onglets ([GlassNavTab]), la pile des
 /// onglets ([ShellTabStack]) et deux rangées de l'accueil ([MediaRow]). Le
-/// Retour du shell (un `PopScope` de `MainShell`) relève de la phase 5.
+/// Retour du shell (`ShellTvBack`) a sa table à lui, `tv_back_rules_test`.
 
 const _tabs = <String, String>{
   'home': 'Accueil',
