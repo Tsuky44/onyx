@@ -1,7 +1,8 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../input/tv_arrow_gate.dart';
-import '../tv_focus.dart' show TvBackAction, tvRemoteShortcuts;
+import '../tv_focus.dart' show TvBackAction;
 import 'onyx_dpad.dart';
 import 'tv_back.dart';
 
@@ -42,11 +43,17 @@ abstract final class TvNavRoot {
   /// saisie a le focus, et rend la touche quand [TvBack] ne l'a pas prise (la
   /// racine). Elles vont encore à [TvBack], par [TvBackKeyAction], et à lui
   /// seul : plus de `DismissIntent` avant lui, plus de [TvBackAction] après,
-  /// qui dépilait la coquille et retenait Menu à la racine.
+  /// qui dépilait la coquille et retenait Menu à la racine. La liste est celle
+  /// d'`OnyxDpad`, pas celle de l'ancien système (`tvRemoteShortcuts`) : deux
+  /// listes, et `goBack` fermait un dialogue sur Android avant que `popRoute`
+  /// ne dépile la page dessous (vu par `tv_back_rules_test`).
   static Map<ShortcutActivator, Intent> get shortcuts =>
       <ShortcutActivator, Intent>{
         ...WidgetsApp.defaultShortcuts,
-        ...tvRemoteShortcuts(webTv: false),
+        const SingleActivator(LogicalKeyboardKey.select):
+            const ActivateIntent(),
+        const SingleActivator(LogicalKeyboardKey.gameButtonA):
+            const ActivateIntent(),
         for (final key in OnyxDpad.backKeysFor(isAndroid: OnyxDpad.isAndroid))
           SingleActivator(key): const TvBackKeyIntent(),
       };

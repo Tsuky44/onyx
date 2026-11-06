@@ -135,30 +135,42 @@ class TvNavHarness {
 
   /// Envoie [key], y compris celles que `flutter_test` ne sait pas simuler
   /// (`goBack`, le Retour d'une télécommande Android, n'a pas de touche
-  /// physique connue) : l'évènement entre alors directement dans
-  /// [HardwareKeyboard], le chemin que suit toute touche venue du moteur.
-  static Future<void> sendKey(
+  /// physique connue). Rend vrai si la touche a été consommée.
+  ///
+  /// Pour celles-là, l'évènement suit le chemin d'une touche venue du
+  /// moteur : [HardwareKeyboard] (l'état des touches enfoncées), puis le
+  /// `keyMessageHandler` de `KeyEventManager`, par où le `FocusManager` la
+  /// reçoit. [HardwareKeyboard] seul ne la fait voir à personne : jusqu'à la
+  /// phase 5, les tests de `goBack` passaient sans que la touche arrive
+  /// nulle part.
+  static Future<bool> sendKey(
       WidgetTester tester, LogicalKeyboardKey key) async {
-    if (key != LogicalKeyboardKey.goBack) {
-      await tester.sendKeyEvent(key);
-      return;
-    }
+    if (key != LogicalKeyboardKey.goBack) return tester.sendKeyEvent(key);
     const physical = PhysicalKeyboardKey.browserBack;
-    HardwareKeyboard.instance.handleKeyEvent(
-      KeyDownEvent(
-        physicalKey: physical,
-        logicalKey: key,
-        timeStamp: Duration.zero,
-      ),
-    );
-    HardwareKeyboard.instance.handleKeyEvent(
-      KeyUpEvent(
-        physicalKey: physical,
-        logicalKey: key,
-        timeStamp: Duration.zero,
-      ),
-    );
+    // Déprécié depuis Flutter 3.18, mais c'est encore par là que le
+    // `FocusManager` reçoit les touches, et `flutter_test` lui-même y passe
+    // (`simulateKeyDownEvent`) ; il ne sait simplement pas nommer `goBack`
+    // (« result != null », sur toutes les plateformes).
+    // ignore: deprecated_member_use
+    final handler = ServicesBinding.instance.keyEventManager.keyMessageHandler!;
+    bool send(KeyEvent event) {
+      HardwareKeyboard.instance.handleKeyEvent(event);
+      // ignore: deprecated_member_use
+      return handler(KeyMessage(<KeyEvent>[event], null));
+    }
+
+    final handled = send(KeyDownEvent(
+      physicalKey: physical,
+      logicalKey: key,
+      timeStamp: Duration.zero,
+    ));
+    send(KeyUpEvent(
+      physicalKey: physical,
+      logicalKey: key,
+      timeStamp: Duration.zero,
+    ));
     await tester.pump();
+    return handled;
   }
 
   /// Le Retour du système : ce que le moteur envoie pour Menu/‹ sur Apple TV

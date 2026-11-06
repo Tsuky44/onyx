@@ -272,15 +272,11 @@ class _Bench {
       };
 
   /// Envoie le Retour ; rend vrai si la touche a été consommée (nul sans
-  /// touche, ou pour `goBack`, que `flutter_test` ne sait pas mesurer).
+  /// touche).
   Future<bool?> back(_Way way, void Function(Duration) advance) async {
     bool? keyHandled;
     Future<void> key() async {
-      if (_key == LogicalKeyboardKey.goBack) {
-        await TvNavHarness.sendKey(tester, _key);
-      } else {
-        keyHandled = await tester.sendKeyEvent(_key);
-      }
+      keyHandled = await TvNavHarness.sendKey(tester, _key);
       await TvNavHarness.settle(tester);
     }
 
@@ -359,6 +355,8 @@ void main() {
         case _Effect.nothing:
           expect(nav.focusedLabel, before);
           expect(bench.systemPops, 0);
+          expect(keyHandled, isFalse,
+              reason: 'goBack n’est pas une touche de l’app sur Android (C2)');
           if (c.state == _State.page || c.state == _State.dialog) {
             expect(find.text('Fiche'), findsOneWidget);
           }
