@@ -20,6 +20,7 @@ import '../../utils/responsive.dart';
 import '../../widgets/global/overlay_back_button.dart';
 import '../../widgets/global/profile_disc.dart';
 import '../../l10n/tr.dart';
+import '../../tv/nav/tv_region.dart';
 
 /// Le choix de l'image de profil de [account] : un avatar de la galerie, une
 /// photo, ou l'initiale. Enregistré sur son serveur, il suit le compte sur tous
@@ -189,25 +190,31 @@ class _AvatarPickerScreenState extends State<AvatarPickerScreen> {
                         ],
                       ),
                       const SizedBox(height: 28),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: compact ? 12 : 16,
-                        runSpacing: compact ? 12 : 16,
-                        children: [
-                          for (final (index, preset)
-                              in ProfileAvatars.gallery.indexed)
-                            _PresetTile(
-                              preset: preset,
-                              number: index + 1,
-                              size: tile,
-                              selected: preset.key == selectedKey,
-                              autofocus: selectedKey == null
-                                  ? index == 0
-                                  : preset.key == selectedKey,
-                              enabled: !_busy,
-                              onSelect: () => _choosePreset(preset),
-                            ),
-                        ],
+                      // Gauche et droite s'arrêtent au bord de la rangée,
+                      // comme avant la refonte : sous dpad, gauche depuis le
+                      // premier avatar partait sur « Retour », en haut à
+                      // gauche de l'écran.
+                      TvRegion.rail(
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: compact ? 12 : 16,
+                          runSpacing: compact ? 12 : 16,
+                          children: [
+                            for (final (index, preset)
+                                in ProfileAvatars.gallery.indexed)
+                              _PresetTile(
+                                preset: preset,
+                                number: index + 1,
+                                size: tile,
+                                selected: preset.key == selectedKey,
+                                autofocus: selectedKey == null
+                                    ? index == 0
+                                    : preset.key == selectedKey,
+                                enabled: !_busy,
+                                onSelect: () => _choosePreset(preset),
+                              ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

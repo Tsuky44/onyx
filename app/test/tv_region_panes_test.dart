@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:onyx/tv/nav/tv_nav_engine.dart';
 import 'package:onyx/tv/nav/tv_region.dart';
 
 import 'support/tv_nav_harness.dart';

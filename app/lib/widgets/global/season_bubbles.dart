@@ -521,6 +521,11 @@ class _SeasonBubble extends StatelessWidget {
       onTap: onTap,
       child: TvFocusable(
         onSelect: onTap,
+        // On entre dans la rangée sur la saison affichée, pas sur la bulle
+        // qui se trouve sous l'élément quitté (vu au simulateur : Bas depuis
+        // « Ajouter à une liste » tombait sur la saison 8). Sans effet avec
+        // l'ancien système.
+        entry: selected,
         focusScale: 1.0,
         borderRadius: radius,
         child:

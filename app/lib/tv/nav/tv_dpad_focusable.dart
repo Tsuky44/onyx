@@ -205,7 +205,19 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
         showRing: widget.showRing,
         child: child,
       ),
-      child: widget.child,
+      child: widget.childFocus
+          // Les cibles de la carte ne se trouvent pas par le parcours : haut
+          // et bas passent de carte en carte, sans s'arrêter sur le menu de
+          // la ligne suivante ni sur l'`InkWell` qui double la carte ; droite
+          // les atteint ([_containedStep], [TvCardDirections]).
+          ? Focus(
+              canRequestFocus: false,
+              skipTraversal: true,
+              descendantsAreTraversable: false,
+              includeSemantics: false,
+              child: widget.child,
+            )
+          : widget.child,
     );
     final card = onDirection == null || !widget.childFocus
         ? focusable

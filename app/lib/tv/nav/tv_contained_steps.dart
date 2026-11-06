@@ -12,9 +12,11 @@ abstract final class TvContainedSteps {
   static bool _placed(FocusNode node) =>
       node is! FocusScopeNode && node.context != null && !node.rect.isEmpty;
 
-  /// Les boutons de [row], dans le parcours et posés à l'écran.
+  /// Les boutons de [row] posés à l'écran, qu'ils soient ou non dans le
+  /// parcours directionnel : ceux d'un `TvFocusable.childFocus` n'y sont pas
+  /// sous dpad, justement pour n'être atteints que d'ici.
   static Iterable<FocusNode> _inside(FocusNode row) =>
-      row.traversalDescendants.where(_placed);
+      row.descendants.where((node) => node.canRequestFocus).where(_placed);
 
   /// Droite depuis la ligne [row] : son premier bouton à droite de son
   /// centre. Nul s'il n'y en a pas.

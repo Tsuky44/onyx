@@ -64,6 +64,15 @@ const List<String> _home = <String>['lib/tv/nav/', 'lib/tv/input/'];
 /// tant que le drapeau `ONYX_TV_NAV` existe : la politique de parcours et l'action des
 /// flèches de l'ancien système y sont encore montées quand il vaut `legacy`.
 ///
+/// Phase 3 : les réglages (`settings_screen`, sur `TvRegion.panes`), les
+/// épisodes (`episode_tile`, sur `TvFocusable.onDirection`) et le bandeau
+/// (`hero_carousel`, sur `TvRegion.slide`) sont sortis. Ce qui reste des
+/// écrans de la phase 3 n'est pas de la navigation : la touche lecture/pause
+/// du bandeau « Reprendre » (`remote_playback_banner`), le suivi de la bulle
+/// qui grandit (`season_bubbles`, un défilement à la fin de l'animation, pas
+/// par flèche), le défilement du texte d'un document (`legal_document_screen`)
+/// et le zoom de la grille au clavier (`poster_grid_zoom_region`).
+///
 /// **La liste ne fait que rétrécir.** Un fichier qui y figure n'en gagne pas
 /// une de plus ; un fichier qui en perd voit son plafond baissé dans le même
 /// changement (le second test l'exige), pour qu'il ne puisse plus y remonter.
