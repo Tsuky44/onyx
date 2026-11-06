@@ -2,6 +2,9 @@
 
 - **Statut :** accepté. Vérifié par les tests de focus et la suite complète ; pas encore à la
   télécommande d'un vrai téléviseur ni sur le simulateur Apple TV.
+  **Remplacée pour ce qui touche aux entrées de zone (proposé, [ADR-0110](0110-un-seul-systeme-de-focus-dpad.md))** :
+  `TvFocusEntries` et `TvTraversalPolicy` cèdent la place aux régions de dpad (`TvRegion`) à la
+  phase 2 de la refonte. D'ici là, et si l'ADR-0110 est rejetée, cette ADR reste pleine.
 - **Date :** 2026-11-06
 - **Portée :** `tv/tv_focus_entry.dart` (nouveau), `tv/tv_focus_memory.dart`, `tv/tv_key_repeat.dart`,
   `screens/shell/main_shell.dart`, `main.dart`.
