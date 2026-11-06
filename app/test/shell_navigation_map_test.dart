@@ -107,7 +107,16 @@ class _ShellState extends State<_Shell> {
                 tabs: {
                   'home': SingleChildScrollView(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Le bouton du bandeau, au-dessus des rangées.
+                        Padding(
+                          padding: const EdgeInsets.all(28),
+                          child: ElevatedButton(
+                            onPressed: () {},
+                            child: const Text('Bandeau'),
+                          ),
+                        ),
                         MediaRow(
                           title: 'Reprendre',
                           items: [
@@ -118,6 +127,7 @@ class _ShellState extends State<_Shell> {
                         ),
                         MediaRow(
                           title: 'Ajouts',
+                          onSeeAll: () {},
                           items: [
                             for (var i = 0; i < 8; i++)
                               _movie(200 + i, 'Ajouts $i'),
@@ -192,8 +202,13 @@ void main() {
       (from: 'Films', direction: _left, to: 'Accueil'),
       (from: 'Séries', direction: _right, to: 'Recherche'),
       (from: 'Accueil', direction: _left, to: 'Accueil'),
-      // Bas depuis l'onglet affiché entre dans l'accueil par sa première carte.
-      (from: 'Accueil', direction: _down, to: 'Reprendre 0'),
+      // Bas depuis l'onglet affiché entre dans l'accueil par le bandeau.
+      (from: 'Accueil', direction: _down, to: 'Bandeau'),
+      // Puis dans la première rangée, pas sur « Tout voir » de la suivante :
+      // vu au simulateur sous dpad, quand une zone entourait la page entière
+      // (constat N6).
+      (from: 'Bandeau', direction: _down, to: 'Reprendre 0'),
+      (from: 'Reprendre 0', direction: _up, to: 'Bandeau'),
       // Une rangée se parcourt carte à carte, et s'arrête à son bord.
       (from: 'Reprendre 0', direction: _right, to: 'Reprendre 1'),
       (from: 'Reprendre 1', direction: _left, to: 'Reprendre 0'),
@@ -201,10 +216,9 @@ void main() {
       // D'une rangée à l'autre, à la verticale.
       (from: 'Reprendre 2', direction: _down, to: 'Ajouts 2'),
       (from: 'Ajouts 2', direction: _up, to: 'Reprendre 2'),
-      // Haut depuis la première rangée monte sur l'onglet affiché, même sous
-      // un autre onglet (ADR-0109 pour l'ancien système, entrée de
-      // `TvRegion.tabs` sous dpad).
-      (from: 'Reprendre 3', direction: _up, to: 'Accueil'),
+      // Haut depuis le bandeau monte sur l'onglet affiché (ADR-0109 pour
+      // l'ancien système, entrée de `TvRegion.tabs` sous dpad).
+      (from: 'Bandeau', direction: _up, to: 'Accueil'),
     ];
 
     for (final step in steps) {
@@ -222,7 +236,7 @@ void main() {
     testWidgets('une rangée quittée se retrouve à la carte où l’on était',
         (tester) async {
       final nav = await pump(tester);
-      await _focusOn(tester, 'Accueil');
+      await _focusOn(tester, 'Bandeau');
       final route = <(TraversalDirection, String)>[
         (_down, 'Reprendre 0'),
         (_right, 'Reprendre 1'),

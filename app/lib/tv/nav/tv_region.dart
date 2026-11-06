@@ -21,6 +21,9 @@ enum TvRegionKind {
 
   /// Un volet d'un écran en plusieurs colonnes (les réglages).
   pane,
+
+  /// Une page entière, faite d'autres zones (le contenu d'un onglet).
+  page,
 }
 
 /// Une zone que la télécommande parcourt comme un tout, et qui se souvient de
@@ -40,6 +43,7 @@ enum TvRegionKind {
 /// | [list] | mémoire | sort | sort |
 /// | [tabs] | onglet marqué `entry` (l'onglet affiché) | reste | sort |
 /// | [pane] | mémoire | sort (vers le volet voisin) | sort |
+/// | [page] | pas de zone sous dpad (voir [TvRegion.page]) | — | — |
 ///
 /// « Mémoire » sans souvenir retombe sur l'élément marqué `entry`
 /// (`TvFocusable.entry`), puis sur le plus proche (constat C8).
@@ -69,6 +73,23 @@ class TvRegion extends StatelessWidget {
     required this.child,
     this.entersAtTop = false,
   }) : kind = TvRegionKind.list;
+
+  /// Une page entière, faite d'autres zones : le contenu d'un onglet, avec
+  /// ses rangées.
+  ///
+  /// **Sous dpad, ce n'est pas une zone** : une `DpadRegion` cherche d'abord
+  /// dans ses propres éléments avant d'en sortir, et les cartes des rangées
+  /// appartiennent à leur rangée, pas à la page. Autour de l'accueil, Bas
+  /// depuis le bouton du bandeau sautait donc la première rangée pour « Tout
+  /// voir » de la suivante, le premier élément *de la page* en dessous (vu au
+  /// simulateur, constat N6 du plan). L'entrée dans la page est alors celle de
+  /// la zone où le focus arrive.
+  ///
+  /// Avec l'ancien système, c'est une mémoire qui entre en haut de la page à
+  /// la première visite (`TvFocusMemory(entersAtTop: true)`), à l'identique.
+  const TvRegion.page({super.key, this.id, required this.child})
+      : kind = TvRegionKind.page,
+        entersAtTop = true;
 
   const TvRegion.tabs({super.key, this.id, required this.child})
       : kind = TvRegionKind.tabs,
@@ -120,6 +141,7 @@ class TvRegion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!TvNavScope.isActive(context)) return _legacy();
+    if (kind == TvRegionKind.page) return child;
     final id = this.id;
     return DpadRegion(
       memoryKey: id == null ? null : OnyxDpad.memoryKeyFor(context, id),
@@ -130,7 +152,10 @@ class TvRegion extends StatelessWidget {
       horizontalEdge: switch (kind) {
         TvRegionKind.rail || TvRegionKind.tabs => DpadEdgeBehavior.stop,
         TvRegionKind.grid => DpadEdgeBehavior.lineWrap,
-        TvRegionKind.list || TvRegionKind.pane => DpadEdgeBehavior.leave,
+        TvRegionKind.list ||
+        TvRegionKind.pane ||
+        TvRegionKind.page =>
+          DpadEdgeBehavior.leave,
       },
       verticalEdge: DpadEdgeBehavior.leave,
       child: child,
@@ -142,6 +167,7 @@ class TvRegion extends StatelessWidget {
       case TvRegionKind.rail:
       case TvRegionKind.grid:
       case TvRegionKind.list:
+      case TvRegionKind.page:
         return TvFocusMemory(entersAtTop: entersAtTop, child: child);
       case TvRegionKind.pane:
         return TvFocusPane(child: child);

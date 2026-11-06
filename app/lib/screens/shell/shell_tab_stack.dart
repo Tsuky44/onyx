@@ -65,14 +65,9 @@ class _ShellTabStackState extends State<ShellTabStack> {
                 excluding: position != index,
                 // Redescendre de l'en-tête ramène là où l'on était dans cet
                 // onglet, et en haut de la page la première fois — voir
-                // [TvRegion.entersAtTop]. Une page se parcourt en colonne :
-                // une liste, pas une rangée.
+                // [TvRegion.page].
                 child: mounted.contains(id)
-                    ? TvRegion.list(
-                        id: 'shell/$id',
-                        entersAtTop: true,
-                        child: tabs[id]!,
-                      )
+                    ? TvRegion.page(id: 'shell/$id', child: tabs[id]!)
                     : const SizedBox.shrink(),
               ),
             ),
