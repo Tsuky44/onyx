@@ -36,10 +36,27 @@ class _OnyxMenuTile extends StatefulWidget {
 class _OnyxMenuTileState extends State<_OnyxMenuTile> {
   bool _hovered = false;
 
+  /// Le nœud de la ligne quand le menu n'en fournit pas. L'éclairage se lit
+  /// sur lui, pas sur le `Focus` le plus proche : sous dpad, `TvFocusable`
+  /// pose sous la cible un `Focus` qui ne prend jamais le focus (son enfant
+  /// en est exclu), et la ligne focalisée restait éteinte (ADR-0110,
+  /// phase 7).
+  FocusNode? _ownedNode;
+
+  FocusNode get _node =>
+      widget.focusNode ??
+      (_ownedNode ??= FocusNode(debugLabel: 'onyx-menu-row'));
+
+  @override
+  void dispose() {
+    _ownedNode?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return TvFocusable(
-      focusNode: widget.focusNode,
+      focusNode: _node,
       onSelect: widget.onTap,
       borderRadius: BorderRadius.circular(6),
       // Rows touch each other: growing one would climb over its neighbour.
@@ -54,13 +71,14 @@ class _OnyxMenuTileState extends State<_OnyxMenuTile> {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
-          // Read from the tree rather than kept in a flag of our own: the menu
+          // Read from the node rather than kept in a flag of our own: the menu
           // hands one node from row to row as it changes section, so a row can
           // be built around a node that already holds the focus — and nothing
           // would ever announce a change that never happened.
-          child: Builder(
-            builder: (context) {
-              final focused = Focus.of(context).hasFocus;
+          child: ListenableBuilder(
+            listenable: _node,
+            builder: (context, _) {
+              final focused = _node.hasFocus;
               return DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(6),

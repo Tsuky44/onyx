@@ -99,17 +99,11 @@ const Map<String, Map<String, int>> _legacy = {
   'lib/screens/player/player_screen.dart': {
     'onKeyEvent': 1,
   },
-  'lib/screens/player/widgets/onyx/onyx_controls_layer.dart': {
-    'TvFocusLegacy': 4,
-  },
   'lib/screens/player/widgets/onyx/onyx_progress_bar.dart': {
     'onKeyEvent': 1,
   },
   'lib/screens/player/widgets/onyx/onyx_settings_menu.dart': {
     'onKeyEvent': 1,
-  },
-  'lib/screens/player/widgets/onyx/onyx_skip_intro_button.dart': {
-    'TvFocusLegacy': 1,
   },
   'lib/screens/player/widgets/player_episodes_panel.dart': {
     'ensureVisible': 1,

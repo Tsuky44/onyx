@@ -24,6 +24,7 @@ import '../../services/watch_party.dart';
 import 'chrome_auto_hide.dart';
 import 'display_cutouts.dart';
 import 'video_display_mode.dart';
+import '../../tv/nav/onyx_dpad.dart' show TvNavScope;
 import '../../tv/nav/tv_back.dart';
 import '../../tv/tv_mode.dart';
 import '../../tv/touchpad_motion.dart';
@@ -252,18 +253,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   /// Les menus ouverts par-dessus le lecteur. Voir [PlayerPopupHost].
   late final PlayerPopupHost _popups = PlayerPopupHost(
     isActive: () => !_isDisposing && mounted,
-    onDismissed: () {
-      // The remote came from the control bar and has to go back to it, or the
-      // next key press has nowhere to land.
-      if (TvMode.isTv) {
-        _enterControlBar();
-      } else {
-        _keyboardFocusNode.requestFocus();
-        // Le chrome est resté affiché tout le temps du menu (voir
-        // [chromeMayAutoHide]) : son compte à rebours repart d'ici.
-        if (_showControls) _hideControlsWithDelay();
-      }
-    },
+    onDismissed: (origin) => _handlePopupDismissed(origin),
   );
 
   /// Whether this screen may take over the device's orientation and system

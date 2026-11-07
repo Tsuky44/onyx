@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:onyx/screens/player/hooks/use_player_popup.dart';
 import 'package:onyx/screens/player/playback/playback_session.dart';
 import 'package:onyx/screens/player/playback/sleep_timer.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_settings_menu.dart';
 import 'package:onyx/screens/player/video_display_mode.dart';
-import 'package:onyx/tv/tv_focus.dart';
-import 'package:onyx/tv/tv_mode.dart';
+import 'package:onyx/tv/nav/tv_nav_engine.dart';
+
+import 'support/tv_nav_harness.dart';
 
 /// Le défaut que ce fichier verrouille : sur un téléviseur, le menu de réglages
 /// du Chrome Onyx s'ouvrait, la télécommande y déplaçait bien le focus — mais
@@ -14,98 +15,131 @@ import 'package:onyx/tv/tv_mode.dart';
 /// son halo par le [Material] du menu, c'est-à-dire *sous* le fond opaque du
 /// panneau. Impossible, dès lors, de savoir où l'on est, donc impossible de
 /// changer de langue : le menu passait pour bloqué.
+///
+/// Les tests tournent dans les deux systèmes de navigation (`TvNavHarness`),
+/// le menu étant ouvert par un vrai [PlayerPopupHost], comme le lecteur.
 void main() {
-  setUp(() => TvMode.enabled.value = true);
-  tearDown(() => TvMode.enabled.value = false);
+  const down = TraversalDirection.down;
+  const up = TraversalDirection.up;
+  const left = TraversalDirection.left;
 
-  testWidgets('la ligne où se trouve la télécommande se voit', (tester) async {
-    await _pumpMenu(tester);
+  TvNavHarness.forEachEngine((engine) {
+    testWidgets('la ligne où se trouve la télécommande se voit', (tester) async {
+      await _pumpMenu(tester, engine);
 
-    // Une seule, et c'est bien celle qui détient le focus : deux lignes
-    // allumées, ou zéro, et l'écran ment sur ce que fera la touche OK.
-    expect(_highlighted(tester), 'Audio');
-  });
+      // Une seule, et c'est bien celle qui détient le focus : deux lignes
+      // allumées, ou zéro, et l'écran ment sur ce que fera la touche OK.
+      expect(_highlighted(tester), 'Audio');
+    });
 
-  testWidgets('les flèches parcourent le menu', (tester) async {
-    await _pumpMenu(tester);
+    testWidgets('les flèches parcourent le menu', (tester) async {
+      final nav = await _pumpMenu(tester, engine);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pumpAndSettle();
-    expect(_highlighted(tester), 'Sous-titres');
+      await nav.press(down);
+      expect(_highlighted(tester), 'Sous-titres');
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-    await tester.pumpAndSettle();
-    expect(_highlighted(tester), 'Audio');
-  });
+      await nav.press(up);
+      expect(_highlighted(tester), 'Audio');
+    });
 
-  testWidgets('OK ouvre la section et la télécommande arrive sur la piste en '
-      'cours', (tester) async {
-    await _pumpMenu(tester);
+    testWidgets('OK ouvre la section et la télécommande arrive sur la piste en '
+        'cours', (tester) async {
+      final nav = await _pumpMenu(tester, engine);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.select);
-    await tester.pumpAndSettle();
+      await nav.select();
 
-    // Pas la première ligne de la liste : celle qui est déjà jouée. C'est de
-    // là que l'utilisateur compte se déplacer.
-    expect(_highlighted(tester), 'English');
-  });
+      // Pas la première ligne de la liste : celle qui est déjà jouée. C'est de
+      // là que l'utilisateur compte se déplacer.
+      expect(_highlighted(tester), 'English');
+    });
 
-  testWidgets('retour remonte à l’index, sur la ligne d’où l’on vient',
-      (tester) async {
-    await _pumpMenu(tester);
-    await tester.sendKeyEvent(LogicalKeyboardKey.select);
-    await tester.pumpAndSettle();
+    testWidgets('retour remonte à l’index, sur la ligne d’où l’on vient',
+        (tester) async {
+      final nav = await _pumpMenu(tester, engine);
+      await nav.select();
 
-    // Gauche : le menu est une colonne, la touche n'y a rien d'autre à faire
-    // et c'est le geste que le chevron du bandeau annonce.
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
-    await tester.pumpAndSettle();
+      // Gauche : le menu est une colonne, la touche n'y a rien d'autre à faire
+      // et c'est le geste que le chevron du bandeau annonce.
+      await nav.press(left);
 
-    expect(find.text('Vitesse de lecture'), findsOneWidget);
-    expect(_highlighted(tester), 'Audio');
-  });
+      expect(find.text('Vitesse de lecture'), findsOneWidget);
+      expect(_highlighted(tester), 'Audio');
+    });
 
-  testWidgets('OK sur une piste la choisit', (tester) async {
-    final session = _FakeSession();
-    await _pumpMenu(tester, session: session);
+    testWidgets('OK sur une piste la choisit', (tester) async {
+      final session = _FakeSession();
+      final nav = await _pumpMenu(tester, engine, session: session);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.select);
-    await tester.pumpAndSettle();
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-    await tester.pumpAndSettle();
-    await tester.sendKeyEvent(LogicalKeyboardKey.select);
-    await tester.pumpAndSettle();
+      await nav.select();
+      await nav.press(up);
+      await nav.select();
 
-    expect(session.chosen?.title, 'Français');
-  });
+      expect(session.chosen?.title, 'Français');
+    });
 
-  testWidgets('la minuterie de veille se règle à la télécommande',
-      (tester) async {
-    await _pumpMenu(tester);
+    testWidgets('la minuterie de veille se règle à la télécommande',
+        (tester) async {
+      final nav = await _pumpMenu(tester, engine);
 
-    // Audio, Sous-titres, Vitesse de lecture, Affichage, Minuterie de veille.
-    for (var i = 0; i < 4; i++) {
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-      await tester.pumpAndSettle();
+      // Audio, Sous-titres, Vitesse de lecture, Affichage, Minuterie de veille.
+      for (var i = 0; i < 4; i++) {
+        await nav.press(down);
+      }
+      expect(_highlighted(tester), 'Minuterie de veille');
+      await nav.select();
+      expect(_highlighted(tester), 'Désactivée');
+
+      // Désactivée, 5, 10, 15, 30 minutes.
+      for (var i = 0; i < 4; i++) {
+        await nav.press(down);
+      }
+      await nav.select();
+
+      expect(SleepTimer.instance.chosen, const Duration(minutes: 30));
+
+      // Avant la fin du test : il refuse de se terminer sur une minuterie qui
+      // court encore.
+      SleepTimer.instance.resetForTest();
+    });
+
+    testWidgets('Retour remonte d’une section à l’index, puis ferme le menu',
+        (tester) async {
+      final nav = await _pumpMenu(tester, engine);
+      await nav.select();
+      expect(_highlighted(tester), 'English');
+
+      // Premier Retour : la section remonte à l'index, le menu reste ouvert.
+      await nav.back();
+      expect(find.text('Vitesse de lecture'), findsOneWidget);
+      expect(_highlighted(tester), 'Audio');
+
+      // Second Retour : l'index ne remonte plus nulle part, le menu se ferme.
+      await nav.back();
+      expect(find.text('Vitesse de lecture'), findsNothing);
+    });
+
+    if (engine == TvNavEngine.dpad) {
+      testWidgets('une touche Retour suivie de son popRoute ne défait qu’un '
+          'niveau', (tester) async {
+        final nav = await _pumpMenu(tester, engine);
+        await nav.select();
+        expect(_highlighted(tester), 'English');
+
+        // Sur Apple TV, une même pression arrive deux fois : la touche, puis
+        // `popRoute` (TvBack.claimKey les dédoublonne). Un seul niveau est
+        // défait par paire.
+        await nav.back();
+        await nav.popRoute();
+        expect(find.text('Vitesse de lecture'), findsOneWidget,
+            reason: 'la section est remontée, le menu reste ouvert');
+        expect(_highlighted(tester), 'Audio');
+
+        await nav.back();
+        await nav.popRoute();
+        expect(find.text('Vitesse de lecture'), findsNothing,
+            reason: 'la seconde paire ferme le menu');
+      });
     }
-    expect(_highlighted(tester), 'Minuterie de veille');
-    await tester.sendKeyEvent(LogicalKeyboardKey.select);
-    await tester.pumpAndSettle();
-    expect(_highlighted(tester), 'Désactivée');
-
-    // Désactivée, 5, 10, 15, 30 minutes.
-    for (var i = 0; i < 4; i++) {
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-      await tester.pumpAndSettle();
-    }
-    await tester.sendKeyEvent(LogicalKeyboardKey.select);
-    await tester.pumpAndSettle();
-
-    expect(SleepTimer.instance.chosen, const Duration(minutes: 30));
-
-    // Avant la fin du test : il refuse de se terminer sur une minuterie qui
-    // court encore.
-    SleepTimer.instance.resetForTest();
   });
 }
 
@@ -127,54 +161,70 @@ String _highlighted(WidgetTester tester) {
       .data!;
 }
 
-/// Monte le menu comme le lecteur le fait : dans un scope de popup où la
-/// télécommande est poussée, et sous les raccourcis de l'app.
-Future<void> _pumpMenu(WidgetTester tester, {_FakeSession? session}) async {
-  final scope = FocusScopeNode(debugLabel: 'popup');
-  addTearDown(scope.dispose);
+/// L'écran d'accueil : il ouvre le menu par un vrai [PlayerPopupHost], après
+/// sa première image, comme le lecteur ouvre un popup.
+class _MenuHome extends StatefulWidget {
+  const _MenuHome({required this.host, required this.session});
 
-  // Ce que fait `_insertPlayerPopup` : le popup n'est pas une route, donc rien
-  // n'y amène le focus tout seul, et il pousse la télécommande sur la première
-  // ligne venue. Posé *avant* la frame, comme dans le lecteur — le menu, lui,
-  // s'inscrit pendant sa construction, donc après. L'ordre est ce qui donne le
-  // dernier mot au menu, qui seul sait quelle ligne compte.
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    scope.requestFocus();
-    scope.nextFocus();
-  });
+  final PlayerPopupHost host;
+  final _FakeSession session;
 
-  await tester.pumpWidget(
-    MaterialApp(
-      shortcuts: <ShortcutActivator, Intent>{
-        ...WidgetsApp.defaultShortcuts,
-        ...tvSelectShortcuts,
-      },
-      home: TvScope(
-        isTv: true,
-        child: Scaffold(
-          body: MediaQuery(
+  @override
+  State<_MenuHome> createState() => _MenuHomeState();
+}
+
+class _MenuHomeState extends State<_MenuHome> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.host.insert(
+        context,
+        (dismiss) => Material(
+          type: MaterialType.transparency,
+          child: MediaQuery(
             // La police de test est à chasse fixe et bien plus large que la
             // vraie : sans ça les libellés débordent des 292 px du panneau.
-            data: const MediaQueryData(textScaler: TextScaler.linear(0.4)),
-            child: FocusScope(
-              node: scope,
-              child: OnyxSettingsMenu(
-                session: session ?? _FakeSession(),
-                currentMode: VideoDisplayMode.original,
-                onModeChanged: (_) {},
-                playbackRate: 1.0,
-                playbackRates: const [0.5, 1.0, 1.5, 2.0],
-                onRateChanged: (_) {},
-                onClose: () {},
-              ),
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(0.4),
+            ),
+            child: OnyxSettingsMenu(
+              session: widget.session,
+              currentMode: VideoDisplayMode.original,
+              onModeChanged: (_) {},
+              playbackRate: 1.0,
+              playbackRates: const [0.5, 1.0, 1.5, 2.0],
+              onRateChanged: (_) {},
+              onClose: dismiss,
             ),
           ),
         ),
-      ),
-    ),
-  );
+      );
+    });
+  }
 
+  @override
+  Widget build(BuildContext context) => const Scaffold(body: SizedBox.expand());
+}
+
+/// Monte le menu comme le lecteur le fait : dans un [PlayerPopupHost], sous
+/// le système de navigation [engine].
+Future<TvNavHarness> _pumpMenu(
+  WidgetTester tester,
+  TvNavEngine engine, {
+  _FakeSession? session,
+}) async {
+  final host = PlayerPopupHost(isActive: () => true, onDismissed: (_) {});
+  addTearDown(host.dispose);
+
+  final nav = await TvNavHarness.pump(
+    tester,
+    _MenuHome(host: host, session: session ?? _FakeSession()),
+    engine: engine,
+  );
   await tester.pumpAndSettle();
+  return nav;
 }
 
 class _FakeSession implements PlaybackSession {

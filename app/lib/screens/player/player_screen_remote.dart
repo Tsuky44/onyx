@@ -53,6 +53,30 @@ extension _PlayerRemote on _PlayerScreenState {
     _safeSetState(() {});
   }
 
+  /// Un menu du lecteur vient de se fermer : la télécommande revient au
+  /// chrome, le pointeur au lecteur. [origin] : voir
+  /// [PlayerPopupHost.onDismissed].
+  void _handlePopupDismissed(FocusNode? origin) {
+    // The remote came from the control bar and has to go back to it, or the
+    // next key press has nowhere to land.
+    if (TvMode.isTv) {
+      // Sous dpad, sur la commande même qui a ouvert le menu, comme le ferait
+      // une route (ADR-0110, phase 7) ; l'ancien système la pose sur
+      // lecture/pause, à l'identique.
+      if (origin != null && TvNavScope.isActive(context)) {
+        origin.requestFocus();
+        _showControlsTransient();
+      } else {
+        _enterControlBar();
+      }
+      return;
+    }
+    _keyboardFocusNode.requestFocus();
+    // Le chrome est resté affiché tout le temps du menu (voir
+    // [chromeMayAutoHide]) : son compte à rebours repart d'ici.
+    if (_showControls) _hideControlsWithDelay();
+  }
+
   /// Hands the remote to the control bar, and puts the chrome up to receive it.
   void _enterControlBar([_RemoteEntry entry = _RemoteEntry.playPause]) {
     _remoteEntry = entry;

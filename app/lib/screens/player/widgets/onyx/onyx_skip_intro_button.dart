@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../l10n/tr.dart';
 import '../../../../tv/tv_focus.dart';
-import '../../../../tv/tv_focus_rows.dart';
+import '../../../../tv/nav/tv_region.dart';
 import '../../playback/skip_segments.dart';
 import 'onyx_chrome_theme.dart';
 
@@ -161,7 +161,7 @@ class OnyxSkipIntroSlot extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(metrics.gutter, 0, metrics.gutter, 14),
       child: Align(
         alignment: Alignment.centerRight,
-        child: focusRow ? TvFocusRow(child: button) : button,
+        child: focusRow ? TvRegion.controls(child: button) : button,
       ),
     );
   }

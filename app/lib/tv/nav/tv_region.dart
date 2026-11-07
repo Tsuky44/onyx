@@ -3,7 +3,9 @@ import 'package:flutter/widgets.dart';
 
 import '../tv_focus_memory.dart';
 import '../tv_focus_panes.dart';
+import '../tv_focus_rows.dart';
 import 'onyx_dpad.dart';
+import 'tv_control_rows.dart';
 import 'tv_pane_region.dart';
 import 'tv_slide_edges.dart';
 
@@ -32,6 +34,12 @@ enum TvRegionKind {
 
   /// Une page entière, faite d'autres zones (le contenu d'un onglet).
   page,
+
+  /// Une rangée de commandes du chrome du lecteur, sous un [controlRows].
+  controls,
+
+  /// Les rangées de commandes d'un chrome, autour de leurs [controls].
+  controlRows,
 }
 
 /// Une zone que la télécommande parcourt comme un tout, et qui se souvient de
@@ -54,6 +62,8 @@ enum TvRegionKind {
 /// | [panes] | pas de zone : chaque volet est la sienne | — | — |
 /// | [slide] | mémoire | tourne la page ([TvRegion.onEdge]) | sort |
 /// | [page] | pas de zone sous dpad (voir [TvRegion.page]) | — | — |
+/// | [controls] | `preferredFocus`, sinon le plus proche | reste | rangée voisine, dans l'ordre de l'écran |
+/// | [controlRows] | pas de zone : chaque rangée est la sienne | — | — |
 ///
 /// « Mémoire » sans souvenir retombe sur l'élément marqué `entry`
 /// (`TvFocusable.entry`), puis sur le plus proche (constat C8).
@@ -68,24 +78,30 @@ class TvRegion extends StatelessWidget {
     this.id,
     required this.child,
     this.entersAtTop = false,
-  })  : kind = TvRegionKind.rail,
-        onEdge = null;
+  }) : kind = TvRegionKind.rail,
+       onEdge = null,
+       preferredFocus = null,
+       onNavigate = null;
 
   const TvRegion.grid({
     super.key,
     this.id,
     required this.child,
     this.entersAtTop = false,
-  })  : kind = TvRegionKind.grid,
-        onEdge = null;
+  }) : kind = TvRegionKind.grid,
+       onEdge = null,
+       preferredFocus = null,
+       onNavigate = null;
 
   const TvRegion.list({
     super.key,
     this.id,
     required this.child,
     this.entersAtTop = false,
-  })  : kind = TvRegionKind.list,
-        onEdge = null;
+  }) : kind = TvRegionKind.list,
+       onEdge = null,
+       preferredFocus = null,
+       onNavigate = null;
 
   /// Une page entière, faite d'autres zones : le contenu d'un onglet, avec
   /// ses rangées.
@@ -101,14 +117,18 @@ class TvRegion extends StatelessWidget {
   /// Avec l'ancien système, c'est une mémoire qui entre en haut de la page à
   /// la première visite (`TvFocusMemory(entersAtTop: true)`), à l'identique.
   const TvRegion.page({super.key, this.id, required this.child})
-      : kind = TvRegionKind.page,
-        entersAtTop = true,
-        onEdge = null;
+    : kind = TvRegionKind.page,
+      entersAtTop = true,
+      onEdge = null,
+      preferredFocus = null,
+      onNavigate = null;
 
   const TvRegion.tabs({super.key, this.id, required this.child})
-      : kind = TvRegionKind.tabs,
-        entersAtTop = false,
-        onEdge = null;
+    : kind = TvRegionKind.tabs,
+      entersAtTop = false,
+      onEdge = null,
+      preferredFocus = null,
+      onNavigate = null;
 
   /// Un volet, sous un [TvRegion.panes].
   ///
@@ -118,9 +138,11 @@ class TvRegion extends StatelessWidget {
   /// haut (pas sur celui qui est à la même hauteur). Sous dpad, voir
   /// `TvPaneRegion` ; avec l'ancien système, `TvFocusPane`.
   const TvRegion.pane({super.key, this.id, required this.child})
-      : kind = TvRegionKind.pane,
-        entersAtTop = false,
-        onEdge = null;
+    : kind = TvRegionKind.pane,
+      entersAtTop = false,
+      onEdge = null,
+      preferredFocus = null,
+      onNavigate = null;
 
   /// Des volets côte à côte (une liste de catégories et la page qu'elle
   /// ouvre), chacun dans son [TvRegion.pane].
@@ -129,10 +151,12 @@ class TvRegion extends StatelessWidget {
   /// les zones ne s'emboîtent pas (constat C15). Avec l'ancien système, c'est
   /// le `TvFocusPanes` qui ordonne ses volets.
   const TvRegion.panes({super.key, required this.child})
-      : kind = TvRegionKind.panes,
-        id = null,
-        entersAtTop = false,
-        onEdge = null;
+    : kind = TvRegionKind.panes,
+      id = null,
+      entersAtTop = false,
+      onEdge = null,
+      preferredFocus = null,
+      onNavigate = null;
 
   /// La page affichée d'un carrousel (le bandeau de l'accueil) : quand rien
   /// ne suit sur la ligne dans la page, gauche et droite appellent [onEdge],
@@ -144,9 +168,41 @@ class TvRegion extends StatelessWidget {
   /// seule page), gauche et droite sortent de la zone. Avec l'ancien
   /// système, voir `TvSlideEdges`.
   const TvRegion.slide({super.key, required this.child, this.onEdge})
-      : kind = TvRegionKind.slide,
-        id = null,
-        entersAtTop = false;
+    : kind = TvRegionKind.slide,
+      id = null,
+      entersAtTop = false,
+      preferredFocus = null,
+      onNavigate = null;
+
+  /// Une rangée de commandes du chrome télé du lecteur, sous un
+  /// [TvRegion.controlRows] : gauche et droite y restent et s'arrêtent à ses
+  /// bords, Haut et Bas passent à la rangée voisine, dans l'ordre de
+  /// l'écran. On y entre sur [preferredFocus] (la lecture, la barre), sinon
+  /// sur l'élément le plus proche à l'horizontale.
+  ///
+  /// Sous dpad, voir `TvControlRowRegion` ; avec l'ancien système,
+  /// `TvFocusRow`, à l'identique.
+  const TvRegion.controls({super.key, required this.child, this.preferredFocus})
+    : kind = TvRegionKind.controls,
+      id = null,
+      entersAtTop = false,
+      onEdge = null,
+      onNavigate = null;
+
+  /// Les rangées de commandes d'un chrome, chacune dans son
+  /// [TvRegion.controls].
+  ///
+  /// **Sous dpad, ce n'est pas une zone** (constat C15) : il ne fait que
+  /// recenser ses rangées (`TvControlRows`). Avec l'ancien système, c'est
+  /// `TvFocusRows`, qui appelle [onNavigate] à chaque pas qu'il fait. Sous
+  /// dpad, [onNavigate] ne sert pas : chaque flèche traverse le lecteur avant
+  /// dpad (constat C4), et le lecteur relance lui-même son compte à rebours.
+  const TvRegion.controlRows({super.key, required this.child, this.onNavigate})
+    : kind = TvRegionKind.controlRows,
+      id = null,
+      entersAtTop = false,
+      onEdge = null,
+      preferredFocus = null;
 
   final TvRegionKind kind;
 
@@ -175,6 +231,12 @@ class TvRegion extends StatelessWidget {
   /// Gauche ou droite au bord d'une [TvRegion.slide].
   final ValueChanged<TraversalDirection>? onEdge;
 
+  /// L'entrée d'une [TvRegion.controls].
+  final FocusNode? preferredFocus;
+
+  /// Voir [TvRegion.controlRows] : ancien système seulement.
+  final VoidCallback? onNavigate;
+
   /// La clé d'un élément de zone qui se reconstruit sous le focus (une
   /// rangée de l'accueil rechargée au retour d'un film), sous dpad.
   ///
@@ -198,6 +260,14 @@ class TvRegion extends StatelessWidget {
       case TvRegionKind.page:
       case TvRegionKind.panes:
         return child;
+      case TvRegionKind.controlRows:
+        return TvControlRows(child: child);
+      case TvRegionKind.controls:
+        return TvControlRowRegion(
+          preferredFocus: preferredFocus,
+          debugLabel: kind.name,
+          child: child,
+        );
       case TvRegionKind.pane:
         return TvPaneRegion(
           memoryKey: memoryKey,
@@ -225,8 +295,9 @@ class TvRegion extends StatelessWidget {
         TvRegionKind.list ||
         TvRegionKind.pane ||
         TvRegionKind.panes ||
-        TvRegionKind.page =>
-          DpadEdgeBehavior.leave,
+        TvRegionKind.page ||
+        TvRegionKind.controls ||
+        TvRegionKind.controlRows => DpadEdgeBehavior.leave,
       },
       verticalEdge: DpadEdgeBehavior.leave,
       onEdge: onEdge,
@@ -250,6 +321,10 @@ class TvRegion extends StatelessWidget {
         return onEdge == null
             ? child
             : TvSlideEdges(onEdge: onEdge, child: child);
+      case TvRegionKind.controls:
+        return TvFocusRow(preferredFocus: preferredFocus, child: child);
+      case TvRegionKind.controlRows:
+        return TvFocusRows(onNavigate: onNavigate, child: child);
       case TvRegionKind.tabs:
         // L'ancien en-tête choisit lui-même son onglet d'entrée
         // (`main_shell`, par `TvFocusEntries`) : rien à poser ici.

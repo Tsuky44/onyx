@@ -6,7 +6,10 @@ import 'package:onyx/screens/player/widgets/onyx/onyx_chrome_theme.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_controls_layer.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_progress_bar.dart';
 import 'package:onyx/theme/app_colors.dart';
+import 'package:onyx/tv/nav/tv_nav_engine.dart';
 import 'package:onyx/widgets/global/app_slider.dart';
+
+import 'support/tv_nav_harness.dart';
 
 /// Mounts the chrome at a given viewport width.
 Future<void> pumpChrome(
@@ -80,6 +83,57 @@ Future<void> pumpChrome(
     ),
   );
   await tester.pump();
+}
+
+/// Monte le chrome télé sous le banc commun ([TvNavHarness]), sur sa surface de
+/// 1920 × 1080, avec le système de navigation [engine]. Le reste est celui de
+/// [pumpChrome].
+Future<TvNavHarness> pumpTvChrome(
+  WidgetTester tester,
+  TvNavEngine engine, {
+  FocusNode? playPauseFocusNode,
+  FocusNode? progressFocusNode,
+  VoidCallback? onBack,
+  VoidCallback? onRewind,
+  VoidCallback? onSkipNext,
+}) {
+  return TvNavHarness.pump(
+    tester,
+    Scaffold(
+      backgroundColor: Colors.black,
+      body: OnyxControlsLayer(
+        visible: true,
+        isPlaying: true,
+        position: const Duration(minutes: 42),
+        duration: const Duration(hours: 2),
+        buffered: 0.5,
+        title: 'Avatar : La Voie de l’eau',
+        overline: '2022',
+        volume: 70,
+        onPlayPause: () {},
+        onRewind: onRewind ?? () {},
+        onForward: () {},
+        onSeekFraction: (_) {},
+        onVolumeChanged: (_) {},
+        showVolume: true,
+        cutouts: const [],
+        scale: 1,
+        brightness: null,
+        onBrightnessChanged: (_) {},
+        onBack: onBack ?? () {},
+        onToggleSubtitles: () {},
+        onOpenAudio: () {},
+        onCycleSpeed: () {},
+        onOpenSettings: () {},
+        onToggleFullscreen: () {},
+        onSkipNext: onSkipNext,
+        isTv: true,
+        playPauseFocusNode: playPauseFocusNode,
+        progressFocusNode: progressFocusNode,
+      ),
+    ),
+    engine: engine,
+  );
 }
 
 void main() {
@@ -691,140 +745,121 @@ void main() {
   });
 
   group('the D-pad walks the television chrome', () {
-    /// Mounts the television chrome at a set's usual logical size, with the
-    /// remote on play/pause.
-    Future<FocusNode> pumpTv(
-      WidgetTester tester, {
-      FocusNode? progress,
-      VoidCallback? onRewind,
-      VoidCallback? onSkipNext,
-    }) async {
-      final playPause = FocusNode(debugLabel: 'play-pause');
-      addTearDown(playPause.dispose);
-      await pumpChrome(
-        tester,
-        width: 960,
-        height: 540,
-        isTv: true,
-        playPauseFocusNode: playPause,
-        progressFocusNode: progress,
-        onRewind: onRewind,
-        onSkipNext: onSkipNext,
-      );
-      playPause.requestFocus();
-      await tester.pump();
-      return playPause;
-    }
-
-    bool focusedOn(WidgetTester tester, IconData icon) {
-      final context = primaryFocus?.context;
-      if (context == null) return false;
-      return find
-          .descendant(
-            of: find.byWidget(context.widget),
-            matching: find.byIcon(icon),
-          )
-          .evaluate()
-          .isNotEmpty;
-    }
-
-    testWidgets('down from play/pause lands on the timeline, which seeks',
-        (tester) async {
-      var rewound = 0;
-      final progress = FocusNode(debugLabel: 'progress');
-      addTearDown(progress.dispose);
-      await pumpTv(tester, progress: progress, onRewind: () => rewound++);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-      await tester.pump();
-      expect(progress.hasFocus, isTrue);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
-      await tester.pump();
-      expect(rewound, 1);
-      expect(progress.hasFocus, isTrue,
-          reason: 'left on the timeline seeks, it does not leave it');
-    });
-
-    testWidgets('up from the timeline comes back to play/pause',
-        (tester) async {
-      final progress = FocusNode(debugLabel: 'progress');
-      addTearDown(progress.dispose);
-      final playPause = await pumpTv(tester, progress: progress);
-
-      progress.requestFocus();
-      await tester.pump();
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-      await tester.pump();
-
-      expect(playPause.hasFocus, isTrue);
-    });
-
-    testWidgets('up from play/pause reaches the top row, where right walks to '
-        'the settings and stops there', (tester) async {
-      await pumpTv(tester);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-      await tester.pump();
-
-      var reached = focusedOn(tester, Icons.settings_rounded);
-      for (var press = 0; press < 6 && !reached; press++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-        await tester.pump();
-        reached = focusedOn(tester, Icons.settings_rounded);
+    TvNavHarness.forEachEngine((engine) {
+      /// Mounts the television chrome on the bench, with the remote on
+      /// play/pause.
+      Future<(TvNavHarness, FocusNode)> pumpTv(
+        WidgetTester tester, {
+        FocusNode? progress,
+        VoidCallback? onRewind,
+        VoidCallback? onSkipNext,
+        VoidCallback? onBack,
+      }) async {
+        final playPause = FocusNode(debugLabel: 'play-pause');
+        addTearDown(playPause.dispose);
+        final nav = await pumpTvChrome(
+          tester,
+          engine,
+          playPauseFocusNode: playPause,
+          progressFocusNode: progress,
+          onRewind: onRewind,
+          onSkipNext: onSkipNext,
+          onBack: onBack,
+        );
+        playPause.requestFocus();
+        await TvNavHarness.settle(tester);
+        return (nav, playPause);
       }
-      expect(reached, isTrue, reason: 'the settings button was never reached');
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      expect(focusedOn(tester, Icons.settings_rounded), isTrue,
-          reason: 'the edge of a row is a wall');
-    });
-
-    testWidgets('left and right stay on the transport row', (tester) async {
-      await pumpTv(tester, onSkipNext: () {});
-
-      for (var press = 0; press < 4; press++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
-        await tester.pump();
+      bool focusedOn(WidgetTester tester, IconData icon) {
+        final context = primaryFocus?.context;
+        if (context == null) return false;
+        return find
+            .descendant(
+              of: find.byWidget(context.widget),
+              matching: find.byIcon(icon),
+            )
+            .evaluate()
+            .isNotEmpty;
       }
-      expect(focusedOn(tester, Icons.replay_10_rounded), isTrue);
 
-      for (var press = 0; press < 6; press++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-        await tester.pump();
-      }
-      expect(focusedOn(tester, Icons.skip_next_rounded), isTrue);
-    });
+      testWidgets('down from play/pause lands on the timeline, which seeks',
+          (tester) async {
+        var rewound = 0;
+        final progress = FocusNode(debugLabel: 'progress');
+        addTearDown(progress.dispose);
+        final (nav, _) =
+            await pumpTv(tester, progress: progress, onRewind: () => rewound++);
 
-    testWidgets('up from the top row goes nowhere', (tester) async {
-      var backs = 0;
-      final playPause = FocusNode();
-      addTearDown(playPause.dispose);
-      await pumpChrome(
-        tester,
-        width: 960,
-        height: 540,
-        isTv: true,
-        playPauseFocusNode: playPause,
-        onBack: () => backs++,
-      );
-      playPause.requestFocus();
-      await tester.pump();
+        await nav.press(TraversalDirection.down);
+        expect(progress.hasFocus, isTrue);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-      await tester.pump();
-      for (var press = 0; press < 6; press++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
-        await tester.pump();
-      }
-      expect(focusedOn(tester, Icons.arrow_back_ios_new_rounded), isTrue);
+        await nav.press(TraversalDirection.left);
+        expect(rewound, 1);
+        expect(progress.hasFocus, isTrue,
+            reason: 'left on the timeline seeks, it does not leave it');
+      });
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-      await tester.pump();
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pump();
-      expect(backs, 1);
+      testWidgets('up from the timeline comes back to play/pause',
+          (tester) async {
+        final progress = FocusNode(debugLabel: 'progress');
+        addTearDown(progress.dispose);
+        final (nav, playPause) = await pumpTv(tester, progress: progress);
+
+        progress.requestFocus();
+        await TvNavHarness.settle(tester);
+        await nav.press(TraversalDirection.up);
+
+        expect(playPause.hasFocus, isTrue);
+      });
+
+      testWidgets('up from play/pause reaches the top row, where right walks '
+          'to the settings and stops there', (tester) async {
+        final (nav, _) = await pumpTv(tester);
+
+        await nav.press(TraversalDirection.up);
+
+        var reached = focusedOn(tester, Icons.settings_rounded);
+        for (var press = 0; press < 6 && !reached; press++) {
+          await nav.press(TraversalDirection.right);
+          reached = focusedOn(tester, Icons.settings_rounded);
+        }
+        expect(reached, isTrue,
+            reason: 'the settings button was never reached');
+
+        await nav.press(TraversalDirection.right);
+        expect(focusedOn(tester, Icons.settings_rounded), isTrue,
+            reason: 'the edge of a row is a wall');
+      });
+
+      testWidgets('left and right stay on the transport row', (tester) async {
+        final (nav, _) = await pumpTv(tester, onSkipNext: () {});
+
+        for (var press = 0; press < 4; press++) {
+          await nav.press(TraversalDirection.left);
+        }
+        expect(focusedOn(tester, Icons.replay_10_rounded), isTrue);
+
+        for (var press = 0; press < 6; press++) {
+          await nav.press(TraversalDirection.right);
+        }
+        expect(focusedOn(tester, Icons.skip_next_rounded), isTrue);
+      });
+
+      testWidgets('up from the top row goes nowhere', (tester) async {
+        var backs = 0;
+        final (nav, _) = await pumpTv(tester, onBack: () => backs++);
+
+        await nav.press(TraversalDirection.up);
+        for (var press = 0; press < 6; press++) {
+          await nav.press(TraversalDirection.left);
+        }
+        expect(focusedOn(tester, Icons.arrow_back_ios_new_rounded), isTrue);
+
+        await nav.press(TraversalDirection.up);
+        await nav.select(key: LogicalKeyboardKey.enter);
+        expect(backs, 1);
+      });
     });
   });
 

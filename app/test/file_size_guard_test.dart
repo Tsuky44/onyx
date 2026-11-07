@@ -17,10 +17,6 @@ const int _maxLines = 800;
 /// test passe » est exactement ce que ce test existe pour empêcher : sortez
 /// d'abord dans son propre fichier le morceau que vous touchez.
 const Map<String, (int ceiling, String why)> _grandfathered = {
-  'lib/screens/player/widgets/onyx/onyx_controls_layer.dart': (
-    994,
-    'le Chrome Onyx et ses boutons ; ses rangées restent à extraire',
-  ),
   'lib/services/download_manager_io.dart': (
     1218,
     'une seule classe pour la file d’attente, le disque et la reprise',

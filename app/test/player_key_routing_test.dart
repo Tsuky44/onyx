@@ -1,8 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:onyx/screens/player/player_key_routing.dart';
 import 'package:onyx/screens/player/player_shortcuts.dart';
+
+import 'support/tv_nav_harness.dart';
 
 KeyEvent _down(LogicalKeyboardKey key) => KeyDownEvent(
       physicalKey: PhysicalKeyboardKey.keyA,
@@ -129,5 +132,88 @@ void main() {
 
   test('une touche inconnue continue son chemin', () {
     expect(route(_down(LogicalKeyboardKey.f9)), isA<PlayerKeyIgnored>());
+  });
+
+  // Les mêmes décisions, vues d'un écran monté : la touche du lecteur passe
+  // avant dpad (constat C4), dans les deux systèmes de navigation.
+  TvNavHarness.forEachEngine((engine) {
+    group('vu par un écran monté', () {
+      late List<PlayerKeyAction> actions;
+      late FocusNode player;
+
+      Future<TvNavHarness> mount(WidgetTester tester) async {
+        actions = <PlayerKeyAction>[];
+        player = FocusNode(debugLabel: 'lecteur');
+        addTearDown(player.dispose);
+        final nav = await TvNavHarness.pump(
+          tester,
+          Scaffold(
+            body: Focus(
+              focusNode: player,
+              autofocus: true,
+              onKeyEvent: (node, event) {
+                final action = routePlayerKey(
+                  event,
+                  isTv: true,
+                  browsingControls: false,
+                  chromeVisible: false,
+                  skipIntroShown: false,
+                );
+                // Le relâchement est rendu consommé comme l'appui, mais ne
+                // compte pas pour une action de plus.
+                if (event is KeyDownEvent) actions.add(action);
+                return action is PlayerKeyIgnored
+                    ? KeyEventResult.ignored
+                    : KeyEventResult.handled;
+              },
+              child: const SizedBox.expand(),
+            ),
+          ),
+          engine: engine,
+        );
+        expect(player.hasPrimaryFocus, isTrue);
+        return nav;
+      }
+
+      testWidgets(
+          'gauche et droite cherchent tout de suite, sans réveiller le chrome',
+          (tester) async {
+        final nav = await mount(tester);
+
+        await nav.press(TraversalDirection.left);
+        expect(actions.whereType<PlayerKeyRemoteSeek>().single.direction, -1);
+        expect(player.hasPrimaryFocus, isTrue);
+
+        actions.clear();
+        await nav.press(TraversalDirection.right);
+        expect(actions.whereType<PlayerKeyRemoteSeek>().single.direction, 1);
+        expect(player.hasPrimaryFocus, isTrue);
+      });
+
+      testWidgets('haut et bas montent le chrome, une seule fois par appui',
+          (tester) async {
+        final nav = await mount(tester);
+
+        await nav.press(TraversalDirection.up);
+        expect(actions.whereType<PlayerKeyEnterControlBar>(), hasLength(1));
+        expect(player.hasPrimaryFocus, isTrue);
+
+        actions.clear();
+        await nav.press(TraversalDirection.down);
+        expect(actions.whereType<PlayerKeyEnterControlBar>(), hasLength(1));
+        expect(player.hasPrimaryFocus, isTrue);
+      });
+
+      testWidgets(
+          'OK ne met jamais en pause : il pose la télécommande sur le chrome',
+          (tester) async {
+        final nav = await mount(tester);
+
+        await nav.select();
+
+        expect(actions.whereType<PlayerKeyEnterControlBar>(), hasLength(1));
+        expect(actions.whereType<PlayerKeyTogglePlayback>(), isEmpty);
+      });
+    });
   });
 }

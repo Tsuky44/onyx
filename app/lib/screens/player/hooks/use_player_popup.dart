@@ -28,7 +28,12 @@ class PlayerPopupHost {
   final bool Function() isActive;
 
   /// Un menu vient de se fermer, lecteur toujours là : le focus y revient.
-  final VoidCallback onDismissed;
+  ///
+  /// [origin] est ce qui avait le focus quand le menu s'est ouvert (le bouton
+  /// « Réglages », d'ordinaire), s'il est encore là pour le reprendre ; nul
+  /// sinon. Sous dpad, le lecteur y rend la télécommande ; l'ancien système,
+  /// lui, la pose sur lecture/pause.
+  final void Function(FocusNode? origin) onDismissed;
 
   /// Focus scope lent to whichever popup is open, so a remote can walk into a
   /// menu that is not a route and would otherwise never receive the focus.
@@ -38,7 +43,7 @@ class PlayerPopupHost {
   /// Back goes through this before it reaches the player. One at a time: each
   /// of these covers the screen with its own dismiss barrier, so a second one
   /// stacked on it would be unreachable.
-  ({OverlayEntry entry, VoidCallback dismiss})? _open;
+  ({OverlayEntry entry, VoidCallback dismiss, FocusNode? origin})? _open;
 
   bool get isOpen => _open != null;
 
@@ -51,6 +56,11 @@ class PlayerPopupHost {
     BuildContext context,
     Widget Function(VoidCallback dismiss) builder,
   ) {
+    // Le menu qui en remplace un autre (la séance relancée depuis son
+    // panneau) rend le focus là où le premier l'avait pris, pas dans un menu
+    // fermé.
+    final origin = _open?.origin ?? FocusManager.instance.primaryFocus;
+
     // Never two at once; the one underneath could not be reached anyway.
     dismissTop();
 
@@ -63,7 +73,7 @@ class PlayerPopupHost {
       if (identical(_open?.entry, entry)) _open = null;
       entry.remove();
       if (!isActive()) return;
-      onDismissed();
+      onDismissed(_stillThere(origin) ? origin : null);
     }
 
     entry = OverlayEntry(
@@ -82,7 +92,7 @@ class PlayerPopupHost {
       ),
     );
 
-    _open = (entry: entry, dismiss: dismiss);
+    _open = (entry: entry, dismiss: dismiss, origin: origin);
     Overlay.of(context).insert(entry);
 
     // Only a remote is walked in: on a desktop the pointer is already where
@@ -102,6 +112,16 @@ class PlayerPopupHost {
       _focusScope.nextFocus();
     });
   }
+
+  /// [node] peut reprendre le focus : il est encore dans l'arbre, il n'est pas
+  /// dans le menu qui se ferme, et rien ne l'exclut (un chrome masqué).
+  bool _stillThere(FocusNode? node) =>
+      node != null &&
+      node is! FocusScopeNode &&
+      node.context != null &&
+      node.parent != null &&
+      node.canRequestFocus &&
+      !node.ancestors.contains(_focusScope);
 
   /// Closes the popup on screen, if there is one. Returns whether it did, so
   /// Back can stop there instead of also acting on the player.
