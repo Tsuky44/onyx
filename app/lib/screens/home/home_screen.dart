@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../desktop_window.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
@@ -166,8 +167,11 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     final homeProvider = Provider.of<HomeProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    // Barre d'état + la barre du haut du téléphone (voir [MobileTopBar]).
-    final topBarHeight = MediaQuery.paddingOf(context).top + 56;
+    // Barre d'état + la barre du haut du téléphone (voir [MobileTopBar]),
+    // ou hauteur de l'en-tête de verre sur grand écran / TV (voir [ShellDesktopHeader]).
+    final headerInset = widget.embedded
+        ? shellHeaderHeight(context)
+        : MediaQuery.paddingOf(context).top + 56;
     final isTv = TvScope.of(context);
     final data = homeProvider.homeData;
     final discovery = data == null
@@ -186,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen>
       body: homeProvider.isLoading
           ? HomeSkeleton(
               heroHeight: HeroBanner.heightFor(context),
-              topInset: widget.embedded ? 0 : topBarHeight,
+              topInset: headerInset,
             )
           : homeProvider.errorMessage != null
               ? ErrorStateView(
@@ -198,19 +202,18 @@ class _HomeScreenState extends State<HomeScreen>
                     RefreshIndicator(
                       onRefresh: () => homeProvider.loadHome(),
                       color: AppColors.primary,
-                      edgeOffset: widget.embedded ? 0 : topBarHeight,
+                      edgeOffset: headerInset,
                       child: CustomScrollView(
                         scrollCacheExtent: AppLayout.imageCacheExtent(context),
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
                           // Le carrousel commence sous la barre du haut, pas
-                          // derrière elle : elle y était transparente et
-                          // posée sur l'affiche.
-                          if (!widget.embedded)
-                            SliverToBoxAdapter(
-                              child: SizedBox(height: topBarHeight),
-                            ),
+                          // derrière elle : posée sur l'affiche, elle masquait
+                          // le haut du poster et le titre.
+                          SliverToBoxAdapter(
+                            child: SizedBox(height: headerInset),
+                          ),
                           if (heroSlides.isNotEmpty)
                             SliverToBoxAdapter(
                               child: HeroCarousel(

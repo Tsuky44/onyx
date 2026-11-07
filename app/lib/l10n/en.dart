@@ -3406,4 +3406,32 @@ const Map<String, String> kEnglish = <String, String>{
       'Audio output',
   'Conteneur':
       'Container',
+  'SÉRIE TÉLÉVISÉE':
+      'TV SERIES',
+  'FILM':
+      'MOVIE',
+  'Créée par':
+      'Created by',
+  'Réalisé par':
+      'Directed by',
+  'Première diffusion':
+      'First aired',
+  'Sortie':
+      'Released',
+  'Durée':
+      'Runtime',
+  'Note TMDB':
+      'TMDB rating',
+  'Recettes':
+      'Revenue',
+  'Distribution':
+      'Cast',
+  'Acteur précédent':
+      'Previous actor',
+  'Acteur suivant':
+      'Next actor',
+  'Tout le casting':
+      'Full cast',
+  'Saga':
+      'Collection',
 };

@@ -175,14 +175,6 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
         details.status != RequestMediaStatus.unknown;
 
     final hasSeasons = isTv && details.seasons.isNotEmpty;
-    final credits = [
-      if (details.director != null && details.director!.isNotEmpty)
-        (label: tr('Réalisateur'), value: details.director!),
-      for (final writer in details.writers)
-        (label: tr('Scénario'), value: writer),
-      for (final editor in details.editors)
-        (label: tr('Montage'), value: editor),
-    ];
     Widget cast() => CastSection(
           horizontalPadding: 0,
           cast: [
@@ -267,8 +259,8 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
           child: Padding(
             padding: EdgeInsets.only(top: hasSeasons ? 32 : 0),
             child: DetailSummarySection(
-              credits: credits,
-              keywords: details.keywords,
+              credits: const [],
+              keywords: const [],
               infoTable: RequestInfoTable(details: details),
               mainTitle: tr('Informations'),
               extra: details.cast.isEmpty ? null : cast(),

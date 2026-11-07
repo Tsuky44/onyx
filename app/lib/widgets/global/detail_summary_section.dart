@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../l10n/tr.dart';
 import '../../models/models.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../utils/responsive.dart';
 import 'detail_info_table.dart';
@@ -12,22 +10,18 @@ import 'detail_metadata.dart';
 /// Un crédit de la fiche : « Réalisateur », « Denis Villeneuve ».
 typedef DetailCredit = ({String label, String value});
 
-/// Le corps d'une fiche sous son en-tête, partagé par toutes les fiches : les
-/// crédits et les mots-clés à gauche, [infoTable] à droite sur un grand écran
-/// et dessous ailleurs. Le synopsis est dans l'en-tête.
+/// Le corps d'une fiche sous son en-tête, partagé par toutes les fiches :
+/// la distribution en éventail à gauche ([extra]), le cartel à droite sur un
+/// grand écran ([infoTable]) et dessous ailleurs.
 class DetailSummarySection extends StatelessWidget {
   final List<DetailCredit> credits;
   final List<String> keywords;
   final Widget infoTable;
 
-  /// Un bloc de plus avant les crédits et les mots-clés — le casting, par
-  /// exemple — pour combler le vide que [infoTable] laisse sous lui sur un
-  /// grand écran, au lieu de lui laisser sa propre section pleine largeur.
+  /// La distribution en éventail à gauche du cartel.
   final Widget? extra;
 
-  /// Le titre des crédits, affiché juste au-dessus d'eux. Quand [extra] passe
-  /// devant, c'est lui qui ouvre la colonne — ce titre le suit, à la place
-  /// du titre de section que la page n'a plus besoin de poser elle-même.
+  /// Le titre des crédits, affiché au-dessus d'eux si présents.
   final String? mainTitle;
 
   const DetailSummarySection({
@@ -39,23 +33,16 @@ class DetailSummarySection extends StatelessWidget {
     this.mainTitle,
   });
 
-  /// Le même corps pour un titre de la bibliothèque. [details] peut manquer le
-  /// temps du chargement.
+  /// Construit la section pour un titre de la bibliothèque.
   factory DetailSummarySection.forDetails({
     Key? key,
     required MediaDetails? details,
     Widget? extra,
     String? mainTitle,
   }) {
-    final director = details?.director;
     return DetailSummarySection(
       key: key,
-      credits: [
-        if (director != null && director.isNotEmpty)
-          (label: tr('Réalisateur'), value: director),
-        for (final writer in details?.writers ?? const <String>[])
-          (label: tr('Scénario'), value: writer),
-      ],
+      credits: const [],
       infoTable: details == null
           ? const SizedBox.shrink()
           : DetailInfoTable.forDetails(details),
@@ -64,13 +51,13 @@ class DetailSummarySection extends StatelessWidget {
     );
   }
 
-  /// Largeur à partir de laquelle [infoTable] passe à droite du corps.
+  /// Largeur à partir de laquelle [infoTable] passe à droite de la distribution.
   static const double wideBreakpoint = 1100;
 
-  /// La colonne d'informations à droite : un quart de l'écran, assez pour
-  /// les studios sur une ligne, jamais au point d'écraser le texte.
+  /// La colonne d'informations à droite : calibrée à la largeur du cartel
+  /// MediaHub (27rem ~ 432 px), sans écraser la distribution.
   static double _sidebarWidth(double width) =>
-      (width * 0.24).clamp(340.0, 460.0);
+      (width * 0.28).clamp(360.0, 432.0);
 
   @override
   Widget build(BuildContext context) {
@@ -80,12 +67,11 @@ class DetailSummarySection extends StatelessWidget {
     final main = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (extra != null) ...[
-          extra!,
-          if (hasMain) const SizedBox(height: 28),
-        ],
-        if (hasMain)
+        if (extra != null) extra!,
+        if (hasMain) ...[
+          if (extra != null) const SizedBox(height: 28),
           _CreditsBlock(credits: credits, keywords: keywords, title: mainTitle),
+        ],
       ],
     );
     return Padding(
@@ -95,14 +81,14 @@ class DetailSummarySection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: main),
-                const SizedBox(width: 56),
+                const SizedBox(width: 48),
                 SizedBox(width: _sidebarWidth(width), child: infoTable),
               ],
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (hasMainContent) ...[main, const SizedBox(height: 28)],
+                if (hasMainContent) ...[main, const SizedBox(height: 32)],
                 infoTable,
               ],
             ),
@@ -152,67 +138,62 @@ class _CreditsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 520 ? 3 : 2;
-        return Wrap(
-          spacing: 24,
-          runSpacing: 22,
-          children: [
-            for (final credit in credits)
-              SizedBox(
-                width: (constraints.maxWidth - (columns - 1) * 24) / columns,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(credit.label,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: AppType.body)),
-                    const SizedBox(height: 4),
-                    Text(credit.value,
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.55),
-                            fontSize: AppType.body)),
-                  ],
+    const colWidth = 200.0;
+    return Wrap(
+      spacing: 24,
+      runSpacing: 16,
+      children: [
+        for (final c in credits)
+          SizedBox(
+            width: colWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  c.value,
+                  style: const TextStyle(
+                    fontSize: AppType.body,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-          ],
-        );
-      },
+                const SizedBox(height: 2),
+                Text(
+                  c.label,
+                  style: const TextStyle(
+                    fontSize: AppType.footnote,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
 
 class _KeywordTag extends StatelessWidget {
-  final String keyword;
+  final String text;
 
-  const _KeywordTag(this.keyword);
+  const _KeywordTag(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(AppIcons.tag,
-              size: 12, color: Colors.white.withValues(alpha: 0.4)),
-          const SizedBox(width: 6),
-          Text(
-            keyword,
-            style: TextStyle(
-              fontSize: AppType.footnote,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ],
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: AppType.footnote,
+          color: Color(0xFFA8A5A1),
+        ),
       ),
     );
   }
