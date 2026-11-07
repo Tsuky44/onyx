@@ -1,7 +1,7 @@
 # ADR-0110 — Un seul système de focus : dpad
 
 - **Statut :** proposé. La phase 0 (rapport [`refonte-navigation-dpad-phase0.md`](../refonte-navigation-dpad-phase0.md))
-  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. Les phases 2 à 6 montent
+  a tout vérifié au simulateur et sans écran, rien sur une vraie Apple TV. Les phases 2 à 7 montent
   dpad **derrière le drapeau de compilation `ONYX_TV_NAV=dpad`** (défaut `legacy` : sans lui, l'app
   est celle d'avant la refonte) ; vues au simulateur Apple TV seulement. Aucun essai sur une vraie
   Apple TV n'a été fait : l'utilisateur ne peut pas tester pour le moment. **Le drapeau reste**
@@ -20,10 +20,13 @@
 - **Portée :** `pubspec.yaml` (`dpad: 3.3.0`), `lib/tv/nav/` (`OnyxDpad`, `TvBack`, `TvFocusable`,
   `TvRegion`, `TvDpadFocusable`, `TvForegroundRoute`, `tv_nav_theme.dart` ; en phase 3
   `TvPaneRegion`, `TvContainedSteps`, `TvCardDirections`, `TvSlideEdges`, `TvWideCard` ; en phase 5
-  `TvBackStep`, `TvBackKeyAction`), `lib/screens/shell/shell_tv_back.dart`, `lib/tv/input/`
+  `TvBackStep`, `TvBackKeyAction` ; en phase 7 `TvControlRows`, `TvControlRowRegion`),
+  `lib/screens/shell/shell_tv_back.dart`, `lib/tv/input/`
   (`TvArrowGate`, `StepTarget` ; en phase 6 `TvRepeatCadence`, `TvDpadLog`), `lib/tv/tv_touchpad.dart`
   (élan sous dpad), `test/support/tv_nav_harness.dart`,
-  `test/no_parallel_focus_system_test.dart`. Plan : [`refonte-navigation-dpad.md`](../refonte-navigation-dpad.md).
+  `test/no_parallel_focus_system_test.dart` ; en phase 7 le lecteur (`player_screen_remote.dart`,
+  `use_player_popup.dart`, `onyx_controls_layer.dart`, `onyx_controls_rows.dart`) et
+  `test/support/player_remote_bench.dart`. Plan : [`refonte-navigation-dpad.md`](../refonte-navigation-dpad.md).
 - **Remplace :** [ADR-0109](0109-le-focus-tv-entre-une-fois-ou-la-zone-le-decide.md) pour ce qui
   touche aux entrées de zone (`TvFocusEntries`, `TvTraversalPolicy`), une fois la phase 2 fusionnée.
 - **Garde :** [ADR-0008](0008-focus-visible-du-lecteur-tv.md) (focus toujours visible, notre anneau),
@@ -455,6 +458,117 @@ rangée), la répétition sans intervalle (Apple TV) et `StepTarget` borné à l
 des flèches dans la même tâche. `touchpad_motion_test` est un modèle pur, sans focus : il ne dépend
 d'aucun moteur et reste tel quel. Le guard test ne grandit pas.
 
+## Phase 7 : le lecteur
+
+**Le lecteur décide, dpad déplace le focus.** Le nœud du lecteur (`Focus` de `PlayerScreen`, avec son
+`onKeyEvent`) est l'ancêtre de tout le chrome. Une touche y passe donc avant le portail des flèches
+et avant les raccourcis de dpad (constat C4), quel que soit le moteur. `routePlayerKey` reste la
+seule décision, pure et testée. Chrome masqué, le lecteur détient le focus primaire : les flèches
+deviennent une recherche (gauche, droite) ou un réveil du chrome (haut, bas, OK), et le lecteur les
+consomme. Ni le portail ni dpad ne les voient, et une rafale vaut autant de pas de recherche qu'elle
+compte de flèches. Chrome affiché, une commande a le focus et `routePlayerKey` rend les flèches et
+OK (`PlayerKeyIgnored`) : elles continuent vers le portail puis vers dpad. La barre de progression
+garde gauche et droite pour elle (son `onKeyEvent`, avant le lecteur) et rend haut et bas.
+
+**L'élan et l'accélération du trackpad ne s'appliquent pas au lecteur.** Ils ne partent que d'un nœud
+posé dans un `Scrollable` horizontal (`TvTouchpad.acceleratesFrom`), et rien dans le lecteur n'en a :
+ni le lecteur, ni le chrome. Le lecteur continue de suivre le doigt lui-même (`addMoveListener`).
+Rien n'a changé dans `TvTouchpad` ; un test le fige.
+
+**Les rangées du chrome sont des `TvRegion.controls`**, sous un `TvRegion.controlRows`. Avec l'ancien
+système, ce sont `TvFocusRow` et `TvFocusRows`, à l'identique. Sous dpad, `TvFocusRows` n'est plus
+monté : chaque rangée est une `TvControlRowRegion` (une `DpadRegion`, bords gauche et droit en mur),
+et `TvControlRows` ne fait que les recenser, sans être une zone (C15). Une région ordinaire ne
+suffisait pas. Depuis « Réglages », en haut à droite, la barre pleine largeur est dans le faisceau et
+la lecture au centre ne l'est pas : Bas sautait la rangée du milieu, comme le constat de la phase 3
+(« entre deux cibles du faisceau, la plus proche au centre près »). Une porte invisible (la parade de
+`TvWideCard`) ne marche pas ici : la rangée du milieu est étroite et centrée, et la porte serait aussi
+dans le faisceau de « Retour », à l'autre bout. La rangée porte donc, comme `TvPaneRegion`, une
+sous-classe de `DpadTraversalPolicy`. Gauche et droite restent à dpad. Haut et Bas vont à la rangée
+voisine dans l'ordre de l'écran, sur son `preferredFocus` (lecture/pause, la barre), sinon sur
+l'élément le plus proche à l'horizontale. C'est l'ordre de `TvFocusRows`. Une rangée vide (masquée,
+sans commande) est sautée. Au bord du chrome, la flèche est bloquée et dpad le signale
+(`onBlockedMove`). La flèche fait **un seul** `requestFocus`, celui du contrôleur de dpad, et aucun
+défilement : le chrome ne défile pas. Gardé sous dpad, `TvFocusRows` aurait été un second système de
+parcours, avec son propre `requestFocus`, à côté de celui de dpad.
+
+**Pas de racine `Dpad` imbriquée** (décision 2 du plan, §10). Rien dans le chrome ne l'a demandée :
+l'ordre des rangées tient dans une politique de rangée, et le piège des menus vient de leur
+`FocusScope`, car dpad ne cherche que dans la portée du focus (`nearestScope.traversalDescendants`).
+Une racine imbriquée aurait eu son propre jeu de touches, son `restoreFocus` et sa mémoire, à garder
+d'accord avec la racine de l'app, et un second `Dpad` que le guard test refuse. Le lecteur est une
+route du navigateur racine : à sa sortie, le `Navigator` rend le focus à la carte d'où il est parti,
+comme pour une fiche (phase 5). Le banc l'épingle.
+
+**Menus du lecteur.** Ils restent des `OverlayEntry` (`PlayerPopupHost`), pas des routes. Leur
+`FocusScope` piège les flèches sans rien de plus sous dpad. Retour passe par `TvBack.claimKey`
+(phase 5) dans les trois lectures de touche : le lecteur, le menu ouvert, une section du menu de
+réglages. Une seule couche est défaite par appui, même quand l'Apple TV livre Menu en touche et en
+`popRoute`. L'ordre est section, menu, chrome, lecteur. Aucune couche n'est défaite deux fois : la
+touche consommée par la section ne remonte ni au menu ni au lecteur, et le `popRoute` qui suit est
+avalé par `TvBack`. **Sous dpad, la fermeture d'un menu rend le focus à la commande qui l'avait
+ouvert** (« Réglages », « Sous-titres »), comme une route qui se dépile. `PlayerPopupHost` note le
+focus à l'ouverture. Un menu qui en remplace un autre garde le point de départ du premier. Si cette
+commande n'est plus là (masquée, démontée), la télécommande va à lecture/pause, comme avec l'ancien
+système, qui y retourne toujours.
+
+**Constat, corrigé : sous dpad, la ligne focalisée du menu de réglages restait éteinte.** La
+ligne lisait son état par `Focus.of(context)`, le `Focus` le plus proche. Sous dpad, c'est celui que
+`TvFocusable` pose sous la cible pour en exclure l'enfant, et il ne prend jamais le focus. Le menu
+redevenait celui de l'amendement de l'ADR-0008 (« un focus invisible est un focus absent ») : les
+flèches s'y déplaçaient, rien ne le montrait. La ligne lit maintenant son propre nœud, comme
+`OnyxIconButton`. C'est le même nœud avec l'ancien système : rien n'y change.
+
+**`onyx_controls_layer.dart` passe sous 800 lignes** (994 → 689). Le chrome télé, la rangée de
+transport et les utilitaires partent dans `onyx_controls_rows.dart`, un `part` (extension privée),
+et le fichier sort de la liste de `file_size_guard_test`. `onyx_controls_layer.dart` et
+`onyx_skip_intro_button.dart` sortent aussi de la liste de `no_parallel_focus_system_test` : ils
+n'emploient plus l'ancien système en direct.
+
+**Vu au simulateur Apple TV** (`ONYX_TV_NAV=dpad`, lecteur Flutter : le simulateur prend la route
+logicielle, jamais l'écran natif). Un épisode lancé depuis « Reprendre la lecture ». Le flux n'a
+pas démarré (« La lecture ne démarre pas », serveur trop lent pour le simulateur), et le chrome est
+resté navigable par-dessus. Aucune recherche n'a été faite, pour ne pas déplacer la reprise. Focus
+lu par le service VM ; Échap et `popRoute` rejoués par une extension de service temporaire, non
+commitée, comme en phase 5, et envoyés ensemble (à quelques millisecondes).
+
+| Geste | Focus |
+|---|---|
+| Ouverture du lecteur | lecture/pause, entourée |
+| Bas, puis Haut | la barre, puis lecture/pause |
+| Haut | « Épisodes », le plus proche de la rangée du haut |
+| Droite ×4, appuis séparés | « Réglages » |
+| Bas depuis « Réglages » | lecture/pause (pas la barre) |
+| OK sur « Réglages », Bas, OK | menu ouvert sur « Qualité », puis section Audio sur la piste jouée, lignes éclairées |
+| Échap + `popRoute` dans la section | index, sur « Audio » : une seule couche |
+| Échap + `popRoute` sur l'index | menu fermé, focus rendu à « Réglages » |
+| Échap + `popRoute` chrome affiché | chrome baissé, focus sur le lecteur |
+| Bas, chrome masqué | chrome levé, focus sur lecture/pause (`routePlayerKey`, dpad n'a rien bougé) |
+| `popRoute` ×2 | chrome baissé, puis sortie du lecteur |
+
+Trois constats. (1) Cinq `press_key` envoyés dans le même appel arrivent en rafale et ne font qu'un
+pas dans la rangée du haut : c'est la règle de la phase 6 (hors d'une rangée qui défile, une rafale
+vaut un pas). Appui par appui, chaque flèche fait son pas. (2) À la sortie, le focus n'est pas revenu
+sur la carte d'origine. Le retour du film recharge l'accueil, et « Reprendre la lecture » remet
+l'épisode joué en tête de rangée, hors de l'écran. Le focus est allé à l'entrée de la page (le bouton
+du bandeau « Lecture en cours »), puis Bas a retrouvé la rangée par sa mémoire de position. Le banc,
+dont la carte reste en place, épingle le retour à la carte. Le suivi d'une carte déplacée par un
+rechargement relève de l'accueil (constat C7), pas du lecteur. (3) Les boutons « Réessayer » et
+« Retour » du démarrage manqué ne sont dans aucune rangée. Chrome affiché, Haut et Bas vont de
+rangée en rangée et ne les atteignent pas. Chrome masqué, le lecteur garde les flèches. C'était déjà
+le cas avec l'ancien système (`TvFocusRows`, `routePlayerKey`) ; c'est à traiter à part.
+
+**Tests.** `PlayerScreen` ne se monte pas dans un test : il lui faut un moteur, une session et un
+serveur. `test/support/player_remote_bench.dart` reprend, branche pour branche, ce qui décide de la
+télécommande dans `player_screen_remote.dart`, autour des vrais widgets : le chrome, `routePlayerKey`,
+`PlayerPopupHost` et le menu de réglages. `player_chrome_navigation_map_test` donne la carte du
+chrome dans les deux moteurs, et les invariants : chrome affiché ⇒ une commande entourée à chaque
+pas, flèches chrome masqué ⇒ `routePlayerKey` (une rafale de trois = trois pas, aucun élan), un
+Retour = une couche jusqu'à la carte d'origine, le menu qui piège les flèches. Sans la politique de
+rangée, deux cas de la carte échouent sous dpad. `onyx_settings_menu_tv_test`,
+`player_key_routing_test` et le groupe D-pad d'`onyx_controls_layer_test` tournent dans les deux
+moteurs.
+
 ## Conséquences
 
 - Phase 1 : aucun changement visible. `TvFocusable` est réexporté tel quel par
@@ -493,6 +607,11 @@ d'aucun moteur et reste tel quel. Le guard test ne grandit pas.
   sur vraie Apple TV, traces `[DPAD]` à l'appui (rapport §5.2, §5.3, §5.11) : la cadence de
   répétition, les seuils d'accélération et d'élan, l'intervalle et la grâce de l'élan, et la forme
   réelle des rafales de la Siri Remote.
+- Phase 7 : sans drapeau, aucun changement visible (`TvRegion.controls` et `.controlRows`
+  redonnent `TvFocusRow` et `TvFocusRows`, et la fermeture d'un menu pose toujours la télécommande
+  sur lecture/pause). Avec `ONYX_TV_NAV=dpad`, le chrome du lecteur passe sur dpad : rangées en
+  région, Haut et Bas dans l'ordre de l'écran, menus qui rendent le focus à la commande d'origine.
+  L'écran natif de l'Apple TV (ADR-0105) n'est pas touché.
 - Reste ouvert, et à écrire ici : les mesures de la recette sur machine réelle (statut), les critères
   du plan §1 mesurés en phase 8, et le retrait du drapeau (avec lui `TvFocusGuard`,
   `TvCardDirections.legacy` et `TvSlideEdges`).

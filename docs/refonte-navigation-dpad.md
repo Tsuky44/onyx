@@ -134,7 +134,7 @@ Règles d'architecture (gardées par un test, voir §6) :
 | Onglet affiché à l'entrée de l'en-tête | `TvFocusEntries.register` | `TvRegion.tabs` : `enter: entry`, `entry: true` sur l'onglet affiché |
 | Gauche/droite sans quitter la ligne | `nextOnLine` | `horizontalEdge: stop` (rangées) / `lineWrap` (grilles) |
 | Passage entre volets des réglages | `TvFocusPanes` | `TvRegion.pane` côte à côte, bord `leave`, `enter: restore` |
-| Rangées du lecteur | `TvFocusRows` | régions du chrome (phase 7) |
+| Rangées du lecteur | `TvFocusRows` | `TvRegion.controls` sous `TvRegion.controlRows` : une région par rangée, Haut et Bas dans l'ordre de l'écran (phase 7) |
 | Un seul défilement par pas | `TvFocusScroll` | `autoScroll` de `DpadFocusable` + thème (`scrollPadding`, alignement) ; défilement de page au bout → `onBlockedMove` |
 | Activer | `kTvSelectKeys` | `DpadKeySet.select` (tvOS envoie `enter`, C9) |
 | Revenir | `kTvBackKeys`, `TvBackIntent` | `TvBack` (popRoute + touche) ; `DpadKeySet.back` sans `goBack` sur Android (C1, C2) ; `browserBack` / touche 461 pour webOS |
@@ -405,6 +405,19 @@ bornées au bout de la rangée. Reste : tous les réglages sur vraie Apple TV
 - Écran natif Apple TV (AVKit, ADR-0105) : hors périmètre, il a son propre
   moteur de focus.
 - `player_key_routing_test`, `onyx_settings_menu_tv_test` portés.
+
+**Faite** (ADR-0110, « Phase 7 »). Le drapeau reste. Sous dpad, `TvFocusRows`
+n'est plus monté : chaque rangée du chrome est une `TvRegion.controls`
+(`TvControlRowRegion`, bords en mur), et Haut et Bas passent à la rangée
+voisine dans l'ordre de l'écran, par une politique de rangée et un seul
+`requestFocus`. La géométrie seule de dpad sautait la rangée du milieu depuis
+« Réglages ». Pas de racine imbriquée : une région suffit, et le menu piège
+ses flèches par son `FocusScope`. Chrome masqué, le lecteur consomme les
+flèches avant le portail et dpad (C4), et l'élan ne part pas du lecteur. La
+fermeture d'un menu rend le focus à la commande qui l'a ouvert.
+`onyx_controls_layer.dart` passe à 689 lignes. Le banc
+`player_remote_bench.dart` et `player_chrome_navigation_map_test` donnent la
+carte et les invariants dans les deux moteurs.
 
 ### Phase 8 — Nettoyage et preuve
 
