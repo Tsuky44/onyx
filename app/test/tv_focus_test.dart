@@ -188,6 +188,11 @@ void main() {
       expect(taps, 0, reason: 'l’appui peut encore devenir un appui long');
 
       await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+      // `flutter_test` date chaque touche de zéro : le relâchement paraît
+      // suivre l'appui de 0 ms, comme le rebond d'un clic tenu sur la
+      // télécommande du simulateur Apple TV. L'action part une fois passée
+      // la fenêtre de ce rebond (40 ms), sans nouvel appui.
+      await tester.pump(const Duration(milliseconds: 100));
       await TvNavHarness.settle(tester);
       expect(taps, 1);
       expect(menus, 0);

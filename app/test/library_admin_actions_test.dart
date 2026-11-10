@@ -28,8 +28,8 @@ final RegExp _libraryAdminCall = RegExp(
 /// La liste doit rester courte : chaque entrée nomme l'endroit où le droit est
 /// vérifié à sa place.
 const Map<String, String> _gatedElsewhere = {
-  'lib/screens/library/show_detail_screen.dart':
-      'ses deux actions ne s’ouvrent que depuis ShowMetadataMenu',
+  'lib/screens/library/show_metadata_actions.dart':
+      'appelé par la fiche série depuis ShowMetadataMenu seulement',
   'lib/screens/settings/media_review_screen.dart':
       'atteint seulement depuis la page Bibliothèque, sous perms.manageLibrary',
   'lib/screens/player/hooks/player_controller_tracks.dart':

@@ -24,15 +24,14 @@ import '../../widgets/global/detail_summary_section.dart';
 import '../../widgets/global/episode_tile.dart';
 import '../../widgets/global/live_progress_state.dart';
 import '../../widgets/global/media_detail_widgets.dart';
-import '../../widgets/global/metadata_fix_sheet.dart';
 import '../../widgets/global/poster_picker_sheet.dart';
 import '../../widgets/global/season_download_button.dart';
 import '../../widgets/global/season_watched_button.dart';
 import '../../widgets/global/share_media_button.dart';
 import '../../widgets/global/staggered_entrance.dart';
-import 'release_folder_hint.dart';
 import 'season_detail_screen.dart';
 import 'show_episode_actions.dart';
+import 'show_metadata_actions.dart';
 import 'widgets/missing_season_banner.dart';
 import 'widgets/season_tabs.dart';
 import 'widgets/show_metadata_menu.dart';
@@ -333,37 +332,29 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
 
   int? get _playerSeasonNumber => _selectedSeason?.effectiveSeasonNumber;
 
-  Future<({String? folder, String? episode})> _fetchLocalLibraryContext(
-    ApiClient api,
-    LibraryProvider lp,
-  ) async {
-    String? folder = releaseFolderHint([
-      for (final ep in [
+  /// Les fichiers de la série, et sa fiche relue au passage.
+  Future<ShowLocalFiles> _localFiles(ApiClient api) async {
+    final lp = Provider.of<LibraryProvider>(context, listen: false);
+    final local = await resolveShowLocalFiles(
+      api,
+      showId: _show.id,
+      episodes: [
         if (_resumeEpisode != null) _resumeEpisode!,
         ...lp.episodes,
-      ])
-        ep.media.filePath,
-    ]);
-    String? episode;
-    for (final ep in [
-      if (_resumeEpisode != null) _resumeEpisode!,
-      ...lp.episodes,
-    ]) {
-      final path = ep.media.filePath;
-      if (path == null || path.isEmpty) continue;
-      episode ??= path.split(RegExp(r'[\\/]+')).last;
-    }
-    try {
-      final details = await api.getMediaDetails(_show.id);
-      if (mounted) setState(() => _details = details);
-      final f = details.localFolder?.trim();
-      final e = details.localEpisodeFile?.trim();
-      if (f != null && f.isNotEmpty) folder = f;
-      if (e != null && e.isNotEmpty) episode = e;
-    } catch (_) {
-      // Sans fiche, le dossier et l'épisode déduits du chemin suffisent.
-    }
-    return (folder: folder, episode: episode);
+      ],
+    );
+    final details = local.details;
+    if (details != null && mounted) setState(() => _details = details);
+    return local;
+  }
+
+  /// La série corrigée remplace l'ancienne, puis la page se recharge.
+  Future<void> _adoptCorrectedShow(Media updated) async {
+    setState(() {
+      _show = updated;
+      _details = null;
+    });
+    await _reloadShowAfterMetadataChange();
   }
 
   Future<void> _reloadShowAfterMetadataChange() async {
@@ -385,60 +376,15 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
 
   Future<void> _autoRedetect() async {
     final api = Provider.of<AuthProvider>(context, listen: false).apiClient;
-    final lp = Provider.of<LibraryProvider>(context, listen: false);
-    final local = await _fetchLocalLibraryContext(api, lp);
+    final local = await _localFiles(api);
     if (!mounted) return;
-
-    final folderLine = local.folder?.isNotEmpty == true
-        ? local.folder!
-        : tr('dossier inconnu');
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(tr('Relancer la détection')),
-        content: Text(
-          tr(
-              'TMDB sera recherché à partir du dossier local '
-              ':\n\n{0}\n\nL’affiche et les métadonnées de cette série '
-              'seront remplacées.',
-              [folderLine]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(tr('Annuler')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(tr('Relancer')),
-          ),
-        ],
-      ),
+    await redetectShowMetadata(
+      context,
+      api: api,
+      show: _show,
+      folder: local.folder,
+      onUpdated: _adoptCorrectedShow,
     );
-    if (confirmed != true || !mounted) return;
-
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      final updated = await api.redetectMediaMetadata(_show.id);
-      if (!mounted) return;
-      setState(() {
-        _show = updated;
-        _details = null;
-      });
-      await _reloadShowAfterMetadataChange();
-      messenger.showSnackBar(
-        SnackBar(content: Text(tr('Détection automatique terminée'))),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content:
-              Text(tr('Détection impossible — essayez le choix manuel TMDB')),
-        ),
-      );
-    }
   }
 
   Future<void> _changePoster() async {
@@ -452,44 +398,15 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
 
   Future<void> _rematch() async {
     final api = Provider.of<AuthProvider>(context, listen: false).apiClient;
-    final lp = Provider.of<LibraryProvider>(context, listen: false);
-    final local = await _fetchLocalLibraryContext(api, lp);
+    final local = await _localFiles(api);
     if (!mounted) return;
-
-    final searchSeed = local.folder ?? local.episode ?? _show.title;
-
-    final choice = await MetadataFixSheet.show(
+    await rematchShowMetadata(
       context,
       api: api,
-      initialQuery: searchSeed,
-      type: MediaType.show,
-      localFolder: local.folder,
-      localEpisodeFile: local.episode,
+      show: _show,
+      local: local,
+      onUpdated: _adoptCorrectedShow,
     );
-
-    if (choice == null || !mounted) return;
-
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      final updated =
-          await api.rematchMediaMetadata(_show.id, tmdbId: choice.tmdbId);
-      if (!mounted) return;
-      setState(() {
-        _show = updated;
-        _details = null;
-      });
-      await _reloadShowAfterMetadataChange();
-      messenger.showSnackBar(
-        SnackBar(content: Text(tr('Fiche série mise à jour'))),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(tr('Impossible de mettre à jour la fiche')),
-        ),
-      );
-    }
   }
 
   Media? _resolveSelectedSeason(List<Media> seasons) {

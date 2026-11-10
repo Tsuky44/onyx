@@ -254,6 +254,10 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    // La pastille a un menu : un OK n'agit qu'au relâchement, et `flutter_test`
+    // date ce relâchement de 0 ms, comme le rebond d'un clic tenu sur Apple TV.
+    // Il part une fois passée la fenêtre de ce rebond (40 ms).
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.runAsync(() async {
       for (var i = 0; i < 50 && !auth.isAuthenticated; i++) {
         await Future<void>.delayed(Duration.zero);

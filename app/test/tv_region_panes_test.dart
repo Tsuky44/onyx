@@ -151,6 +151,36 @@ void main() {
       expect(category.hasFocus, isTrue);
     });
 
+    testWidgets(
+        'gauche depuis le bout d’une ligne rend la catégorie, pas un réglage '
+        'plus bas et plus à gauche', (tester) async {
+      final category = node('cat');
+      final menu = node('menu');
+      final lowChip = node('low-chip');
+      await pumpPanes(
+        tester,
+        list: [target(category)],
+        // Le menu au bout de « Langue audio par défaut », puis, bien plus bas,
+        // une puce alignée à gauche (« Décodage matériel »).
+        page: [
+          Padding(
+            padding: const EdgeInsets.only(left: 300),
+            child: target(menu),
+          ),
+          const SizedBox(height: 600),
+          target(lowChip),
+        ],
+      );
+      category.requestFocus();
+      await tester.pump();
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      expect(menu.hasFocus, isTrue);
+
+      await press(tester, LogicalKeyboardKey.arrowLeft);
+
+      expect(category.hasFocus, isTrue);
+    });
+
     testWidgets('une page sans rien d’actionnable ne prend pas le focus',
         (tester) async {
       final category = node('cat');
