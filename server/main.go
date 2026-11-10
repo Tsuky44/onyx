@@ -267,6 +267,12 @@ func main() {
 	router.GET("/api/integrations/mediahub/counts", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubLibraryCounts)))
 	router.GET("/api/integrations/mediahub/link", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.GetMediaHubLink)))
 	router.PUT("/api/integrations/mediahub/link", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.UpdateMediaHubLink)))
+	// Le gestionnaire de stockage de MediaHub (ADR-0114) : tailles, dernière
+	// lecture et activité par compte, et la suppression du disque, comme
+	// MediaHub le fait avec Emby. La clé ouvre là une écriture : voir l'ADR.
+	router.GET("/api/integrations/mediahub/storage", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubStorage)))
+	router.GET("/api/integrations/mediahub/storage/:id", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubStorageDetails)))
+	router.DELETE("/api/integrations/mediahub/storage/:id", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubDeleteStorage)))
 
 	// Serveurs liés (ADR-0017) : la progression passe d'un serveur à l'autre
 	// sans dépendre d'une app ouverte.

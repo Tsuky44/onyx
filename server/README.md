@@ -205,6 +205,20 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   prend `{ "mediahub_url"?, "mediahub_api_key"? }` (`400` adresse non http(s) ou clé de moins de 32
   caractères) : présenter la clé actuelle suffit pour en poser une nouvelle. `401` sans la bonne clé.
   Capacité `mediahub_directory`.
+* `GET /api/integrations/mediahub/storage`, `GET|DELETE /api/integrations/mediahub/storage/:id`
+  (sans compte, `Authorization: Bearer <mediahub_api_key>`, ADR-0114) — le gestionnaire de stockage de
+  MediaHub. La liste → `{ "movies": [...], "shows": [...] }`, chaque ligne `{ "id", "type", "title",
+  "tmdb_id"?, "path", "size", "episode_count"?, "added_at"?, "last_played_at"? }` (taille en octets,
+  série : somme de ses épisodes avec fichier, dernière lecture tous comptes confondus, dates RFC 3339).
+  Le détail d'un film ou d'une série → `{ "id", "type", "title", "overview"?, "release_date"?,
+  "duration"?, "path"?, "seasons": [{ "id", "number", "title", "size", "episode_count", "path" }],
+  "viewers": [{ "user_id", "username", "finished", "last_played_at"?, "position_seconds",
+  "duration_seconds", "watched_episodes"?, "total_episodes"?, "seasons"?: [{ "number", "total",
+  "watched" }] }] }` (`404` pour une saison ou un épisode). `DELETE` (film, série, saison ou épisode)
+  supprime les fichiers du disque, le dossier qui ne contient plus de vidéo (jamais la racine d'une
+  bibliothèque) et les lignes du catalogue → `{ "files_removed", "bytes_freed" }` ; un fichier déjà
+  absent compte comme supprimé. `404` média inconnu, `409` fichier hors des bibliothèques de films et
+  de séries, `500` fichier impossible à supprimer. Capacité `mediahub_storage`.
 * `POST /api/integrations/onyxhub/imported` (sans compte, `Authorization: Bearer <mediahub_api_key>`,
   ADR-0074) — l'équivalent pour OnyxHub : `{ "tmdbId", "mediaType", "paths": [...] }` (100 au plus)
   → `202 { "status": "queued" }`. Capacité `onyxhub_import_signal`.

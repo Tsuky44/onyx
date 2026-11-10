@@ -68,6 +68,9 @@ const (
 	// s'ouvrent avec la clé d'intégration : MediaHub n'a plus besoin d'une
 	// session d'administrateur Onyx (ADR-0102).
 	CapabilityMediaHubDirectory = "mediahub_directory"
+	// GET /api/integrations/mediahub/storage, GET|DELETE …/storage/:id : le
+	// gestionnaire de stockage de MediaHub sur Onyx (ADR-0114).
+	CapabilityMediaHubStorage = "mediahub_storage"
 )
 
 type pingResponse struct {
@@ -105,6 +108,7 @@ func pingPayload() pingResponse {
 			CapabilityMediaHubEvents,
 			CapabilityMediaHubSSO,
 			CapabilityMediaHubDirectory,
+			CapabilityMediaHubStorage,
 		},
 	}
 }

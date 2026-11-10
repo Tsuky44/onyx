@@ -21,6 +21,7 @@
     "mediahub_requests",
     "mediahub_events",
     "mediahub_sso",
-    "mediahub_directory"
+    "mediahub_directory",
+    "mediahub_storage"
   ]
 }
