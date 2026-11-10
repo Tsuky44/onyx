@@ -143,8 +143,11 @@ class _UserChoiceScreenState extends State<UserChoiceScreen> {
                     SizedBox(height: compact ? 32 : 48),
                     // Gauche et droite s'arrêtent au bord de la rangée : sous
                     // dpad, gauche depuis le premier profil partait sur « ‹ »,
-                    // en haut à gauche de l'écran (vu au simulateur).
+                    // en haut à gauche de l'écran (vu au simulateur). Haut
+                    // depuis « Gérer » rend la personne d'où l'on venait : une
+                    // seule rangée, rien à recommencer (ADR-0113).
                     TvRegion.rail(
+                      entersAtStart: false,
                       child: Wrap(
                         alignment: WrapAlignment.center,
                         spacing: compact ? 16 : 32,

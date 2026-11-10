@@ -39,7 +39,8 @@ void main() {
               'episode_number': 3,
               'position_seconds': 1450,
               'duration': 3000,
-              'watched_at': DateTime(2026, 10, 16, 21, 4).toUtc().toIso8601String(),
+              'watched_at':
+                  DateTime(2026, 10, 16, 21, 4).toUtc().toIso8601String(),
             }),
             now: now),
         'S1 E3 · à 24:10 · il y a 56 min',
@@ -48,8 +49,8 @@ void main() {
 
     test('un épisode vu ne donne plus de position', () {
       expect(
-        shareViewerProgress(
-            viewer({'season_number': 2, 'episode_number': 1, 'finished': true})),
+        shareViewerProgress(viewer(
+            {'season_number': 2, 'episode_number': 1, 'finished': true})),
         'S2 E1 · vu',
       );
     });
@@ -116,13 +117,15 @@ void main() {
 
     expect(find.text('Lioness · Saison 1'), findsOneWidget);
     expect(find.byType(ShareViewersList), findsOneWidget,
-        reason: 'un lien que personne n’a ouvert sous un prénom n’a pas de liste');
+        reason:
+            'un lien que personne n’a ouvert sous un prénom n’a pas de liste');
     expect(find.textContaining('Paul  S1 E1 · vu', findRichText: true),
         findsOneWidget);
     expect(find.textContaining('Marie  S1 E3 · à 10:00', findRichText: true),
         findsOneWidget);
 
-    final paul = tester.getTopLeft(find.textContaining('Paul', findRichText: true));
+    final paul =
+        tester.getTopLeft(find.textContaining('Paul', findRichText: true));
     final marie =
         tester.getTopLeft(find.textContaining('Marie', findRichText: true));
     expect(paul.dy, lessThan(marie.dy),

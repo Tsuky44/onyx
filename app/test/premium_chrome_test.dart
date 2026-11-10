@@ -171,7 +171,8 @@ void main() {
       expect(selected, [ShellTabs.library(_animes)]);
     });
 
-    testWidgets('au-delà de deux, les bibliothèques se choisissent dans une liste',
+    testWidgets(
+        'au-delà de deux, les bibliothèques se choisissent dans une liste',
         (tester) async {
       final selected = <String>[];
       await tester.pumpWidget(

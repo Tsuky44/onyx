@@ -145,8 +145,7 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
               FilledButton.icon(
                 autofocus: true,
                 onPressed: _copy,
-                icon: Icon(_copied ? AppIcons.check : AppIcons.copy,
-                    size: 18),
+                icon: Icon(_copied ? AppIcons.check : AppIcons.copy, size: 18),
                 label: Text(_copied ? tr('Copié') : tr('Copier le lien')),
               ),
             ],
@@ -160,11 +159,15 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
       children: [
         Text(
           widget.collection
-              ? tr('Toute personne qui a le lien peut regarder les épisodes '
+              ? tr(
+                  'Toute personne qui a le lien peut regarder les épisodes '
                   'de « {0} » dans son navigateur ou dans l’app Onyx, sans '
-                  'compte, jusqu’à l’expiration du lien.', [widget.title])
-              : tr('Toute personne qui a le lien peut regarder « {0} » dans '
-                  'son navigateur ou dans l’app Onyx, sans compte.', [widget.title]),
+                  'compte, jusqu’à l’expiration du lien.',
+                  [widget.title])
+              : tr(
+                  'Toute personne qui a le lien peut regarder « {0} » dans '
+                  'son navigateur ou dans l’app Onyx, sans compte.',
+                  [widget.title]),
           style: const TextStyle(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 12),
@@ -172,8 +175,7 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: _singleUse,
-            onChanged:
-                _creating ? null : (v) => setState(() => _singleUse = v),
+            onChanged: _creating ? null : (v) => setState(() => _singleUse = v),
             title: Text(tr('Détruire après lecture')),
             subtitle: Text(
               _singleUse
@@ -256,13 +258,15 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
           ),
           child: SelectableText(
             _link,
-            style: const TextStyle(fontSize: AppType.subhead, color: AppColors.textPrimary),
+            style: const TextStyle(
+                fontSize: AppType.subhead, color: AppColors.textPrimary),
           ),
         ),
         const SizedBox(height: 12),
         Text(
           details.join(' · '),
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: AppType.subhead),
+          style: const TextStyle(
+              color: AppColors.textSecondary, fontSize: AppType.subhead),
         ),
         const SizedBox(height: 12),
         Text(
@@ -270,7 +274,8 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
               'le suivre ou le supprimer dans Paramètres › Liens de partage. '
               'Dans l’app Onyx, il se colle sur l’écran de connexion, sous « '
               'Ouvrir un lien de partage ».'),
-          style: TextStyle(color: AppColors.textMuted, fontSize: AppType.subhead),
+          style:
+              TextStyle(color: AppColors.textMuted, fontSize: AppType.subhead),
         ),
         if (localOnly) ...[
           const SizedBox(height: 12),
@@ -278,7 +283,8 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
             tr('Cette adresse n’est joignable que depuis votre réseau '
                 'local. Pour un envoi à l’extérieur, connectez l’app au '
                 'serveur par son adresse publique avant de créer le lien.'),
-            style: TextStyle(color: AppColors.warning, fontSize: AppType.subhead),
+            style:
+                TextStyle(color: AppColors.warning, fontSize: AppType.subhead),
           ),
         ],
       ],

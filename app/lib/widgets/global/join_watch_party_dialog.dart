@@ -126,7 +126,9 @@ class _JoinWatchPartyDialogState extends State<_JoinWatchPartyDialog> {
             Text(
               server == null
                   ? tr('Entrez le code affiché dans le lecteur de l’hôte.')
-                  : tr('Entrez le code affiché dans le lecteur de l’hôte, sur {0}.', [server]),
+                  : tr(
+                      'Entrez le code affiché dans le lecteur de l’hôte, sur {0}.',
+                      [server]),
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),

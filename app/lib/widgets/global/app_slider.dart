@@ -234,10 +234,9 @@ class _SliderMetrics {
   static _SliderMetrics of(BuildContext context, {required bool enabled}) {
     final theme = SliderTheme.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final active = (enabled
-            ? theme.activeTrackColor
-            : theme.disabledActiveTrackColor) ??
-        scheme.primary;
+    final active =
+        (enabled ? theme.activeTrackColor : theme.disabledActiveTrackColor) ??
+            scheme.primary;
     final inactive = (enabled
             ? theme.inactiveTrackColor
             : theme.disabledInactiveTrackColor) ??
@@ -248,8 +247,9 @@ class _SliderMetrics {
     final haloShape = theme.overlayShape;
     return _SliderMetrics(
       trackHeight: theme.trackHeight ?? 4,
-      thumbRadius:
-          thumbShape is RoundSliderThumbShape ? thumbShape.enabledThumbRadius : 10,
+      thumbRadius: thumbShape is RoundSliderThumbShape
+          ? thumbShape.enabledThumbRadius
+          : 10,
       haloRadius:
           haloShape is RoundSliderOverlayShape ? haloShape.overlayRadius : 0,
       activeColor: active,

@@ -60,6 +60,7 @@ Future<TvNavHarness> _mount(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TvRegion.rail(
+              entersAtStart: false,
               id: 'rangée',
               child: SizedBox(
                 height: 120,

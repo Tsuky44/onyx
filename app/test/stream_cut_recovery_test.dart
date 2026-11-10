@@ -36,8 +36,8 @@ void main() {
   test('a downloaded file or an unknown duration is never second-guessed', () {
     final cuts = recovery(reopenAt: (_) async => true);
     const mid = Duration(minutes: 17);
-    expect(cuts.isCut(position: mid, duration: episode, localFile: true),
-        isFalse);
+    expect(
+        cuts.isCut(position: mid, duration: episode, localFile: true), isFalse);
     expect(cuts.isCut(position: mid, duration: Duration.zero), isFalse);
   });
 

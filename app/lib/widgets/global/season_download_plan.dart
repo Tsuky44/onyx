@@ -95,6 +95,5 @@ class SeasonDownloadPlan {
   }
 
   /// Vrai quand [nextBatch] ne vise que les non vus.
-  bool get nextBatchIsUnwatched =>
-      partlyWatched && unwatchedMissing > 0;
+  bool get nextBatchIsUnwatched => partlyWatched && unwatchedMissing > 0;
 }

@@ -306,7 +306,8 @@ void main() {
 
     // La recherche interactive (ADR-0098).
     final releases = (_contract('request_releases')['releases'] as List)
-        .map((e) => RequestRelease.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map(
+            (e) => RequestRelease.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
     expect(releases, isNotEmpty);
     expect(releases.first.title, isNotEmpty);

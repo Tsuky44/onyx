@@ -35,6 +35,8 @@ class OverlayBackButton extends StatefulWidget {
     return kToolbarHeight + top;
   }
 
+  static double topInsetFor(BuildContext context) => _topInset(context);
+
   /// The window's own controls on macOS, or whatever the screen reserves at
   /// the top — the status bar, or the app's nav bar when the page opens
   /// under it (see `MainShell`). The larger wins: on macOS under the nav bar,

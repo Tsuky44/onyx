@@ -133,7 +133,7 @@ class _SegmentState extends State<_Segment> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: _focused ? AppColors.accent : Colors.transparent,
+              color: _focused ? AppColors.focus : Colors.transparent,
               width: 2.5,
             ),
           ),

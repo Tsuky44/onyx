@@ -203,9 +203,7 @@ class _AutoScrollSession {
   Widget _buildOverlay(BuildContext context) {
     final vertical = _targets.containsKey(Axis.vertical);
     final horizontal = _targets.containsKey(Axis.horizontal);
-    final icon = vertical && horizontal
-        ? AppIcons.autoscroll
-        : AppIcons.sort;
+    final icon = vertical && horizontal ? AppIcons.autoscroll : AppIcons.sort;
 
     // Plein écran et opaque : le clic qui arrête la séance ne doit pas aussi
     // ouvrir l'affiche qui se trouve dessous, et la molette l'arrête aussi.

@@ -106,7 +106,8 @@ void main() {
       );
       expect(failed.error, 'Serveur injoignable');
 
-      final retried = failed.copyWith(status: DownloadStatus.queued, error: null);
+      final retried =
+          failed.copyWith(status: DownloadStatus.queued, error: null);
       expect(retried.error, isNull);
       expect(retried.title, failed.title);
       expect(retried.bytesReceived, failed.bytesReceived);

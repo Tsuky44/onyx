@@ -23,7 +23,8 @@ Future<void> _open(WidgetTester tester, ServerAnnouncement announcement,
 }
 
 void main() {
-  testWidgets('un long message tient sur un téléphone et défile', (tester) async {
+  testWidgets('un long message tient sur un téléphone et défile',
+      (tester) async {
     await _open(
       tester,
       ServerAnnouncement(
@@ -36,9 +37,10 @@ void main() {
     expect(find.text('Maintenance du serveur'), findsOneWidget);
   });
 
-  testWidgets('sans titre, la fenêtre dit d’où vient le message', (tester) async {
-    await _open(tester,
-        const ServerAnnouncement(id: 1, title: '', message: 'Bonjour'));
+  testWidgets('sans titre, la fenêtre dit d’où vient le message',
+      (tester) async {
+    await _open(
+        tester, const ServerAnnouncement(id: 1, title: '', message: 'Bonjour'));
     expect(find.text('Un message de votre serveur'), findsOneWidget);
   });
 
@@ -53,7 +55,8 @@ void main() {
     expect(find.byType(AnnouncementDialog), findsOneWidget);
 
     final button = find.byType(FilledButton);
-    expect(Focus.of(tester.element(find.text('J’ai compris'))).hasFocus, isTrue);
+    expect(
+        Focus.of(tester.element(find.text('J’ai compris'))).hasFocus, isTrue);
     await tester.tap(button);
     await tester.pumpAndSettle();
     expect(find.byType(AnnouncementDialog), findsNothing);

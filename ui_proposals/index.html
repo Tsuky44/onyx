@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onyx — Améliorations Ciblées dans la DA Actuelle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0A0A0A;
+      --surface: #141416;
+      --surface-elevated: #1D1D20;
+      --text: #F5F5F7;
+      --text-sub: #A1A1A6;
+      --text-muted: #6E6E73;
+      --accent: #0A84FF;
+      --border: rgba(255, 255, 255, 0.08);
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Manrope', -apple-system, sans-serif;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    .master-header {
+      background: rgba(10, 10, 10, 0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(20px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0A84FF, #0051A8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      font-weight: 800;
+      font-size: 15px;
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .nav-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-tab-btn:hover {
+      color: var(--text);
+      background: var(--surface-elevated);
+    }
+
+    .nav-tab-btn.active {
+      color: #0A0A0A;
+      background: #FFFFFF;
+      font-weight: 700;
+    }
+
+    .viewer-wrap {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 69px);
+      background: #000;
+    }
+
+    .frame-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #050505;
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    .prototype-frame {
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .audit-summary-panel {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .audit-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Geist', sans-serif;
+      font-size: 11.5px;
+      color: var(--accent);
+      background: rgba(10, 132, 255, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .open-external-btn {
+      color: var(--text-sub);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+    }
+
+    .open-external-btn:hover {
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="master-header">
+    <div class="brand">
+      <div class="brand-logo">O</div>
+      <div class="brand-text">
+        <h1>Onyx — Améliorations dans la DA</h1>
+        <p>100% Respect de l'architecture et des tokens Quiet Premium</p>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab-btn active" onclick="loadProposal('comparaison_interactive.html', this, 'Comparateur interactif Avant / Après (Bascule instantanée sur les mêmes éléments)')">
+        <span>Comparaison Avant / Après</span>
+      </button>
+      <button class="nav-tab-btn" onclick="loadProposal('amelioration_1_polish_conservateur.html', this, 'Amélioration 1 : Polish Conservateur (Remplacement du dropdown, jauge dans HeroPill, micro-badges)')">
+        <span>Amélioration 1 : Polish</span>
+      </button>
+      <button class="nav-tab-btn" onclick="loadProposal('amelioration_2_focus_tv_et_mobile.html', this, 'Amélioration 2 : TV & Mobile (Focus D-pad télécommande et maintien de l\'affiche sur mobile)')">
+        <span>Amélioration 2 : TV & Mobile</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="viewer-wrap">
+    <div class="frame-container">
+      <iframe id="proto-frame" class="prototype-frame" src="comparaison_interactive.html"></iframe>
+    </div>
+
+    <div class="audit-summary-panel">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span class="audit-tag">VUE ACTIVE</span>
+        <span id="proposal-desc" style="font-weight: 600; color: var(--text);">Comparateur interactif Avant / Après (Bascule instantanée sur les mêmes éléments)</span>
+      </div>
+
+      <div>
+        <a id="external-link" href="comparaison_interactive.html" target="_blank" class="open-external-btn">
+          Ouvrir en plein écran
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function loadProposal(file, btn, description) {
+      document.querySelectorAll('.nav-tab-btn').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('proto-frame').src = file;
+      document.getElementById('proposal-desc').innerText = description;
+      document.getElementById('external-link').href = file;
+    }
+  </script>
+</body>
+</html>

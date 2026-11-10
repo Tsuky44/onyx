@@ -28,9 +28,8 @@ class TvFocusPanes extends StatefulWidget {
   final Widget child;
 
   /// Les volets qui contiennent [node], s'il y en a.
-  static TvFocusPanesState? maybeOf(FocusNode node) => node.context
-      ?.getInheritedWidgetOfExactType<_TvFocusPanesScope>()
-      ?.state;
+  static TvFocusPanesState? maybeOf(FocusNode node) =>
+      node.context?.getInheritedWidgetOfExactType<_TvFocusPanesScope>()?.state;
 
   @override
   State<TvFocusPanes> createState() => TvFocusPanesState();

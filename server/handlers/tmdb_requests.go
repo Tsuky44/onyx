@@ -317,6 +317,8 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 
 	// Fetch seasons for TV shows
 	var seasons []seasonInfo
+	var nextEpisodeAir *models.EpisodeAirRef
+	var lastEpisodeAir *models.EpisodeAirRef
 	if mediaType == models.TypeShow {
 		lang := languageOf(r).tmdbLocale()
 		client := httpx.Catalog
@@ -326,6 +328,16 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 			defer resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				var tvResp struct {
+					NextEpisodeToAir *struct {
+						AirDate       string `json:"air_date"`
+						EpisodeNumber int    `json:"episode_number"`
+						SeasonNumber  int    `json:"season_number"`
+					} `json:"next_episode_to_air"`
+					LastEpisodeToAir *struct {
+						AirDate       string `json:"air_date"`
+						EpisodeNumber int    `json:"episode_number"`
+						SeasonNumber  int    `json:"season_number"`
+					} `json:"last_episode_to_air"`
 					Seasons []struct {
 						SeasonNumber int     `json:"season_number"`
 						Name         string  `json:"name"`
@@ -336,6 +348,20 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 					} `json:"seasons"`
 				}
 				if json.NewDecoder(resp.Body).Decode(&tvResp) == nil {
+					if tvResp.NextEpisodeToAir != nil && tvResp.NextEpisodeToAir.AirDate != "" {
+						nextEpisodeAir = &models.EpisodeAirRef{
+							AirDate:       tvResp.NextEpisodeToAir.AirDate,
+							EpisodeNumber: tvResp.NextEpisodeToAir.EpisodeNumber,
+							SeasonNumber:  tvResp.NextEpisodeToAir.SeasonNumber,
+						}
+					}
+					if tvResp.LastEpisodeToAir != nil && tvResp.LastEpisodeToAir.AirDate != "" {
+						lastEpisodeAir = &models.EpisodeAirRef{
+							AirDate:       tvResp.LastEpisodeToAir.AirDate,
+							EpisodeNumber: tvResp.LastEpisodeToAir.EpisodeNumber,
+							SeasonNumber:  tvResp.LastEpisodeToAir.SeasonNumber,
+						}
+					}
 					for _, s := range tvResp.Seasons {
 						if s.SeasonNumber <= 0 {
 							continue
@@ -423,38 +449,40 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	}
 
 	json.NewEncoder(w).Encode(struct {
-		ID               int                  `json:"id"`
-		MediaType        string               `json:"mediaType"`
-		Title            string               `json:"title"`
-		OriginalTitle    string               `json:"originalTitle"`
-		Tagline          string               `json:"tagline"`
-		Overview         string               `json:"overview"`
-		PosterPath       string               `json:"posterPath"`
-		BackdropPath     string               `json:"backdropPath"`
-		LogoPath         string               `json:"logoPath"`
-		ReleaseDate      string               `json:"releaseDate"`
-		Rating           float64              `json:"rating"`
-		Runtime          int                  `json:"runtime"`
-		Genres           []string             `json:"genres"`
-		Studios          []string             `json:"studios"`
-		Countries        []string             `json:"countries"`
-		OriginalLanguage string               `json:"originalLanguage"`
-		TMDBStatus       string               `json:"tmdbStatus"`
-		Status           string               `json:"status"`
-		Director         string               `json:"director"`
-		Writers          []string             `json:"writers"`
-		Editors          []string             `json:"editors"`
-		Keywords         []string             `json:"keywords"`
-		TrailerKey       string               `json:"trailerKey"`
-		Budget           int64                `json:"budget"`
-		Revenue          int64                `json:"revenue"`
-		Cast             []castMember         `json:"cast"`
-		Seasons          []seasonInfo         `json:"seasons"`
-		NumberOfSeasons  int                  `json:"numberOfSeasons"`
-		NumberOfEpisodes int                  `json:"numberOfEpisodes"`
-		Recommendations  []requestRelatedItem `json:"recommendations"`
-		Similar          []requestRelatedItem `json:"similar"`
-		Waiting          *mediaHubWaiting     `json:"waiting,omitempty"`
+		ID               int                   `json:"id"`
+		MediaType        string                `json:"mediaType"`
+		Title            string                `json:"title"`
+		OriginalTitle    string                `json:"originalTitle"`
+		Tagline          string                `json:"tagline"`
+		Overview         string                `json:"overview"`
+		PosterPath       string                `json:"posterPath"`
+		BackdropPath     string                `json:"backdropPath"`
+		LogoPath         string                `json:"logoPath"`
+		ReleaseDate      string                `json:"releaseDate"`
+		Rating           float64               `json:"rating"`
+		Runtime          int                   `json:"runtime"`
+		Genres           []string              `json:"genres"`
+		Studios          []string              `json:"studios"`
+		Countries        []string              `json:"countries"`
+		OriginalLanguage string                `json:"originalLanguage"`
+		TMDBStatus       string                `json:"tmdbStatus"`
+		Status           string                `json:"status"`
+		Director         string                `json:"director"`
+		Writers          []string              `json:"writers"`
+		Editors          []string              `json:"editors"`
+		Keywords         []string              `json:"keywords"`
+		TrailerKey       string                `json:"trailerKey"`
+		Budget           int64                 `json:"budget"`
+		Revenue          int64                 `json:"revenue"`
+		Cast             []castMember          `json:"cast"`
+		Seasons          []seasonInfo          `json:"seasons"`
+		NumberOfSeasons  int                   `json:"numberOfSeasons"`
+		NumberOfEpisodes int                   `json:"numberOfEpisodes"`
+		NextEpisodeToAir *models.EpisodeAirRef `json:"nextEpisodeToAir,omitempty"`
+		LastEpisodeToAir *models.EpisodeAirRef `json:"lastEpisodeToAir,omitempty"`
+		Recommendations  []requestRelatedItem  `json:"recommendations"`
+		Similar          []requestRelatedItem  `json:"similar"`
+		Waiting          *mediaHubWaiting      `json:"waiting,omitempty"`
 	}{
 		Waiting:          waiting,
 		ID:               tmdbID,
@@ -486,6 +514,8 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		Seasons:          seasons,
 		NumberOfSeasons:  details.NumberOfSeasons,
 		NumberOfEpisodes: details.NumberOfEpisodes,
+		NextEpisodeToAir: nextEpisodeAir,
+		LastEpisodeToAir: lastEpisodeAir,
 		Recommendations:  mapRelatedForRequest(details.Recommendations, mtStr),
 		Similar:          mapRelatedForRequest(details.Similar, mtStr),
 	})

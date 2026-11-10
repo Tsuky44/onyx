@@ -56,7 +56,8 @@ Future<void> confirmDeleteDownloads(
   if (deleted == 0) return;
   messenger.showSnackBar(SnackBar(
     content: Text(
-      tr('{0} élément{1}', [deleted, deleted > 1 ? tr('s supprimés') : tr(' supprimé')]),
+      tr('{0} élément{1}',
+          [deleted, deleted > 1 ? tr('s supprimés') : tr(' supprimé')]),
     ),
   ));
 }

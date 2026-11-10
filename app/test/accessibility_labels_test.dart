@@ -28,7 +28,8 @@ class _Api extends ApiClient {
       (required: false, codeRequired: false);
 
   @override
-  Future<DevicePairing> startDevicePairing({required String deviceName}) async =>
+  Future<DevicePairing> startDevicePairing(
+          {required String deviceName}) async =>
       throw Exception('hors ligne');
 
   @override
@@ -43,7 +44,8 @@ class _Api extends ApiClient {
   Future<Map<String, dynamic>> getProgress(int mediaId) async =>
       {'current_position_seconds': 600, 'is_finished': false};
 
-  static Map<String, dynamic> _list(int id, String kind, {bool mine = true}) => {
+  static Map<String, dynamic> _list(int id, String kind, {bool mine = true}) =>
+      {
         'id': id,
         'kind': kind,
         'name': 'Recos',
@@ -280,7 +282,10 @@ void main() {
   // propriétaire, avec ses boutons de modification.
   for (final (name, screen) in [
     ('l’onglet des listes nomme chaque vignette', const ListsScreen()),
-    ('une liste nomme chacune de ses actions', const ListDetailScreen(listId: 2)),
+    (
+      'une liste nomme chacune de ses actions',
+      const ListDetailScreen(listId: 2)
+    ),
   ]) {
     testWidgets(name, (tester) async {
       final handle = tester.ensureSemantics();

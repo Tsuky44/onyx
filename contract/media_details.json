@@ -123,5 +123,15 @@
     "poster_url": "poster_url-value"
   },
   "number_of_seasons": 30,
-  "number_of_episodes": 31
+  "number_of_episodes": 31,
+  "next_episode_to_air": {
+    "air_date": "2020-01-02",
+    "episode_number": 32,
+    "season_number": 33
+  },
+  "last_episode_to_air": {
+    "air_date": "2020-01-02",
+    "episode_number": 34,
+    "season_number": 35
+  }
 }

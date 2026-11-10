@@ -40,15 +40,16 @@ void main() {
     expect(log, [true, false, true]);
   });
 
-  testWidgets('une page recouverte par une autre s\'arrête, et repart au retour',
+  testWidgets(
+      'une page recouverte par une autre s\'arrête, et repart au retour',
       (tester) async {
     final log = <bool>[];
     final navigator = GlobalKey<NavigatorState>();
     await tester.pumpWidget(WidgetsApp(
       navigatorKey: navigator,
       color: const Color(0xFF000000),
-      pageRouteBuilder: <T>(settings, builder) =>
-          PageRouteBuilder<T>(pageBuilder: (context, _, __) => builder(context)),
+      pageRouteBuilder: <T>(settings, builder) => PageRouteBuilder<T>(
+          pageBuilder: (context, _, __) => builder(context)),
       home: _Probe(log),
     ));
     expect(log, [true]);

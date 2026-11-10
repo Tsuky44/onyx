@@ -122,6 +122,7 @@ class ShellDesktopHeader extends StatelessWidget {
               child: GlassCatalogSearch(
                 collapsedWidth: 200,
                 expandedWidth: 280,
+                staysAbovePages: true,
               ),
             ),
             const SizedBox(width: 12),

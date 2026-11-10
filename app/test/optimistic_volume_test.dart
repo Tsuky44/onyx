@@ -6,7 +6,8 @@ void main() {
     expect(OptimisticVolume().resolve(40), 40);
   });
 
-  test('shows what the user picked while the engine still reports the old value',
+  test(
+      'shows what the user picked while the engine still reports the old value',
       () {
     final v = OptimisticVolume()..resolve(40);
     v.request(80);

@@ -136,7 +136,8 @@ void main() {
       kind: LibraryKind.shows,
     );
 
-    await tester.pumpWidget(_providers(api, const LibraryScreen(library: library)));
+    await tester
+        .pumpWidget(_providers(api, const LibraryScreen(library: library)));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);

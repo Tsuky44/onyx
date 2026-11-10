@@ -25,8 +25,8 @@ void main() {
         VideoDisplayMode.fillHeight);
     expect(PinchZoom.spread.apply(VideoDisplayMode.fillHeight),
         VideoDisplayMode.fill);
-    expect(PinchZoom.spread.apply(VideoDisplayMode.fill),
-        VideoDisplayMode.fill);
+    expect(
+        PinchZoom.spread.apply(VideoDisplayMode.fill), VideoDisplayMode.fill);
     expect(PinchZoom.squeeze.apply(VideoDisplayMode.fill),
         VideoDisplayMode.fillHeight);
     expect(PinchZoom.squeeze.apply(VideoDisplayMode.original),
@@ -73,7 +73,8 @@ void pinchTrackerTests() {
         ..down(_fingerDown(2, const Offset(200, 100)));
 
       expect(tracker.move(_fingerMove(2, const Offset(205, 100))), isNull);
-      expect(tracker.move(_fingerMove(2, const Offset(260, 100))), PinchZoom.spread);
+      expect(tracker.move(_fingerMove(2, const Offset(260, 100))),
+          PinchZoom.spread);
       // Les doigts qui reviennent en arrière ne rebasculent pas l'image.
       expect(tracker.move(_fingerMove(2, const Offset(150, 100))), isNull);
     });
@@ -82,7 +83,8 @@ void pinchTrackerTests() {
       final tracker = PinchTracker()
         ..down(_fingerDown(1, const Offset(100, 100)))
         ..down(_fingerDown(2, const Offset(200, 100)));
-      expect(tracker.move(_fingerMove(2, const Offset(260, 100))), PinchZoom.spread);
+      expect(tracker.move(_fingerMove(2, const Offset(260, 100))),
+          PinchZoom.spread);
 
       // Un doigt levé puis reposé : c'est le même geste.
       tracker

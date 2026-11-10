@@ -76,7 +76,7 @@ class _WatchListTileState extends State<WatchListTile> {
                     color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: _focused ? AppColors.accent : AppColors.border,
+                      color: _focused ? AppColors.focus : AppColors.border,
                       width: _focused ? 2 : 1,
                     ),
                   ),

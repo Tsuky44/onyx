@@ -87,7 +87,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(registry.linkedAccounts(a.id).map((a) => a.id), contains(b.id));
     expect(find.textContaining('Lié à bob'), findsOneWidget);
-    expect(find.textContaining('en attente des administrateurs'), findsOneWidget);
+    expect(
+        find.textContaining('en attente des administrateurs'), findsOneWidget);
     await tester.tap(find.byTooltip('Options du compte alice'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Dissocier ce compte'));

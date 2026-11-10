@@ -209,7 +209,8 @@ void main() {
       expect(find.text('Avatar : La Voie de l’eau'), findsWidgets);
     });
 
-    testWidgets('times read as elapsed on the left, remaining + end on the right',
+    testWidgets(
+        'times read as elapsed on the left, remaining + end on the right',
         (tester) async {
       await pumpChrome(tester, width: 1280);
 
@@ -307,8 +308,7 @@ void main() {
 
   group('both arrangements stay usable', () {
     testWidgets('nothing overflows at phone width', (tester) async {
-      await pumpChrome(
-          tester,
+      await pumpChrome(tester,
           width: 375,
           onSkipNext: () {},
           onSkipPrevious: () {},
@@ -318,8 +318,7 @@ void main() {
     });
 
     testWidgets('nothing overflows at desktop width', (tester) async {
-      await pumpChrome(
-          tester,
+      await pumpChrome(tester,
           width: 1280,
           onSkipNext: () {},
           onSkipPrevious: () {},
@@ -419,7 +418,8 @@ void main() {
       expect(rect.right, greaterThan(420 - 60));
       // Below the top bar, which is measured rather than guessed at: the
       // control starts where the bar above it ends.
-      final back = tester.getRect(find.byIcon(Icons.arrow_back_ios_new_rounded));
+      final back =
+          tester.getRect(find.byIcon(Icons.arrow_back_ios_new_rounded));
       expect(rect.top, greaterThanOrEqualTo(back.bottom));
     });
 
@@ -432,8 +432,7 @@ void main() {
       await pumpChrome(tester, width: 420, brightness: 0.5);
 
       final rect = tester.getRect(find.byType(OnyxBrightnessSlider));
-      final fullscreen =
-          tester.getRect(find.byIcon(Icons.fullscreen_rounded));
+      final fullscreen = tester.getRect(find.byIcon(Icons.fullscreen_rounded));
 
       expect(rect.bottom, lessThanOrEqualTo(fullscreen.top));
     });
@@ -469,8 +468,7 @@ void main() {
 
       expect(find.byType(OnyxBrightnessSlider), findsOneWidget);
       final rect = tester.getRect(find.byType(OnyxBrightnessSlider));
-      final fullscreen =
-          tester.getRect(find.byIcon(Icons.fullscreen_rounded));
+      final fullscreen = tester.getRect(find.byIcon(Icons.fullscreen_rounded));
       expect(rect.bottom, lessThanOrEqualTo(fullscreen.top));
     });
 
@@ -489,8 +487,7 @@ void main() {
       );
 
       final bar = tester.getRect(find.byType(OnyxBrightnessSlider));
-      final fullscreen =
-          tester.getRect(find.byIcon(Icons.fullscreen_rounded));
+      final fullscreen = tester.getRect(find.byIcon(Icons.fullscreen_rounded));
 
       for (var frame = 0; frame < 5; frame++) {
         await tester.pump(const Duration(milliseconds: 16));
@@ -813,7 +810,8 @@ void main() {
         expect(playPause.hasFocus, isTrue);
       });
 
-      testWidgets('up from play/pause reaches the top row, where right walks '
+      testWidgets(
+          'up from play/pause reaches the top row, where right walks '
           'to the settings and stops there', (tester) async {
         final (nav, _) = await pumpTv(tester);
 
@@ -864,7 +862,8 @@ void main() {
   });
 
   group('the television chrome is laid out for the remote', () {
-    testWidgets('menus at the top right, transport in the middle, timeline '
+    testWidgets(
+        'menus at the top right, transport in the middle, timeline '
         'at the bottom', (tester) async {
       await pumpChrome(tester, width: 960, height: 540, isTv: true);
 
@@ -924,7 +923,8 @@ void main() {
       expect(filled(Icons.forward_10_rounded), isTrue);
     });
 
-    testWidgets('the focused timeline thickens and turns to the accent, with '
+    testWidgets(
+        'the focused timeline thickens and turns to the accent, with '
         'no frame around it', (tester) async {
       final progress = FocusNode();
       addTearDown(progress.dispose);

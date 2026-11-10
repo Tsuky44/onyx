@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_page_transitions.dart';
+import 'focus_fill.dart';
 import '../theme/app_type.dart';
 
 abstract final class AppTheme {
@@ -21,7 +22,7 @@ abstract final class AppTheme {
   /// remote-driven UI lives or dies on the user being able to find the cursor,
   /// so focus gets a real ring, on every button, everywhere.
   static WidgetStateProperty<BorderSide?> _focusSide(BorderSide? resting,
-      {Color color = AppColors.accent}) {
+      {Color color = AppColors.focus}) {
     return WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.focused)) {
         return BorderSide(color: color, width: 2.5);
@@ -39,7 +40,7 @@ abstract final class AppTheme {
   static BorderSide chipSide(BorderSide resting) {
     return WidgetStateBorderSide.resolveWith((states) {
       if (states.contains(WidgetState.focused)) {
-        return const BorderSide(color: AppColors.accent, width: 2.5);
+        return const BorderSide(color: AppColors.focus, width: 2.5);
       }
       return resting;
     });
@@ -141,21 +142,25 @@ abstract final class AppTheme {
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
+      // Blanc au repos, sauf sur téléviseur : la commande blanche y est
+      // celle qui a le focus (ADR-0112).
       elevatedButtonTheme: ElevatedButtonThemeData(
-        style: focusRinged(ElevatedButton.styleFrom(
-          backgroundColor: AppColors.textPrimary,
-          foregroundColor: AppColors.background,
-          disabledBackgroundColor: AppColors.surfaceHover,
-          disabledForegroundColor: AppColors.textMuted,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-          ),
-        )),
+        style: focusRinged(
+            restOnTv: FocusFill.glass,
+            ElevatedButton.styleFrom(
+              backgroundColor: AppColors.textPrimary,
+              foregroundColor: AppColors.background,
+              disabledBackgroundColor: AppColors.surfaceHover,
+              disabledForegroundColor: AppColors.textMuted,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              textStyle: textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            )),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: focusRinged(
@@ -182,9 +187,9 @@ abstract final class AppTheme {
       // sur le même bleu, « Nouvelle liste » ne montrait aucun focus. Son
       // anneau est blanc.
       filledButtonTheme: FilledButtonThemeData(
-        style: const ButtonStyle().copyWith(
+        style: FocusFill.wrap(const ButtonStyle().copyWith(
           side: _focusSide(null, color: AppColors.textPrimary),
-        ),
+        )),
       ),
       textButtonTheme: TextButtonThemeData(
         style: focusRinged(TextButton.styleFrom(
@@ -301,7 +306,13 @@ abstract final class AppTheme {
   ///
   /// Public for the local button themes, which replace the app's instead of
   /// merging into it ([DetailActions.secondaryStyle]).
-  static ButtonStyle focusRinged(ButtonStyle style, {BorderSide? resting}) {
-    return style.copyWith(side: _focusSide(resting));
+  ///
+  /// Sur téléviseur, le bouton focalisé se remplit aussi de blanc
+  /// ([FocusFill], ADR-0112) : l'anneau seul ne se voyait pas sur un bouton
+  /// déjà blanc. [restOnTv] : voir [FocusFill.wrap].
+  static ButtonStyle focusRinged(ButtonStyle style,
+      {BorderSide? resting, Color? restOnTv}) {
+    return FocusFill.wrap(style.copyWith(side: _focusSide(resting)),
+        restOnTv: restOnTv);
   }
 }

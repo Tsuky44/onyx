@@ -54,9 +54,11 @@ class MediaRow extends StatelessWidget {
     final horizontalPadding = AppLayout.pagePadding(context);
     final cardWidth = AppLayout.mediaRowCardWidth(context);
     final compact = AppLayout.isCompact(context);
-    final rowHeight = isContinueWatching
-        ? ContinueWatchingCard.rowHeight + PosterCard.liftHeadroom
-        : cardWidth / AppLayout.posterOnlyAspectRatio + PosterCard.liftHeadroom;
+    final room = PosterCard.railRoom(context);
+    final rowHeight = (isContinueWatching
+            ? ContinueWatchingCard.rowHeight
+            : cardWidth / AppLayout.posterOnlyAspectRatio) +
+        room.vertical;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,12 +96,14 @@ class MediaRow extends StatelessWidget {
             ],
           ),
         ),
-        // La marge réservée au zoom des affiches ([PosterCard.liftHeadroom])
-        // est reprise ici, pour que l'écart visible sous le titre ne change pas.
-        const SizedBox(height: 14 - PosterCard.liftHeadroom),
-        // Revenir sur cette rangée ramène à la carte où l'on était — voir
-        // [TvRegion]. Le titre la nomme : l'accueil n'a pas deux rangées du
-        // même nom, et la mémoire la retrouve après un rechargement.
+        // La marge réservée au zoom des affiches ([PosterCard.railRoom]) est
+        // reprise ici, pour que l'écart visible sous le titre ne change pas —
+        // sauf sur téléviseur, où elle le dépasse.
+        SizedBox(height: (14 - room.top).clamp(0, 14).toDouble()),
+        // On entre dans cette rangée par sa première carte, d'où que l'on
+        // vienne (ADR-0113). Le titre la nomme : l'accueil n'a pas deux
+        // rangées du même nom, et la mémoire la retrouve après un
+        // rechargement.
         TvRegion.rail(
           id: 'home/$title',
           child: SizedBox(
@@ -114,7 +118,8 @@ class MediaRow extends StatelessWidget {
               padding: EdgeInsets.only(
                 left: horizontalPadding,
                 right: horizontalPadding,
-                top: PosterCard.liftHeadroom,
+                top: room.top,
+                bottom: room.bottom,
               ),
               itemCount: items.length,
               itemBuilder: (context, index) {

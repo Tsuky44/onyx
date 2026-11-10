@@ -33,8 +33,8 @@ void main() {
   test('a television takes the constrained profile whatever it reports', () {
     final profile = resolve(totalMemoryMb: 2048, isTv: true);
     expect(profile, same(PlaybackProfile.constrained));
-    expect(profile.demuxerMaxBytes + profile.demuxerBackBytes,
-        lessThan(96 * mb));
+    expect(
+        profile.demuxerMaxBytes + profile.demuxerBackBytes, lessThan(96 * mb));
   });
 
   test('a low-RAM device is constrained even off a television', () {
@@ -71,8 +71,7 @@ void main() {
     ]) {
       expect(profile.demuxerBackBytes, greaterThanOrEqualTo(16 * mb),
           reason: profile.label);
-      expect(profile.demuxerMaxBytes,
-          greaterThan(profile.demuxerBackBytes),
+      expect(profile.demuxerMaxBytes, greaterThan(profile.demuxerBackBytes),
           reason: profile.label);
     }
   });

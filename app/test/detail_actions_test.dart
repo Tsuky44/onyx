@@ -160,7 +160,8 @@ void main() {
       );
     });
 
-    test('la saison affichée par la fiche l’emporte sur celle de l’épisode', () {
+    test('la saison affichée par la fiche l’emporte sur celle de l’épisode',
+        () {
       expect(
         detailPlayLabel(
           resuming: false,

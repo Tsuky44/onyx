@@ -42,8 +42,8 @@ void main() {
     test('une adresse en HTTPS n’est jamais rabattue sur HTTP', () async {
       var probed = false;
       final scheme = ServerScheme(probe: (_) async => probed = true);
-      expect(await scheme.resolve('https://onyx.example'),
-          'https://onyx.example');
+      expect(
+          await scheme.resolve('https://onyx.example'), 'https://onyx.example');
       expect(probed, isFalse);
     });
   });
@@ -77,19 +77,24 @@ void main() {
         url: 'http://maison.local:8080', username: 'mathis', token: 'jeton');
     await registry.activate(maison.id);
 
-    final changed = await speaking({'ami.local:8080'}).upgradeAccounts(registry);
+    final changed =
+        await speaking({'ami.local:8080'}).upgradeAccounts(registry);
 
     expect(changed, isFalse);
     expect(registry.active?.id, maison.id);
-    expect(
-        registry.accounts.map((a) => a.url), contains('https://ami.local:8080'));
+    expect(registry.accounts.map((a) => a.url),
+        contains('https://ami.local:8080'));
     expect(registry.accountById(ami.id), isNull);
   });
 
   test('le même serveur, en HTTP ou en HTTPS', () {
-    expect(ServerAccount.sameAddress('http://a.local:8080', 'https://a.local:8080'),
+    expect(
+        ServerAccount.sameAddress(
+            'http://a.local:8080', 'https://a.local:8080'),
         isTrue);
-    expect(ServerAccount.sameAddress('https://a.local:8080', 'https://a.local:8081'),
+    expect(
+        ServerAccount.sameAddress(
+            'https://a.local:8080', 'https://a.local:8081'),
         isFalse);
   });
 }

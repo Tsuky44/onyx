@@ -42,7 +42,8 @@ void main() {
   testWidgets('sans bibliothèque, un compte simple n’a aucun bouton',
       (tester) async {
     await _pump(tester,
-        libraries: const [], permissions: const Permissions(requestMedia: true));
+        libraries: const [],
+        permissions: const Permissions(requestMedia: true));
 
     expect(find.text('Aucune bibliothèque'), findsOneWidget);
     expect(find.text('Ajouter une bibliothèque'), findsNothing);
@@ -51,14 +52,16 @@ void main() {
 
   testWidgets('des bibliothèques encore vides : il reste à synchroniser',
       (tester) async {
-    await _pump(tester, libraries: const [_films], permissions: Permissions.all);
+    await _pump(tester,
+        libraries: const [_films], permissions: Permissions.all);
 
     expect(find.text('Bibliothèque vide'), findsOneWidget);
     expect(find.text('Synchroniser'), findsOneWidget);
     expect(find.text('Ajouter une bibliothèque'), findsNothing);
   });
 
-  testWidgets('tant que la liste n’est pas arrivée, on ne conclut pas qu’elle '
+  testWidgets(
+      'tant que la liste n’est pas arrivée, on ne conclut pas qu’elle '
       'est vide', (tester) async {
     await _pump(tester, libraries: null, permissions: Permissions.all);
 

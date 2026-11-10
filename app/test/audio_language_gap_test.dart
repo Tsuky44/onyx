@@ -176,8 +176,7 @@ void main() {
     });
 
     test('elle ne compte pas comme un réglage à appliquer à un épisode', () {
-      final prefs =
-          SeriesTrackPreferences.fromJson({'await_audio_lang': 'fr'});
+      final prefs = SeriesTrackPreferences.fromJson({'await_audio_lang': 'fr'});
       expect(prefs.awaitAudioLang, 'fr');
       expect(prefs.isEmpty, isTrue);
       expect(prefs.withAudioLang('ja').awaitAudioLang, 'fr');
@@ -189,10 +188,25 @@ void main() {
   // retrouver les langues que le serveur inscrit pour chaque épisode.
   test('le code de langue est le même que celui du serveur', () {
     const cases = <String, String?>{
-      'fre': 'fr', 'fra': 'fr', 'FR': 'fr', 'French': 'fr', 'fr-FR': 'fr',
-      'jpn': 'ja', 'ja': 'ja', 'eng': 'en', 'ger': 'de', 'deu': 'de',
-      'chi': 'zh', 'zho': 'zh', 'kor': 'ko', 'pol': 'po',
-      '': null, 'und': null, ' ': null, 'auto': null, 'no': null,
+      'fre': 'fr',
+      'fra': 'fr',
+      'FR': 'fr',
+      'French': 'fr',
+      'fr-FR': 'fr',
+      'jpn': 'ja',
+      'ja': 'ja',
+      'eng': 'en',
+      'ger': 'de',
+      'deu': 'de',
+      'chi': 'zh',
+      'zho': 'zh',
+      'kor': 'ko',
+      'pol': 'po',
+      '': null,
+      'und': null,
+      ' ': null,
+      'auto': null,
+      'no': null,
     };
     cases.forEach((tag, code) {
       expect(PlaybackPreferencesStorage.normalizeLangCode(tag), code,
@@ -219,8 +233,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(
-        find.text('L’épisode suivant n’est pas disponible en français.'),
+    expect(find.text('L’épisode suivant n’est pas disponible en français.'),
         findsOneWidget);
     await tester.tap(find.text('Continuer en japonais'));
     await tester.tap(find.text('Attendre la version en français'));

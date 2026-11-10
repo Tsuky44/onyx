@@ -101,8 +101,13 @@ void main() {
         expect(focused(tester), 'Pause');
         await press(tester, up);
         expect(
-          ['Retour', 'Épisodes suivants', 'Sous-titres', 'Pistes audio',
-              'Réglages'],
+          [
+            'Retour',
+            'Épisodes suivants',
+            'Sous-titres',
+            'Pistes audio',
+            'Réglages'
+          ],
           contains(focused(tester)),
         );
       });
@@ -116,7 +121,8 @@ void main() {
         expect(focused(tester), 'Épisode suivant');
       });
 
-      testWidgets('la rangée du haut : de Retour à Réglages, murs aux deux bouts',
+      testWidgets(
+          'la rangée du haut : de Retour à Réglages, murs aux deux bouts',
           (tester) async {
         await open(tester);
         await press(tester, up);
@@ -161,7 +167,8 @@ void main() {
         expect(focused(tester), 'barre');
       });
 
-      testWidgets('« Passer l’intro » est sa propre rangée, entre la lecture '
+      testWidgets(
+          '« Passer l’intro » est sa propre rangée, entre la lecture '
           'et la barre', (tester) async {
         await open(tester, skipIntro: true);
         await press(tester, down);
@@ -181,8 +188,24 @@ void main() {
       testWidgets('chrome affiché ⇒ une commande est entourée, à chaque pas',
           (tester) async {
         await open(tester);
-        const walk = [up, right, right, right, down, down, left, up, left,
-            left, left, up, up, down, down, down];
+        const walk = [
+          up,
+          right,
+          right,
+          right,
+          down,
+          down,
+          left,
+          up,
+          left,
+          left,
+          left,
+          up,
+          up,
+          down,
+          down,
+          down
+        ];
         for (final direction in walk) {
           await press(tester, direction);
           expect(player(tester).chromeVisible, isTrue);
@@ -192,7 +215,8 @@ void main() {
         }
       });
 
-      testWidgets('chrome masqué, les flèches vont à routePlayerKey, '
+      testWidgets(
+          'chrome masqué, les flèches vont à routePlayerKey, '
           'et dpad ne bouge rien', (tester) async {
         await open(tester, raise: false);
         await nav.press(left);
@@ -203,7 +227,8 @@ void main() {
         expect(focused(tester), 'barre');
       });
 
-      testWidgets('chrome masqué, une rafale n’est pas regroupée : chaque '
+      testWidgets(
+          'chrome masqué, une rafale n’est pas regroupée : chaque '
           'flèche est un pas de recherche', (tester) async {
         await open(tester, raise: false);
         TvNavHarness.sendBurst([
@@ -235,7 +260,8 @@ void main() {
         expect(focused(tester), 'lecteur');
       });
 
-      testWidgets('un Retour défait une couche : section, menu, chrome, lecteur',
+      testWidgets(
+          'un Retour défait une couche : section, menu, chrome, lecteur',
           (tester) async {
         await open(tester);
         await press(tester, up);
@@ -267,8 +293,8 @@ void main() {
         expect(player(tester).chromeVisible, isTrue);
         // dpad rend la télécommande au bouton qui a ouvert le menu ;
         // l'ancien système la pose sur lecture/pause.
-        expect(focused(tester),
-            engine == TvNavEngine.dpad ? 'Réglages' : 'Pause');
+        expect(
+            focused(tester), engine == TvNavEngine.dpad ? 'Réglages' : 'Pause');
 
         await back();
         expect(player(tester).chromeVisible, isFalse);

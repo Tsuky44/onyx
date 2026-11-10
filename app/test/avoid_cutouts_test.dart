@@ -10,7 +10,8 @@ const Key middle = Key('middle');
 const Key lower = Key('lower');
 
 /// Three stacked rows of 60, the middle one level with [bubble].
-Future<void> pumpRows(WidgetTester tester, {List<Rect> cutouts = const []}) async {
+Future<void> pumpRows(WidgetTester tester,
+    {List<Rect> cutouts = const []}) async {
   await tester.pumpWidget(
     Directionality(
       textDirection: TextDirection.ltr,

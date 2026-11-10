@@ -4,13 +4,38 @@ import 'package:onyx/screens/player/playback/auto_quality.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _ladder = <QualityTier>[
-  QualityTier(key: '2160p', label: '4K · 12 Mbit/s', height: 2160, bitrateBps: 12000000),
-  QualityTier(key: '1080p-10', label: '1080p · 10 Mbit/s', height: 1080, bitrateBps: 10000000),
-  QualityTier(key: '1080p', label: '1080p · 6 Mbit/s', height: 1080, bitrateBps: 6000000),
-  QualityTier(key: '1080p-4', label: '1080p · 4 Mbit/s', height: 1080, bitrateBps: 4000000),
-  QualityTier(key: '720p', label: '720p · 3,5 Mbit/s', height: 720, bitrateBps: 3500000),
-  QualityTier(key: '720p-2', label: '720p · 2 Mbit/s', height: 720, bitrateBps: 2000000),
-  QualityTier(key: '360p', label: '360p · 1 Mbit/s', height: 360, bitrateBps: 1000000),
+  QualityTier(
+      key: '2160p',
+      label: '4K · 12 Mbit/s',
+      height: 2160,
+      bitrateBps: 12000000),
+  QualityTier(
+      key: '1080p-10',
+      label: '1080p · 10 Mbit/s',
+      height: 1080,
+      bitrateBps: 10000000),
+  QualityTier(
+      key: '1080p',
+      label: '1080p · 6 Mbit/s',
+      height: 1080,
+      bitrateBps: 6000000),
+  QualityTier(
+      key: '1080p-4',
+      label: '1080p · 4 Mbit/s',
+      height: 1080,
+      bitrateBps: 4000000),
+  QualityTier(
+      key: '720p',
+      label: '720p · 3,5 Mbit/s',
+      height: 720,
+      bitrateBps: 3500000),
+  QualityTier(
+      key: '720p-2',
+      label: '720p · 2 Mbit/s',
+      height: 720,
+      bitrateBps: 2000000),
+  QualityTier(
+      key: '360p', label: '360p · 1 Mbit/s', height: 360, bitrateBps: 1000000),
 ];
 
 final _t0 = DateTime(2026, 10, 8, 20);
@@ -33,7 +58,8 @@ AutoVerdict _play(
     final buffered = from + slope * i;
     verdict = auto.noteSample(
       _t0.add(Duration(seconds: startSecond + i)),
-      buffered: Duration(milliseconds: (buffered < 0 ? 0 : buffered * 1000).round()),
+      buffered:
+          Duration(milliseconds: (buffered < 0 ? 0 : buffered * 1000).round()),
       remaining: remaining,
       playing: true,
       speed: speed,
@@ -96,7 +122,8 @@ void main() {
       expect(again.fillRatio, closeTo(0.5, 0.1));
     });
 
-    test('tant que l’avance reste confortable, la ligne a le temps de se '
+    test(
+        'tant que l’avance reste confortable, la ligne a le temps de se '
         'reprendre', () {
       final auto = AutoQuality();
       final seen = <AutoVerdict>[];
@@ -136,13 +163,15 @@ void main() {
       final auto = AutoQuality();
       auto.noteDisturbance(_t0);
       final seen = <AutoVerdict>[];
-      _play(auto, startSecond: 0, seconds: 14, from: 8, slope: -0.5, seen: seen);
+      _play(auto,
+          startSecond: 0, seconds: 14, from: 8, slope: -0.5, seen: seen);
 
       expect(seen, everyElement(AutoVerdict.steady));
       expect(auto.noteStall(_t0.add(const Duration(seconds: 5))), isFalse);
     });
 
-    test('en fin de film, le tampon fond parce qu’il n’y a plus rien à '
+    test(
+        'en fin de film, le tampon fond parce qu’il n’y a plus rien à '
         'recevoir', () {
       final auto = AutoQuality();
       final seen = <AutoVerdict>[];
@@ -159,12 +188,10 @@ void main() {
       expect(seen, everyElement(AutoVerdict.steady));
     });
 
-    test('à vitesse double, un tampon qui tient n’est pas une ligne lente',
-        () {
+    test('à vitesse double, un tampon qui tient n’est pas une ligne lente', () {
       final auto = AutoQuality();
       // Lue à 2×, la ligne livre 1,8 s de film par seconde : 90 %.
-      _play(auto,
-          startSecond: 0, seconds: 20, from: 14, slope: -0.2, speed: 2);
+      _play(auto, startSecond: 0, seconds: 20, from: 14, slope: -0.2, speed: 2);
 
       expect(auto.fillRatio, closeTo(0.9, 0.03));
     });
@@ -184,7 +211,8 @@ void main() {
           remaining: _film,
           playing: false);
       final seen = <AutoVerdict>[];
-      _play(auto, startSecond: 11, seconds: 8, from: 9, slope: -0.5, seen: seen);
+      _play(auto,
+          startSecond: 11, seconds: 8, from: 9, slope: -0.5, seen: seen);
 
       expect(seen, everyElement(AutoVerdict.steady),
           reason: 'la fenêtre repart de zéro à la reprise');
@@ -216,7 +244,8 @@ void main() {
       expect(_at('360p').down(0.5), isNull);
     });
 
-    test('le barreau natif n’est pas une descente : recopié, il pèse le '
+    test(
+        'le barreau natif n’est pas une descente : recopié, il pèse le '
         'fichier', () {
       // Fichier 1080p à 10 Mbit/s, ligne à 90 % : 7,2 Mbit/s. « 1080p · 6 »
       // tiendrait sur le papier, mais le serveur y recopie le fichier.
@@ -238,16 +267,17 @@ void main() {
       expect(ladder.down(0.5)?.tier?.key, '1080p-4');
     });
 
-    test('sans débit de fichier connu, il est supposé peser son barreau '
+    test(
+        'sans débit de fichier connu, il est supposé peser son barreau '
         'natif', () {
-      expect(_at(null, source: 0, height: 1080).down(0.5)?.tier?.key,
-          '720p-2');
+      expect(_at(null, source: 0, height: 1080).down(0.5)?.tier?.key, '720p-2');
     });
 
     test('un serveur sans échelle de débits ne donne rien à choisir', () {
       const ladder = AutoLadder(
         tiers: [
-          QualityTier(key: '1080p', label: '1080p', height: 1080, bitrateBps: 0),
+          QualityTier(
+              key: '1080p', label: '1080p', height: 1080, bitrateBps: 0),
         ],
         currentKey: null,
         sourceHeight: 1080,
@@ -281,7 +311,8 @@ void main() {
       expect(_at(null).carries(30000000), isTrue);
     });
 
-    test('un encodeur à la traîne demande une image plus petite, pas un '
+    test(
+        'un encodeur à la traîne demande une image plus petite, pas un '
         'débit plus bas', () {
       expect(_at('1080p-4').smallerPicture()?.tier?.key, '720p');
       expect(_at('1080p-10').smallerPicture()?.tier?.key, '720p');
@@ -290,7 +321,8 @@ void main() {
           reason: 'le Direct Play ne passe pas par l’encodeur');
     });
 
-    test('au-dessus de ce que le serveur encode assez vite, plus rien n’est '
+    test(
+        'au-dessus de ce que le serveur encode assez vite, plus rien n’est '
         'proposé', () {
       final ladder = AutoLadder(
         tiers: _ladder,
@@ -321,8 +353,7 @@ void main() {
                 ceilingBps: ceilingBps)
             .up(capacity);
 
-    test('une lecture stable demande une mesure après le délai, pas avant',
-        () {
+    test('une lecture stable demande une mesure après le délai, pas avant', () {
       final auto = AutoQuality();
       final seen = <AutoVerdict>[];
       _play(auto, startSecond: 0, seconds: 89, from: 20, slope: 0, seen: seen);
@@ -362,17 +393,17 @@ void main() {
       expect(up(29000000)?.isDirect, isFalse);
     });
 
-    test('pas de barreau plus lourd que le fichier : au-dessus, c’est lui',
-        () {
+    test('pas de barreau plus lourd que le fichier : au-dessus, c’est lui', () {
       // Fichier à 5 Mbit/s : 1080p · 6 et au-delà n'ont aucun sens.
       expect(up(7400000, source: 5000000)?.tier?.key, '1080p-4');
       expect(up(7500000, source: 5000000), const AutoTarget.direct());
     });
 
-    test('quand l’appareil ne lit pas le fichier, le sommet est le barreau '
+    test(
+        'quand l’appareil ne lit pas le fichier, le sommet est le barreau '
         'pris à sa place', () {
-      expect(up(100000000, direct: false, ceiling: '1080p')?.tier?.key,
-          '1080p');
+      expect(
+          up(100000000, direct: false, ceiling: '1080p')?.tier?.key, '1080p');
       expect(up(100000000, current: '1080p', direct: false, ceiling: '1080p'),
           isNull);
     });
@@ -390,7 +421,8 @@ void main() {
       expect(climb(15000000)?.tier?.key, '1080p');
     });
 
-    test('rien à remonter depuis le Direct Play, ni sur une mesure trop '
+    test(
+        'rien à remonter depuis le Direct Play, ni sur une mesure trop '
         'courte', () {
       expect(up(100000000, current: null), isNull);
       expect(up(2500000), isNull);
@@ -398,8 +430,8 @@ void main() {
 
     test('la mesure vise le sommet, pas plus', () {
       expect(_at('360p').climbDemandBps, 30000000);
-      expect(_at('360p', direct: false, ceiling: '1080p').climbDemandBps,
-          9000000);
+      expect(
+          _at('360p', direct: false, ceiling: '1080p').climbDemandBps, 9000000);
     });
 
     test('une mesure qui ne justifie rien double l’attente suivante', () {

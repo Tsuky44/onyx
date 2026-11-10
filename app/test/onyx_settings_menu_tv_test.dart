@@ -24,7 +24,8 @@ void main() {
   const left = TraversalDirection.left;
 
   TvNavHarness.forEachEngine((engine) {
-    testWidgets('la ligne où se trouve la télécommande se voit', (tester) async {
+    testWidgets('la ligne où se trouve la télécommande se voit',
+        (tester) async {
       await _pumpMenu(tester, engine);
 
       // Une seule, et c'est bien celle qui détient le focus : deux lignes
@@ -42,7 +43,8 @@ void main() {
       expect(_highlighted(tester), 'Audio');
     });
 
-    testWidgets('OK ouvre la section et la télécommande arrive sur la piste en '
+    testWidgets(
+        'OK ouvre la section et la télécommande arrive sur la piste en '
         'cours', (tester) async {
       final nav = await _pumpMenu(tester, engine);
 
@@ -119,7 +121,8 @@ void main() {
     });
 
     if (engine == TvNavEngine.dpad) {
-      testWidgets('une touche Retour suivie de son popRoute ne défait qu’un '
+      testWidgets(
+          'une touche Retour suivie de son popRoute ne défait qu’un '
           'niveau', (tester) async {
         final nav = await _pumpMenu(tester, engine);
         await nav.select();
@@ -157,7 +160,8 @@ String _highlighted(WidgetTester tester) {
   );
   expect(fill, findsOneWidget);
   return tester
-      .widget<Text>(find.descendant(of: fill, matching: find.byType(Text)).first)
+      .widget<Text>(
+          find.descendant(of: fill, matching: find.byType(Text)).first)
       .data!;
 }
 

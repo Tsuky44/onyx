@@ -21,8 +21,7 @@ void main() {
     expect(pressed, 1);
   });
 
-  testWidgets('le disque se cale sur la marge de la page',
-      (tester) async {
+  testWidgets('le disque se cale sur la marge de la page', (tester) async {
     const pad = 48.0;
     await tester.pumpWidget(_host(
       Positioned(

@@ -100,8 +100,7 @@ void main() {
     expect(source.capabilities, isNull);
   });
 
-  test('les capacités de l’écran natif demandent le HEVC et le progressif',
-      () {
+  test('les capacités de l’écran natif demandent le HEVC et le progressif', () {
     final query = PlaybackCapabilities.aetherNativeTv.toQueryParameters();
     expect(query['encode'], 'hevc');
     expect(query['progressive'], '1');

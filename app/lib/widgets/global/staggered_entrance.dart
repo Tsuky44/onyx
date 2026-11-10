@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import '../../theme/app_motion.dart';
@@ -24,8 +26,14 @@ class StaggeredEntranceScope extends StatefulWidget {
   /// filtre) : la cascade rejoue. Un ajout de page ne le change pas.
   final Object? playKey;
 
-  /// Combien de cartes, depuis la première, entrent en cascade.
+  /// Combien de cartes, depuis la première, entrent en cascade — ou combien
+  /// de pas, quand les cartes en donnent un ([StaggeredEntrance.step]).
   final int maxAnimated;
+
+  /// L'attente avant la première carte, quand quelque chose doit se poser
+  /// avant la grille (l'en-tête des résultats de recherche). Les cartes
+  /// restent invisibles pendant ce temps.
+  final Duration delay;
 
   final Widget child;
 
@@ -34,6 +42,7 @@ class StaggeredEntranceScope extends StatefulWidget {
     required this.playKey,
     required this.child,
     this.maxAnimated = 16,
+    this.delay = Duration.zero,
   });
 
   /// Durée totale de la cascade de [count] cartes.
@@ -51,6 +60,7 @@ class _StaggeredEntranceScopeState extends State<StaggeredEntranceScope>
     duration: StaggeredEntranceScope.totalFor(widget.maxAnimated),
   );
   bool _played = false;
+  Timer? _delayed;
 
   @override
   void didChangeDependencies() {
@@ -58,7 +68,10 @@ class _StaggeredEntranceScopeState extends State<StaggeredEntranceScope>
     if (!_played) {
       _played = true;
       _play();
-    } else if (AppMotion.reduced(context) && _clock.isAnimating) {
+    } else if (AppMotion.reduced(context) &&
+        (_clock.isAnimating || _delayed != null)) {
+      _delayed?.cancel();
+      _delayed = null;
       _clock.value = 1;
     }
   }
@@ -70,8 +83,16 @@ class _StaggeredEntranceScopeState extends State<StaggeredEntranceScope>
   }
 
   void _play() {
+    _delayed?.cancel();
+    _delayed = null;
     if (AppMotion.reduced(context)) {
       _clock.value = 1;
+    } else if (widget.delay > Duration.zero) {
+      _clock.value = 0;
+      _delayed = Timer(widget.delay, () {
+        _delayed = null;
+        if (mounted) _clock.forward(from: 0);
+      });
     } else {
       _clock.forward(from: 0);
     }
@@ -79,6 +100,7 @@ class _StaggeredEntranceScopeState extends State<StaggeredEntranceScope>
 
   @override
   void dispose() {
+    _delayed?.cancel();
     _clock.dispose();
     super.dispose();
   }
@@ -111,11 +133,17 @@ class _StaggerClock extends InheritedWidget {
 /// [child] tel quel.
 class StaggeredEntrance extends StatelessWidget {
   final int index;
+
+  /// Le pas de la carte dans la cascade, s'il n'est pas son rang : une grille
+  /// en diagonale donne le même pas à toute une diagonale. Nul, c'est [index].
+  final int? step;
+
   final Widget child;
 
   const StaggeredEntrance({
     super.key,
     required this.index,
+    this.step,
     required this.child,
   });
 
@@ -125,11 +153,12 @@ class StaggeredEntrance extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<_StaggerClock>();
-    if (scope == null || index >= scope.maxAnimated) return child;
+    final step = this.step ?? index;
+    if (scope == null || step >= scope.maxAnimated) return child;
 
     final total =
         StaggeredEntranceScope.totalFor(scope.maxAnimated).inMicroseconds;
-    final start = (AppMotion.stagger * index).inMicroseconds / total;
+    final start = (AppMotion.stagger * step).inMicroseconds / total;
     final end = start + AppMotion.emphasis.inMicroseconds / total;
     final interval =
         Interval(start, end.clamp(0.0, 1.0), curve: AppMotion.curve);

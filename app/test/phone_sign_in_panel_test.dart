@@ -101,8 +101,7 @@ void main() {
               serverUrl: serverUrl,
               // Never the real listener: it binds a socket.
               directLink: linkSession != null,
-              createLinkSession:
-                  linkSession == null ? null : () => linkSession,
+              createLinkSession: linkSession == null ? null : () => linkSession,
             ),
           ),
         ),

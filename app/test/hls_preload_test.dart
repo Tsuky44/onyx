@@ -88,8 +88,11 @@ void main() {
   test('une playlist dit ses segments, leur durée et son initialisation', () {
     final ts = parseHlsMediaPlaylist(_playlist('stream_0', 3));
     expect(ts.initUri, isNull);
-    expect(ts.segments.map((s) => s.uri),
-        ['stream_0_000.ts?ticket=T', 'stream_0_001.ts?ticket=T', 'stream_0_002.ts?ticket=T']);
+    expect(ts.segments.map((s) => s.uri), [
+      'stream_0_000.ts?ticket=T',
+      'stream_0_001.ts?ticket=T',
+      'stream_0_002.ts?ticket=T'
+    ]);
     expect(ts.segments.first.duration, 2.0);
 
     final fmp4 = parseHlsMediaPlaylist(
@@ -113,7 +116,8 @@ void main() {
       await upstream.server.close(force: true);
     });
 
-    test('télécharge d’avance ce qu’on lui demande, sans que le serveur '
+    test(
+        'télécharge d’avance ce qu’on lui demande, sans que le serveur '
         'tienne la session pour lue', () async {
       final relay = preload;
       // Hors Windows et Linux, il n'y a pas de relais : le moteur ouvre la
@@ -137,8 +141,8 @@ void main() {
       if (relay == null) return;
       await relay.warm(seconds: 2, budget: const Duration(seconds: 5));
       upstream.asked.clear();
-      final base = relay.masterUrl.substring(
-          0, relay.masterUrl.lastIndexOf('/') + 1);
+      final base =
+          relay.masterUrl.substring(0, relay.masterUrl.lastIndexOf('/') + 1);
 
       final master = await _get(relay.masterUrl);
       expect(master.status, 200);
@@ -158,18 +162,21 @@ void main() {
       final again = await _get('${base}stream_0_000.ts?ticket=T');
       expect(later.body, 'octets de stream_0_003.ts');
       expect(again.body, 'octets de stream_0_000.ts');
-      expect(upstream.asked, [
-        'stream_0.m3u8?ticket=T',
-        'stream_0_003.ts?ticket=T',
-        'stream_0_000.ts?ticket=T',
-      ], reason: 'sans `warm` : cette fois le moteur lit la session');
+      expect(
+          upstream.asked,
+          [
+            'stream_0.m3u8?ticket=T',
+            'stream_0_003.ts?ticket=T',
+            'stream_0_000.ts?ticket=T',
+          ],
+          reason: 'sans `warm` : cette fois le moteur lit la session');
     });
 
     test('rend au moteur le refus du serveur tel quel', () async {
       final relay = preload;
       if (relay == null) return;
-      final base = relay.masterUrl.substring(
-          0, relay.masterUrl.lastIndexOf('/') + 1);
+      final base =
+          relay.masterUrl.substring(0, relay.masterUrl.lastIndexOf('/') + 1);
 
       expect((await _get('${base}stream_0_000.ts?ticket=autre')).status, 401);
       expect((await _get('${base}absent.bin?ticket=T')).status, 404);
@@ -179,7 +186,8 @@ void main() {
       final relay = preload;
       if (relay == null) return;
       final url = relay.masterUrl;
-      final other = url.replaceFirst(RegExp(r'/[0-9a-f]{32}/'), '/${'0' * 32}/');
+      final other =
+          url.replaceFirst(RegExp(r'/[0-9a-f]{32}/'), '/${'0' * 32}/');
 
       expect((await _get(other)).status, 404);
       relay.close();

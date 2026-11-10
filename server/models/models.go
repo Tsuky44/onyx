@@ -268,6 +268,14 @@ type CatalogCrewMember struct {
 	Job  string `json:"job,omitempty"`
 }
 
+// EpisodeAirRef captures the air date and season/episode numbers of an upcoming
+// or past episode (from TMDB next_episode_to_air / last_episode_to_air).
+type EpisodeAirRef struct {
+	AirDate       string `json:"air_date"`
+	EpisodeNumber int    `json:"episode_number"`
+	SeasonNumber  int    `json:"season_number"`
+}
+
 // MediaDetails is the rich detail payload returned by
 // GET /api/media/:id/details. It merges the local library record (ID, poster)
 // with live TMDB catalog metadata (cast, genres, rating, backdrop…).
@@ -318,8 +326,10 @@ type MediaDetails struct {
 	Collection *CollectionInfo `json:"collection,omitempty"`
 
 	// TV-only
-	NumberOfSeasons  int `json:"number_of_seasons,omitempty"`
-	NumberOfEpisodes int `json:"number_of_episodes,omitempty"`
+	NumberOfSeasons  int            `json:"number_of_seasons,omitempty"`
+	NumberOfEpisodes int            `json:"number_of_episodes,omitempty"`
+	NextEpisodeToAir *EpisodeAirRef `json:"next_episode_to_air,omitempty"`
+	LastEpisodeToAir *EpisodeAirRef `json:"last_episode_to_air,omitempty"`
 }
 
 // RelatedMedia is a compact TMDB title used for recommendations / similar.

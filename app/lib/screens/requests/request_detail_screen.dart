@@ -6,12 +6,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/media_request.dart';
+import '../../models/media_details.dart';
 import '../../models/models.dart' show CastMember, MediaType;
 import '../../navigation/catalog_navigation.dart';
 import '../../navigation/play_link.dart';
 import '../../services/api_client.dart';
 import '../../providers/media_requests_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../utils/poster_url.dart';
 import '../../widgets/global/detail_cast_section.dart';
 import '../../widgets/global/detail_hero.dart';
@@ -31,6 +33,7 @@ import 'widgets/request_status_badge.dart';
 import '../../theme/app_icons.dart';
 import '../../l10n/tr.dart';
 import '../../widgets/global/detail_actions.dart';
+import '../../widgets/global/media_countdown.dart';
 import '../../models/watch_list.dart';
 import '../../widgets/global/add_to_list_button.dart';
 
@@ -47,6 +50,108 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   late Future<RequestMediaDetails> _details;
   bool _submitting = false;
   bool _launching = false;
+  EpisodeAirRef? _fallbackNextEpisode;
+  EpisodeAirRef? _fallbackLastEpisode;
+  bool _resolvingEpisodes = false;
+
+  void _resolveFallbackCountdown(RequestMediaDetails details) {
+    if (_resolvingEpisodes ||
+        details.mediaType != RequestMediaType.tv ||
+        details.nextEpisodeToAir != null ||
+        details.seasons.isEmpty) {
+      return;
+    }
+    _resolvingEpisodes = true;
+
+    final now = DateTime.now();
+    final y = now.year.toString().padLeft(4, '0');
+    final m = now.month.toString().padLeft(2, '0');
+    final d = now.day.toString().padLeft(2, '0');
+    final todayStr = '$y-$m-$d';
+
+    RequestSeason? targetSeason;
+    for (final s in details.seasons) {
+      if (s.number <= 0) continue;
+      if (s.airDate != null && s.airDate!.compareTo(todayStr) >= 0) {
+        if (targetSeason == null || s.airDate!.compareTo(targetSeason.airDate!) < 0) {
+          targetSeason = s;
+        }
+      }
+    }
+    if (targetSeason == null) {
+      for (final s in details.seasons) {
+        if (s.number <= 0) continue;
+        if (targetSeason == null || s.number > targetSeason.number) {
+          targetSeason = s;
+        }
+      }
+    }
+
+    final season = targetSeason;
+    if (season == null) return;
+
+    final provider = context.read<MediaRequestsProvider>();
+    provider.loadSeasonEpisodes(details.id, season.number).then((episodes) {
+      if (!mounted || episodes.isEmpty) return;
+
+      RequestEpisode? nextEp;
+      RequestEpisode? prevEp;
+
+      for (final ep in episodes) {
+        final air = ep.airDate;
+        if (air == null || air.isEmpty) continue;
+        if (air.compareTo(todayStr) >= 0) {
+          if (nextEp == null || air.compareTo(nextEp.airDate!) < 0) {
+            nextEp = ep;
+          }
+        } else {
+          if (prevEp == null || air.compareTo(prevEp.airDate!) > 0) {
+            prevEp = ep;
+          }
+        }
+      }
+
+      if (nextEp != null) {
+        final ep = nextEp;
+        final prev = prevEp;
+        final seasonNum = season.number;
+        setState(() {
+          _fallbackNextEpisode = EpisodeAirRef(
+            airDate: ep.airDate!,
+            episodeNumber: ep.number,
+            seasonNumber: seasonNum,
+          );
+          if (prev != null && prev.airDate != null) {
+            _fallbackLastEpisode = EpisodeAirRef(
+              airDate: prev.airDate!,
+              episodeNumber: prev.number,
+              seasonNumber: seasonNum,
+            );
+          }
+        });
+      } else {
+        final normalizedStatus =
+            (details.tmdbStatus ?? '').trim().toLowerCase();
+        if (normalizedStatus == 'ended' ||
+            normalizedStatus == 'canceled' ||
+            normalizedStatus == 'cancelled') {
+          final last = episodes.last;
+          if (last.airDate != null && last.airDate!.isNotEmpty) {
+            final seasonNum = season.number;
+            setState(() {
+              _fallbackLastEpisode = EpisodeAirRef(
+                airDate: last.airDate!,
+                episodeNumber: last.number,
+                seasonNumber: seasonNum,
+              );
+            });
+          }
+        }
+      }
+    }).catchError((_) {
+      // Donnée de secours facultative pour l'affichage : ne bloque pas la page.
+    });
+  }
 
   @override
   void initState() {
@@ -174,6 +279,16 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     final tracked = details.status != RequestMediaStatus.available &&
         details.status != RequestMediaStatus.unknown;
 
+    if (isTv &&
+        details.nextEpisodeToAir == null &&
+        _fallbackNextEpisode == null &&
+        _fallbackLastEpisode == null) {
+      _resolveFallbackCountdown(details);
+    }
+
+    final nextEp = details.nextEpisodeToAir ?? _fallbackNextEpisode;
+    final lastEp = details.lastEpisodeToAir ?? _fallbackLastEpisode;
+
     final hasSeasons = isTv && details.seasons.isNotEmpty;
     Widget cast() => CastSection(
           horizontalPadding: 0,
@@ -190,101 +305,125 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
               openPerson(context, member.tmdbId, name: member.name),
         );
 
-    return CustomScrollView(
-      scrollCacheExtent: AppLayout.imageCacheExtent(context),
-      slivers: [
-        SliverToBoxAdapter(
-          child: DetailHero(
-            playKey: details.id,
-            backdropUrl: detailBackdropUrl(details.backdropUrl),
-            posterUrl: detailPosterUrl(details.posterUrl),
-            logoUrl: logoImageUrl(details.logoUrl),
-            title: details.title,
-            tagline: details.tagline,
-            overview: details.overview,
-            emptyOverviewLabel: tr('Aucun synopsis disponible.'),
-            eyebrow: _eyebrow(details),
-            metadata: buildMetadataChips(
-              type: isTv ? MediaType.show : MediaType.movie,
-              releaseDate: details.releaseDate,
-              runtimeMinutes: details.runtime ?? 0,
-              rating: details.rating,
-              seasons: details.numberOfSeasons ?? 0,
-              genres: details.genres,
-            ),
-            actions: _actions(details),
-            onBack: () => Navigator.of(context).pop(),
-          ),
-        ),
-        // Sous l'en-tête et non dedans : sa hauteur est fixe, et le suivi d'une
-        // demande a la taille qu'il veut.
-        if ((waiting != null &&
-                details.status != RequestMediaStatus.available) ||
-            tracked)
+    return TvRegion.sections(
+      child: CustomScrollView(
+        scrollCacheExtent: AppLayout.imageCacheExtent(context),
+        slivers: [
           SliverToBoxAdapter(
-            child: Padding(
-              padding: AppLayout.pageInsets(context, top: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (waiting != null &&
-                      details.status != RequestMediaStatus.available)
-                    RequestImportNotice(message: waiting),
-                  // Le suivi vient de MediaHub : un titre disponible n'a plus
-                  // rien à montrer, les autres sont interrogés tant que l'écran
-                  // est ouvert.
-                  if (tracked)
-                    RequestProgressPanel(
-                        tmdbId: details.id, mediaType: details.mediaType),
-                ],
+            child: TvRegion.section(
+              id: 'hero',
+              child: DetailHero(
+                playKey: details.id,
+                backdropUrl: detailBackdropUrl(details.backdropUrl),
+                posterUrl: detailPosterUrl(details.posterUrl),
+                logoUrl: logoImageUrl(details.logoUrl),
+                title: details.title,
+                tagline: details.tagline,
+                overview: details.overview,
+                emptyOverviewLabel: tr('Aucun synopsis disponible.'),
+                eyebrow: _eyebrow(details),
+                metadata: buildMetadataChips(
+                  type: isTv ? MediaType.show : MediaType.movie,
+                  releaseDate: details.releaseDate,
+                  runtimeMinutes: details.runtime ?? 0,
+                  rating: details.rating,
+                  seasons: details.numberOfSeasons ?? 0,
+                  genres: details.genres,
+                ),
+                actions: _actions(details),
+                trailing: MediaCountdown.fromDetails(
+                  isTv: isTv,
+                  nextEpisode: nextEp,
+                  lastEpisode: lastEp,
+                  status: details.tmdbStatus,
+                  releaseDate: details.releaseDate,
+                ),
+                onBack: () => Navigator.of(context).pop(),
               ),
             ),
           ),
-        // Même ordre que les fiches de la bibliothèque. Une série passe par
-        // ses saisons — c'est là qu'on demande. Dans les deux cas, le casting
-        // ouvre la colonne de gauche, les crédits et les tags dessous, à côté
-        // de la card d'infos : plus de vide sous les crédits.
-        if (hasSeasons)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: AppLayout.pageInsets(context, top: 48),
-              child: RequestSeasonList(
-                tmdbId: details.id,
-                showItem: widget.item,
-                seasons: details.seasons,
-              ),
-            ),
-          ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.only(top: hasSeasons ? 32 : 0),
-            child: DetailSummarySection(
-              credits: const [],
-              keywords: const [],
-              infoTable: RequestInfoTable(details: details),
-              mainTitle: tr('Informations'),
-              extra: details.cast.isEmpty ? null : cast(),
-            ),
-          ),
-        ),
-        for (final (title, items) in [
-          (tr('Recommandations'), details.recommendations),
-          (tr('Titres similaires'), details.similar),
-        ])
-          if (items.isNotEmpty)
+          // Sous l'en-tête et non dedans : sa hauteur est fixe, et le suivi d'une
+          // demande a la taille qu'il veut.
+          if ((waiting != null &&
+                  details.status != RequestMediaStatus.available) ||
+              tracked)
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 32),
-                child: PosterRail(
-                  title: title,
-                  itemCount: items.length,
-                  itemBuilder: (context, index) =>
-                      RequestMediaCard(item: items[index]),
+              child: TvRegion.section(
+                id: 'progress',
+                child: Padding(
+                  padding: AppLayout.pageInsets(context, top: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (waiting != null &&
+                          details.status != RequestMediaStatus.available)
+                        RequestImportNotice(message: waiting),
+                      // Le suivi vient de MediaHub : un titre disponible n'a plus
+                      // rien à montrer, les autres sont interrogés tant que l'écran
+                      // est ouvert.
+                      if (tracked)
+                        RequestProgressPanel(
+                            tmdbId: details.id, mediaType: details.mediaType),
+                    ],
+                  ),
                 ),
               ),
             ),
-        const SliverToBoxAdapter(child: SizedBox(height: 56)),
-      ],
+          // Même ordre que les fiches de la bibliothèque. Une série passe par
+          // ses saisons — c'est là qu'on demande. Dans les deux cas, le casting
+          // ouvre la colonne de gauche, les crédits et les tags dessous, à côté
+          // de la card d'infos : plus de vide sous les crédits.
+          if (hasSeasons)
+            SliverToBoxAdapter(
+              child: TvRegion.section(
+                id: 'seasons',
+                child: Padding(
+                  padding: AppLayout.pageInsets(context, top: 48),
+                  child: RequestSeasonList(
+                    tmdbId: details.id,
+                    showItem: widget.item,
+                    seasons: details.seasons,
+                  ),
+                ),
+              ),
+            ),
+          SliverToBoxAdapter(
+            child: TvRegion.section(
+              id: 'info',
+              child: Padding(
+                padding: EdgeInsets.only(top: hasSeasons ? 32 : 0),
+                child: DetailSummarySection(
+                  credits: const [],
+                  keywords: const [],
+                  infoTable: RequestInfoTable(details: details),
+                  mainTitle: tr('Informations'),
+                  extra: details.cast.isEmpty ? null : cast(),
+                ),
+              ),
+            ),
+          ),
+          for (final (index, (title, items)) in [
+            (tr('Recommandations'), details.recommendations),
+            (tr('Titres similaires'), details.similar),
+          ].indexed)
+            if (items.isNotEmpty)
+              SliverToBoxAdapter(
+                child: TvRegion.section(
+                  id: 'rail-$index',
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 32),
+                    child: PosterRail(
+                      title: title,
+                      itemCount: items.length,
+                      itemBuilder: (context, index) =>
+                          RequestMediaCard(item: items[index]),
+                    ),
+                  ),
+                ),
+              ),
+          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+        ],
+      ),
     );
   }
 

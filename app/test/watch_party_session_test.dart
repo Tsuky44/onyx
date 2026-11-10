@@ -21,7 +21,10 @@ class _FakePartyApi extends ApiClient {
     required double positionSeconds,
     required bool playing,
   }) async =>
-      _party(version: 1, mediaId: mediaId, playing: playing,
+      _party(
+          version: 1,
+          mediaId: mediaId,
+          playing: playing,
           position: positionSeconds);
 
   /// Ce que rend une mesure de latence (un poll sur une version dépassée).
@@ -186,8 +189,8 @@ void main() {
     final player = _FakePlayer();
     session.attach(player);
 
-    api.polls.last.complete(
-        _party(version: 2, position: 1500, actionKind: 'seek'));
+    api.polls.last
+        .complete(_party(version: 2, position: 1500, actionKind: 'seek'));
     await _settle();
 
     expect(player.seeks, hasLength(1));
@@ -225,8 +228,8 @@ void main() {
     final player = _FakePlayer();
     session.attach(player);
 
-    api.polls.last.complete(
-        _party(version: 2, position: 98, waitingFor: ['alex']));
+    api.polls.last
+        .complete(_party(version: 2, position: 98, waitingFor: ['alex']));
     await _settle();
 
     expect(player.playingApplied, [false]);
@@ -235,15 +238,16 @@ void main() {
     expect(session.waitingMessage, 'En attente de alex…');
   });
 
-  test('a device the party waits for keeps loading, then holds until the '
+  test(
+      'a device the party waits for keeps loading, then holds until the '
       'server lets everyone go', () async {
     final (session, api) = await open();
     final player = _FakePlayer()..isLoading = true;
     session.attach(player);
     api.onUpdate = (_) => _party(version: 3, position: 100);
 
-    api.polls.last.complete(
-        _party(version: 2, position: 100, waitingForYou: true));
+    api.polls.last
+        .complete(_party(version: 2, position: 100, waitingForYou: true));
     await _settle();
     expect(player.playingApplied, isEmpty,
         reason: 'a loading player is not paused for itself');

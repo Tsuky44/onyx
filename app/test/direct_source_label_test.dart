@@ -11,7 +11,8 @@ void main() {
   });
 
   test('un flux du serveur reste « Direct », avec le sous-titre du menu', () {
-    final direct = directSourceLabel(local: false, streamSubtitle: 'Le fichier');
+    final direct =
+        directSourceLabel(local: false, streamSubtitle: 'Le fichier');
 
     expect(direct.label, 'Direct');
     expect(direct.subtitle, 'Le fichier');

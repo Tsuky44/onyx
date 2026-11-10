@@ -50,8 +50,8 @@ void main() {
   });
 
   test('copyWith keeps the flag through a progress update', () {
-    final updated = episodeItem(hasNewEpisode: true)
-        .copyWith(currentPositionSeconds: 900);
+    final updated =
+        episodeItem(hasNewEpisode: true).copyWith(currentPositionSeconds: 900);
     expect(updated.hasNewEpisode, isTrue);
     expect(updated.showId, 7);
   });

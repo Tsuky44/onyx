@@ -346,8 +346,8 @@ void main() {
     });
 
     test('un sous-titre du menu AVKit porte l’identifiant du moteur', () {
-      final intent = nativeTvIntentOf(_event(
-              OnyxAppleNativeEventKind.subtitleSelected, trackId: '4'))
+      final intent = nativeTvIntentOf(
+              _event(OnyxAppleNativeEventKind.subtitleSelected, trackId: '4'))
           as NativeTvSetSubtitle;
       expect(intent.trackId, '4');
     });
@@ -359,9 +359,9 @@ void main() {
         OnyxAppleNativeReason.unsupported,
         OnyxAppleNativeReason.bitmapSubtitles,
       ]) {
-        final intent = nativeTvIntentOf(_event(
-            OnyxAppleNativeEventKind.unavailable,
-            reason: reason)) as NativeTvUnavailable;
+        final intent = nativeTvIntentOf(
+                _event(OnyxAppleNativeEventKind.unavailable, reason: reason))
+            as NativeTvUnavailable;
         expect(intent.reason, reason);
       }
     });

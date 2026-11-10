@@ -388,8 +388,7 @@ class _PosterTile extends StatelessWidget {
                       DecoratedBox(
                         decoration: BoxDecoration(
                           borderRadius: radius,
-                          border:
-                              Border.all(color: AppColors.accent, width: 3),
+                          border: Border.all(color: AppColors.accent, width: 3),
                         ),
                         child: const Align(
                           alignment: Alignment.topRight,

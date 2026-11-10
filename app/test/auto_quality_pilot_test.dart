@@ -5,10 +5,23 @@ import 'package:onyx/screens/player/playback/auto_descent.dart';
 import 'package:onyx/screens/player/playback/auto_quality.dart';
 
 const _ladder = <QualityTier>[
-  QualityTier(key: '1080p-10', label: '1080p · 10 Mbit/s', height: 1080, bitrateBps: 10000000),
-  QualityTier(key: '1080p', label: '1080p · 6 Mbit/s', height: 1080, bitrateBps: 6000000),
-  QualityTier(key: '720p-2', label: '720p · 2 Mbit/s', height: 720, bitrateBps: 2000000),
-  QualityTier(key: '360p', label: '360p · 1 Mbit/s', height: 360, bitrateBps: 1000000),
+  QualityTier(
+      key: '1080p-10',
+      label: '1080p · 10 Mbit/s',
+      height: 1080,
+      bitrateBps: 10000000),
+  QualityTier(
+      key: '1080p',
+      label: '1080p · 6 Mbit/s',
+      height: 1080,
+      bitrateBps: 6000000),
+  QualityTier(
+      key: '720p-2',
+      label: '720p · 2 Mbit/s',
+      height: 720,
+      bitrateBps: 2000000),
+  QualityTier(
+      key: '360p', label: '360p · 1 Mbit/s', height: 360, bitrateBps: 1000000),
 ];
 
 /// Une lecture en carton : une avance qui suit une pente, une ligne d'un
@@ -85,7 +98,8 @@ class _Playback {
 /// Le pilote de la qualité automatique : il lit, décide par [AutoQuality], et
 /// ne fait qu'une chose à la fois. Voir ADR-0056.
 void main() {
-  test('une ligne qui livre la moitié du fichier fait descendre, une fois, '
+  test(
+      'une ligne qui livre la moitié du fichier fait descendre, une fois, '
       'sans urgence', () async {
     // 10 Mbit/s mesurés pour un fichier à 20.
     final playback = _Playback()
@@ -107,7 +121,8 @@ void main() {
         reason: 'en Direct Play il n’y a rien au-dessus à mesurer');
   });
 
-  test('si le premier barreau ne suffit pas, on redescend jusqu’à ce que '
+  test(
+      'si le premier barreau ne suffit pas, on redescend jusqu’à ce que '
       'ça tienne', () async {
     final playback = _Playback()
       ..slope = -0.5
@@ -122,7 +137,8 @@ void main() {
     expect(playback.moves, ['1080p-10', '1080p']);
   });
 
-  test('une coupure sur un barreau fait descendre tout de suite, dans '
+  test(
+      'une coupure sur un barreau fait descendre tout de suite, dans '
       'l’urgence', () async {
     final playback = _Playback()
       ..quality = '1080p'
@@ -258,7 +274,8 @@ void main() {
               'mesure à côté');
     });
 
-    test('une ligne qui tient ce qui est lu : la première coupure passe, '
+    test(
+        'une ligne qui tient ce qui est lu : la première coupure passe, '
         'la deuxième descend d’un cran', () async {
       final playback = _Playback()
         ..quality = '1080p'
@@ -305,7 +322,8 @@ void main() {
       expect(playback.urgent, [true]);
     });
 
-    test('une ligne qui livre ce qui est lu n’est pas accusée, même sans '
+    test(
+        'une ligne qui livre ce qui est lu n’est pas accusée, même sans '
         'marge', () async {
       final playback = _Playback()
         ..quality = '1080p'
@@ -401,7 +419,8 @@ void main() {
   });
 
   group('le Direct Play d’abord (ADR-0065)', () {
-    test('un cache plein qui fond ne fait pas transcoder : la mesure disculpe '
+    test(
+        'un cache plein qui fond ne fait pas transcoder : la mesure disculpe '
         'la ligne, et la pente n’est plus crue', () async {
       // Le tampon d'un moteur plafonné fond le temps de se recharger : la
       // pente d'une ligne à la moitié du fichier, sur une ligne qui en porte
@@ -431,7 +450,8 @@ void main() {
       expect(playback.quality, isNull);
     });
 
-    test('deux coupures sur une ligne qui porte le fichier passent, la '
+    test(
+        'deux coupures sur une ligne qui porte le fichier passent, la '
         'troisième en trois minutes descend', () async {
       final playback = _Playback()
         ..buffered = 60
@@ -447,7 +467,8 @@ void main() {
       expect(playback.moves, ['1080p-10']);
     });
 
-    test('des coupures espacées de plus de trois minutes ne s’additionnent '
+    test(
+        'des coupures espacées de plus de trois minutes ne s’additionnent '
         'pas', () async {
       final playback = _Playback()
         ..buffered = 60
@@ -474,7 +495,8 @@ void main() {
       expect(playback.moves, hasLength(1));
     });
 
-    test('pendant un délai de grâce, une ligne à peine sous le fichier ne fait '
+    test(
+        'pendant un délai de grâce, une ligne à peine sous le fichier ne fait '
         'pas quitter le Direct Play', () async {
       // 18 Mbit/s reçus pour un fichier à 20 : un moteur qui vient d'ouvrir
       // reçoit encore moins que ce que la ligne porte.
@@ -488,7 +510,8 @@ void main() {
       expect(playback.moves, isEmpty);
     });
 
-    test('sur un barreau aussi, une ligne disculpée ne se réaccuse pas sur '
+    test(
+        'sur un barreau aussi, une ligne disculpée ne se réaccuse pas sur '
         'la pente', () async {
       final playback = _Playback()
         ..quality = '1080p'
@@ -504,7 +527,8 @@ void main() {
     });
   });
 
-  test('choisie dans le menu depuis un barreau bas, l’Auto mesure sans '
+  test(
+      'choisie dans le menu depuis un barreau bas, l’Auto mesure sans '
       'attendre son tour', () async {
     final playback = _Playback()
       ..quality = '360p'

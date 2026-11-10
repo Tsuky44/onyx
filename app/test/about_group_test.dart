@@ -13,7 +13,8 @@ void main() {
       ));
 
   // Ce que les magasins et les conditions de TMDB exigent de lire dans l'app.
-  testWidgets('À propos porte l’attribution TMDB et le rappel de responsabilité',
+  testWidgets(
+      'À propos porte l’attribution TMDB et le rappel de responsabilité',
       (tester) async {
     await pump(tester);
 
@@ -36,7 +37,8 @@ void main() {
 
   // Lu sur le disque : `rootBundle` ne répond pas hors d'un `testWidgets`.
   test('chaque document légal est un fichier du dossier embarqué', () {
-    expect(File('pubspec.yaml').readAsStringSync(), contains('- assets/legal/'));
+    expect(
+        File('pubspec.yaml').readAsStringSync(), contains('- assets/legal/'));
     for (final document in LegalDocument.values) {
       expect(File(document.asset).readAsStringSync().trim(), isNotEmpty,
           reason: document.asset);

@@ -28,17 +28,22 @@ void main() {
         'd7235b7ef69f6c76227c48b4834615131ab8ff4327175b84258e8fee3a89bbdf');
   });
 
-  test('un lien entre dans l’empreinte par sa cible, sans être suivi', () async {
+  test('un lien entre dans l’empreinte par sa cible, sans être suivi',
+      () async {
     write('Contents/MacOS/onyx', utf8.encode('binary\n'));
     write('Contents/Info.plist', utf8.encode('<plist/>'));
     write('Contents/Resources/été.txt', utf8.encode('é'));
     Directory('${root.path}/Contents/Frameworks/F.framework')
         .createSync(recursive: true);
-    Link('${root.path}/Contents/Frameworks/F.framework/Current').createSync('A');
+    Link('${root.path}/Contents/Frameworks/F.framework/Current')
+        .createSync('A');
 
     expect(await bundleDigest(root.path),
         '12f423e1ce9173a0da8d16b5e0526d3961baa52ea27f3e658913982c39c6ec61');
-  }, skip: Platform.isWindows ? 'liens symboliques réservés à l’administrateur' : false);
+  },
+      skip: Platform.isWindows
+          ? 'liens symboliques réservés à l’administrateur'
+          : false);
 
   test('modifier un octet du bundle change son empreinte', () async {
     write('Contents/MacOS/onyx', utf8.encode('binary\n'));

@@ -19,6 +19,7 @@ Widget _rail(
   bool entersAtTop = false,
 }) =>
     TvRegion.rail(
+      entersAtStart: false,
       entersAtTop: entersAtTop,
       child: Row(
         children: [
@@ -178,6 +179,7 @@ void main() {
                   child: const TvTestTile('dehors', width: 120, height: 40),
                 ),
                 TvRegion.rail(
+                  entersAtStart: false,
                   child: Row(
                     children: [
                       TvFocusable(

@@ -32,11 +32,11 @@ void main() {
     );
   });
 
-  Future<(_FakeApiClient, AuthProvider)> pumpServers(WidgetTester tester) async {
+  Future<(_FakeApiClient, AuthProvider)> pumpServers(
+      WidgetTester tester) async {
     final api = _FakeApiClient();
     await api.initialize();
-    api.profiles['http://maison.local'] =
-        User(id: 1, username: 'mathis');
+    api.profiles['http://maison.local'] = User(id: 1, username: 'mathis');
     api.profiles['http://paul.local'] = User(id: 7, username: 'mathis');
     await api.rememberSession(
       serverUrl: 'http://paul.local',
@@ -63,7 +63,8 @@ void main() {
     return (api, auth);
   }
 
-  testWidgets('les deux serveurs sont là, un seul marqué actif', (tester) async {
+  testWidgets('les deux serveurs sont là, un seul marqué actif',
+      (tester) async {
     final (_, auth) = await pumpServers(tester);
 
     expect(find.text('maison.local'), findsOneWidget);

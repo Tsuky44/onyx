@@ -178,8 +178,7 @@ void main() {
     await auth.refreshAccessRequests();
 
     expect(auth.pendingAccessRequests, isEmpty);
-    expect(auth.servers, hasLength(1),
-        reason: 'un refus ne crée rien');
+    expect(auth.servers, hasLength(1), reason: 'un refus ne crée rien');
   });
 
   test('basculer relit l’identité du serveur d’arrivée', () async {
@@ -203,7 +202,8 @@ void main() {
     expect(auth.currentUser?.id, 7);
   });
 
-  test('la bascule prévient qui doit vider ce qui appartenait à l’autre serveur',
+  test(
+      'la bascule prévient qui doit vider ce qui appartenait à l’autre serveur',
       () async {
     final (api, auth) = await signedInAtHome();
     api.profiles['http://paul.local'] = _user('mathis', id: 7);

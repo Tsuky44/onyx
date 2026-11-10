@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,8 +8,10 @@ import '../theme/app_motion.dart';
 import '../theme/lite_mode.dart';
 import '../utils/app_platform.dart';
 import 'tv_focus_memory.dart';
+import 'tv_focus_ring.dart';
 import 'tv_focus_scroll.dart';
 import 'tv_mode.dart';
+import 'tv_touchpad.dart';
 
 export 'nav/tv_focusable.dart' show TvFocusable;
 
@@ -231,6 +235,29 @@ class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
   /// sauf si l'appui a duré assez longtemps pour devenir un appui long.
   bool _selectPending = false;
 
+  /// Le minuteur de l'appui long. Toutes les télécommandes ne répètent pas
+  /// OK tant qu'il est enfoncé (la Siri Remote, certaines télécommandes
+  /// Android TV, un navigateur de téléviseur) : sans lui, le menu n'attendait
+  /// qu'une répétition qui ne venait jamais.
+  Timer? _longSelectTimer;
+
+  /// La durée d'un appui long, celle de dpad (`TvNavTheme.longSelectDuration`)
+  /// et d'Android TV.
+  static const Duration longSelectDuration = Duration(milliseconds: 500);
+
+  /// Un relâchement plus bref que ça n'est pas un doigt : la télécommande du
+  /// simulateur Apple TV coupe un clic tenu en « enfoncé, relâché 8 ms après,
+  /// ré-enfoncé ». Il n'agit qu'après [_bounceWindow], s'il n'est pas suivi
+  /// d'un nouvel appui ; sinon l'appui continue.
+  static const Duration _bounceRelease = Duration(milliseconds: 30);
+  static const Duration _bounceWindow = Duration(milliseconds: 40);
+
+  /// L'instant où OK a été enfoncé ([KeyEvent.timeStamp]).
+  Duration _selectDownAt = Duration.zero;
+
+  /// L'action d'un relâchement trop bref, en attente de [_bounceWindow].
+  Timer? _bounceTimer;
+
   FocusNode get _node =>
       widget.focusNode ??
       (_ownedNode ??= FocusNode(debugLabel: 'tv-focusable'));
@@ -275,6 +302,9 @@ class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
 
   @override
   void dispose() {
+    _longSelectTimer?.cancel();
+    _bounceTimer?.cancel();
+    TvTouchpad.clickHeld.removeListener(_onClickReleased);
     _memory?.forget(_node);
     TvFocusScroll.forgetSelfScrolling(_node);
     _ownedNode?.dispose();
@@ -288,7 +318,7 @@ class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
     widget.onFocusChange?.call(focused);
 
     if (!focused) {
-      _selectPending = false;
+      _cancelLongSelect();
       return;
     }
     _memory?.remember(_node);
@@ -341,7 +371,48 @@ class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
     FocusManager.instance.addEarlyKeyEventHandler(swallow);
   }
 
+  static final Set<LogicalKeyboardKey> _arrowKeys = <LogicalKeyboardKey>{
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowDown,
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.arrowRight,
+  };
+
+  void _cancelLongSelect() {
+    _selectPending = false;
+    _longSelectTimer?.cancel();
+    _longSelectTimer = null;
+    _bounceTimer?.cancel();
+    _bounceTimer = null;
+    TvTouchpad.clickHeld.removeListener(_onClickReleased);
+  }
+
+  /// Un relâchement bref sans nouvel appui, alors que le pavé est encore
+  /// enfoncé (voir [TvTouchpad.clickHeld]) : l'appui continue. Le minuteur
+  /// de l'appui long ouvre le menu s'il dure ; s'il cesse avant, c'était un
+  /// appui court, et l'action part au vrai relâchement.
+  void _onClickReleased() {
+    if (TvTouchpad.clickHeld.value) return;
+    TvTouchpad.clickHeld.removeListener(_onClickReleased);
+    if (!mounted || !_selectPending) return;
+    _cancelLongSelect();
+    widget.onSelect?.call();
+  }
+
+  /// L'appui long, par la première répétition ou par le minuteur : une seule
+  /// fois par appui.
+  void _fireLongSelect(LogicalKeyboardKey key) {
+    if (!_selectPending) return;
+    _cancelLongSelect();
+    final onContextMenu = widget.onContextMenu;
+    if (onContextMenu == null || !widget.enabled) return;
+    _swallowRestOfPress(key);
+    onContextMenu();
+  }
+
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    debugPrint(
+        'ONYXKEY ${DateTime.now().millisecondsSinceEpoch} ${event.runtimeType} ${event.logicalKey.debugName} menu=${widget.onContextMenu != null}');
     if (!widget.enabled) return KeyEventResult.ignored;
 
     if (kTvSelectKeys.contains(event.logicalKey)) {
@@ -354,20 +425,42 @@ class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
       if (onContextMenu != null &&
           (context.getInheritedWidgetOfExactType<TvScope>()?.isTv ?? false)) {
         if (event is KeyDownEvent) {
+          // Le rebond d'un appui tenu : c'est le même appui qui continue.
+          if (_bounceTimer?.isActive ?? false) {
+            _bounceTimer!.cancel();
+            _bounceTimer = null;
+            return KeyEventResult.handled;
+          }
           _selectPending = true;
+          _selectDownAt = event.timeStamp;
+          final key = event.logicalKey;
+          _longSelectTimer?.cancel();
+          _longSelectTimer = Timer(longSelectDuration, () {
+            if (mounted) _fireLongSelect(key);
+          });
           return KeyEventResult.handled;
         }
         if (event is KeyRepeatEvent) {
-          if (_selectPending) {
-            _selectPending = false;
-            _swallowRestOfPress(event.logicalKey);
-            onContextMenu();
-          }
+          _fireLongSelect(event.logicalKey);
           return KeyEventResult.handled;
         }
         if (event is KeyUpEvent) {
           final fire = _selectPending;
-          _selectPending = false;
+          if (fire && event.timeStamp - _selectDownAt < _bounceRelease) {
+            _bounceTimer?.cancel();
+            _bounceTimer = Timer(_bounceWindow, () {
+              _bounceTimer = null;
+              if (!mounted || !_selectPending) return;
+              if (TvTouchpad.clickHeld.value) {
+                TvTouchpad.clickHeld.addListener(_onClickReleased);
+                return;
+              }
+              _cancelLongSelect();
+              widget.onSelect?.call();
+            });
+            return KeyEventResult.handled;
+          }
+          _cancelLongSelect();
           if (!fire || onSelect == null) return KeyEventResult.ignored;
           onSelect();
           return KeyEventResult.handled;
@@ -382,6 +475,14 @@ class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
       }
       if (onSelect == null) return KeyEventResult.ignored;
       onSelect();
+      return KeyEventResult.handled;
+    }
+
+    // OK est tenu : une flèche n'est qu'un frôlement du pavé tactile pendant
+    // le clic (la Siri Remote, sa copie du simulateur). Elle ne déplace pas le
+    // focus, ce qui annulerait l'appui long. Borné à l'appui long lui-même,
+    // qui lève [_selectPending] au plus tard au bout de [longSelectDuration].
+    if (_selectPending && _arrowKeys.contains(event.logicalKey)) {
       return KeyEventResult.handled;
     }
 
@@ -403,40 +504,10 @@ class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
     final isTv = TvScope.of(context);
     final lite = LiteScope.of(context);
 
-    // The stack is unconditional even though the ring is not: swapping the
-    // child between "wrapped" and "bare" rebuilds its whole subtree, which
-    // restarts every poster's fade-in the instant focus moves.
-    Widget content = Stack(
-      clipBehavior: Clip.none,
-      children: [
-        widget.child,
-        // The ring sits over the child rather than around it: adding a border
-        // to the layout would shift every sibling by two pixels the moment
-        // focus lands, and a grid that twitches as you scan it is worse than
-        // no ring at all.
-        if (_focused && widget.showRing)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: widget.borderRadius,
-                  border: Border.all(color: AppColors.accent, width: 3),
-                  // Le halo est un flou de plus à chaque pas de focus ;
-                  // l'anneau seul se lit aussi bien du canapé (ADR-0086).
-                  boxShadow: lite
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: AppColors.accent.withValues(alpha: 0.35),
-                            blurRadius: 18,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                ),
-              ),
-            ),
-          ),
-      ],
+    Widget content = TvFocusRing(
+      visible: _focused && widget.showRing,
+      borderRadius: widget.borderRadius,
+      child: widget.child,
     );
 
     // The zoom is a television affordance. On a phone or a desktop it would
@@ -498,8 +569,8 @@ class TvFocusHalo extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: borderRadius,
           border: Border.all(
-            color: focused ? AppColors.accent : Colors.transparent,
-            width: 2.5,
+            color: focused ? AppColors.focus : Colors.transparent,
+            width: TvFocusRing.width,
           ),
         ),
         child: child,

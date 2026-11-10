@@ -51,7 +51,17 @@ type tmdbCatalogResponse struct {
 	Revenue          int64   `json:"revenue"`
 	NumberOfSeasons  int     `json:"number_of_seasons"`
 	NumberOfEpisodes int     `json:"number_of_episodes"`
-	Genres           []struct {
+	NextEpisodeToAir *struct {
+		AirDate       string `json:"air_date"`
+		EpisodeNumber int    `json:"episode_number"`
+		SeasonNumber  int    `json:"season_number"`
+	} `json:"next_episode_to_air"`
+	LastEpisodeToAir *struct {
+		AirDate       string `json:"air_date"`
+		EpisodeNumber int    `json:"episode_number"`
+		SeasonNumber  int    `json:"season_number"`
+	} `json:"last_episode_to_air"`
+	Genres []struct {
 		Name string `json:"name"`
 	} `json:"genres"`
 	ProductionCompanies []struct {
@@ -234,7 +244,7 @@ func FetchMediaCatalogDetails(tmdbID int, mediaType models.MediaType, language s
 		return nil
 	}
 
-	cacheKey := fmt.Sprintf("%s:%d:%s:v3", mediaType, tmdbID, language)
+	cacheKey := fmt.Sprintf("%s:%d:%s:v4", mediaType, tmdbID, language)
 	if cached, ok := catalogCache.Get(cacheKey); ok {
 		return cached
 	}
@@ -323,6 +333,21 @@ func buildCatalogDetails(r *tmdbCatalogResponse, tmdbID int, mediaType models.Me
 		Keywords:         pickKeywords(r),
 		NumberOfSeasons:  r.NumberOfSeasons,
 		NumberOfEpisodes: r.NumberOfEpisodes,
+	}
+
+	if r.NextEpisodeToAir != nil && r.NextEpisodeToAir.AirDate != "" {
+		d.NextEpisodeToAir = &models.EpisodeAirRef{
+			AirDate:       r.NextEpisodeToAir.AirDate,
+			EpisodeNumber: r.NextEpisodeToAir.EpisodeNumber,
+			SeasonNumber:  r.NextEpisodeToAir.SeasonNumber,
+		}
+	}
+	if r.LastEpisodeToAir != nil && r.LastEpisodeToAir.AirDate != "" {
+		d.LastEpisodeToAir = &models.EpisodeAirRef{
+			AirDate:       r.LastEpisodeToAir.AirDate,
+			EpisodeNumber: r.LastEpisodeToAir.EpisodeNumber,
+			SeasonNumber:  r.LastEpisodeToAir.SeasonNumber,
+		}
 	}
 
 	if mediaType == models.TypeShow {

@@ -132,7 +132,8 @@ List<_Modal> _modals() => [
       ),
       (
         name: 'showRecoveryCodesDialog (barrière non fermable)',
-        open: (context) => showRecoveryCodesDialog(context, const ['AAAA-1111']),
+        open: (context) =>
+            showRecoveryCodesDialog(context, const ['AAAA-1111']),
       ),
     ];
 
@@ -189,8 +190,7 @@ void main() {
 
   for (final modal in _modals()) {
     group(modal.name, () {
-      testWidgets('le focus reste dans la fenêtre aux flèches',
-          (tester) async {
+      testWidgets('le focus reste dans la fenêtre aux flèches', (tester) async {
         final nav = await TvNavHarness.pump(tester, _origin(modal));
         final route = await _openFromOrigin(tester, nav);
         for (final direction in TraversalDirection.values) {
@@ -221,8 +221,7 @@ void main() {
     });
   }
 
-  testWidgets(
-      'DropdownButton : le menu piège le focus et le rend au bouton',
+  testWidgets('DropdownButton : le menu piège le focus et le rend au bouton',
       (tester) async {
     var value = 1;
     final nav = await TvNavHarness.pump(

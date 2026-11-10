@@ -118,7 +118,8 @@ void main() {
     expect(nav.introSkipTarget, 252);
   });
 
-  testWidgets('une intro en base qui ne couvre que le récap laisse les '
+  testWidgets(
+      'une intro en base qui ne couvre que le récap laisse les '
       'chapitres donner l\'intro', (tester) async {
     final nav = await buildController(
       timestamps: EpisodeTimestamps(

@@ -45,10 +45,9 @@ void main() {
       }
     });
 
-    test('le profil 7 se lit sur sa couche de base, sauf en double couche',
-        () {
-      final p7 = _video('hevc',
-          bitDepth: 10, pixFmt: 'yuv420p10le', doviProfile: 7);
+    test('le profil 7 se lit sur sa couche de base, sauf en double couche', () {
+      final p7 =
+          _video('hevc', bitDepth: 10, pixFmt: 'yuv420p10le', doviProfile: 7);
       expect(avKitDecodeObstacle(p7), isNull);
       expect(avKitDecodeObstacle(p7, dualLayerDolbyVision: true),
           NativeTvDecodeObstacle.dualLayerDolbyVision);
@@ -65,8 +64,7 @@ void main() {
         'av1',
         'vp9',
       ]) {
-        expect(avKitDecodeObstacle(_video(codec)),
-            NativeTvDecodeObstacle.codec,
+        expect(avKitDecodeObstacle(_video(codec)), NativeTvDecodeObstacle.codec,
             reason: codec);
       }
     });
@@ -76,7 +74,8 @@ void main() {
           NativeTvDecodeObstacle.bitDepth);
       expect(avKitDecodeObstacle(_video('h264', pixFmt: 'yuv420p10le')),
           NativeTvDecodeObstacle.bitDepth);
-      expect(avKitDecodeObstacle(_video('h264', pixFmt: '', profile: 'High 10')),
+      expect(
+          avKitDecodeObstacle(_video('h264', pixFmt: '', profile: 'High 10')),
           NativeTvDecodeObstacle.bitDepth);
       expect(avKitDecodeObstacle(_video('hevc', pixFmt: 'yuv420p12le')),
           NativeTvDecodeObstacle.bitDepth);

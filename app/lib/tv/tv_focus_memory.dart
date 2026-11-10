@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'nav/tv_rail_start.dart';
 import 'tv_focus_entry.dart';
 import 'tv_mode.dart';
 
@@ -23,6 +24,9 @@ import 'tv_mode.dart';
 /// second `requestFocus` après coup (ADR-0109). La première visite, rien n'est
 /// mémorisé, et le parcours directionnel de Flutter garde la main.
 ///
+/// Les rangées de l'accueil n'en profitent plus pour leur entrée : on y entre
+/// par la première carte ([TvFocusMemory.entersAtStart], ADR-0113).
+///
 /// Les mémoires s'emboîtent : une rangée dans un onglet signale aussi l'élément
 /// à l'onglet. Hors téléviseur, la zone ne redirige jamais rien.
 class TvFocusMemory extends StatefulWidget {
@@ -30,6 +34,7 @@ class TvFocusMemory extends StatefulWidget {
     super.key,
     required this.child,
     this.entersAtTop = false,
+    this.entersAtStart = false,
   });
 
   final Widget child;
@@ -43,6 +48,11 @@ class TvFocusMemory extends StatefulWidget {
   /// seul élément à sa verticale, par-dessus le bandeau et la première
   /// rangée.
   final bool entersAtTop;
+
+  /// Une rangée : on y entre toujours par la première carte, à chaque visite
+  /// ([TvRailStart], ADR-0113). La mémoire continue de renseigner la zone
+  /// parente.
+  final bool entersAtStart;
 
   /// La mémoire la plus proche au-dessus de [context], s'il y en a une.
   ///
@@ -114,6 +124,11 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
   FocusNode? entryFor(FocusNode landed, FocusNode? from) {
     if (!TvMode.isTv) return null;
     if (from != null && from.ancestors.contains(_node)) return null;
+    if (widget.entersAtStart) {
+      final first = TvRailStart.enter(_node.traversalDescendants,
+          current: () => _node.traversalDescendants);
+      return identical(first, landed) ? null : first;
+    }
     final target = _remembered;
     if (target == null) return widget.entersAtTop ? _enterAtTop() : null;
     if (identical(landed, target)) return null;

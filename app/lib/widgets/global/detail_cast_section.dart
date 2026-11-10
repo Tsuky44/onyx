@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/tr.dart';
@@ -53,6 +54,7 @@ class CastSection extends StatefulWidget {
 
 class _CastSectionState extends State<CastSection> {
   int _selectedIndex = 0;
+  int? _hoveredIndex;
 
   void _move(int step, int total) {
     if (total <= 0) return;
@@ -304,15 +306,17 @@ class _CastSectionState extends State<CastSection> {
   }) {
     final double k = index - (totalCards - 1) / 2.0;
     final bool isSelected = index == current;
+    final bool isHovered = !isSelected && _hoveredIndex == index;
     final bool isAfter = index > current;
     final double x = start + index * step + (isAfter ? gap : 0.0);
-    final double lift = isSelected ? -18.0 : 0.0;
+    final double lift = isSelected ? -18.0 : (isHovered ? -10.0 : 0.0);
     final double y = k * k * 1.4 + lift;
     final double top = fanHeight - 18.0 - cardHeight + y;
     final double angle = isSelected ? 0.0 : (k * 2.2 * math.pi / 180.0);
     final double scale = isSelected ? 1.04 : 1.0;
 
     return AnimatedPositioned(
+      key: ValueKey<int>(index),
       duration: const Duration(milliseconds: 380),
       curve: Curves.easeOutCubic,
       left: x,
@@ -337,39 +341,57 @@ class _CastSectionState extends State<CastSection> {
               }
             },
             onSelect: () {
-              if (index != current) {
-                setState(() => _selectedIndex = index);
-              } else {
-                if (index < actorsCount) {
-                  widget.onTapMember?.call(widget.cast[index]);
-                } else {
-                  _showFullCast(context);
-                }
-              }
-            },
-            child: GestureDetector(
-              onTap: () {
+              if (index < actorsCount) {
                 if (index != current) {
                   setState(() => _selectedIndex = index);
                 } else {
+                  widget.onTapMember?.call(widget.cast[index]);
+                }
+              } else {
+                _showFullCast(context);
+              }
+            },
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (event) {
+                if (event.kind == PointerDeviceKind.touch) return;
+                if (_hoveredIndex != index) {
+                  setState(() => _hoveredIndex = index);
+                }
+              },
+              onExit: (event) {
+                if (event.kind == PointerDeviceKind.touch) return;
+                if (_hoveredIndex == index) {
+                  setState(() => _hoveredIndex = null);
+                }
+              },
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
                   if (index < actorsCount) {
-                    widget.onTapMember?.call(widget.cast[index]);
+                    if (index != current) {
+                      setState(() => _selectedIndex = index);
+                    } else {
+                      widget.onTapMember?.call(widget.cast[index]);
+                    }
                   } else {
                     _showFullCast(context);
                   }
-                }
-              },
-              child: index < actorsCount
-                  ? _buildActorCard(
-                      member: widget.cast[index],
-                      isSelected: isSelected,
-                      isNarrow: isNarrow,
-                    )
-                  : _buildPlusCard(
-                      remaining: widget.cast.length - actorsCount,
-                      isSelected: isSelected,
-                      isNarrow: isNarrow,
-                    ),
+                },
+                child: index < actorsCount
+                    ? _buildActorCard(
+                        member: widget.cast[index],
+                        isSelected: isSelected,
+                        isHovered: isHovered,
+                        isNarrow: isNarrow,
+                      )
+                    : _buildPlusCard(
+                        remaining: widget.cast.length - actorsCount,
+                        isSelected: isSelected,
+                        isHovered: isHovered,
+                        isNarrow: isNarrow,
+                      ),
+              ),
             ),
           ),
         ),
@@ -380,6 +402,7 @@ class _CastSectionState extends State<CastSection> {
   Widget _buildActorCard({
     required CastMember member,
     required bool isSelected,
+    required bool isHovered,
     required bool isNarrow,
   }) {
     final (first, rest) = _splitName(member.name);
@@ -405,20 +428,35 @@ class _CastSectionState extends State<CastSection> {
                   spreadRadius: -16,
                 ),
               ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.9),
-                  blurRadius: 22,
-                  offset: const Offset(-10, 0),
-                  spreadRadius: -12,
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.9),
-                  blurRadius: 30,
-                  offset: const Offset(0, 18),
-                  spreadRadius: -16,
-                ),
-              ],
+            : isHovered
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.92),
+                      blurRadius: 28,
+                      offset: const Offset(-10, 6),
+                      spreadRadius: -12,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.92),
+                      blurRadius: 34,
+                      offset: const Offset(0, 22),
+                      spreadRadius: -16,
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.9),
+                      blurRadius: 22,
+                      offset: const Offset(-10, 0),
+                      spreadRadius: -12,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.9),
+                      blurRadius: 30,
+                      offset: const Offset(0, 18),
+                      spreadRadius: -16,
+                    ),
+                  ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(13),
@@ -493,6 +531,7 @@ class _CastSectionState extends State<CastSection> {
   Widget _buildPlusCard({
     required int remaining,
     required bool isSelected,
+    required bool isHovered,
     required bool isNarrow,
   }) {
     return Container(
@@ -508,14 +547,32 @@ class _CastSectionState extends State<CastSection> {
                 color: Colors.white.withValues(alpha: 0.09),
                 width: 1,
               ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.9),
-            blurRadius: 22,
-            offset: const Offset(-10, 0),
-            spreadRadius: -12,
-          ),
-        ],
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.95),
+                  blurRadius: 40,
+                  offset: const Offset(0, 26),
+                  spreadRadius: -16,
+                ),
+              ]
+            : isHovered
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.92),
+                      blurRadius: 28,
+                      offset: const Offset(-10, 6),
+                      spreadRadius: -12,
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.9),
+                      blurRadius: 22,
+                      offset: const Offset(-10, 0),
+                      spreadRadius: -12,
+                    ),
+                  ],
       ),
       child: Center(
         child: Padding(
@@ -693,8 +750,8 @@ class _FullCastSheet extends StatelessWidget {
                                 ? AppNetworkImage(
                                     url: castProfileUrl(member.profileUrl),
                                     fit: BoxFit.cover,
-                                    errorWidget: _InitialsPlaceholder(
-                                        name: member.name),
+                                    errorWidget:
+                                        _InitialsPlaceholder(name: member.name),
                                   )
                                 : _InitialsPlaceholder(name: member.name),
                           ),

@@ -59,7 +59,35 @@ abstract final class AppMotion {
   /// [move], donc absent sous « réduire les animations » et en mode léger.
   static const Duration sweep = Duration(milliseconds: 900);
 
-  /// The app's only curve (`PROJECT_DESIGN.md` §10: "ease-out").
+  /// L'ouverture d'une page entière par-dessus celle qu'on regarde — la vue
+  /// de recherche qui s'ouvre à la frappe (`SearchResultsRoute`). Hors de la
+  /// plage 180–280 ms : à [emphasis], tout l'écran changeait en moins de
+  /// 200 ms et l'ouverture se lisait comme une coupure. Ce n'est pas une
+  /// attente — la frappe continue dans la barre pendant qu'elle joue.
+  static const Duration reveal = Duration(milliseconds: 380);
+
+  /// Le retournement d'une affiche qui montre son menu au dos
+  /// (`showPosterFlipMenu`). Hors de la plage 180–280 ms : une rotation d'un
+  /// demi-tour à [emphasis] faisait défiler le profil de la carte en trois
+  /// images, et l'œil lisait une coupure plutôt qu'un objet qui tourne. Le
+  /// menu est focalisable dès l'ouverture : la télécommande n'attend pas la
+  /// fin du geste. Passé par [move] pour la rotation ; sous « réduire les
+  /// animations », les deux faces se fondent l'une dans l'autre.
+  static const Duration flip = Duration(milliseconds: 420);
+
+  /// La courbe du retournement ([flip]). Un ease-out pur lançait l'affiche à
+  /// pleine vitesse dès la première image, comme arrachée : la rotation
+  /// démarre en douceur et se pose, comme une carte qu'on retourne à la main.
+  static const Curve flipCurve = Curves.easeInOutCubic;
+
+  /// La courbe du fondu d'une page entière ([reveal]), seule exception à
+  /// [curve]. Un ease-out met l'essentiel du fondu dans les premières images :
+  /// sur une petite carte c'est vif, sur tout l'écran c'est brusque. Le fondu
+  /// part et finit en douceur ; le mouvement, lui, garde [curve].
+  static const Curve revealFade = Curves.easeInOut;
+
+  /// The app's curve (`PROJECT_DESIGN.md` §10: "ease-out"), sauf le fondu
+  /// d'une page entière ([revealFade]).
   static const Curve curve = Curves.easeOut;
 
   /// Press-down scale for interactive cards. Deliberately restrained:

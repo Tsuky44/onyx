@@ -41,9 +41,10 @@ void main() {
         .toList();
     expect(assets, isNotEmpty);
     for (final asset in assets) {
-      expect(File(asset).existsSync(), isTrue, reason: '$asset est déclaré '
-          'mais absent : la police tomberait silencieusement sur celle du '
-          'système.');
+      expect(File(asset).existsSync(), isTrue,
+          reason: '$asset est déclaré '
+              'mais absent : la police tomberait silencieusement sur celle du '
+              'système.');
     }
   });
 

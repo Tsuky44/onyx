@@ -1,6 +1,42 @@
 import 'catalog.dart';
 import 'media.dart';
 
+/// Référence de diffusion d'un épisode (prochain ou dernier épisode à l'antenne).
+class EpisodeAirRef {
+  final String airDate;
+  final int episodeNumber;
+  final int seasonNumber;
+
+  const EpisodeAirRef({
+    required this.airDate,
+    required this.episodeNumber,
+    required this.seasonNumber,
+  });
+
+  factory EpisodeAirRef.fromJson(Map<String, dynamic> json) => EpisodeAirRef(
+        airDate: json['air_date'] as String? ?? json['airDate'] as String? ?? '',
+        episodeNumber: (json['episode_number'] as num?)?.toInt() ??
+            (json['episodeNumber'] as num?)?.toInt() ??
+            0,
+        seasonNumber: (json['season_number'] as num?)?.toInt() ??
+            (json['seasonNumber'] as num?)?.toInt() ??
+            0,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'air_date': airDate,
+        'episode_number': episodeNumber,
+        'season_number': seasonNumber,
+      };
+}
+
+EpisodeAirRef? _parseEpisodeAir(dynamic raw) {
+  if (raw is Map) {
+    return EpisodeAirRef.fromJson(Map<String, dynamic>.from(raw));
+  }
+  return null;
+}
+
 /// Rich catalog details for a movie/show, returned by
 /// GET /api/media/:id/details. Merges local library data with live TMDB
 /// metadata (cast, genres, rating, backdrop, crew…).
@@ -34,6 +70,8 @@ class MediaDetails {
   final CollectionInfo? collection;
   final int numberOfSeasons;
   final int numberOfEpisodes;
+  final EpisodeAirRef? nextEpisodeToAir;
+  final EpisodeAirRef? lastEpisodeToAir;
 
   /// TMDB titles close to this one, tagged with a local id when the library
   /// already holds them. Drives the "Titres similaires" rail.
@@ -69,6 +107,8 @@ class MediaDetails {
     this.collection,
     this.numberOfSeasons = 0,
     this.numberOfEpisodes = 0,
+    this.nextEpisodeToAir,
+    this.lastEpisodeToAir,
     this.similarTitles = const [],
   });
 
@@ -115,6 +155,10 @@ class MediaDetails {
           : null,
       numberOfSeasons: json['number_of_seasons'] as int? ?? 0,
       numberOfEpisodes: json['number_of_episodes'] as int? ?? 0,
+      nextEpisodeToAir: _parseEpisodeAir(
+          json['next_episode_to_air'] ?? json['nextEpisodeToAir']),
+      lastEpisodeToAir: _parseEpisodeAir(
+          json['last_episode_to_air'] ?? json['lastEpisodeToAir']),
       similarTitles: (json['similar_titles'] as List<dynamic>?)
               ?.map((e) => CatalogItem.fromJson(e as Map<String, dynamic>))
               .toList() ??

@@ -101,8 +101,7 @@ class ErrorStateView extends StatelessWidget {
             // Gris et non rouge : un serveur qui ne répond pas est un état
             // passager, pas une faute. Le rouge vif à 64 px en faisait une
             // alarme au milieu d'une page de films.
-            const Icon(AppIcons.cloudOff,
-                size: 44, color: AppColors.textMuted),
+            const Icon(AppIcons.cloudOff, size: 44, color: AppColors.textMuted),
             const SizedBox(height: 16),
             Text(
               message,

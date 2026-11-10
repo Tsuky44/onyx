@@ -64,8 +64,7 @@ void main() {
   });
 
   test('une taille inconnue donne une barre indéterminée, pas zéro', () {
-    final notice = downloadNoticeFor(
-        [_entry(3, DownloadStatus.downloading)],
+    final notice = downloadNoticeFor([_entry(3, DownloadStatus.downloading)],
         transferring: true);
     expect(notice?.percent, -1);
     expect(notice?.text, 'Téléchargement…');

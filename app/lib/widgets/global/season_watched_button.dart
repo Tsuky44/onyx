@@ -53,9 +53,7 @@ class SeasonWatchedButton extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : Icon(
-              allWatched
-                  ? AppIcons.watchedFilled
-                  : AppIcons.watched,
+              allWatched ? AppIcons.watchedFilled : AppIcons.watched,
               size: 18,
             ),
       label: Text(allWatched ? tr('Saison vue') : tr('Marquer la saison vue')),

@@ -4,7 +4,8 @@ import 'package:onyx/screens/player/playback/playback_session.dart';
 import 'package:onyx_player_apple/onyx_player_apple.dart';
 
 void main() {
-  test('un segment que le moteur ne sait pas produire déclenche le repli HLS', () {
+  test('un segment que le moteur ne sait pas produire déclenche le repli HLS',
+      () {
     final failure = aetherFailureOf(
       OnyxApplePlayerErrorKind.source,
       'Source segment could not be produced (code -5)',

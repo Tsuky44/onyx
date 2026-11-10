@@ -133,7 +133,8 @@ class _OtpCodeDialogState<T> extends State<_OtpCodeDialog<T>> {
   Future<void> _submit() async {
     final code = _code.text.trim();
     if (code.isEmpty) {
-      setState(() => _error = tr('Entrez le code affiché par votre application.'));
+      setState(
+          () => _error = tr('Entrez le code affiché par votre application.'));
       return;
     }
     setState(() {

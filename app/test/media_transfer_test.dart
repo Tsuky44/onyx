@@ -107,8 +107,7 @@ void main() {
       );
 
   group('DioMediaTransfer', () {
-    test('reprend un fichier partiel à l’octet où il s’était arrêté',
-        () async {
+    test('reprend un fichier partiel à l’octet où il s’était arrêté', () async {
       target.writeAsBytesSync(_source.sublist(0, 300));
       final ranges = <String?>[];
       final progress = <(int, int)>[];

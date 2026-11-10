@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onyx — Proposition 2 : Modular Focus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #070708;
+      --bg-surface: #121214;
+      --bg-surface-elevated: #19191C;
+      --bg-surface-hover: #222226;
+      --text-primary: #F7F7F8;
+      --text-secondary: #9E9EA4;
+      --text-muted: #686870;
+      --accent: #0A84FF;
+      --accent-soft: rgba(10, 132, 255, 0.15);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(255, 255, 255, 0.22);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Top switcher toolbar */
+    .prototype-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(7, 7, 8, 0.9);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .proto-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: #30D158;
+      background: rgba(48, 209, 88, 0.12);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(48, 209, 88, 0.25);
+    }
+
+    .proto-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .proto-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .proto-btn:hover, .proto-btn.active {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .proto-btn.active {
+      background: var(--text-primary);
+      color: #070708;
+      font-weight: 600;
+    }
+
+    /* COMPACT HERO HEADER (Modular & Focused) */
+    .compact-hero {
+      position: relative;
+      padding: 40px 48px 32px;
+      background: radial-gradient(circle at 75% 30%, rgba(10, 132, 255, 0.06) 0%, transparent 60%),
+                  linear-gradient(to bottom, #111114 0%, var(--bg-base) 100%);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .hero-flex {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .poster-container {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .poster-card {
+      width: 220px;
+      aspect-ratio: 2 / 3;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+      background: var(--bg-surface);
+    }
+
+    .poster-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .hero-meta-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .badge-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .type-pill {
+      font-family: 'Geist', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px 8px;
+      border-radius: 4px;
+      color: var(--text-secondary);
+    }
+
+    .hero-main-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    .meta-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Geist', sans-serif;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+    }
+
+    .rating-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 214, 10, 0.12);
+      border: 1px solid rgba(255, 214, 10, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: #FFD60A;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .hero-short-overview {
+      font-size: 14.5px;
+      color: rgba(247, 247, 248, 0.85);
+      line-height: 1.55;
+      max-width: 800px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-play-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #FFFFFF;
+      border: none;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      font-family: 'Manrope', sans-serif;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(10, 132, 255, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-play-primary:hover {
+      background: #0071E3;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(10, 132, 255, 0.5);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      font-family: 'Manrope', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-icon-square {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-icon-square:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    /* STICKY SEGMENTED TABS (The core of Proposition 2) */
+    .tabs-nav-bar {
+      position: sticky;
+      top: 51px;
+      z-index: 500;
+      background: rgba(12, 12, 14, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 48px;
+    }
+
+    .tabs-track {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      gap: 28px;
+      overflow-x: auto;
+    }
+
+    .tab-item {
+      padding: 16px 4px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-item:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-item.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-item .tab-counter {
+      font-family: 'Geist', sans-serif;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+    }
+
+    .tab-item.active .tab-counter {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    /* MAIN BODY TABS CONTAINER */
+    .tab-panel-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 36px 48px 80px;
+    }
+
+    .tab-section {
+      display: none;
+    }
+
+    .tab-section.active {
+      display: block;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* TAB 1: EPISODES & SEASONS */
+    .season-header-selector {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .season-dropdown-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .season-dropdown-pill:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      background: var(--bg-surface-elevated);
+    }
+
+    /* Episode Row in List Mode */
+    .episodes-list-modular {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ep-row-modular {
+      display: flex;
+      gap: 20px;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.2s;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .ep-row-modular:hover {
+      background: var(--bg-surface-elevated);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateX(4px);
+    }
+
+    .ep-row-thumb {
+      width: 140px;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+      background: var(--bg-surface-elevated);
+    }
+
+    .ep-row-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ep-row-meta {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .ep-row-title-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ep-number-tag {
+      font-family: 'Geist', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .ep-row-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .ep-row-synopsis {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .ep-row-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .ep-duration-chip {
+      font-family: 'Geist', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .ep-track-badge {
+      font-family: 'Geist', monospace;
+      font-size: 10.5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #30D158;
+    }
+
+    /* TAB 2: CASTING & CREW */
+    .cast-grid-modular {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .actor-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s;
+    }
+
+    .actor-box:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-3px);
+    }
+
+    .actor-img {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      background: var(--bg-surface-elevated);
+    }
+
+    .actor-details {
+      padding: 12px 14px;
+    }
+
+    .actor-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .actor-char {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* TAB 3: MASTER AUDIO/VIDEO INSPECTOR */
+    .master-board {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    .board-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .board-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .channel-layout-visual {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    .channel-box {
+      background: rgba(10, 132, 255, 0.1);
+      border: 1px solid rgba(10, 132, 255, 0.3);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-family: 'Geist', monospace;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .channel-box strong {
+      display: block;
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .spec-table-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 13.5px;
+    }
+
+    .spec-table-row:last-child {
+      border-bottom: none;
+    }
+
+    .spec-key {
+      color: var(--text-secondary);
+    }
+
+    .spec-val {
+      font-family: 'Geist', monospace;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    @media (max-width: 900px) {
+      .hero-flex {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .poster-card {
+        width: 140px;
+      }
+      .master-board {
+        grid-template-columns: 1fr;
+      }
+      .tabs-nav-bar {
+        padding: 0 20px;
+      }
+      .tab-panel-container {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar controls -->
+  <div class="prototype-bar">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span class="proto-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Proposition 2 : Modular Focus
+      </span>
+      <span style="color: var(--text-muted); font-size: 12px;">Architecture à onglets & Mode Binge (Fin du scroll infini)</span>
+    </div>
+
+    <div class="proto-controls">
+      <button class="proto-btn active" id="btn-mode-movie" onclick="switchMediaMode('movie')">Film (Dune 2)</button>
+      <button class="proto-btn" id="btn-mode-series" onclick="switchMediaMode('series')">Série (Severance)</button>
+    </div>
+  </div>
+
+  <!-- COMPACT HERO -->
+  <header class="compact-hero">
+    <div class="hero-flex">
+      <div class="poster-container">
+        <div class="poster-card">
+          <img id="meta-poster" src="https://image.tmdb.org/t/p/w600_and_h900_bestv2/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg" alt="Poster">
+        </div>
+      </div>
+
+      <div class="hero-meta-col">
+        <div class="badge-strip">
+          <span class="type-pill" id="meta-type">FILM DIRECT PLAY</span>
+          <span class="type-pill" style="color: #64D2FF; border: 1px solid rgba(100, 210, 255, 0.3);">4K HDR10+</span>
+          <span class="type-pill">FR / EN ATMOS</span>
+        </div>
+
+        <h1 class="hero-main-title" id="meta-title">Dune : Deuxième Partie</h1>
+
+        <div class="meta-line">
+          <span id="meta-year">2024</span>
+          <span>·</span>
+          <span id="meta-runtime">2h 46min</span>
+          <span>·</span>
+          <span class="rating-badge">★ 8.2</span>
+          <span>·</span>
+          <span id="meta-genres">Science-Fiction, Aventure, Drame</span>
+        </div>
+
+        <p class="hero-short-overview" id="meta-overview">
+          Paul Atreides s'unit à Chani et aux Fremen tout en préparant sa revanche contre les conspirateurs qui ont détruit sa famille. Devant choisir entre l'amour de sa vie et le destin de l'univers, il doit empêcher un avenir terrible que lui seul peut prédire.
+        </p>
+
+        <div class="hero-buttons">
+          <button class="btn-play-primary" onclick="alert('Reprise immédiate')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="meta-play-btn">Reprendre (1h 04m restantes)</span>
+          </button>
+
+          <button class="btn-secondary" onclick="alert('Lancement de la bande-annonce')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Bande-annonce 4K
+          </button>
+
+          <button class="btn-icon-square" title="Marquer comme vu" onclick="alert('Statut vu basculé')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+
+          <button class="btn-icon-square" title="Téléchargement" onclick="alert('Téléchargement direct')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+
+          <button class="btn-icon-square" title="Plus d'actions" onclick="alert('Menu complet')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STICKY SEGMENTED TABS -->
+  <nav class="tabs-nav-bar">
+    <div class="tabs-track">
+      <div class="tab-item active" id="tab-episodes-btn" onclick="switchTab('episodes')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+        <span id="tab-episodes-label">Épisodes</span>
+        <span class="tab-counter" id="tab-episodes-count">19</span>
+      </div>
+
+      <div class="tab-item" id="tab-cast-btn" onclick="switchTab('cast')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        <span>Distribution & Équipe</span>
+        <span class="tab-counter">14</span>
+      </div>
+
+      <div class="tab-item" id="tab-master-btn" onclick="switchTab('master')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        <span>Master & Audio/Vidéo</span>
+        <span class="tab-counter" style="color:#30D158;">Direct Play</span>
+      </div>
+
+      <div class="tab-item" id="tab-bonus-btn" onclick="switchTab('bonus')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        <span>Trailers & Suppléments</span>
+        <span class="tab-counter">3</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- TAB PANELS -->
+  <main class="tab-panel-container">
+
+    <!-- PANEL 1: EPISODES -->
+    <section class="tab-section active" id="panel-episodes">
+      <div class="season-header-selector">
+        <div class="season-dropdown-pill" onclick="alert('Menu des saisons : Saison 1 (9 épisodes), Saison 2 (10 épisodes)')">
+          <span>Saison 1 (2022 · 9 épisodes)</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+
+        <div style="font-size: 13px; color: var(--text-muted);">
+          Statut : <strong style="color: var(--text-primary);">2 épisodes vus</strong> sur 9
+        </div>
+      </div>
+
+      <div class="episodes-list-modular">
+        <!-- Episode 1 -->
+        <div class="ep-row-modular" onclick="alert('Lecture S1 E1')">
+          <div class="ep-row-thumb">
+            <img src="https://image.tmdb.org/t/p/w500/uOS9kXwQ2tqF3gT9Qp19V8B2W4b.jpg" alt="Ep 1" onerror="this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80'">
+          </div>
+          <div class="ep-row-meta">
+            <div class="ep-row-title-bar">
+              <span class="ep-number-tag">E01</span>
+              <h4 class="ep-row-title">Bonne nouvelle pour l'enfer</h4>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <p class="ep-row-synopsis">Mark Scout dirige une équipe chez Lumon Industries, dont les employés ont subi une procédure de dissociation chirurgicale.</p>
+          </div>
+          <div class="ep-row-right">
+            <span class="ep-duration-chip">57 min</span>
+            <span class="ep-track-badge">4K · Atmos</span>
+          </div>
+        </div>
+
+        <!-- Episode 2 -->
+        <div class="ep-row-modular" onclick="alert('Lecture S1 E2')">
+          <div class="ep-row-thumb">
+            <img src="https://image.tmdb.org/t/p/w500/yZfD9g9JmK1bQvG7P2l7b0Z2M4K.jpg" alt="Ep 2" onerror="this.src='https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&q=80'">
+          </div>
+          <div class="ep-row-meta">
+            <div class="ep-row-title-bar">
+              <span class="ep-number-tag">E02</span>
+              <h4 class="ep-row-title">Demi-boucle</h4>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <p class="ep-row-synopsis">L'équipe forme Helly aux protocoles de raffinement de macrodonnées. Mark rencontre un mystérieux ancien collègue à l'extérieur.</p>
+          </div>
+          <div class="ep-row-right">
+            <span class="ep-duration-chip">53 min</span>
+            <span class="ep-track-badge">4K · Atmos</span>
+          </div>
+        </div>
+
+        <!-- Episode 3 -->
+        <div class="ep-row-modular" onclick="alert('Lecture S1 E3')">
+          <div class="ep-row-thumb">
+            <img src="https://image.tmdb.org/t/p/w500/q2bX2y7b0Z2M4KyZfD9g9JmK1bQ.jpg" alt="Ep 3" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&q=80'">
+          </div>
+          <div class="ep-row-meta">
+            <div class="ep-row-title-bar">
+              <span class="ep-number-tag">E03</span>
+              <h4 class="ep-row-title">À perpétuité</h4>
+              <span style="font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(10, 132, 255, 0.15); padding: 2px 6px; border-radius: 4px;">À REPRENDRE</span>
+            </div>
+            <p class="ep-row-synopsis">Mark emmène l'équipe en excursion dans l'aile perpétuelle. Cobel intensifie sa surveillance sur l'intégration de Helly.</p>
+          </div>
+          <div class="ep-row-right">
+            <span class="ep-duration-chip">54 min</span>
+            <span class="ep-track-badge">4K · Atmos</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 2: CASTING -->
+    <section class="tab-section" id="panel-cast">
+      <div class="cast-grid-modular">
+        <div class="actor-box">
+          <img class="actor-img" src="https://image.tmdb.org/t/p/w400/4zNWL5c3Wb5a2v3L0kQ3X7M4e7k.jpg" alt="Timothée Chalamet" onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80'">
+          <div class="actor-details">
+            <div class="actor-name">Timothée Chalamet</div>
+            <div class="actor-char">Paul Atreides</div>
+          </div>
+        </div>
+
+        <div class="actor-box">
+          <img class="actor-img" src="https://image.tmdb.org/t/p/w400/rDeGAWFqNmF5J8X7M4e7k4zNWL5.jpg" alt="Zendaya" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80'">
+          <div class="actor-details">
+            <div class="actor-name">Zendaya</div>
+            <div class="actor-char">Chani</div>
+          </div>
+        </div>
+
+        <div class="actor-box">
+          <img class="actor-img" src="https://image.tmdb.org/t/p/w400/5v0J5L0kQ3X7M4e7k4zNWL5c3Wb.jpg" alt="Rebecca Ferguson" onerror="this.src='https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80'">
+          <div class="actor-details">
+            <div class="actor-name">Rebecca Ferguson</div>
+            <div class="actor-char">Dame Jessica</div>
+          </div>
+        </div>
+
+        <div class="actor-box">
+          <img class="actor-img" src="https://image.tmdb.org/t/p/w400/4kL5c3Wb5a2v3L0kQ3X7M4e7k4z.jpg" alt="Javier Bardem" onerror="this.src='https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80'">
+          <div class="actor-details">
+            <div class="actor-name">Javier Bardem</div>
+            <div class="actor-char">Stilgar</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 3: MASTER AUDIO/VIDEO -->
+    <section class="tab-section" id="panel-master">
+      <div class="master-board">
+        <div class="board-card">
+          <h3 class="board-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/></svg>
+            Analyseur de flux et compatibilité client
+          </h3>
+
+          <div class="spec-table-row">
+            <span class="spec-key">Mode de lecture retenu</span>
+            <span class="spec-val" style="color: #30D158;">DIRECT PLAY INTÉGRAL (Zéro transcodage)</span>
+          </div>
+
+          <div class="spec-table-row">
+            <span class="spec-key">Conteneur & Taille</span>
+            <span class="spec-val">Matroska (.mkv) · 72.4 Go</span>
+          </div>
+
+          <div class="spec-table-row">
+            <span class="spec-key">Débit moyen mesuré</span>
+            <span class="spec-val">64.8 Mb/s (Pic à 98.2 Mb/s)</span>
+          </div>
+
+          <div class="spec-table-row">
+            <span class="spec-key">Codec Vidéo</span>
+            <span class="spec-val">HEVC (H.265) Main 10@L5.1@High</span>
+          </div>
+
+          <div class="spec-table-row">
+            <span class="spec-key">Plage Dynamique</span>
+            <span class="spec-val">Dolby Vision Profil 7.6 + HDR10 compatible</span>
+          </div>
+
+          <div class="spec-table-row">
+            <span class="spec-key">Espace colorimétrique</span>
+            <span class="spec-val">BT.2020 (10 bits)</span>
+          </div>
+        </div>
+
+        <div class="board-card">
+          <h3 class="board-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            Canaux Audio Atmos
+          </h3>
+
+          <div class="channel-layout-visual">
+            <div class="channel-box"><strong>L</strong>Gauche</div>
+            <div class="channel-box"><strong>C</strong>Centre</div>
+            <div class="channel-box"><strong>R</strong>Droite</div>
+            <div class="channel-box"><strong>LFE</strong>Sub</div>
+            <div class="channel-box"><strong>Ls</strong>Surr G</div>
+            <div class="channel-box"><strong>Rs</strong>Surr D</div>
+            <div class="channel-box"><strong>Ltm</strong>Haut G</div>
+            <div class="channel-box"><strong>Rtm</strong>Haut D</div>
+          </div>
+
+          <div class="spec-table-row">
+            <span class="spec-key">Format primaire</span>
+            <span class="spec-val">Dolby TrueHD avec Atmos 7.1</span>
+          </div>
+          <div class="spec-table-row">
+            <span class="spec-key">Échantillonnage</span>
+            <span class="spec-val">48 000 Hz / 24 bits</span>
+          </div>
+          <div class="spec-table-row">
+            <span class="spec-key">Piste de repli</span>
+            <span class="spec-val">DTS-HD MA 5.1 (Français)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 4: BONUS & TRAILERS -->
+    <section class="tab-section" id="panel-bonus">
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+        <div style="background: var(--bg-surface); border:1px solid var(--border-subtle); border-radius: var(--radius-md); overflow:hidden; cursor:pointer;" onclick="alert('Lecture bande-annonce')">
+          <div style="aspect-ratio: 16/9; background:#000; position:relative;">
+            <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80" style="width:100%; height:100%; object-fit:cover;">
+            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3);">
+              <div style="width:44px; height:44px; border-radius:50%; background:#FFF; color:#000; display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div style="padding: 14px;">
+            <h4 style="font-size: 14.5px; font-weight:700;">Bande-Annonce Officielle Finale (4K)</h4>
+            <span style="font-size: 12px; color: var(--text-muted); font-family:'Geist';">2 min 45 s · VF & VOSTFR</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-section').forEach(el => el.classList.remove('active'));
+
+      document.getElementById('tab-' + tabId + '-btn').classList.add('active');
+      document.getElementById('panel-' + tabId).classList.add('active');
+    }
+
+    function switchMediaMode(mode) {
+      document.getElementById('btn-mode-movie').classList.toggle('active', mode === 'movie');
+      document.getElementById('btn-mode-series').classList.toggle('active', mode === 'series');
+
+      if (mode === 'movie') {
+        document.getElementById('meta-type').innerText = 'FILM DIRECT PLAY';
+        document.getElementById('meta-title').innerText = 'Dune : Deuxième Partie';
+        document.getElementById('meta-runtime').innerText = '2h 46min';
+        document.getElementById('meta-year').innerText = '2024';
+        document.getElementById('meta-poster').src = 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg';
+        document.getElementById('tab-episodes-btn').style.display = 'none';
+        switchTab('master');
+      } else {
+        document.getElementById('meta-type').innerText = 'SÉRIE TÉLÉVISÉE';
+        document.getElementById('meta-title').innerText = 'Severance';
+        document.getElementById('meta-runtime').innerText = '2 Saisons · 19 Épisodes';
+        document.getElementById('meta-year').innerText = '2022 - 2025';
+        document.getElementById('meta-poster').src = 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=600&q=80';
+        document.getElementById('tab-episodes-btn').style.display = 'flex';
+        switchTab('episodes');
+      }
+    }
+  </script>
+</body>
+</html>

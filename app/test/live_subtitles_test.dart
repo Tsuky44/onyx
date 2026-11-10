@@ -174,7 +174,8 @@ void main() {
       subtitles: const [],
       sourceBitrateBps: 41000000,
       qualities: const [
-        QualityTier(key: '720p', label: '720p', height: 720, bitrateBps: 3660000),
+        QualityTier(
+            key: '720p', label: '720p', height: 720, bitrateBps: 3660000),
       ],
     );
 

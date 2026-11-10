@@ -54,8 +54,7 @@ void main() {
     ));
 
     expect(openedAt, p.join(root.path, 'onyxImageCache.db'));
-    final stored =
-        await repo.get('https://image.tmdb.org/t/p/w1280/fond.jpg');
+    final stored = await repo.get('https://image.tmdb.org/t/p/w1280/fond.jpg');
     expect(stored?.relativePath, 'fond.file');
     await repo.close();
   });

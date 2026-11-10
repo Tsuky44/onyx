@@ -94,8 +94,8 @@ void main() {
     });
 
     test('un téléviseur et un ordinateur montrent l\'image entière', () {
-      expect(on(const Size(960, 540), handheld: false),
-          VideoDisplayMode.original);
+      expect(
+          on(const Size(960, 540), handheld: false), VideoDisplayMode.original);
     });
   });
 }

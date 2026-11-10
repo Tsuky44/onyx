@@ -39,8 +39,8 @@ void main() {
         isNull,
       );
       // Navigation privée : le navigateur masque l'adresse.
-      expect(InstallOrigin.serverUrlFromMarker(marker('about:internet')),
-          isNull);
+      expect(
+          InstallOrigin.serverUrlFromMarker(marker('about:internet')), isNull);
       expect(InstallOrigin.serverUrlFromMarker('[ZoneTransfer]\r\nZoneId=3'),
           isNull);
       expect(InstallOrigin.serverUrlFromMarker(''), isNull);
@@ -65,8 +65,7 @@ void main() {
     });
 
     test('une adresse déjà saisie l\'emporte sur l\'origine', () async {
-      SharedPreferences.setMockInitialValues(
-          {'server_url': 'http://nas:8080'});
+      SharedPreferences.setMockInitialValues({'server_url': 'http://nas:8080'});
       final api = ApiClient();
       await api.initialize();
 

@@ -28,7 +28,8 @@ class CatalogApi extends ApiClient {
   @override
   Future<List<Media>> getShows() async => [];
   Future<HomeResponse> home = Future.value(HomeResponse.fromJson({}));
-  Future<MediaDetails> details = Future.value(MediaDetails.fromJson({'type': 'movie', 'id': 1}));
+  Future<MediaDetails> details =
+      Future.value(MediaDetails.fromJson({'type': 'movie', 'id': 1}));
   @override
   Future<HomeResponse> getHome() => home;
   @override
@@ -41,7 +42,8 @@ const _library =
     MediaLibrary(id: 1, name: 'Vidéothèque', kind: LibraryKind.movies);
 
 void main() {
-  testWidgets('mounted library tab reloads after switching from an empty server',
+  testWidgets(
+      'mounted library tab reloads after switching from an empty server',
       (tester) async {
     final api = CatalogApi();
     final library = LibraryProvider(api);
@@ -132,9 +134,11 @@ void main() {
     api.details = old.future;
     final pending = MediaDetailsCache.load(api, 1);
     MediaDetailsCache.clear();
-    api.details = Future.value(MediaDetails.fromJson({'type': 'movie', 'id': 1, 'title': 'B'}));
+    api.details = Future.value(
+        MediaDetails.fromJson({'type': 'movie', 'id': 1, 'title': 'B'}));
     await MediaDetailsCache.load(api, 1);
-    old.complete(MediaDetails.fromJson({'type': 'movie', 'id': 1, 'title': 'A'}));
+    old.complete(
+        MediaDetails.fromJson({'type': 'movie', 'id': 1, 'title': 'A'}));
     await pending;
     expect(MediaDetailsCache.peek(1)!.title, 'B');
     MediaDetailsCache.clear();

@@ -60,7 +60,8 @@ void main() {
     expect(current.standby, isTrue);
   });
 
-  test('une session préparée se demande avec standby=1, une session '
+  test(
+      'une session préparée se demande avec standby=1, une session '
       'ordinaire sans', () async {
     final asked = <Map<String, dynamic>>[];
     final api = _api((options) {
@@ -68,7 +69,8 @@ void main() {
       return ResponseBody.fromString(
           jsonEncode({
             'session_id': 's',
-            'master_url': 'http://a.test/api/v1/stream/7/s/master.m3u8?ticket=T',
+            'master_url':
+                'http://a.test/api/v1/stream/7/s/master.m3u8?ticket=T',
             'standby': options.queryParameters['standby'] == 1,
           }),
           200,
@@ -77,8 +79,8 @@ void main() {
           });
     });
 
-    final prepared = await api.startHlsSession(7, '1080p',
-        access: _access(), standby: true);
+    final prepared =
+        await api.startHlsSession(7, '1080p', access: _access(), standby: true);
     await api.startHlsSession(7, '1080p', access: _access());
 
     expect(prepared.standby, isTrue);
@@ -136,8 +138,7 @@ void main() {
   });
 
   test('une mesure où presque rien n’arrive ne prouve rien', () async {
-    final api =
-        _api((options) => ResponseBody.fromBytes(Uint8List(1000), 206));
+    final api = _api((options) => ResponseBody.fromBytes(Uint8List(1000), 206));
 
     expect(
       await api.measureLineBps(7, access: _access(), wantBps: 8000000),

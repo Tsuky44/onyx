@@ -26,7 +26,11 @@ void main() {
 
   test('une piste forcée choisie reste forcée à l\'épisode suivant', () {
     final wanted = CarriedSubtitle.of(forcedFr);
-    final next = [sub('fr'), sub('fr2', forced: true), sub('en', language: 'en')];
+    final next = [
+      sub('fr'),
+      sub('fr2', forced: true),
+      sub('en', language: 'en')
+    ];
 
     expect(wanted.matchIn(next)?.lang, 'fr2');
   });

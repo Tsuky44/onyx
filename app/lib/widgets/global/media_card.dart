@@ -49,7 +49,8 @@ class MediaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final apiClient = Provider.of<ApiClient>(context, listen: false);
-    final url = cardPosterUrl(media.posterUrl, serverBaseUrl: apiClient.baseUrl);
+    final url =
+        cardPosterUrl(media.posterUrl, serverBaseUrl: apiClient.baseUrl);
     final year = extractYear(media.releaseDate);
     final isShow = media.type == MediaType.show ||
         media.type == MediaType.season ||

@@ -56,7 +56,8 @@ void main() {
       expect(modest(webos: true), isTrue);
     });
 
-    test('un ordinateur à deux processeurs ou moins, pas un ordinateur '
+    test(
+        'un ordinateur à deux processeurs ou moins, pas un ordinateur '
         'ordinaire (ADR-0101)', () {
       expect(modest(cpus: 2), isTrue);
       expect(modest(cpus: 1), isTrue);
@@ -105,8 +106,8 @@ void main() {
     });
 
     test('mpv passe au bilinéaire et lâche une image plutôt que ralentir', () {
-      final options = mpvFastRenderingOptions(
-          PlaybackProfile.desktop.withFastRendering());
+      final options =
+          mpvFastRenderingOptions(PlaybackProfile.desktop.withFastRendering());
       expect(options['scale'], 'bilinear');
       expect(options['dscale'], 'bilinear');
       expect(options['framedrop'], 'decoder+vo');

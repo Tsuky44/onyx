@@ -100,7 +100,8 @@ class SeasonDownloadButton extends StatelessWidget {
     if (plan.nextBatchIsUnwatched) {
       label = compact
           ? tr('Non vus ({0})', [plan.unwatchedMissing])
-          : tr('Télécharger les non vus · {0}', [_labelFor(plan.unwatchedMissing)]);
+          : tr('Télécharger les non vus · {0}',
+              [_labelFor(plan.unwatchedMissing)]);
     } else if (plan.done > 0) {
       label = compact
           ? tr('Compléter ({0})', [plan.missing])
@@ -127,7 +128,8 @@ class SeasonDownloadButton extends StatelessWidget {
   }) async {
     final pending = [
       for (final episode in candidates)
-        if (!(manager.entryFor(episode.media.id)?.isCompleted ?? false)) episode,
+        if (!(manager.entryFor(episode.media.id)?.isCompleted ?? false))
+          episode,
     ];
     if (pending.isEmpty) return;
 
@@ -159,8 +161,10 @@ class SeasonDownloadButton extends StatelessWidget {
         backgroundColor: AppColors.surface,
         title: Text(tr('Annuler les téléchargements ?')),
         content: Text(
-          tr('Les épisodes de {0} pas encore sur l’appareil sont retirés de '
-              'la file. Ceux déjà téléchargés restent.', [showTitle]),
+          tr(
+              'Les épisodes de {0} pas encore sur l’appareil sont retirés de '
+              'la file. Ceux déjà téléchargés restent.',
+              [showTitle]),
         ),
         actions: [
           TextButton(
@@ -182,7 +186,8 @@ class SeasonDownloadButton extends StatelessWidget {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          tr('{0} téléchargement{1} annulé{2}', [cancelled, cancelled > 1 ? 's' : '', cancelled > 1 ? 's' : '']),
+          tr('{0} téléchargement{1} annulé{2}',
+              [cancelled, cancelled > 1 ? 's' : '', cancelled > 1 ? 's' : '']),
         ),
       ),
     );
@@ -195,7 +200,9 @@ class SeasonDownloadButton extends StatelessWidget {
   ) =>
       confirmDeleteDownloads(
         context,
-        what: seasonNumber == null ? tr('la saison') : tr('la saison {0}', [seasonNumber]),
+        what: seasonNumber == null
+            ? tr('la saison')
+            : tr('la saison {0}', [seasonNumber]),
         entries: [
           for (final episode in downloadable)
             if (manager.entryFor(episode.media.id) case final entry?) entry,

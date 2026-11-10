@@ -44,130 +44,132 @@ class AccountMenu extends StatelessWidget {
     return TourTarget(
       anchor: TourAnchor.account,
       child: PopupMenuButton<String>(
-      tooltip: tr('Menu'),
-      offset: const Offset(0, 44),
-      padding: EdgeInsets.zero,
-      itemBuilder: (_) => [
-        PopupMenuItem(
-          enabled: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                authProvider.currentUser?.username ?? '',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              if (authProvider.activeServer != null)
+        tooltip: tr('Menu'),
+        offset: const Offset(0, 44),
+        padding: EdgeInsets.zero,
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            enabled: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  // Le rôle, pour qu'un membre sache d'emblée ce qu'il peut
-                  // faire sur ce serveur — et pourquoi il ne voit pas les
-                  // actions d'administration.
-                  '${authProvider.activeServer!.displayName} · '
-                  '${authProvider.permissions.isAdmin ? tr('Administrateur') : tr('Membre')}',
-                  style: const TextStyle(
-                    fontSize: AppType.caption,
-                    color: AppColors.textMuted,
-                  ),
+                  authProvider.currentUser?.username ?? '',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-            ],
-          ),
-        ),
-        const PopupMenuDivider(),
-        if (canSwitch) ...[
-          for (final account in otherServers)
-            PopupMenuItem(
-              value: 'switch:${account.id}',
-              child: Row(
-                children: [
-                  const Icon(AppIcons.switchServer, size: 16),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      tr('Passer sur {0}', [account.displayName]),
-                      overflow: TextOverflow.ellipsis,
+                if (authProvider.activeServer != null)
+                  Text(
+                    // Le rôle, pour qu'un membre sache d'emblée ce qu'il peut
+                    // faire sur ce serveur — et pourquoi il ne voit pas les
+                    // actions d'administration.
+                    '${authProvider.activeServer!.displayName} · '
+                    '${authProvider.permissions.isAdmin ? tr('Administrateur') : tr('Membre')}',
+                    style: const TextStyle(
+                      fontSize: AppType.caption,
+                      color: AppColors.textMuted,
                     ),
                   ),
-                ],
+              ],
+            ),
+          ),
+          const PopupMenuDivider(),
+          if (canSwitch) ...[
+            for (final account in otherServers)
+              PopupMenuItem(
+                value: 'switch:${account.id}',
+                child: Row(
+                  children: [
+                    const Icon(AppIcons.switchServer, size: 16),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        tr('Passer sur {0}', [account.displayName]),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const PopupMenuDivider(),
+          ],
+          PopupMenuItem(
+            value: 'users',
+            child: _MenuRow(
+              icon: AppIcons.switchUser,
+              label: tr('Changer d’utilisateur'),
+            ),
+          ),
+          PopupMenuItem(
+            value: 'watch-party',
+            child: Row(
+              children: [
+                Icon(AppIcons.watchParty, size: 16),
+                SizedBox(width: 8),
+                Text(tr('Rejoindre une séance')),
+              ],
+            ),
+          ),
+          const PopupMenuDivider(),
+          // « Serveurs » a quitté ce menu : il ouvrait les mêmes Paramètres sur
+          // une autre section.
+          PopupMenuItem(
+            value: 'settings',
+            child: _MenuRow(icon: AppIcons.settings, label: tr('Paramètres')),
+          ),
+          if (canLinkTv)
+            PopupMenuItem(
+              value: 'tv',
+              child: _MenuRow(
+                icon: AppIcons.scan,
+                label: tr('Connecter un appareil'),
               ),
             ),
           const PopupMenuDivider(),
-        ],
-        PopupMenuItem(
-          value: 'users',
-          child: _MenuRow(
-            icon: AppIcons.switchUser,
-            label: tr('Changer d’utilisateur'),
-          ),
-        ),
-        PopupMenuItem(
-          value: 'watch-party',
-          child: Row(
-            children: [
-              Icon(AppIcons.watchParty, size: 16),
-              SizedBox(width: 8),
-              Text(tr('Rejoindre une séance')),
-            ],
-          ),
-        ),
-        const PopupMenuDivider(),
-        // « Serveurs » a quitté ce menu : il ouvrait les mêmes Paramètres sur
-        // une autre section.
-        PopupMenuItem(
-          value: 'settings',
-          child: _MenuRow(icon: AppIcons.settings, label: tr('Paramètres')),
-        ),
-        if (canLinkTv)
           PopupMenuItem(
-            value: 'tv',
-            child: _MenuRow(
-              icon: AppIcons.scan,
-              label: tr('Connecter un appareil'),
-            ),
+            value: 'logout',
+            child:
+                _MenuRow(icon: AppIcons.signOut, label: tr('Se déconnecter')),
           ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: 'logout',
-          child: _MenuRow(icon: AppIcons.signOut, label: tr('Se déconnecter')),
-        ),
-      ],
-      onSelected: (value) async {
-        if (value.startsWith('switch:')) {
-          final id = value.substring('switch:'.length);
-          // Plusieurs personnes là-bas : on arrive sur « Qui regarde ? »
-          // plutôt que dans la session de la première venue.
-          if (authProvider.apiClient.servers.usersOf(id).length > 1) {
-            Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-              builder: (_) => UserChoiceScreen(serverAccountId: id),
-            ));
+        ],
+        onSelected: (value) async {
+          if (value.startsWith('switch:')) {
+            final id = value.substring('switch:'.length);
+            // Plusieurs personnes là-bas : on arrive sur « Qui regarde ? »
+            // plutôt que dans la session de la première venue.
+            if (authProvider.apiClient.servers.usersOf(id).length > 1) {
+              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+                builder: (_) => UserChoiceScreen(serverAccountId: id),
+              ));
+              return;
+            }
+            await authProvider.switchServer(id);
             return;
           }
-          await authProvider.switchServer(id);
-          return;
-        }
-        switch (value) {
-          case 'users':
-            Navigator.of(context, rootNavigator: true).push(
-              MaterialPageRoute(builder: (_) => const UserChoiceScreen()),
-            );
-          case 'watch-party':
-            await showJoinWatchPartyDialog(context, authProvider: authProvider);
-          case 'settings':
-            Navigator.of(context, rootNavigator: true).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            );
-          case 'tv':
-            Navigator.of(context, rootNavigator: true).push(
-              MaterialPageRoute(builder: (_) => const TvLinkScannerScreen()),
-            );
-          case 'logout':
-            authProvider.logout();
-        }
-      },
-      child: GlassIconButton(
-        size: 34,
-        child: _avatarOrInitial(),
-      ),
+          switch (value) {
+            case 'users':
+              Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (_) => const UserChoiceScreen()),
+              );
+            case 'watch-party':
+              await showJoinWatchPartyDialog(context,
+                  authProvider: authProvider);
+            case 'settings':
+              Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            case 'tv':
+              Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (_) => const TvLinkScannerScreen()),
+              );
+            case 'logout':
+              authProvider.logout();
+          }
+        },
+        child: GlassIconButton(
+          size: 34,
+          child: _avatarOrInitial(),
+        ),
       ),
     );
   }

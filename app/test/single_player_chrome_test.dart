@@ -29,8 +29,8 @@ void main() {
     final screen = Directory('lib/screens/player')
         .listSync()
         .whereType<File>()
-        .where((file) => RegExp(r'[\\/]player_screen(_\w+)?\.dart$')
-            .hasMatch(file.path))
+        .where((file) =>
+            RegExp(r'[\\/]player_screen(_\w+)?\.dart$').hasMatch(file.path))
         .map((file) => file.readAsStringSync())
         .join();
     final mounted = RegExp(r'\b(\w*ControlsLayer|\w*HUDOverlay)\(')

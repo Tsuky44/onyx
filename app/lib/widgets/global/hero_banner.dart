@@ -211,7 +211,7 @@ class _HeroBannerState extends State<HeroBanner> {
                 ? 52
                 : isTv
                     ? 72
-                    : 84,
+                    : 140,
             // L'Align relâche la largeur imposée par le Positioned : sans lui,
             // la limite de 560 px était ignorée et le synopsis courait sur toute
             // la largeur de l'écran.

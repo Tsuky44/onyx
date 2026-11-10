@@ -50,8 +50,7 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
   });
 
-  testWidgets("un synopsis qui tient en entier ne s'ouvre pas",
-      (tester) async {
+  testWidgets("un synopsis qui tient en entier ne s'ouvre pas", (tester) async {
     await tester.pumpWidget(_host('Court.'));
 
     await tester.tap(find.byType(DetailSynopsis));
@@ -60,8 +59,7 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
   });
 
-  test('la ligne de métadonnées porte au plus trois genres, après la note',
-      () {
+  test('la ligne de métadonnées porte au plus trois genres, après la note', () {
     final chips = buildMetadataChips(
       type: MediaType.show,
       releaseDate: '2022-02-18',

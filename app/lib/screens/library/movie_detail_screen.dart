@@ -8,6 +8,7 @@ import '../../providers/library_provider.dart';
 import '../../services/media_details_cache.dart';
 import '../../services/media_tracks_cache.dart';
 import '../../theme/app_colors.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/format.dart';
 import '../../utils/on_screen.dart';
@@ -384,131 +385,151 @@ class _MovieDetailScreenState extends State<MovieDetailScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        scrollCacheExtent: AppLayout.imageCacheExtent(context),
-        slivers: [
-          SliverToBoxAdapter(
-            child: DetailBackdropHeader(
-              fallback: _media,
-              details: _details,
-              metadata: metadata,
-              onBack: () => Navigator.of(context).pop(),
-              loading: _loadingDetails,
-              emptyOverviewLabel: _loadingDetails
-                  ? tr('Chargement des informations…')
-                  : tr('Synopsis indisponible pour ce film.'),
-              badges: techBadgesFor(_tracks),
-              actions: DetailActions(
-                playLabel: detailPlayLabel(resuming: _hasProgress),
-                onPlay: _play,
-                autofocusPlay: TvMode.isTv,
-                progress: _hasProgress ? _progress : null,
-                progressLabel: _hasProgress
-                    ? formatRemaining(
-                        _playbackMedia.duration - _currentPosition)
-                    : null,
-                secondary: [
-                  WatchedActionButton(
-                    isWatched: _isFinished,
-                    isLoading: _loadingWatched || _loadingProgress,
-                    onPressed: _toggleWatched,
-                    compact: true,
-                  ),
-                  AddToListButton(title: ListableTitle.server(_media)),
-                  MediaDownloadButton(item: _playbackItem),
-                  ShareMediaButton(item: _playbackItem),
-                  if (canFixMetadata)
-                    IconButton(
-                      onPressed: _rematch,
-                      tooltip: tr('Corriger la fiche'),
-                      icon: const Icon(AppIcons.edit),
-                      color: AppColors.textSecondary,
-                    ),
-                  if (canFixMetadata)
-                    IconButton(
-                      onPressed: _changePoster,
-                      tooltip: tr('Changer l’affiche'),
-                      icon: const Icon(AppIcons.poster),
-                      color: AppColors.textSecondary,
-                    ),
-                ],
-              ),
-            ),
-          ),
-          if (_versions.length > 1)
+      body: TvRegion.sections(
+        child: CustomScrollView(
+          scrollCacheExtent: AppLayout.imageCacheExtent(context),
+          slivers: [
             SliverToBoxAdapter(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: DropdownButtonFormField<int>(
-                  key: ValueKey(_selectedVersion?.item.media.id),
-                  initialValue: _selectedVersion?.item.media.id,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: tr('Version'),
-                    helperText:
-                        tr('La meilleure qualité est sélectionnée par défaut.'),
+              child: TvRegion.section(
+                id: 'hero',
+                child: DetailBackdropHeader(
+                  fallback: _media,
+                  details: _details,
+                  metadata: metadata,
+                  onBack: () => Navigator.of(context).pop(),
+                  loading: _loadingDetails,
+                  emptyOverviewLabel: _loadingDetails
+                      ? tr('Chargement des informations…')
+                      : tr('Synopsis indisponible pour ce film.'),
+                  badges: techBadgesFor(_tracks),
+                  actions: DetailActions(
+                    playLabel: detailPlayLabel(resuming: _hasProgress),
+                    onPlay: _play,
+                    autofocusPlay: TvMode.isTv,
+                    progress: _hasProgress ? _progress : null,
+                    progressLabel: _hasProgress
+                        ? formatRemaining(
+                            _playbackMedia.duration - _currentPosition)
+                        : null,
+                    secondary: [
+                      WatchedActionButton(
+                        isWatched: _isFinished,
+                        isLoading: _loadingWatched || _loadingProgress,
+                        onPressed: _toggleWatched,
+                        compact: true,
+                      ),
+                      AddToListButton(title: ListableTitle.server(_media)),
+                      MediaDownloadButton(item: _playbackItem),
+                      ShareMediaButton(item: _playbackItem),
+                      if (canFixMetadata)
+                        IconButton(
+                          onPressed: _rematch,
+                          tooltip: tr('Corriger la fiche'),
+                          icon: const Icon(AppIcons.edit),
+                          color: AppColors.textSecondary,
+                        ),
+                      if (canFixMetadata)
+                        IconButton(
+                          onPressed: _changePoster,
+                          tooltip: tr('Changer l’affiche'),
+                          icon: const Icon(AppIcons.poster),
+                          color: AppColors.textSecondary,
+                        ),
+                    ],
                   ),
-                  items: _versions
-                      .map((version) => DropdownMenuItem(
-                            value: version.item.media.id,
-                            child: Text(version.label,
-                                overflow: TextOverflow.ellipsis),
-                          ))
-                      .toList(),
-                  onChanged: (id) {
-                    if (id != null) {
-                      _selectVersion(
-                          _versions.firstWhere((v) => v.item.media.id == id));
-                    }
-                  },
                 ),
               ),
             ),
-          // Le casting ouvre la colonne et les crédits le suivent : il comble
-          // le vide que la fiche TMDB, plus haute, laisse sous eux.
-          SliverToBoxAdapter(
-            child: DetailSummarySection.forDetails(
-              details: _details,
-              mainTitle: tr('Informations'),
-              extra: _details == null || _details!.cast.isEmpty
-                  ? null
-                  : CastSection(
-                      cast: _details!.cast,
-                      horizontalPadding: 0,
-                      onTapMember: (member) =>
-                          openPerson(context, member.tmdbId, name: member.name),
+            if (_versions.length > 1)
+              SliverToBoxAdapter(
+                child: TvRegion.section(
+                  id: 'versions',
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: DropdownButtonFormField<int>(
+                      key: ValueKey(_selectedVersion?.item.media.id),
+                      initialValue: _selectedVersion?.item.media.id,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: tr('Version'),
+                        helperText:
+                            tr('La meilleure qualité est sélectionnée par défaut.'),
+                      ),
+                      items: _versions
+                          .map((version) => DropdownMenuItem(
+                                value: version.item.media.id,
+                                child: Text(version.label,
+                                    overflow: TextOverflow.ellipsis),
+                              ))
+                          .toList(),
+                      onChanged: (id) {
+                        if (id != null) {
+                          _selectVersion(
+                              _versions.firstWhere((v) => v.item.media.id == id));
+                        }
+                      },
                     ),
-            ),
-          ),
-          if (_details?.collection != null)
+                  ),
+                ),
+              ),
+            // Le casting ouvre la colonne et les crédits le suivent : il comble
+            // le vide que la fiche TMDB, plus haute, laisse sous eux.
             SliverToBoxAdapter(
-              child: CollectionSection(
-                collection: _details!.collection!,
-                onTap: () => openCollection(context, _details!.collection!),
+              child: TvRegion.section(
+                id: 'info',
+                child: DetailSummarySection.forDetails(
+                  details: _details,
+                  mainTitle: tr('Informations'),
+                  extra: _details == null || _details!.cast.isEmpty
+                      ? null
+                      : CastSection(
+                          cast: _details!.cast,
+                          horizontalPadding: 0,
+                          onTapMember: (member) =>
+                              openPerson(context, member.tmdbId, name: member.name),
+                        ),
+                ),
               ),
             ),
-          if (_details?.similarTitles.isNotEmpty ?? false)
+            if (_details?.collection != null)
+              SliverToBoxAdapter(
+                child: TvRegion.section(
+                  id: 'collection',
+                  child: CollectionSection(
+                    collection: _details!.collection!,
+                    onTap: () => openCollection(context, _details!.collection!),
+                  ),
+                ),
+              ),
+            if (_details?.similarTitles.isNotEmpty ?? false)
+              SliverToBoxAdapter(
+                child: TvRegion.section(
+                  id: 'similar',
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 32),
+                    child: SimilarTitlesSection(items: _details!.similarTitles),
+                  ),
+                ),
+              ),
+            // Codec, définition exacte, pistes : ce qui intéresse qui vérifie un
+            // fichier, pas qui choisit un film. Il ouvrait la fiche, avant même
+            // le synopsis ; il la ferme. Les badges de l'en-tête en disent
+            // l'essentiel.
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 32),
-                child: SimilarTitlesSection(items: _details!.similarTitles),
+              child: TvRegion.section(
+                id: 'technical',
+                child: MediaTechnicalSection(
+                  tracks: _tracks,
+                  loading: _loadingTracks,
+                  failed: _tracksFailed,
+                  onRetry: _loadTracks,
+                ),
               ),
             ),
-          // Codec, définition exacte, pistes : ce qui intéresse qui vérifie un
-          // fichier, pas qui choisit un film. Il ouvrait la fiche, avant même
-          // le synopsis ; il la ferme. Les badges de l'en-tête en disent
-          // l'essentiel.
-          SliverToBoxAdapter(
-            child: MediaTechnicalSection(
-              tracks: _tracks,
-              loading: _loadingTracks,
-              failed: _tracksFailed,
-              onRetry: _loadTracks,
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 48)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+          ],
+        ),
       ),
     );
   }

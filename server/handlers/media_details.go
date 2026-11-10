@@ -234,6 +234,8 @@ func mergeCatalogDetails(dst *models.MediaDetails, src *models.MediaDetails) {
 	dst.Collection = src.Collection
 	dst.NumberOfSeasons = src.NumberOfSeasons
 	dst.NumberOfEpisodes = src.NumberOfEpisodes
+	dst.NextEpisodeToAir = src.NextEpisodeToAir
+	dst.LastEpisodeToAir = src.LastEpisodeToAir
 }
 
 // RedetectMediaMetadata re-runs automatic TMDB matching from local paths

@@ -42,7 +42,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'Un jeu d’icônes se lit à sa cohérence : une seule icône Material '
+      reason:
+          'Un jeu d’icônes se lit à sa cohérence : une seule icône Material '
           'au trait épais au milieu des icônes fines suffit à faire « app '
           'Android ». Prends ou ajoute l’icône dans lib/theme/app_icons.dart :'
           '\n\n${offenders.join('\n')}',

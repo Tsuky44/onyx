@@ -32,7 +32,11 @@ void main() {
 
   group('durations stay inside the 180–280 ms contract', () {
     test('every exposed duration is in range', () {
-      for (final d in [AppMotion.micro, AppMotion.standard, AppMotion.emphasis]) {
+      for (final d in [
+        AppMotion.micro,
+        AppMotion.standard,
+        AppMotion.emphasis
+      ]) {
         expect(d.inMilliseconds, greaterThanOrEqualTo(180));
         expect(d.inMilliseconds, lessThanOrEqualTo(280));
       }
@@ -79,7 +83,8 @@ void main() {
           ),
         ),
       );
-      return tester.widget<AnimatedContainer>(find.byType(AnimatedContainer).first);
+      return tester
+          .widget<AnimatedContainer>(find.byType(AnimatedContainer).first);
     }
 
     testWidgets('animates over micro normally', (tester) async {

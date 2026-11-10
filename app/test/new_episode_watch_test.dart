@@ -17,8 +17,8 @@ import 'test_doubles.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const home = ServerAccount(
-      id: 'home', url: 'http://maison.test', username: 'mathis');
+  const home =
+      ServerAccount(id: 'home', url: 'http://maison.test', username: 'mathis');
   const friend = ServerAccount(
       id: 'friend',
       url: 'http://paul.test',
@@ -176,8 +176,8 @@ void main() {
   });
 
   test('le texte nomme le serveur seulement quand il y en a plusieurs', () {
-    final alert = NewEpisodeAlert.fromItem(
-        friend, episode(showId: 7, number: 5))!;
+    final alert =
+        NewEpisodeAlert.fromItem(friend, episode(showId: 7, number: 5))!;
 
     expect(alert.body(nameServer: false), 'Nouvel épisode · S1 · Épisode 5');
     expect(alert.body(nameServer: true),
@@ -185,8 +185,8 @@ void main() {
   });
 
   test('la notification porte de quoi rouvrir la série sur son serveur', () {
-    final alert = NewEpisodeAlert.fromItem(
-        friend, episode(showId: 7, number: 5))!;
+    final alert =
+        NewEpisodeAlert.fromItem(friend, episode(showId: 7, number: 5))!;
     final reread = NewEpisodeAlert.fromPayload(alert.toPayload())!;
 
     expect(reread.accountId, 'friend');

@@ -13,7 +13,7 @@ Finder _ring() => find.byWidgetPredicate((widget) {
       final decoration = widget.decoration;
       return decoration is BoxDecoration &&
           decoration.border is Border &&
-          (decoration.border! as Border).top.color == AppColors.accent;
+          (decoration.border! as Border).top.color == AppColors.focus;
     });
 
 void main() {

@@ -201,19 +201,59 @@ List<_Case> _table() => [
         // tvOS : Menu en popRoute, en touche, ou les deux, dans les deux
         // ordres. Un appui, un effet.
         for (final way in _Way.values)
-          (state: state, platform: _Platform.tvos, way: way, effect: _tvRule(state)),
+          (
+            state: state,
+            platform: _Platform.tvos,
+            way: way,
+            effect: _tvRule(state)
+          ),
         // Android : Retour arrive en popRoute ; goBack seul ne fait rien
         // (C2), et goBack suivi de popRoute ne défait qu'une couche.
-        (state: state, platform: _Platform.android, way: _Way.popRoute, effect: _tvRule(state)),
-        (state: state, platform: _Platform.android, way: _Way.key, effect: _Effect.nothing),
-        (state: state, platform: _Platform.android, way: _Way.keyThenPopRoute, effect: _tvRule(state)),
+        (
+          state: state,
+          platform: _Platform.android,
+          way: _Way.popRoute,
+          effect: _tvRule(state)
+        ),
+        (
+          state: state,
+          platform: _Platform.android,
+          way: _Way.key,
+          effect: _Effect.nothing
+        ),
+        (
+          state: state,
+          platform: _Platform.android,
+          way: _Way.keyThenPopRoute,
+          effect: _tvRule(state)
+        ),
         // webOS : le Retour LG est réécrit en Échap, jamais de popRoute.
-        (state: state, platform: _Platform.webos, way: _Way.key, effect: _tvRule(state)),
+        (
+          state: state,
+          platform: _Platform.webos,
+          way: _Way.key,
+          effect: _tvRule(state)
+        ),
       ],
       // Bureau : TvBack ne décide de rien, Flutter garde son Retour.
-      (state: _State.dialog, platform: _Platform.desktop, way: _Way.key, effect: _Effect.desktopEscape),
-      (state: _State.page, platform: _Platform.desktop, way: _Way.key, effect: _Effect.desktopEscape),
-      (state: _State.page, platform: _Platform.desktop, way: _Way.popRoute, effect: _Effect.popsPage),
+      (
+        state: _State.dialog,
+        platform: _Platform.desktop,
+        way: _Way.key,
+        effect: _Effect.desktopEscape
+      ),
+      (
+        state: _State.page,
+        platform: _Platform.desktop,
+        way: _Way.key,
+        effect: _Effect.desktopEscape
+      ),
+      (
+        state: _State.page,
+        platform: _Platform.desktop,
+        way: _Way.popRoute,
+        effect: _Effect.popsPage
+      ),
     ];
 
 class _Bench {
@@ -397,7 +437,9 @@ void main() {
         (tester) async {
       final nav = await TvNavHarness.pump(tester, const _Shell(),
           engine: TvNavEngine.legacy);
-      tester.state<_ShellState>(find.byType(_Shell)).tabs['Accueil']!
+      tester
+          .state<_ShellState>(find.byType(_Shell))
+          .tabs['Accueil']!
           .requestFocus();
       await TvNavHarness.settle(tester);
       await nav.back();

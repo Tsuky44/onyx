@@ -239,4 +239,3 @@ class SimilarTitlesSection extends StatelessWidget {
     );
   }
 }
-

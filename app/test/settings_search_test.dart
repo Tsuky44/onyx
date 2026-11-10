@@ -56,7 +56,8 @@ void main() {
     }
   });
 
-  testWidgets('un résultat ouvre sa page, sans résultat le dit', (tester) async {
+  testWidgets('un résultat ouvre sa page, sans résultat le dit',
+      (tester) async {
     final index = _indexFor(Permissions.all);
     String? opened;
 

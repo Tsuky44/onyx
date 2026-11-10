@@ -112,8 +112,7 @@ void main() {
     expect(tracks.subtitleForNativeId('4'), tracks.subtitles[1]);
   });
 
-  test('une piste image active se signale, pour le repli de l’écran natif',
-      () {
+  test('une piste image active se signale, pour le repli de l’écran natif', () {
     final subtitles = [track('3'), track('4', bitmap: true)];
     expect(
         AetherTracks.of(status(subtitles: subtitles, selectedSubtitle: '4'))

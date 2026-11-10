@@ -34,7 +34,9 @@ void main() {
     test('the same bubble on the right edge pushes the right edge in', () {
       final insets = DisplayCutouts.resolve(
         size: screen,
-        features: [cutout(Rect.fromLTRB(screen.width - 38, 160, screen.width, 250))],
+        features: [
+          cutout(Rect.fromLTRB(screen.width - 38, 160, screen.width, 250))
+        ],
         fallback: EdgeInsets.zero,
       );
 

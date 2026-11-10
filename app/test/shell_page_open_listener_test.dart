@@ -46,8 +46,7 @@ void main() {
   // envoie sa notification : `false`, `false`, puis `true`. Lues telles
   // quelles, elles faisaient reconstruire la coquille à chaque frame tant
   // qu'une fiche était ouverte, y compris sous le lecteur.
-  testWidgets(
-      'une fiche ouverte ne fait reconstruire la coquille qu’une fois',
+  testWidgets('une fiche ouverte ne fait reconstruire la coquille qu’une fois',
       (tester) async {
     final navigatorKey = GlobalKey<NavigatorState>();
     final builds = <bool>[];

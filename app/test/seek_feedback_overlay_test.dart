@@ -133,14 +133,16 @@ void main() {
       (tester) async {
     await pumpOverlay(tester, forward: true);
     expect(
-      tester.widget<IgnorePointer>(
-        find
-            .descendant(
-              of: find.byType(SeekFeedbackOverlay),
-              matching: find.byType(IgnorePointer),
-            )
-            .first,
-      ).ignoring,
+      tester
+          .widget<IgnorePointer>(
+            find
+                .descendant(
+                  of: find.byType(SeekFeedbackOverlay),
+                  matching: find.byType(IgnorePointer),
+                )
+                .first,
+          )
+          .ignoring,
       isTrue,
     );
   });

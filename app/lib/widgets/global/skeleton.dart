@@ -193,7 +193,7 @@ class HomeSkeleton extends StatelessWidget {
           SizedBox(
             height: heroHeight,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(pad, 0, pad, compact ? 52 : 84),
+              padding: EdgeInsets.fromLTRB(pad, 0, pad, compact ? 52 : 140),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,

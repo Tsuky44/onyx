@@ -164,7 +164,8 @@ class _MetadataFixSheetState extends State<MetadataFixSheet> {
                       ],
                       const SizedBox(height: 14),
                       TvDeferredKeyboard(
-                        builder: (context, focusNode, canRequestFocus) => TextField(
+                        builder: (context, focusNode, canRequestFocus) =>
+                            TextField(
                           focusNode: focusNode,
                           canRequestFocus: canRequestFocus,
                           controller: _controller,
@@ -185,7 +186,7 @@ class _MetadataFixSheetState extends State<MetadataFixSheet> {
                               borderSide: BorderSide.none,
                             ),
                           ),
-                                              ),
+                        ),
                       ),
                     ],
                   ),
@@ -256,7 +257,8 @@ class _LocalShowContextCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.15)),
+        border:
+            Border.all(color: AppColors.textSecondary.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,9 +327,7 @@ class _LocalRow extends StatelessWidget {
               Text(
                 value,
                 style: TextStyle(
-                  color: muted
-                      ? AppColors.textMuted
-                      : AppColors.textPrimary,
+                  color: muted ? AppColors.textMuted : AppColors.textPrimary,
                   fontSize: AppType.subhead,
                   fontFamily: 'monospace',
                   height: 1.35,
@@ -357,7 +357,8 @@ class _FileNameChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.15)),
+        border:
+            Border.all(color: AppColors.textSecondary.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,8 +469,8 @@ class _PosterFallback extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.surface,
-      child: const Icon(AppIcons.movie,
-          color: AppColors.textSecondary, size: 24),
+      child:
+          const Icon(AppIcons.movie, color: AppColors.textSecondary, size: 24),
     );
   }
 }

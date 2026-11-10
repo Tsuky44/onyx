@@ -88,14 +88,16 @@ void main() {
   // Un lecteur ouvert sur la télé écrit sa position toutes les cinq secondes :
   // l'accueil du téléphone posé à côté se relisait en entier à ce rythme
   // pendant tout le film.
-  testWidgets('des changements rapprochés ne font relire qu\'une fois par souffle',
+  testWidgets(
+      'des changements rapprochés ne font relire qu\'une fois par souffle',
       (tester) async {
     watch.start();
     await tester.pump();
 
     server.change('b');
     await tester.pump();
-    expect(changes, 1, reason: 'le premier changement est annoncé à l\'instant');
+    expect(changes, 1,
+        reason: 'le premier changement est annoncé à l\'instant');
 
     for (final next in ['c', 'd', 'e']) {
       await tester.pump(const Duration(seconds: 4));
@@ -105,7 +107,8 @@ void main() {
     expect(changes, 1, reason: 'rien de plus pendant le souffle');
 
     await tester.pump(watch.changePause);
-    expect(changes, 2, reason: 'un seul avis pour tout ce qui a bougé entre-temps');
+    expect(changes, 2,
+        reason: 'un seul avis pour tout ce qui a bougé entre-temps');
     watch.stop();
   });
 

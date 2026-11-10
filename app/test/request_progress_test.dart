@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/request_progress.dart';
 
 void main() {
-  test('le suivi lit le téléchargement et les imports tels que MediaHub les rend',
+  test(
+      'le suivi lit le téléchargement et les imports tels que MediaHub les rend',
       () {
     final progress = RequestProgress.fromJson({
       'active': true,

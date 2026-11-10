@@ -95,7 +95,8 @@ void main() {
     );
     key.currentState!.requestKeyboard();
     await tester.pumpAndSettle();
-    controller.selection = TextSelection.collapsed(offset: caret ?? text.length);
+    controller.selection =
+        TextSelection.collapsed(offset: caret ?? text.length);
     await tester.pump();
   }
 

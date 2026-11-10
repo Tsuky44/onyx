@@ -5,7 +5,8 @@ import 'package:onyx/services/client_log.dart';
 void main() {
   setUp(ClientLog.resetForTest);
 
-  test('capture ce que le code écrit déjà, sans que le site d’appel change', () {
+  test('capture ce que le code écrit déjà, sans que le site d’appel change',
+      () {
     ClientLog.install();
     debugPrint('Player: asking 1080p from 0s');
 
@@ -26,7 +27,8 @@ void main() {
     expect(errors.single.message, contains('PlaybackFailure'));
   });
 
-  test('n’enregistre pas deux fois une erreur qui passe aussi par la console', () {
+  test('n’enregistre pas deux fois une erreur qui passe aussi par la console',
+      () {
     ClientLog.install();
     ClientLog.error('API Error [GET] /stream: badResponse (401)');
 
@@ -41,8 +43,7 @@ void main() {
 
     expect(ClientLog.entries, hasLength(ClientLog.capacity));
     expect(ClientLog.entries.first.message, 'ligne 50');
-    expect(ClientLog.entries.last.message,
-        'ligne ${ClientLog.capacity + 49}');
+    expect(ClientLog.entries.last.message, 'ligne ${ClientLog.capacity + 49}');
   });
 
   test('tronque une ligne démesurée plutôt que de remplir le tampon avec', () {

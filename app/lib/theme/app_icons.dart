@@ -142,7 +142,8 @@ abstract final class AppIcons {
       IconData(0xe1a8, fontFamily: _regular); // subtitles
   static const IconData imageBroken =
       IconData(0xe7a8, fontFamily: _regular); // imageBroken
-  static const IconData poster = IconData(0xe2ca, fontFamily: _regular); // image
+  static const IconData poster =
+      IconData(0xe2ca, fontFamily: _regular); // image
   static const IconData folder =
       IconData(0xe24a, fontFamily: _regular); // folder
   static const IconData file = IconData(0xe230, fontFamily: _regular); // file

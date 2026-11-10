@@ -62,7 +62,8 @@ class _TvFocusRowsState extends State<TvFocusRows> {
     }
 
     final rows = _rows.where((row) => row._focusables.isNotEmpty).toList()
-      ..sort((a, b) => a._node.rect.center.dy.compareTo(b._node.rect.center.dy));
+      ..sort(
+          (a, b) => a._node.rect.center.dy.compareTo(b._node.rect.center.dy));
     final index = rows.indexWhere((row) => row._node.hasFocus);
     if (index < 0) return KeyEventResult.ignored;
 
@@ -127,9 +128,8 @@ class _TvFocusRowState extends State<TvFocusRow> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final rows = context
-        .getInheritedWidgetOfExactType<_TvFocusRowsScope>()
-        ?.state;
+    final rows =
+        context.getInheritedWidgetOfExactType<_TvFocusRowsScope>()?.state;
     if (identical(rows, _rows)) return;
     _rows?._unregister(this);
     _rows = rows;
@@ -160,7 +160,8 @@ class _TvFocusRowState extends State<TvFocusRow> {
     if (preferred != null && focusables.contains(preferred)) return preferred;
     if (focusables.isEmpty) return null;
     return focusables.reduce((best, node) =>
-        (node.rect.center.dx - fromX).abs() < (best.rect.center.dx - fromX).abs()
+        (node.rect.center.dx - fromX).abs() <
+                (best.rect.center.dx - fromX).abs()
             ? node
             : best);
   }

@@ -28,7 +28,8 @@ void main() {
     });
 
     test('le titre se lit sans séparateurs ni étiquettes', () {
-      expect(deviceVideoTitle('/a/Mon.Film.2019.1080p.mkv'), 'Mon Film 2019 1080p');
+      expect(deviceVideoTitle('/a/Mon.Film.2019.1080p.mkv'),
+          'Mon Film 2019 1080p');
       expect(deviceVideoTitle('/a/[Groupe] Mon_Anime_01.mkv'), 'Mon Anime 01');
       expect(deviceVideoTitle('/a/Vacances.mp4'), 'Vacances');
     });
@@ -59,9 +60,11 @@ void main() {
       await File(p.join(videos.path, 'Vacances.mp4')).writeAsString('x');
       await Directory(p.join(videos.path, 'Été')).create();
       await File(p.join(videos.path, 'Été', 'Plage.mkv')).writeAsString('xy');
-      await File(p.join(videos.path, 'notes.txt')).writeAsString('pas une vidéo');
+      await File(p.join(videos.path, 'notes.txt'))
+          .writeAsString('pas une vidéo');
       await Directory(p.join(videos.path, '.cache')).create();
-      await File(p.join(videos.path, '.cache', 'cachée.mp4')).writeAsString('x');
+      await File(p.join(videos.path, '.cache', 'cachée.mp4'))
+          .writeAsString('x');
     });
 
     tearDown(() => root.delete(recursive: true));
@@ -130,7 +133,8 @@ void main() {
       expect(library.videos.map((v) => v.title), ['Plage']);
     });
 
-    test('ne plus suivre un dossier retire ses vidéos sans toucher aux fichiers',
+    test(
+        'ne plus suivre un dossier retire ses vidéos sans toucher aux fichiers',
         () async {
       final library = make();
       await library.addFolder(videos.path);
@@ -140,7 +144,8 @@ void main() {
     });
   });
 
-  test('un identifiant de serveur ne passe jamais par la bibliothèque locale', () {
+  test('un identifiant de serveur ne passe jamais par la bibliothèque locale',
+      () {
     // Positif : c'est un téléchargement ou le serveur, jamais un fichier de
     // l'appareil — même si un chemin y avait le même hachage.
     expect(isDeviceVideoId(42), isFalse);

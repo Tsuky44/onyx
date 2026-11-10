@@ -50,6 +50,12 @@ abstract final class AppType {
   /// Titres en surimpression sur une image plein écran.
   static const double hero = 40;
 
+  /// Compte à rebours du prochain épisode sur écran compact (téléphone).
+  static const double countdownCompact = 52;
+
+  /// Chiffre géant épuré du compte à rebours d'un épisode (« J-6 »).
+  static const double countdown = 64;
+
   /// Toutes les marches, dans l'ordre.
   static const List<double> scale = [
     micro,
@@ -65,5 +71,7 @@ abstract final class AppType {
     display,
     largeTitle,
     hero,
+    countdownCompact,
+    countdown,
   ];
 }

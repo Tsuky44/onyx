@@ -206,8 +206,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ouvrir un lien de partage'));
     await tester.pumpAndSettle();
-    expect(find.text('Collez le lien qu’on vous a envoyé. Il se regarde ici, '
-        'sans compte.'), findsOneWidget);
+    expect(
+        find.text('Collez le lien qu’on vous a envoyé. Il se regarde ici, '
+            'sans compte.'),
+        findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -269,8 +271,13 @@ void main() {
     expect(find.text('Mon compte'), findsWidgets);
     expect(find.text('Profil'), findsOneWidget);
     expect(find.text('Liens de partage'), findsOneWidget);
-    expect(find.text('Reprenez vos films et vos séries là où vous les avez '
-        'laissés', findRichText: true, skipOffstage: false), findsNothing);
+    expect(
+        find.text(
+            'Reprenez vos films et vos séries là où vous les avez '
+            'laissés',
+            findRichText: true,
+            skipOffstage: false),
+        findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -290,8 +297,7 @@ void main() {
       SettingsSections.linkedServers,
     ]) {
       expect(server.opens(id), isTrue, reason: id);
-      expect(
-          categories.where((c) => c.opens(id)).map((c) => c.id), [server.id],
+      expect(categories.where((c) => c.opens(id)).map((c) => c.id), [server.id],
           reason: '$id ne doit se trouver que dans l’entrée Serveur');
     }
     expect(server.admin, isTrue);
@@ -309,8 +315,8 @@ void main() {
         categories.firstWhere((c) => c.id == SettingsSections.account);
     expect(account.opens(SettingsSections.emby), isTrue);
     expect(account.opens(SettingsSections.shares), isTrue);
-    expect(categories.where((c) => c.opens(SettingsSections.servers)).length,
-        1);
+    expect(
+        categories.where((c) => c.opens(SettingsSections.servers)).length, 1);
   });
 
   // Exigé par les magasins de toute app où l'on peut créer un compte.

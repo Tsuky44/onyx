@@ -96,12 +96,15 @@ void main() {
 
   group('au clavier', () {
     test('les flèches cherchent de dix secondes et règlent le volume', () {
-      expect((route(_down(LogicalKeyboardKey.arrowLeft)) as PlayerKeySeek).seconds,
+      expect(
+          (route(_down(LogicalKeyboardKey.arrowLeft)) as PlayerKeySeek).seconds,
           -10);
       expect(
-          (route(_down(LogicalKeyboardKey.arrowRight)) as PlayerKeySeek).seconds,
+          (route(_down(LogicalKeyboardKey.arrowRight)) as PlayerKeySeek)
+              .seconds,
           10);
-      expect((route(_down(LogicalKeyboardKey.arrowUp)) as PlayerKeyVolume).delta,
+      expect(
+          (route(_down(LogicalKeyboardKey.arrowUp)) as PlayerKeyVolume).delta,
           5);
       expect(
           (route(_down(LogicalKeyboardKey.arrowDown)) as PlayerKeyVolume).delta,
@@ -113,8 +116,10 @@ void main() {
           isA<PlayerKeyTogglePlayback>());
       expect(route(_down(LogicalKeyboardKey.enter)),
           isA<PlayerKeyTogglePlayback>());
-      expect(route(_repeat(LogicalKeyboardKey.space)), isA<PlayerKeyConsumed>());
-      expect(route(_repeat(LogicalKeyboardKey.enter)), isA<PlayerKeyConsumed>());
+      expect(
+          route(_repeat(LogicalKeyboardKey.space)), isA<PlayerKeyConsumed>());
+      expect(
+          route(_repeat(LogicalKeyboardKey.enter)), isA<PlayerKeyConsumed>());
     });
 
     test('une lettre connue devient son raccourci', () {

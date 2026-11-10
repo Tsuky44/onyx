@@ -58,16 +58,13 @@ RemotePosters _offer({bool locked = false, bool fanartEnabled = true}) =>
       fanartEnabled: fanartEnabled,
       images: const [
         RemotePoster(
-            url: _current,
-            thumbUrl: _current,
-            source: 'tmdb',
-            language: 'fr'),
+            url: _current, thumbUrl: _current, source: 'tmdb', language: 'fr'),
         RemotePoster(url: _fanart, thumbUrl: _fanart, source: 'fanart'),
       ],
     );
 
-Future<void> _pump(WidgetTester tester, ApiClient api,
-    void Function(Media?) onResult) async {
+Future<void> _pump(
+    WidgetTester tester, ApiClient api, void Function(Media?) onResult) async {
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
       body: Builder(

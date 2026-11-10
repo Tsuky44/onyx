@@ -61,8 +61,8 @@ class _Api extends ApiClient {
     final error = failure;
     if (error != null) throw error;
     calls.add('create $name ${kind.wire} $path');
-    final created = MediaLibrary(
-        id: listed.length + 1, name: name, kind: kind, path: path);
+    final created =
+        MediaLibrary(id: listed.length + 1, name: name, kind: kind, path: path);
     listed = [...listed, created];
     return created;
   }
@@ -121,8 +121,9 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('contrat : une bibliothèque telle que le serveur l’écrit', () {
-    final listed = jsonDecode(
-        File('../contract/libraries.json').readAsStringSync()) as List<dynamic>;
+    final listed =
+        jsonDecode(File('../contract/libraries.json').readAsStringSync())
+            as List<dynamic>;
     final library =
         MediaLibrary.fromJson(listed.single as Map<String, dynamic>);
 
@@ -174,8 +175,8 @@ void main() {
 
     // La capacité annoncée ne se redemande pas à chaque rechargement.
     await api.getLibraries();
-    expect(requests.where((request) => request == 'GET /api/ping'),
-        hasLength(1));
+    expect(
+        requests.where((request) => request == 'GET /api/ping'), hasLength(1));
   });
 
   // Plusieurs serveurs de versions différentes coexistent (ADR-0013) : celui
@@ -261,7 +262,8 @@ void main() {
     await tester.tap(find.text('Enregistrer'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Ce dossier n\'existe pas sur le serveur'), findsOneWidget);
+    expect(
+        find.text('Ce dossier n\'existe pas sur le serveur'), findsOneWidget);
     expect(find.text('/media/absent'), findsOneWidget);
     expect(find.text('Nouvelle bibliothèque'), findsOneWidget);
   });

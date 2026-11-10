@@ -60,11 +60,11 @@ class TvControlRowRegion extends DpadRegion {
     this.preferredFocus,
     super.debugLabel,
   }) : super(
-         child: _RowPolicyGroup(child: child),
-         enter: DpadEnterBehavior.entry,
-         horizontalEdge: DpadEdgeBehavior.stop,
-         verticalEdge: DpadEdgeBehavior.leave,
-       );
+          child: _RowPolicyGroup(child: child),
+          enter: DpadEnterBehavior.entry,
+          horizontalEdge: DpadEdgeBehavior.stop,
+          verticalEdge: DpadEdgeBehavior.leave,
+        );
 
   /// Où l'on arrive en entrant dans la rangée.
   final FocusNode? preferredFocus;
@@ -82,9 +82,8 @@ class TvControlRowState extends DpadRegionState {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final rows = context
-        .getInheritedWidgetOfExactType<_TvControlRowsScope>()
-        ?.state;
+    final rows =
+        context.getInheritedWidgetOfExactType<_TvControlRowsScope>()?.state;
     if (identical(rows, _rows)) return;
     _rows?._rows.remove(this);
     _rows = rows;
@@ -101,12 +100,12 @@ class TvControlRowState extends DpadRegionState {
   /// est masquée : un `ExcludeFocus` au-dessus retire ses éléments du
   /// parcours.
   List<FocusNode> _candidates(FocusScopeNode scope) => [
-    for (final node in scope.traversalDescendants)
-      if (node.canRequestFocus &&
-          node.context != null &&
-          identical(DpadRegion.ofNode(node), this))
-        node,
-  ];
+        for (final node in scope.traversalDescendants)
+          if (node.canRequestFocus &&
+              node.context != null &&
+              identical(DpadRegion.ofNode(node), this))
+            node,
+      ];
 
   /// Le milieu de la rangée, à la verticale, dans le repère de l'écran.
   double? get _centerY {
@@ -119,8 +118,7 @@ class TvControlRowState extends DpadRegionState {
     final preferred = _row.preferredFocus;
     if (preferred != null && candidates.contains(preferred)) return preferred;
     return candidates.reduce(
-      (best, node) =>
-          (node.rect.center.dx - fromX).abs() <
+      (best, node) => (node.rect.center.dx - fromX).abs() <
               (best.rect.center.dx - fromX).abs()
           ? node
           : best,
@@ -142,16 +140,15 @@ class TvControlRowState extends DpadRegionState {
     final rows = _rows;
     final scope = current.nearestScope;
     if (rows == null || scope == null) return null;
-    final placed =
-        <(TvControlRowState, double, List<FocusNode>)>[
-            for (final row in rows._rows)
-              if (row.mounted && row._centerY != null)
-                (row, row._centerY!, row._candidates(scope)),
-          ]
-          ..removeWhere(
-            (entry) => entry.$3.isEmpty && !identical(entry.$1, this),
-          )
-          ..sort((a, b) => a.$2.compareTo(b.$2));
+    final placed = <(TvControlRowState, double, List<FocusNode>)>[
+      for (final row in rows._rows)
+        if (row.mounted && row._centerY != null)
+          (row, row._centerY!, row._candidates(scope)),
+    ]
+      ..removeWhere(
+        (entry) => entry.$3.isEmpty && !identical(entry.$1, this),
+      )
+      ..sort((a, b) => a.$2.compareTo(b.$2));
     final index = placed.indexWhere((entry) => identical(entry.$1, this));
     if (index < 0) return null;
     final target = index + step;

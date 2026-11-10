@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Global catalog search query shared by the sticky search bar.
+/// La recherche tapée dans la barre de navigation.
+///
+/// Sur grand écran la barre reste au-dessus de la page de résultats, qui lit
+/// [query] ici pour suivre la frappe (`SearchResultsScreen.followingHeader`).
 class SearchProvider extends ChangeNotifier {
   String _query = '';
   bool _expanded = false;

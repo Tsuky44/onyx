@@ -89,8 +89,7 @@ void main() {
     expect(await storage.loadDefaultAudioLang(), 'fr');
   });
 
-  test('a change on this device reaches the account, field by field',
-      () async {
+  test('a change on this device reaches the account, field by field', () async {
     final server = _AccountServer()
       ..lang = 'en'
       ..saved = true;
@@ -228,8 +227,7 @@ void main() {
     expect(PlaybackPreferencesStorage.stillWatching, mine);
   });
 
-  test('an unreachable server leaves the local preferences in place',
-      () async {
+  test('an unreachable server leaves the local preferences in place', () async {
     await PlaybackPreferencesStorage.setAutoSkipIntro(true);
     final server = _AccountServer()..offline = true;
 

@@ -288,8 +288,9 @@ class _SeasonBubbleRowState extends State<SeasonBubbleRow>
     final entries = widget.entries;
     final wrap = widget.wrap;
     // La rangée se souvient de la bulle où était la télécommande, le temps de
-    // la fiche — voir [TvRegion.id].
+    // la fiche — voir [TvRegion.id] — au lieu de rentrer par la première.
     return TvRegion.rail(
+      entersAtStart: false,
       child: SingleChildScrollView(
         controller: _scroll,
         scrollDirection: Axis.horizontal,

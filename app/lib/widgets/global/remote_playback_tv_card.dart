@@ -208,7 +208,7 @@ class _RemotePlaybackTvCardState extends State<RemotePlaybackTvCard> {
           color: focused ? Colors.white : AppColors.primary,
           borderRadius: BorderRadius.circular(40),
           border: Border.all(
-            color: focused ? AppColors.accent : Colors.transparent,
+            color: focused ? AppColors.focus : Colors.transparent,
             width: 3,
           ),
           boxShadow: focused

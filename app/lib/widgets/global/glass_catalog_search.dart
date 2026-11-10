@@ -1,30 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../models/models.dart';
 import '../../navigation/shell_navigator.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/search_provider.dart';
-import '../../screens/library/movie_detail_screen.dart';
 import '../../screens/library/search_results_screen.dart';
-import '../../screens/library/show_detail_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../tv/tv_deferred_keyboard.dart';
+import '../../tv/tv_focus.dart';
 import '../../tv/tv_mode.dart';
-import '../../utils/poster_url.dart';
-import '../../utils/responsive.dart';
-import 'app_network_image.dart';
 import 'glass_chrome.dart';
+import 'search_results_route.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 
-/// Max number of results shown inline in the dropdown before offering "see all".
-const int _kInlineResultLimit = 8;
-
-/// Styled catalog search with an inline results panel rendered in the root
-/// [Overlay] so it is never clipped by the frosted header strip.
+/// La recherche du catalogue dans la barre de navigation.
+///
+/// Dès le premier caractère tapé, la page de résultats s'ouvre
+/// ([SearchResultsScreen]) : une grille d'affiches en pleine page, mise à jour
+/// à chaque frappe. La liste déroulante sous le champ a disparu — elle montrait
+/// huit titres dans une fenêtre étroite, et il fallait un clic de plus pour
+/// voir le reste.
 class GlassCatalogSearch extends StatefulWidget {
   final bool expandInline;
   final double collapsedWidth;
@@ -33,12 +31,21 @@ class GlassCatalogSearch extends StatefulWidget {
   /// When true, the idle state is a circular search icon instead of a field.
   final bool compactTrigger;
 
+  /// Vrai quand ce champ reste à l'écran au-dessus des pages que la coquille
+  /// ouvre — la barre de verre du grand écran. Il reste alors le seul champ :
+  /// on continue d'y taper, et la page de résultats le suit.
+  ///
+  /// Faux pour la barre du téléphone, que la coquille retire dès qu'une page
+  /// s'ouvre : la frappe passe au champ de la page de résultats.
+  final bool staysAbovePages;
+
   const GlassCatalogSearch({
     super.key,
     this.expandInline = true,
     this.collapsedWidth = 180,
     this.expandedWidth = 300,
     this.compactTrigger = false,
+    this.staysAbovePages = false,
   });
 
   @override
@@ -48,10 +55,15 @@ class GlassCatalogSearch extends StatefulWidget {
 class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final FocusNode _tvSearchNode =
+      FocusNode(debugLabel: 'tv-search-header-button');
 
-  final LayerLink _link = LayerLink();
-  final Object _tapGroupId = Object();
-  OverlayEntry? _overlayEntry;
+  /// La page de résultats ouverte par la frappe, tant qu'elle est dans la pile.
+  Route<void>? _resultsRoute;
+
+  /// La page sur laquelle on était quand la frappe a ouvert les résultats :
+  /// celle où l'on revient quand la recherche s'efface.
+  Route<dynamic>? _routeBeforeResults;
 
   @override
   void initState() {
@@ -65,140 +77,209 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
 
   @override
   void dispose() {
-    _removeOverlay();
     _focusNode.removeListener(_onFocusChanged);
     _controller.dispose();
     _focusNode.dispose();
+    _tvSearchNode.dispose();
     super.dispose();
   }
 
   void _onFocusChanged() {
     context.read<SearchProvider>().setExpanded(_focusNode.hasFocus);
-
-    // Sur un téléviseur, la liste déroulante sous le champ est hors d'atteinte
-    // de la télécommande : elle vit dans une couche au-dessus de la page, où le
-    // parcours du focus n'entre pas. On voyait les résultats sans pouvoir en
-    // ouvrir un. Quand le clavier se referme sur une recherche, on ouvre donc la
-    // page de résultats, qui se parcourt comme une grille. Valider au clavier y
-    // mène aussi, par [GlassSearchInput.onSubmitted] — le champ est alors déjà
-    // vidé, et on ne l'ouvre pas deux fois.
-    if (!_focusNode.hasFocus &&
-        TvMode.isTv &&
-        _controller.text.trim().isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _controller.text.trim().isNotEmpty) _showAllResults();
-      });
-    }
   }
 
   void _onQueryChanged(String value) {
-    context.read<SearchProvider>().setQuery(value);
+    if (widget.staysAbovePages) {
+      context.read<SearchProvider>().setQuery(value);
+    }
+    if (value.trim().isNotEmpty) {
+      _openResults(value);
+    } else if (widget.staysAbovePages) {
+      // Le champ vidé à la main rend la page d'avant. Le focus reste dans le
+      // champ : on efface souvent pour retaper autre chose. La page rendue le
+      // réclame en revenant au premier plan ; le redemander dans la même
+      // frame l'emporte, sans que le champ se replie puis se rouvre.
+      _closeResults();
+      _focusNode.requestFocus();
+    }
   }
 
-  void _clear() {
-    _controller.clear();
-    context.read<SearchProvider>().clear();
-    _focusNode.unfocus();
-  }
-
-  void _openResult(Media media) {
-    final library = context.read<LibraryProvider>();
-    _clear();
-
-    if (media.type == MediaType.movie) {
-      shellNavigatorOf(context).push(
-        MaterialPageRoute(
-          builder: (_) => MovieDetailScreen(
-            movie: media,
-            movieItem: library.movieItemFor(media.id),
-          ),
-        ),
-      );
+  /// Ouvre la page de résultats, ou y ramène si elle est déjà dans la pile.
+  void _openResults(String typed) {
+    final navigator = shellNavigatorOf(context);
+    final open = _resultsRoute;
+    if (open != null && open.isActive) {
+      // Une fiche ouverte depuis les résultats les recouvre : reprendre la
+      // frappe y ramène, au lieu de filtrer une grille qu'on ne voit pas.
+      if (!open.isCurrent) navigator.popUntil((route) => route == open);
       return;
     }
 
-    if (media.type == MediaType.show) {
-      shellNavigatorOf(context).push(
-        MaterialPageRoute(builder: (_) => ShowDetailScreen(show: media)),
-      );
+    final followsHeader = widget.staysAbovePages;
+    if (!followsHeader) {
+      // La frappe passe au champ de la page. Celui-ci se vide avant : un
+      // caractère arrivé avant que la page ne prenne le focus y resterait, et
+      // on le retrouverait au retour. Le clavier, lui, reste ouvert — le
+      // refermer ici le ferait clignoter sous le doigt.
+      _controller.clear();
+      context.read<SearchProvider>().clear();
     }
-  }
 
-  final GlobalKey<TvDeferredKeyboardState> _keyboardKey = GlobalKey();
+    // Un prédicat vrai d'emblée ne retire rien : il donne la page du dessus.
+    navigator.popUntil((route) {
+      _routeBeforeResults = route;
+      return true;
+    });
 
-  Future<void> _showAllResults([String? explicitQuery]) async {
-    final query = (explicitQuery ?? _controller.text).trim();
-    if (query.isEmpty) return;
-    _clear();
-    // Retour depuis les résultats : la télécommande revient sur la recherche,
-    // pour en lancer une autre. Elle tombait sur l'avatar du compte, voisin
-    // du champ vidé.
-    await shellNavigatorOf(context).push(
-      MaterialPageRoute(builder: (_) => SearchResultsScreen(query: query)),
-    );
-    if (mounted) _keyboardKey.currentState?.focusRemote();
-  }
-
-  // --- Overlay lifecycle ---------------------------------------------------
-
-  void _ensureOverlay() {
-    if (_overlayEntry != null) return;
-    final overlay = Overlay.of(context, rootOverlay: true);
-    _overlayEntry = OverlayEntry(builder: _buildOverlay);
-    overlay.insert(_overlayEntry!);
-  }
-
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  Widget _buildOverlay(BuildContext overlayContext) {
-    final search = overlayContext.watch<SearchProvider>();
-    final library = overlayContext.watch<LibraryProvider>();
-
-    // Pas de liste déroulante sur un téléviseur : voir [_onFocusChanged].
-    if (!search.isActive || TvMode.isTv) return const SizedBox.shrink();
-
-    final results = library.searchCatalog(search.query);
-    final loading = library.isLoadingMovies || library.isLoadingShows;
-
-    return CompositedTransformFollower(
-      link: _link,
-      showWhenUnlinked: false,
-      targetAnchor: Alignment.bottomRight,
-      followerAnchor: Alignment.topRight,
-      offset: const Offset(0, 6),
-      child: Align(
-        alignment: Alignment.topRight,
-        child: TapRegion(
-          groupId: _tapGroupId,
-          onTapOutside: (_) => _clear(),
-          child: Material(
-            type: MaterialType.transparency,
-            child: SizedBox(
-              width: widget.expandedWidth,
-              child: GlassSurface(
-                dense: true,
-                borderRadius: BorderRadius.circular(16),
-                child: _SearchResultsPanel(
-                  maxWidth: widget.expandedWidth,
-                  results: results,
-                  isLoading: loading,
-                  query: search.query,
-                  onTap: _openResult,
-                  onSeeAll: () => _showAllResults(search.query),
-                ),
-              ),
+    final route = SearchResultsRoute<void>(
+      // Sous la barre de verre, la page ne prend pas le focus en s'ouvrant :
+      // il reste dans ce champ, où l'on est en train de taper.
+      requestFocus: followsHeader ? false : null,
+      builder: (_) => followsHeader
+          ? const SearchResultsScreen.followingHeader()
+          : SearchResultsScreen(
+              query: typed,
+              autofocusField: true,
+              closesWhenEmptied: true,
             ),
-          ),
+    );
+    _resultsRoute = route;
+    navigator.push(route).whenComplete(() {
+      if (!identical(_resultsRoute, route)) return;
+      _resultsRoute = null;
+      _routeBeforeResults = null;
+      // La page s'est refermée sans que le champ se vide (Retour, un onglet
+      // de la barre) : la recherche se referme avec elle.
+      if (followsHeader && mounted) _resetField();
+    });
+  }
+
+  /// Referme les résultats et rend la page sur laquelle on était avant de
+  /// chercher, fiches ouvertes depuis les résultats comprises.
+  void _closeResults() {
+    final route = _resultsRoute;
+    final before = _routeBeforeResults;
+    _resultsRoute = null;
+    _routeBeforeResults = null;
+    if (route == null || !route.isActive) return;
+    final navigator = route.navigator!;
+    if (route.isCurrent) {
+      navigator.pop();
+      return;
+    }
+    // Une fiche recouvre les résultats. Ils partent d'abord de dessous, sans
+    // se voir ; puis la fiche se referme par son propre geste, sur la page
+    // d'avant — au lieu de deux pages qui s'effacent l'une sur l'autre.
+    navigator.removeRoute(route);
+    navigator.popUntil(
+      (r) => (before != null && before.isActive) ? r == before : r.isFirst,
+    );
+  }
+
+  void _resetField() {
+    _controller.clear();
+    context.read<SearchProvider>().clear();
+    _focusNode.unfocus();
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+  }
+
+  /// La croix du champ : referme la recherche et rend la page d'avant.
+  void _clear() {
+    _closeResults();
+    _resetField();
+  }
+
+  Future<void> _openTvSearch(BuildContext context) async {
+    await shellNavigatorOf(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SearchResultsScreen(
+          query: '',
+          autofocusField: true,
         ),
       ),
     );
+    if (mounted) {
+      _tvSearchNode.requestFocus();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isTv = TvScope.of(context) || TvMode.isTv;
+    if (isTv) {
+      if (widget.compactTrigger) {
+        return TvFocusable(
+          focusNode: _tvSearchNode,
+          onSelect: () => _openTvSearch(context),
+          borderRadius: BorderRadius.circular(20),
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => _openTvSearch(context),
+            child: Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              child: Icon(
+                AppIcons.search,
+                size: 20,
+                color: AppColors.textPrimary.withValues(alpha: 0.92),
+              ),
+            ),
+          ),
+        );
+      }
+
+      return TvFocusable(
+        focusNode: _tvSearchNode,
+        onSelect: () => _openTvSearch(context),
+        borderRadius: BorderRadius.circular(17),
+        focusScale: 1.0,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => _openTvSearch(context),
+          child: Container(
+            height: 34,
+            width: widget.collapsedWidth,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  AppIcons.search,
+                  size: 17,
+                  color: AppColors.textSecondary.withValues(alpha: 0.65),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    tr('Rechercher'),
+                    style: TextStyle(
+                      color: AppColors.textMuted.withValues(alpha: 0.7),
+                      fontSize: AppType.subhead,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final search = context.watch<SearchProvider>();
     final expanded =
         widget.expandInline && (search.isExpanded || search.isActive);
@@ -207,18 +288,16 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
         ? (expanded ? widget.expandedWidth : widget.collapsedWidth)
         : 40.0;
 
-    // Keep the overlay entry alive; its builder decides what to render.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _ensureOverlay();
-    });
-
     if (widget.compactTrigger && !showField) {
       return GlassIconButton(
         size: 40,
         onTap: () {
           context.read<SearchProvider>().setExpanded(true);
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _focusNode.requestFocus();
+            if (mounted) {
+              _focusNode.requestFocus();
+              SystemChannels.textInput.invokeMethod('TextInput.show');
+            }
           });
         },
         child: Icon(
@@ -230,211 +309,24 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
     }
 
     return TvDeferredKeyboard(
-      key: _keyboardKey,
       fieldFocusNode: _focusNode,
       borderRadius: BorderRadius.circular(17),
-      builder: (context, focusNode, canRequestFocus) => TapRegion(
-        groupId: _tapGroupId,
-        child: CompositedTransformTarget(
-          link: _link,
-          child: AnimatedContainer(
-            duration:
-                AppMotion.move(context, const Duration(milliseconds: 220)),
-            curve: Curves.easeOutCubic,
-            width: width,
-            child: GlassSearchInput(
-              controller: _controller,
-              focusNode: _focusNode,
-              canRequestFocus: canRequestFocus,
-              onChanged: _onQueryChanged,
-              onSubmitted: (_) => _showAllResults(),
-              onClear: _clear,
-              hint: expanded ? tr('Titre, film, série…') : tr('Rechercher'),
-              focused: _focusNode.hasFocus,
-              hasText: _controller.text.isNotEmpty,
-            ),
-          ),
+      builder: (context, focusNode, canRequestFocus) => AnimatedContainer(
+        duration: AppMotion.move(context),
+        curve: AppMotion.curve,
+        width: width,
+        child: GlassSearchInput(
+          controller: _controller,
+          focusNode: _focusNode,
+          canRequestFocus: canRequestFocus,
+          onChanged: _onQueryChanged,
+          // Entrée ramène aux résultats quand une fiche les recouvre.
+          onSubmitted: _onQueryChanged,
+          onClear: _clear,
+          hint: expanded ? tr('Titre, film, série…') : tr('Rechercher'),
+          focused: _focusNode.hasFocus,
+          hasText: _controller.text.isNotEmpty,
         ),
-      ),
-    );
-  }
-}
-
-class _SearchResultsPanel extends StatelessWidget {
-  final double maxWidth;
-  final List<Media> results;
-  final bool isLoading;
-  final String query;
-  final ValueChanged<Media> onTap;
-  final VoidCallback onSeeAll;
-
-  const _SearchResultsPanel({
-    required this.maxWidth,
-    required this.results,
-    required this.isLoading,
-    required this.query,
-    required this.onTap,
-    required this.onSeeAll,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return SizedBox(
-        width: maxWidth,
-        height: 112,
-        child: const Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
-    }
-
-    if (results.isEmpty) {
-      return SizedBox(
-        width: maxWidth,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Text(
-            tr('Aucun résultat pour « {0} »', [query]),
-            style: TextStyle(
-              color: AppColors.textMuted.withValues(alpha: 0.95),
-              fontSize: AppType.subhead,
-            ),
-          ),
-        ),
-      );
-    }
-
-    final auth = context.read<AuthProvider>();
-    final baseUrl = auth.apiClient.baseUrl;
-    final visibleCount = results.length.clamp(0, _kInlineResultLimit);
-    final hasMore = results.length > _kInlineResultLimit;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: 340),
-          child: ListView.separated(
-            scrollCacheExtent: AppLayout.imageCacheExtent(context),
-            shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: visibleCount,
-            separatorBuilder: (_, __) => Divider(
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.06),
-            ),
-            itemBuilder: (context, index) {
-              final media = results[index];
-              final poster =
-                  resolvePosterUrl(media.posterUrl, serverBaseUrl: baseUrl);
-              final typeLabel =
-                  media.type == MediaType.movie ? tr('Film') : tr('Série');
-
-              return InkWell(
-                onTap: () => onTap(media),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
-                        child: AppNetworkImage(
-                          url: poster,
-                          width: 34,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorWidget: _posterPlaceholder(),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              media.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: AppType.subhead,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              typeLabel,
-                              style: TextStyle(
-                                color:
-                                    AppColors.textMuted.withValues(alpha: 0.9),
-                                fontSize: AppType.caption,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        InkWell(
-          onTap: onSeeAll,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Flexible : le panneau fait la largeur de la barre de
-                // recherche du téléphone (~140 px de texte), et « Show all
-                // results » y débordait de 4 px.
-                Flexible(
-                  child: Text(
-                    hasMore
-                        ? tr('Voir les {0} résultats', [results.length])
-                        : tr('Voir tous les résultats'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.accent,
-                      fontSize: AppType.subhead,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(AppIcons.forward, size: 15, color: AppColors.accent),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _posterPlaceholder() {
-    return Container(
-      width: 34,
-      height: 50,
-      color: AppColors.surfaceElevated,
-      child: Icon(
-        AppIcons.movie,
-        size: 16,
-        color: AppColors.textMuted.withValues(alpha: 0.6),
       ),
     );
   }

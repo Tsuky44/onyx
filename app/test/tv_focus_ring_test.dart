@@ -12,13 +12,13 @@ import 'support/tv_nav_harness.dart';
 
 const _focused = <WidgetState>{WidgetState.focused};
 
-/// L'anneau d'Onyx : la bordure d'accent posée sur la carte focalisée.
+/// L'anneau d'Onyx : le trait blanc posé sur la carte focalisée (ADR-0111).
 Finder _ring() => find.byWidgetPredicate((widget) {
       if (widget is! DecoratedBox) return false;
       final decoration = widget.decoration;
       return decoration is BoxDecoration &&
           decoration.border is Border &&
-          (decoration.border! as Border).top.color == AppColors.accent;
+          (decoration.border! as Border).top.color == AppColors.focus;
     });
 
 void main() {
@@ -82,9 +82,9 @@ void main() {
       }),
     ));
 
-    expect(style.side?.resolve(_focused)?.color, AppColors.accent);
+    expect(style.side?.resolve(_focused)?.color, AppColors.focus);
     expect(style.side?.resolve(const <WidgetState>{})?.color,
-        isNot(AppColors.accent));
+        isNot(AppColors.focus));
   });
 
   test('un bouton plein porte un anneau blanc, visible sur son fond bleu', () {

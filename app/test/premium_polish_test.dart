@@ -170,16 +170,14 @@ void main() {
           .ignoring,
       isTrue,
     );
-    expect(
-        tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
+    expect(tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
         0);
 
     await tester.pumpWidget(chrome(true));
     await tester.pump(AppMotion.standard ~/ 2);
     // Toujours monté pendant le fondu : il apparaît, il ne surgit pas.
     expect(find.text('Lecture'), findsOneWidget);
-    expect(
-        tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
+    expect(tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
         1);
   });
 
@@ -200,8 +198,8 @@ void main() {
     });
 
     test('« ? » se lit au caractère, quelle que soit la disposition', () {
-      final match = matchPlayerShortcut(
-          _down(LogicalKeyboardKey.comma, character: '?'));
+      final match =
+          matchPlayerShortcut(_down(LogicalKeyboardKey.comma, character: '?'));
       expect(match?.shortcut, PlayerShortcut.showHelp);
     });
 

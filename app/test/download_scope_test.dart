@@ -68,11 +68,15 @@ void main() {
     File('${store.path}/manifest.json').writeAsStringSync(jsonEncode({
       'version': 1,
       'items': [
-        _entry(mediaId: 1, title: 'À la maison', serverUrl: 'http://maison:8080'),
+        _entry(
+            mediaId: 1, title: 'À la maison', serverUrl: 'http://maison:8080'),
         // Même numéro, autre serveur : c'est exactement le cas qui casserait
         // une carte indexée sur le seul media_id.
         _entry(mediaId: 1, title: 'Chez Paul', serverUrl: 'http://paul:8080'),
-        _entry(mediaId: 2, title: 'Aussi chez Paul', serverUrl: 'http://paul:8080'),
+        _entry(
+            mediaId: 2,
+            title: 'Aussi chez Paul',
+            serverUrl: 'http://paul:8080'),
       ],
     }));
 
@@ -108,7 +112,8 @@ void main() {
     expect(manager.entryFor(2)?.title, 'Aussi chez Paul');
   });
 
-  test('ce qui appartient à l’autre serveur n’est pas perdu en route', () async {
+  test('ce qui appartient à l’autre serveur n’est pas perdu en route',
+      () async {
     final manager = DownloadManager.instance;
     // Une écriture du manifeste depuis « paul » ne doit pas effacer « maison ».
     await manager.delete(2);

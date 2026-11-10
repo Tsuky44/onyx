@@ -3,8 +3,8 @@ import 'package:onyx/utils/watched_verdict.dart';
 
 void main() {
   test('un média compte comme vu à partir de 90 %', () {
-    expect(countsAsWatched(positionSeconds: 899, durationSeconds: 1000),
-        isFalse);
+    expect(
+        countsAsWatched(positionSeconds: 899, durationSeconds: 1000), isFalse);
     expect(
         countsAsWatched(positionSeconds: 900, durationSeconds: 1000), isTrue);
   });

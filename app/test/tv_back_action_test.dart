@@ -67,8 +67,8 @@ void main() {
 
     testWidgets('Échap garde son sens de bureau hors téléviseur',
         (tester) async {
-      final nav = await TvNavHarness.pump(tester, _home(),
-          engine: engine, isTv: false);
+      final nav =
+          await TvNavHarness.pump(tester, _home(), engine: engine, isTv: false);
       await _openDetail(tester, nav);
 
       await nav.back();

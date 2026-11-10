@@ -57,8 +57,7 @@ void main() {
     expect(find.byIcon(AppIcons.check), findsOneWidget);
   });
 
-  testWidgets('un épisode non vu montre son numéro sans coche',
-      (tester) async {
+  testWidgets('un épisode non vu montre son numéro sans coche', (tester) async {
     await pumpTile(tester, episode(finished: false));
 
     expect(find.text('7'), findsOneWidget);

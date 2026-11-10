@@ -54,8 +54,8 @@ void main() {
 
     test('la taille du bloc n\'est lue que derrière sa magie', () {
       expect(apkSigningBlockSize(footer(4096)), 4096);
-      expect(apkSigningBlockSize(footer(4096, magic: 'not a sig block!')),
-          isNull);
+      expect(
+          apkSigningBlockSize(footer(4096, magic: 'not a sig block!')), isNull);
       expect(apkSigningBlockSize(footer(8)), isNull);
     });
 

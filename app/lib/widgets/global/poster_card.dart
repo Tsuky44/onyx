@@ -5,6 +5,8 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/lite_mode.dart';
 import '../../tv/tv_focus.dart';
+import '../../tv/tv_focus_ring.dart';
+import '../../tv/tv_mode.dart';
 import 'app_network_image.dart';
 import 'pressable.dart';
 import '../../theme/app_icons.dart';
@@ -96,6 +98,19 @@ class PosterCard extends StatefulWidget {
   /// du débord part vers le haut, là où le viewport de la liste couperait.
   static const double liftHeadroom = 10;
 
+  /// La place à réserver autour d'une rangée horizontale d'affiches, que le
+  /// viewport de la liste coupe en haut et en bas.
+  ///
+  /// Sur téléviseur, l'affiche grandit vers le haut depuis son pied
+  /// ([PosterLift]) et porte un anneau qui la déborde de
+  /// [TvFocusRing.reach] : 12 px de soulèvement (une affiche de 150 px de
+  /// large) plus l'anneau en haut, l'anneau seul en bas. Avant, rien n'était
+  /// réservé en bas et le zoom du focus s'ajoutait au soulèvement : le liseré
+  /// était coupé des deux côtés.
+  static EdgeInsets railRoom(BuildContext context) => TvScope.of(context)
+      ? const EdgeInsets.only(top: 18, bottom: 7)
+      : const EdgeInsets.only(top: liftHeadroom);
+
   @override
   State<PosterCard> createState() => _PosterCardState();
 }
@@ -150,6 +165,9 @@ class _PosterCardState extends State<PosterCard> {
       // The artwork lights up on its own below; a ring around the title lines
       // as well would double the outline.
       showRing: false,
+      // [PosterLift] soulève déjà l'affiche : un second zoom, de toute la
+      // carte, la faisait déborder de la rangée.
+      focusScale: 1.0,
       onFocusChange: (focused) {
         if (_focused == focused) return;
         setState(() => _focused = focused);
@@ -177,6 +195,7 @@ class _PosterCardState extends State<PosterCard> {
                   pressed: pressed,
                   child: PosterLift(
                     active: _active,
+                    focused: _focused,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -312,15 +331,28 @@ Duration _posterMotion(BuildContext context, Duration base) =>
 /// grande carte de grille — et ne vienne jamais toucher la voisine.
 class PosterLift extends StatelessWidget {
   final bool active;
+
+  /// Focus télécommande : l'anneau ([TvFocusRing]) se pose autour de
+  /// l'affiche, à un jour de son bord, et suit son soulèvement.
+  final bool focused;
   final Widget child;
 
-  const PosterLift({super.key, required this.active, required this.child});
+  const PosterLift({
+    super.key,
+    required this.active,
+    this.focused = false,
+    required this.child,
+  });
 
   static const Duration duration = Duration(milliseconds: 260);
 
   /// Point fixe du zoom : aux trois quarts de la hauteur, l'affiche grandit
   /// surtout vers le haut et à peine vers le titre en dessous.
   static const Alignment anchor = Alignment(0, 0.5);
+
+  /// Sur téléviseur, le pied de l'affiche ne bouge pas : son anneau reste
+  /// au-dessus du titre, à la place que [PosterCard.railRoom] lui réserve.
+  static const Alignment tvAnchor = Alignment.bottomCenter;
 
   @override
   Widget build(BuildContext context) {
@@ -329,6 +361,7 @@ class PosterLift extends StatelessWidget {
     // une grille de cinquante affiches en paie cinquante. Le mode léger garde
     // le zoom et retire l'ombre (ADR-0086).
     final shadows = !LiteScope.of(context);
+    final tv = TvScope.of(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -339,7 +372,7 @@ class PosterLift extends StatelessWidget {
 
         return AnimatedScale(
           scale: active ? lifted : 1.0,
-          alignment: anchor,
+          alignment: tv ? tvAnchor : anchor,
           duration: motion,
           curve: active ? Curves.easeOutCubic : Curves.easeOutQuart,
           child: AnimatedContainer(
@@ -364,7 +397,12 @@ class PosterLift extends StatelessWidget {
             ),
             // L'ombre se redessine à chaque image du survol ; sans calque
             // propre, l'affiche et ses voiles le feraient avec elle.
-            child: RepaintBoundary(child: child),
+            child: TvFocusRing(
+              visible: focused && tv,
+              outset: true,
+              borderRadius: BorderRadius.circular(PosterCard.radius),
+              child: RepaintBoundary(child: child),
+            ),
           ),
         );
       },
@@ -380,8 +418,8 @@ class PosterLift extends StatelessWidget {
 class PosterHoverOverlay extends StatelessWidget {
   final bool active;
 
-  /// Focus télécommande : le liseré passe à l'accent en pleine épaisseur, pour
-  /// se lire depuis le canapé plutôt que le filet discret de la souris.
+  /// Focus clavier : le liseré passe au blanc du focus. Sur téléviseur, il
+  /// s'efface devant l'anneau que [PosterLift] trace autour de l'affiche.
   final bool focused;
 
   /// Voile + bouton lecture — seulement pour ce qui se lance directement.
@@ -404,6 +442,7 @@ class PosterHoverOverlay extends StatelessWidget {
     final fade = _posterMotion(context, _fade);
     final pop = _posterMotion(context, _pop);
     final radius = BorderRadius.circular(PosterCard.radius);
+    final ringed = focused && !TvScope.of(context);
 
     return IgnorePointer(
       child: Stack(
@@ -453,12 +492,12 @@ class PosterHoverOverlay extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: radius,
               border: Border.all(
-                color: !active
+                color: !active || (focused && !ringed)
                     ? Colors.white.withValues(alpha: 0)
-                    : focused
-                        ? AppColors.accent
+                    : ringed
+                        ? AppColors.focus
                         : Colors.white.withValues(alpha: 0.22),
-                width: focused ? 3 : 1,
+                width: ringed ? TvFocusRing.width : 1,
               ),
             ),
           ),

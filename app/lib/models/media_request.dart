@@ -1,4 +1,5 @@
 import '../l10n/tr.dart';
+import 'media_details.dart' show EpisodeAirRef;
 
 enum RequestMediaType { movie, tv }
 
@@ -308,6 +309,8 @@ class RequestMediaDetails extends RequestMediaItem {
   final List<RequestCastMember> cast;
   final int? numberOfSeasons;
   final int? numberOfEpisodes;
+  final EpisodeAirRef? nextEpisodeToAir;
+  final EpisodeAirRef? lastEpisodeToAir;
   final List<RequestMediaItem> recommendations;
   final List<RequestMediaItem> similar;
 
@@ -344,6 +347,8 @@ class RequestMediaDetails extends RequestMediaItem {
     this.cast = const [],
     this.numberOfSeasons,
     this.numberOfEpisodes,
+    this.nextEpisodeToAir,
+    this.lastEpisodeToAir,
     this.recommendations = const [],
     this.similar = const [],
     this.waitingMessage,
@@ -394,6 +399,10 @@ class RequestMediaDetails extends RequestMediaItem {
           .toList(),
       numberOfSeasons: json['numberOfSeasons'] as int?,
       numberOfEpisodes: json['numberOfEpisodes'] as int?,
+      nextEpisodeToAir: _parseEpisodeAir(
+          json['nextEpisodeToAir'] ?? json['next_episode_to_air']),
+      lastEpisodeToAir: _parseEpisodeAir(
+          json['lastEpisodeToAir'] ?? json['last_episode_to_air']),
       waitingMessage:
           (json['waiting'] as Map<String, dynamic>?)?['message'] as String?,
       recommendations: recommendations
@@ -419,4 +428,11 @@ class RequestMediaDetails extends RequestMediaItem {
     if (h <= 0) return '${m}m';
     return '${h}h ${m.toString().padLeft(2, '0')}m';
   }
+}
+
+EpisodeAirRef? _parseEpisodeAir(dynamic raw) {
+  if (raw is Map) {
+    return EpisodeAirRef.fromJson(Map<String, dynamic>.from(raw));
+  }
+  return null;
 }

@@ -37,7 +37,8 @@ void main() {
       expect(policy.waitSeconds, 2);
     });
 
-    test('an empty cache mid-playback blames reception, however fast it refills',
+    test(
+        'an empty cache mid-playback blames reception, however fast it refills',
         () {
       // The refill speed is a burst, not an average: with minutes of
       // read-ahead, the cache only empties when the average fell short.

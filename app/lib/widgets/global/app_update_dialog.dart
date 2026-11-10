@@ -218,7 +218,8 @@ class _AppUpdateDialogState extends State<_AppUpdateDialog> {
         children: [
           Text(
             _message(),
-            style: const TextStyle(color: AppColors.textMuted, fontSize: AppType.subhead),
+            style: const TextStyle(
+                color: AppColors.textMuted, fontSize: AppType.subhead),
           ),
           if (_step == _Step.downloading || _step == _Step.installing) ...[
             const SizedBox(height: 16),
@@ -265,9 +266,13 @@ class _AppUpdateDialogState extends State<_AppUpdateDialog> {
       case _Step.ready:
         final countdown = _autoRestartIn;
         final base = AppPlatform.isAndroid
-            ? tr('Prêt à installer la version {0}. Android va demander une '
-                'confirmation.', [version])
-            : tr('Onyx va se fermer, s’installer en version {0}, puis se rouvrir.', [version]);
+            ? tr(
+                'Prêt à installer la version {0}. Android va demander une '
+                'confirmation.',
+                [version])
+            : tr(
+                'Onyx va se fermer, s’installer en version {0}, puis se rouvrir.',
+                [version]);
         if (countdown == null) return base;
         return tr('{0} Ouverture automatique dans {1}s…', [base, countdown]);
       case _Step.failed:
@@ -278,7 +283,8 @@ class _AppUpdateDialogState extends State<_AppUpdateDialog> {
             ? tr('Onyx la télécharge, puis Android demandera de confirmer '
                 'l’installation.')
             : tr('Onyx la télécharge, l’installe et redémarre tout seul.');
-        return tr('La version {0} est disponible{1}. {2}', [version, size.isEmpty ? '' : ' ($size)', action]);
+        return tr('La version {0} est disponible{1}. {2}',
+            [version, size.isEmpty ? '' : ' ($size)', action]);
     }
   }
 
@@ -298,7 +304,8 @@ class _AppUpdateDialogState extends State<_AppUpdateDialog> {
         return [
           TextButton(
             onPressed: _autoRestartIn != null ? _cancelAutoRestart : _close,
-            child: Text(_autoRestartIn != null ? tr('Annuler') : tr('Plus tard')),
+            child:
+                Text(_autoRestartIn != null ? tr('Annuler') : tr('Plus tard')),
           ),
           FilledButton(
             onPressed: _restart,

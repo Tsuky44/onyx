@@ -12,6 +12,7 @@ import 'support/tv_nav_harness.dart';
 /// Une rangée de [count] cartes, `<prefix>0` à `<prefix>N`, dans une zone.
 Widget _rail(String id, String prefix, int count, {int? autofocusAt}) {
   return TvRegion.rail(
+    entersAtStart: false,
     id: id,
     child: Row(
       children: [

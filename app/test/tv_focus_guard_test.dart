@@ -29,7 +29,8 @@ void main() {
   testWidgets('le garde-fou laisse passer les enfants', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: TvFocusGuard(child: Text('accueil', textDirection: TextDirection.ltr)),
+        home: TvFocusGuard(
+            child: Text('accueil', textDirection: TextDirection.ltr)),
       ),
     );
     expect(find.text('accueil'), findsOneWidget);

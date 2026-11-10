@@ -1,9 +1,9 @@
 import 'package:dpad/dpad.dart';
 import 'package:flutter/material.dart';
 
-import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/lite_mode.dart';
+import '../tv_focus_ring.dart';
 import '../tv_mode.dart';
 import 'tv_card_directions.dart';
 import 'tv_contained_steps.dart';
@@ -257,38 +257,10 @@ class _TvFocusRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lite = LiteScope.of(context);
-    // La pile ne dépend pas du focus : basculer l'enfant entre « enveloppé »
-    // et « nu » reconstruirait tout son sous-arbre, et chaque affiche
-    // relancerait son fondu à chaque pas.
-    Widget content = Stack(
-      clipBehavior: Clip.none,
-      children: [
-        child,
-        // Par-dessus l'enfant plutôt qu'autour : une bordure dans la mise en
-        // page décalerait chaque voisin de deux pixels à chaque pas.
-        if (focused && showRing)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: borderRadius,
-                  border: Border.all(color: AppColors.accent, width: 3),
-                  // Le halo est un flou de plus à chaque pas de focus ;
-                  // l'anneau seul se lit aussi bien du canapé (ADR-0086).
-                  boxShadow: lite
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: AppColors.accent.withValues(alpha: 0.35),
-                            blurRadius: 18,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                ),
-              ),
-            ),
-          ),
-      ],
+    Widget content = TvFocusRing(
+      visible: focused && showRing,
+      borderRadius: borderRadius,
+      child: child,
     );
     // L'agrandissement est un geste de téléviseur : sur téléphone ou bureau,
     // il se battrait avec le survol des cartes.

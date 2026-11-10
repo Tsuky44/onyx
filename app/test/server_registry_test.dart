@@ -268,7 +268,8 @@ void main() {
     // Le jeton n'a rien à faire dans le carnet lui-même.
     expect(prefs.getString('onyx_servers_v1'), isNot(contains('"a"')));
   });
-  test('server-declared links group accounts, persist and survive an address change',
+  test(
+      'server-declared links group accounts, persist and survive an address change',
       () async {
     final registry = ServerRegistry();
     await registry.load();

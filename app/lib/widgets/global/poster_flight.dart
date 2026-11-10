@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../tv/tv_mode.dart';
 import '../../tv/tv_ui_scale.dart';
+import '../../utils/responsive.dart';
 import 'app_network_image.dart';
+import 'overlay_back_button.dart';
 
 /// L'envol d'une affiche vers sa fiche, porté d'OnyxHub (`MotionDirector`,
 /// `launchFly`) : la carte cliquée se soulève et se retourne, son dos montre
@@ -155,48 +157,53 @@ class PosterFlightRoute<T> extends PageRoute<T> {
         // Même arbre du début à la fin, la page toujours en première place :
         // la reparenter perdrait son état (chargement, défilement).
         return LayoutBuilder(
-          builder: (context, constraints) => Stack(
-            fit: StackFit.expand,
-            children: [
-              // La fiche attend l'atterrissage : opacité nulle, aucune
-              // peinture, aucun toucher.
-              IgnorePointer(
-                ignoring: !landed,
-                child: Opacity(
-                  opacity: reversing ? (lite ? 1 : a) : (landed ? 1 : 0),
-                  child: _Arrival(
-                    progress: arrival,
-                    window: t.arrivalWindow,
-                    child: child!,
-                  ),
-                ),
-              ),
-              if (flying && !landed) _Scrim(opacity: t.scrim(a)),
-              if (flying)
+          builder: (context, constraints) {
+            final topInset = AppLayout.isWide(context)
+                ? OverlayBackButton.topInsetFor(context)
+                : 0.0;
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                // La fiche attend l'atterrissage : opacité nulle, aucune
+                // peinture, aucun toucher.
                 IgnorePointer(
-                  child: RepaintBoundary(
-                    child: _FlightLayer(
-                      timeline: t,
-                      a: a,
-                      from: from,
-                      // La hauteur est mesurée dans la page, à l'échelle du
-                      // téléviseur ; l'envol se dessine, lui, à taille brute.
-                      to: Rect.fromLTWH(
-                          0,
-                          0,
-                          constraints.maxWidth,
-                          backdropHeight *
-                              (TvScope.of(context)
-                                  ? TvUiScale.factorFor(constraints.maxWidth)
-                                  : 1)),
-                      radius: radius,
-                      posterUrl: posterUrl,
-                      backdropUrl: backdropUrl,
+                  ignoring: !landed,
+                  child: Opacity(
+                    opacity: reversing ? (lite ? 1 : a) : (landed ? 1 : 0),
+                    child: _Arrival(
+                      progress: arrival,
+                      window: t.arrivalWindow,
+                      child: child!,
                     ),
                   ),
                 ),
-            ],
-          ),
+                if (flying && !landed) _Scrim(opacity: t.scrim(a)),
+                if (flying)
+                  IgnorePointer(
+                    child: RepaintBoundary(
+                      child: _FlightLayer(
+                        timeline: t,
+                        a: a,
+                        from: from,
+                        // La hauteur est mesurée dans la page, à l'échelle du
+                        // téléviseur ; l'envol se dessine, lui, à taille brute.
+                        to: Rect.fromLTWH(
+                            0,
+                            topInset,
+                            constraints.maxWidth,
+                            backdropHeight *
+                                (TvScope.of(context)
+                                    ? TvUiScale.factorFor(constraints.maxWidth)
+                                    : 1)),
+                        radius: radius,
+                        posterUrl: posterUrl,
+                        backdropUrl: backdropUrl,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );

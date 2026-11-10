@@ -32,7 +32,9 @@ void main() {
   });
 
   group('AppDownload', () {
-    AppDownload download({String file = 'Onyx-1.0.0-macos.dmg', String url = '/api/downloads/Onyx-1.0.0-macos.dmg'}) =>
+    AppDownload download(
+            {String file = 'Onyx-1.0.0-macos.dmg',
+            String url = '/api/downloads/Onyx-1.0.0-macos.dmg'}) =>
         AppDownload(
             platform: 'macos',
             label: 'macOS',

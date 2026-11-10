@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/announcement.dart';
 import 'package:onyx/screens/shell/pending_announcement.dart';
 
-const _message = ServerAnnouncement(id: 7, title: 'Maintenance', message: 'Ce soir');
+const _message =
+    ServerAnnouncement(id: 7, title: 'Maintenance', message: 'Ce soir');
 
 class _Harness {
   _Harness({this.fails = false, this.shows = true});

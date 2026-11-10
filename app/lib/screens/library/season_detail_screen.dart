@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../services/media_details_cache.dart';
 import '../../theme/app_colors.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/format.dart';
 import '../../utils/on_screen.dart';
@@ -186,145 +187,157 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        scrollCacheExtent: AppLayout.imageCacheExtent(context),
-        slivers: [
-          SliverToBoxAdapter(
-            child: DetailBackdropHeader(
-              fallback: Media(
-                id: _season.id,
-                type: MediaType.season,
-                title: seasonLabel(_season),
-                duration: 0,
-                posterUrl: seasonPoster != null && seasonPoster.isNotEmpty
-                    ? seasonPoster
-                    : _show.posterUrl,
-                overview: _season.overview,
-                releaseDate: _season.releaseDate,
-                createdAt: _season.createdAt,
-              ),
-              details: _headerDetails(),
-              eyebrow: _show.title,
-              metadata: [
-                for (final fact in seasonFacts(
-                  _season,
-                  episodeCount: episodes.isNotEmpty ? episodes.length : null,
-                ))
-                  MetadataText(fact),
-              ],
-              loading: _showDetails == null,
-              emptyOverviewLabel: tr('Pas de résumé pour cette saison.'),
-              onBack: () => Navigator.of(context).pop(),
-              actions: DetailActions(
-                playLabel: detailPlayLabel(
-                  resuming: resumeInProgress,
-                  episode: playTarget?.media,
-                  seasonOverride: _seasonNumber,
+      body: TvRegion.sections(
+        child: CustomScrollView(
+          scrollCacheExtent: AppLayout.imageCacheExtent(context),
+          slivers: [
+            SliverToBoxAdapter(
+              child: TvRegion.section(
+                id: 'hero',
+                child: DetailBackdropHeader(
+                  fallback: Media(
+                    id: _season.id,
+                    type: MediaType.season,
+                    title: seasonLabel(_season),
+                    duration: 0,
+                    posterUrl: seasonPoster != null && seasonPoster.isNotEmpty
+                        ? seasonPoster
+                        : _show.posterUrl,
+                    overview: _season.overview,
+                    releaseDate: _season.releaseDate,
+                    createdAt: _season.createdAt,
+                  ),
+                  details: _headerDetails(),
+                  eyebrow: _show.title,
+                  metadata: [
+                    for (final fact in seasonFacts(
+                      _season,
+                      episodeCount: episodes.isNotEmpty ? episodes.length : null,
+                    ))
+                      MetadataText(fact),
+                  ],
+                  loading: _showDetails == null,
+                  emptyOverviewLabel: tr('Pas de résumé pour cette saison.'),
+                  onBack: () => Navigator.of(context).pop(),
+                  actions: DetailActions(
+                    playLabel: detailPlayLabel(
+                      resuming: resumeInProgress,
+                      episode: playTarget?.media,
+                      seasonOverride: _seasonNumber,
+                    ),
+                    onPlay: playTarget == null
+                        ? null
+                        : () => _play(playTarget, episodes),
+                    autofocusPlay: TvMode.isTv,
+                    progress: resumeInProgress ? resumeEp.percentWatched : null,
+                    progressLabel: resumeInProgress
+                        ? formatRemaining(resumeEp.effectiveDuration -
+                            resumeEp.currentPositionSeconds)
+                        : null,
+                  ),
                 ),
-                onPlay: playTarget == null
-                    ? null
-                    : () => _play(playTarget, episodes),
-                autofocusPlay: TvMode.isTv,
-                progress: resumeInProgress ? resumeEp.percentWatched : null,
-                progressLabel: resumeInProgress
-                    ? formatRemaining(resumeEp.effectiveDuration -
-                        resumeEp.currentPositionSeconds)
-                    : null,
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: AppLayout.pageInsets(context, top: 24, bottom: 8),
-              child: Row(
-                children: [
-                  Text(tr('Épisodes'), style: detailSectionTitleStyle(context)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      episodes.isEmpty
-                          ? ''
-                          : tr('{0}/{1} disponibles',
-                              [availableCount, episodes.length]),
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textMuted,
+            TvRegion.section(
+              id: 'episodes',
+              child: SliverMainAxisGroup(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: AppLayout.pageInsets(context, top: 24, bottom: 8),
+                      child: Row(
+                        children: [
+                          Text(tr('Épisodes'), style: detailSectionTitleStyle(context)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              episodes.isEmpty
+                                  ? ''
+                                  : tr('{0}/{1} disponibles',
+                                      [availableCount, episodes.length]),
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
+                            ),
                           ),
+                          SeasonDownloadButton(
+                            episodes: episodes,
+                            showTitle: _show.title,
+                            showId: _show.id,
+                            showPosterUrl: _show.posterUrl,
+                            seasonNumber: _seasonNumber,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  SeasonDownloadButton(
-                    episodes: episodes,
-                    showTitle: _show.title,
-                    showId: _show.id,
-                    showPosterUrl: _show.posterUrl,
-                    seasonNumber: _seasonNumber,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: AppLayout.pageInsets(context, bottom: 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: SeasonWatchedButton(
+                          episodes: episodes,
+                          busy: _updatingWatched,
+                          onSetWatched: _setSeasonWatched,
+                        ),
+                      ),
+                    ),
                   ),
+                  if (_loadingEpisodes && episodes.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppLayout.pagePadding(context)),
+                        child: const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2.5)),
+                      ),
+                    )
+                  else if (episodes.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppLayout.pagePadding(context)),
+                        child: Text(
+                          _failed
+                              ? tr('Impossible de charger les épisodes.')
+                              : tr('Aucun épisode pour cette saison.'),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                        ),
+                      ),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final episode = episodes[index];
+                          return EpisodeTile(
+                            episode: episode,
+                            episodeNumber: episode.media.episodeNumber ?? index + 1,
+                            showTitle: _show.title,
+                            showId: _show.id,
+                            showPosterUrl: _show.posterUrl,
+                            seasonNumber: _seasonNumber,
+                            onToggleWatched: episode.isAvailable
+                                ? (watched) async {
+                                    await setEpisodeWatched(context, episode, watched);
+                                  }
+                                : null,
+                            onTap: episode.isAvailable
+                                ? () => _play(episode, episodes)
+                                : null,
+                          );
+                        },
+                        childCount: episodes.length,
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: AppLayout.pageInsets(context, bottom: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SeasonWatchedButton(
-                  episodes: episodes,
-                  busy: _updatingWatched,
-                  onSetWatched: _setSeasonWatched,
-                ),
-              ),
-            ),
-          ),
-          if (_loadingEpisodes && episodes.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(AppLayout.pagePadding(context)),
-                child: const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2.5)),
-              ),
-            )
-          else if (episodes.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(AppLayout.pagePadding(context)),
-                child: Text(
-                  _failed
-                      ? tr('Impossible de charger les épisodes.')
-                      : tr('Aucun épisode pour cette saison.'),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                ),
-              ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final episode = episodes[index];
-                  return EpisodeTile(
-                    episode: episode,
-                    episodeNumber: episode.media.episodeNumber ?? index + 1,
-                    showTitle: _show.title,
-                    showId: _show.id,
-                    showPosterUrl: _show.posterUrl,
-                    seasonNumber: _seasonNumber,
-                    onToggleWatched: episode.isAvailable
-                        ? (watched) async {
-                            await setEpisodeWatched(context, episode, watched);
-                          }
-                        : null,
-                    onTap: episode.isAvailable
-                        ? () => _play(episode, episodes)
-                        : null,
-                  );
-                },
-                childCount: episodes.length,
-              ),
-            ),
-          const SliverToBoxAdapter(child: SizedBox(height: 48)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+          ],
+        ),
       ),
     );
   }

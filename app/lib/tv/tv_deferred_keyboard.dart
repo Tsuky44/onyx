@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'nav/onyx_dpad.dart' show TvNavScope;
 import 'tv_focus.dart';
@@ -40,6 +41,7 @@ class TvDeferredKeyboard extends StatefulWidget {
     required this.builder,
     this.fieldFocusNode,
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
+    this.autofocus = false,
   });
 
   /// Construit le champ. Reçoit le nœud à lui donner, et ce qu'il doit passer à
@@ -58,6 +60,10 @@ class TvDeferredKeyboard extends StatefulWidget {
   /// Épouse la forme du champ, pour que l'anneau de focus le suive.
   final BorderRadius borderRadius;
 
+  /// Si vrai, le champ réclame directement le focus et l'ouverture du clavier
+  /// dès l'affichage du widget.
+  final bool autofocus;
+
   @override
   State<TvDeferredKeyboard> createState() => TvDeferredKeyboardState();
 }
@@ -70,7 +76,7 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
   /// dans ce cas : celui de l'appelant ne nous appartient pas.
   FocusNode? _ownedNode;
 
-  bool _keyboardRequested = false;
+  late bool _keyboardRequested = widget.autofocus;
 
   FocusNode get _fieldNode =>
       widget.fieldFocusNode ?? (_ownedNode ??= FocusNode());
@@ -79,6 +85,13 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
   void initState() {
     super.initState();
     _fieldNode.addListener(_onFieldFocusChanged);
+    if (widget.autofocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _fieldNode.requestFocus();
+        SystemChannels.textInput.invokeMethod('TextInput.show');
+      });
+    }
   }
 
   @override
@@ -87,6 +100,16 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
     if (oldWidget.fieldFocusNode != widget.fieldFocusNode) {
       oldWidget.fieldFocusNode?.removeListener(_onFieldFocusChanged);
       _fieldNode.addListener(_onFieldFocusChanged);
+    }
+    if (!oldWidget.autofocus && widget.autofocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (TvScope.of(context)) {
+          requestKeyboard();
+        } else {
+          _fieldNode.requestFocus();
+        }
+      });
     }
   }
 
@@ -104,6 +127,7 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
     // suivant de la télécommande le rouvrirait tout seul — et le focus revient
     // sur le champ-bouton, pour ne laisser la télécommande nulle part.
     setState(() => _keyboardRequested = false);
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       // Sous dpad, une flèche qui sort du champ a déjà posé le focus sur le
@@ -140,7 +164,14 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
     // Après la frame : le champ n'est focusable qu'une fois reconstruit avec
     // `canRequestFocus` à vrai.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _fieldNode.requestFocus();
+      if (!mounted) return;
+      _fieldNode.requestFocus();
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+      Future.microtask(() {
+        if (mounted && _fieldNode.hasFocus) {
+          SystemChannels.textInput.invokeMethod('TextInput.show');
+        }
+      });
     });
   }
 
@@ -154,6 +185,7 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
     if (!mounted || !_keyboardRequested) return;
     setState(() => _keyboardRequested = false);
     _remoteNode.requestFocus();
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
   }
 
   /// Rend à la télécommande le champ qui a le focus, s'il y en a un, et dit
@@ -198,7 +230,11 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
       // Le champ prend le focus quand OK ouvre le clavier ; sous dpad il ne
       // doit pas en être exclu.
       editable: true,
-      child: widget.builder(context, _fieldNode, _keyboardRequested),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _keyboardRequested ? null : requestKeyboard,
+        child: widget.builder(context, _fieldNode, _keyboardRequested),
+      ),
     );
   }
 }

@@ -115,12 +115,15 @@ typedef _Step = ({String from, TraversalDirection direction, String to});
 /// les menus sont hors du parcours (`TvFocusable.childFocus`).
 const _skips = <TvNavEngine, Map<String, String>>{
   TvNavEngine.legacy: {
-    'Film A|down': 'legacy, comme sur main : bas depuis une ligne tombe sur le menu de la '
-        'ligne suivante (« menu 1 »), pas sur la ligne',
-    'Film B|down': 'legacy, comme sur main : bas depuis une ligne tombe sur le menu de la '
-        'ligne suivante (« menu 2 »), pas sur la ligne',
-    'menu 1|down': 'legacy, comme sur main : bas depuis un menu va au menu de la ligne '
-        'suivante (« menu 2 »), pas à la ligne',
+    'Film A|down':
+        'legacy, comme sur main : bas depuis une ligne tombe sur le menu de la '
+            'ligne suivante (« menu 1 »), pas sur la ligne',
+    'Film B|down':
+        'legacy, comme sur main : bas depuis une ligne tombe sur le menu de la '
+            'ligne suivante (« menu 2 »), pas sur la ligne',
+    'menu 1|down':
+        'legacy, comme sur main : bas depuis un menu va au menu de la ligne '
+            'suivante (« menu 2 »), pas à la ligne',
   },
 };
 

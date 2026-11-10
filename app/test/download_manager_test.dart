@@ -197,7 +197,8 @@ void main() {
     expect(manager.offlineDetails(2)?.id, 7);
     expect(manager.entryFor(1)?.infoId, 7);
 
-    expect(manager.showPosterPath(7), endsWith(_path(['shows', '7', 'poster.jpg'])));
+    expect(manager.showPosterPath(7),
+        endsWith(_path(['shows', '7', 'poster.jpg'])));
     // Aucun logo n'a été rapatrié : l'appelant retombe sur le titre écrit.
     expect(manager.showLogoPath(7), isNull);
   });
@@ -290,7 +291,8 @@ void main() {
     expect(manager.downloads, isEmpty);
     expect(Directory('${root.path}/onyx_offline/1').existsSync(), isFalse);
     // Plus un seul épisode de la série : sa fiche n'a plus rien à décrire.
-    expect(Directory('${root.path}/onyx_offline/shows/7').existsSync(), isFalse);
+    expect(
+        Directory('${root.path}/onyx_offline/shows/7').existsSync(), isFalse);
     expect(manager.detailsForShow(7), isNull);
 
     // Le manifeste réécrit doit refléter la suppression, pas seulement la
@@ -301,7 +303,8 @@ void main() {
     expect(manifest['items'], isEmpty);
   });
 
-  test('un statut inconnu retombe sur la file plutôt que de faire échouer la relecture',
+  test(
+      'un statut inconnu retombe sur la file plutôt que de faire échouer la relecture',
       () {
     final restored = OfflineDownload.fromJson({
       'media_id': 9,

@@ -82,7 +82,7 @@ void main() {
           .ancestor(of: find.text('Films'), matching: find.byType(DecoratedBox))
           .first);
       final border = (ring.decoration as BoxDecoration).border as Border;
-      expect(border.top.color, AppColors.accent);
+      expect(border.top.color, AppColors.focus);
     });
   });
 }

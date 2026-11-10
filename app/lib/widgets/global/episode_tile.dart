@@ -197,7 +197,7 @@ class _EpisodeTileState extends State<EpisodeTile> {
                   : Colors.transparent,
               border: Border(
                 left: BorderSide(
-                  color: _focused ? AppColors.accent : Colors.transparent,
+                  color: _focused ? AppColors.focus : Colors.transparent,
                   width: 3,
                 ),
               ),

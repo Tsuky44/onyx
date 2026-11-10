@@ -99,9 +99,7 @@ class _AppDownloadButtonState extends State<AppDownloadButton> {
           size: widget.size,
           onTap: _open,
           child: Icon(
-            _isUpdate
-                ? AppIcons.update
-                : AppIcons.download,
+            _isUpdate ? AppIcons.update : AppIcons.download,
             size: widget.size * 0.5,
             color: _isUpdate ? AppColors.accent : AppColors.textPrimary,
           ),
@@ -122,4 +120,3 @@ class _AppDownloadButtonState extends State<AppDownloadButton> {
     return parts.join(' · ');
   }
 }
-

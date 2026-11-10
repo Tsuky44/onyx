@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/lite_mode.dart';
+import '../../tv/input/tv_field_key_handler.dart';
 import '../../tv/nav/onyx_dpad.dart' show TvNavScope;
 import '../../tv/nav/tv_focusable.dart';
 import '../../tv/tv_mode.dart';
@@ -186,6 +187,9 @@ class GlassSearchInput extends StatelessWidget {
   /// télécommande empêche d'atteindre quoi que ce soit après lui.
   final bool canRequestFocus;
 
+  /// Voir [TextField.selectAllOnFocus]. Nul garde le défaut de la plateforme.
+  final bool? selectAllOnFocus;
+
   const GlassSearchInput({
     super.key,
     required this.controller,
@@ -197,6 +201,7 @@ class GlassSearchInput extends StatelessWidget {
     this.focused = false,
     this.hasText = false,
     this.canRequestFocus = true,
+    this.selectAllOnFocus,
   });
 
   @override
@@ -217,64 +222,76 @@ class GlassSearchInput extends StatelessWidget {
       ),
       child: SizedBox(
         height: 34,
-        child: TextField(
+        child: TvFieldKeyHandler(
           controller: controller,
-          focusNode: focusNode,
           canRequestFocus: canRequestFocus,
-          onChanged: onChanged,
           onSubmitted: onSubmitted,
-          textInputAction: TextInputAction.search,
-          cursorColor: AppColors.textPrimary,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: AppType.subhead,
-            fontWeight: FontWeight.w500,
-            height: 1.2,
-          ),
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: focused ? focusFill : idleFill,
-            hoverColor: Colors.transparent,
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: AppColors.textMuted.withValues(alpha: 0.7),
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            canRequestFocus: canRequestFocus,
+            selectAllOnFocus: selectAllOnFocus,
+            onChanged: onChanged,
+            onSubmitted: onSubmitted,
+            onEditingComplete: () {
+              final query = controller.text.trim();
+              if (query.isNotEmpty) {
+                onSubmitted?.call(query);
+              }
+            },
+            textInputAction: TextInputAction.search,
+            cursorColor: AppColors.textPrimary,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
               fontSize: AppType.subhead,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
+              height: 1.2,
             ),
-            prefixIcon: Icon(
-              AppIcons.search,
-              size: 17,
-              color: AppColors.textSecondary
-                  .withValues(alpha: focused ? 0.95 : 0.65),
-            ),
-            prefixIconConstraints:
-                const BoxConstraints(minWidth: 36, minHeight: 34),
-            suffixIcon: hasText
-                ? IconButton(
-                    icon: Icon(
-                      AppIcons.close,
-                      size: 15,
-                      color: AppColors.textMuted.withValues(alpha: 0.8),
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 32, minHeight: 34),
-                    onPressed: onClear,
-                  )
-                : null,
-            contentPadding: const EdgeInsets.symmetric(vertical: 9),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(17),
-              borderSide: BorderSide(color: idleBorder),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(17),
-              borderSide: BorderSide(color: focusBorder),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(17),
-              borderSide: BorderSide(color: idleBorder),
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: focused ? focusFill : idleFill,
+              hoverColor: Colors.transparent,
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: AppColors.textMuted.withValues(alpha: 0.7),
+                fontSize: AppType.subhead,
+                fontWeight: FontWeight.w400,
+              ),
+              prefixIcon: Icon(
+                AppIcons.search,
+                size: 17,
+                color: AppColors.textSecondary
+                    .withValues(alpha: focused ? 0.95 : 0.65),
+              ),
+              prefixIconConstraints:
+                  const BoxConstraints(minWidth: 36, minHeight: 34),
+              suffixIcon: hasText
+                  ? IconButton(
+                      icon: Icon(
+                        AppIcons.close,
+                        size: 15,
+                        color: AppColors.textMuted.withValues(alpha: 0.8),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 34),
+                      onPressed: onClear,
+                    )
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(vertical: 9),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(17),
+                borderSide: BorderSide(color: idleBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(17),
+                borderSide: BorderSide(color: focusBorder),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(17),
+                borderSide: BorderSide(color: idleBorder),
+              ),
             ),
           ),
         ),
@@ -404,7 +421,7 @@ class _GlassNavTabState extends State<GlassNavTab> {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: ringed ? AppColors.accent : Colors.transparent,
+                  color: ringed ? AppColors.focus : Colors.transparent,
                   width: 2,
                 ),
               ),
@@ -527,7 +544,7 @@ class _GlassIconButtonState extends State<GlassIconButton> {
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: ringed
-                        ? AppColors.accent
+                        ? AppColors.focus
                         : Colors.white.withValues(alpha: 0.12),
                     width: ringed ? 2 : 1,
                   ),

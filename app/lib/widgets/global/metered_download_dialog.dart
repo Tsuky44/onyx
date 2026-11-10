@@ -50,17 +50,21 @@ Future<bool> confirmDownloadOnThisNetwork(
       title: Text(tr('Télécharger sur ce réseau ?')),
       content: Text(
         network.kind == NetworkKind.mobile
-            ? tr('Vous êtes en données mobiles. Télécharger {0} peut '
+            ? tr(
+                'Vous êtes en données mobiles. Télécharger {0} peut '
                 'consommer plusieurs gigaoctets de votre forfait — un '
                 'épisode est rapatrié dans sa qualité d’origine, sans '
                 'compression.\n\nEn Wi-Fi, le téléchargement repartira tout '
-                'seul.', [what])
-            : tr('Ce réseau est signalé comme limité — un partage de '
+                'seul.',
+                [what])
+            : tr(
+                'Ce réseau est signalé comme limité — un partage de '
                 'connexion, par exemple. Télécharger {0} peut consommer '
                 'plusieurs gigaoctets du forfait qui le fournit : un épisode '
                 'est rapatrié dans sa qualité d’origine, sans '
                 'compression.\n\nSur un réseau non limité, le téléchargement '
-                'repartira tout seul.', [what]),
+                'repartira tout seul.',
+                [what]),
       ),
       actions: [
         TextButton(

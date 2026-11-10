@@ -92,7 +92,8 @@ void main() {
 
     await mouse.moveTo(tester.getCenter(find.text('Voir la saison')));
     await tester.pump();
-    await tester.tap(find.text('Voir la saison'), kind: PointerDeviceKind.mouse);
+    await tester.tap(find.text('Voir la saison'),
+        kind: PointerDeviceKind.mouse);
     await tester.pumpAndSettle();
 
     expect(calls.opened.map((s) => s.id), [11]);

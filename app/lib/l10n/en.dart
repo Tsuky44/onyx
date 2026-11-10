@@ -2526,12 +2526,8 @@ const Map<String, String> kEnglish = <String, String>{
       'View the collection',
   'Voir les résultats':
       'Show results',
-  'Voir les {0} résultats':
-      'Show the {0} results',
   'Voir moins':
       'Show less',
-  'Voir tous les résultats':
-      'Show all results',
   'Volume':
       'Volume',
   'Vos autres appareils restent connectés.':

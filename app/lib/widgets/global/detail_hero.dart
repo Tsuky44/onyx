@@ -5,6 +5,8 @@ import '../../theme/app_icons.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_type.dart';
+import '../../theme/focus_fill.dart';
+import '../../tv/tv_mode.dart';
 import '../../utils/responsive.dart';
 import 'app_network_image.dart';
 import 'detail_metadata.dart';
@@ -33,70 +35,76 @@ class DetailBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: heightFor(context),
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Decoded at window width, not at the source's 1280 px: the backdrop
-          // is the largest image on the page and the one that used to hold up
-          // the first paint.
-          AppNetworkImage(
-            url: url,
-            fit: BoxFit.cover,
-            alignment: PosterFlight.focus,
-            filterQuality: FilterQuality.high,
-            decodeWidth: MediaQuery.sizeOf(context).width,
-            fadeInDuration: AppMotion.standard,
-            placeholder: const ColoredBox(color: AppColors.surfaceElevated),
-            errorWidget: const ColoredBox(color: AppColors.surfaceElevated),
-          ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.transparent,
-                  AppColors.background,
-                ],
-                stops: [0.0, 0.45, 1.0],
-              ),
+    final topInset = AppLayout.isWide(context)
+        ? OverlayBackButton.topInsetFor(context)
+        : 0.0;
+    return Padding(
+      padding: EdgeInsets.only(top: topInset),
+      child: SizedBox(
+        height: heightFor(context),
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Decoded at window width, not at the source's 1280 px: the backdrop
+            // is the largest image on the page and the one that used to hold up
+            // the first paint.
+            AppNetworkImage(
+              url: url,
+              fit: BoxFit.cover,
+              alignment: PosterFlight.focus,
+              filterQuality: FilterQuality.high,
+              decodeWidth: MediaQuery.sizeOf(context).width,
+              fadeInDuration: AppMotion.standard,
+              placeholder: const ColoredBox(color: AppColors.surfaceElevated),
+              errorWidget: const ColoredBox(color: AppColors.surfaceElevated),
             ),
-          ),
-          if (!AppLayout.isCompact(context))
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    AppColors.background.withValues(alpha: 0.95),
-                    AppColors.background.withValues(alpha: 0.55),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.45, 0.85],
-                ),
-              ),
-            )
-          else
-            DecoratedBox(
+            const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.25),
-                    AppColors.background.withValues(alpha: 0.75),
+                    Colors.transparent,
+                    Colors.transparent,
                     AppColors.background,
                   ],
-                  stops: const [0.0, 0.55, 1.0],
+                  stops: [0.0, 0.45, 1.0],
                 ),
               ),
             ),
-        ],
+            if (!AppLayout.isCompact(context))
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      AppColors.background.withValues(alpha: 0.95),
+                      AppColors.background.withValues(alpha: 0.55),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.45, 0.85],
+                  ),
+                ),
+              )
+            else
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.25),
+                      AppColors.background.withValues(alpha: 0.75),
+                      AppColors.background,
+                    ],
+                    stops: const [0.0, 0.55, 1.0],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -121,6 +129,7 @@ class DetailHero extends StatelessWidget {
     this.metadata = const [],
     this.badges = const [],
     this.actions,
+    this.trailing,
     this.onBack,
   });
 
@@ -148,6 +157,9 @@ class DetailHero extends StatelessWidget {
   final List<String> badges;
   final Widget? actions;
 
+  /// Widget additionnel en queue d'en-tête (compte à rebours du prochain épisode).
+  final Widget? trailing;
+
   /// Nul quand il n'y a rien derrière la page : celle d'un lien de partage.
   final VoidCallback? onBack;
 
@@ -171,9 +183,13 @@ class DetailHero extends StatelessWidget {
   /// passer sous lui.
   double _posterHeightFor(BuildContext context, double wide) {
     if (onBack == null) return wide;
+    final topInset = AppLayout.isWide(context)
+        ? OverlayBackButton.topInsetFor(context)
+        : 0.0;
     final clearance =
         OverlayBackButton.toolbarHeightFor(context) + 4 + _backGap;
-    final room = DetailBackdrop.heightDesktop - _posterBottom - clearance;
+    final room =
+        DetailBackdrop.heightDesktop + topInset - _posterBottom - clearance;
     return room.clamp(posterHeightMedium, wide);
   }
 
@@ -188,6 +204,7 @@ class DetailHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = AppLayout.isCompact(context);
+    final wide = AppLayout.isWide(context);
     final pad = AppLayout.pagePadding(context);
     final info = _info(context, compact);
 
@@ -212,13 +229,21 @@ class DetailHero extends StatelessWidget {
                     FlightDrop(
                       child: _Poster(
                         url: posterUrl,
-                        height: AppLayout.isWide(context)
+                        height: wide
                             ? _posterHeightFor(context, posterHeight)
                             : posterHeightMedium,
                       ),
                     ),
                     const SizedBox(width: 36),
                     Expanded(child: info),
+                    if (trailing != null && wide) ...[
+                      const SizedBox(width: 32),
+                      FlightDrop(
+                        delay: const Duration(milliseconds: 140),
+                        distance: 32,
+                        child: trailing!,
+                      ),
+                    ],
                   ],
                 ),
         ),
@@ -234,23 +259,39 @@ class DetailHero extends StatelessWidget {
       ],
     );
 
-    if (actions == null || !compact) return header;
-    // Sur téléphone, les actions passent sous l'image plutôt que dessus : le
-    // titre, le logo, les puces et quatre lignes de synopsis remplissent déjà
-    // l'en-tête, et un bouton pleine largeur de plus le faisait remonter
-    // jusque sous le bouton retour.
+    final showTrailingBelow = trailing != null && !wide;
+    final showActionsBelow = actions != null && compact;
+
+    if (!showActionsBelow && !showTrailingBelow) return header;
+    // Sur téléphone ou écran étroit, les actions et/ou le bloc de compte à
+    // rebours passent sous l'en-tête pour ne pas écraser les métadonnées et le
+    // synopsis.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         header,
-        Padding(
-          padding: EdgeInsets.fromLTRB(pad, 4, pad, 8),
-          child: FlightDrop(
-            delay: const Duration(milliseconds: 120),
-            distance: 48,
-            child: actions!,
+        if (showActionsBelow)
+          Padding(
+            padding: EdgeInsets.fromLTRB(pad, 4, pad, 8),
+            child: FlightDrop(
+              delay: const Duration(milliseconds: 120),
+              distance: 48,
+              child: actions!,
+            ),
           ),
-        ),
+        if (showTrailingBelow)
+          Padding(
+            padding: EdgeInsets.fromLTRB(pad, 16, pad, 8),
+            child: FlightDrop(
+              delay: const Duration(milliseconds: 140),
+              distance: 32,
+              child: Align(
+                alignment:
+                    compact ? Alignment.centerLeft : Alignment.centerRight,
+                child: trailing!,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -492,14 +533,16 @@ class HeroPill extends StatefulWidget {
 
 class _HeroPillState extends State<HeroPill> {
   /// Le voile de focus d'un `InkWell` ne se lit pas depuis un canapé sur du
-  /// verre : l'arête passe à l'accent, comme le liseré des affiches (ADR-0008).
+  /// verre. Sur téléviseur, la pastille focalisée se remplit de blanc
+  /// ([FocusFill], ADR-0112) ; ailleurs, son arête passe au blanc du focus.
   bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
     final widget = this.widget;
     final compact = widget.dense || AppLayout.isCompact(context);
-    final (fill, border, foreground) = switch (widget.style) {
+    final filled = _focused && TvScope.of(context);
+    var (fill, border, foreground) = switch (widget.style) {
       HeroPillStyle.glass => (
           Colors.white.withValues(alpha: 0.15),
           Colors.white.withValues(alpha: 0.2),
@@ -521,6 +564,7 @@ class _HeroPillState extends State<HeroPill> {
           Colors.white,
         ),
     };
+    if (filled) (fill, foreground) = (FocusFill.fill, FocusFill.ink);
     final iconOnly = !widget.dense &&
         compact &&
         widget.iconOnlyWhenCompact &&
@@ -533,7 +577,8 @@ class _HeroPillState extends State<HeroPill> {
       children: [
         if (widget.icon != null)
           Icon(widget.icon,
-              size: iconSize, color: widget.iconColor ?? foreground),
+              size: iconSize,
+              color: filled ? foreground : widget.iconColor ?? foreground),
         if (widget.icon != null && !iconOnly) SizedBox(width: compact ? 6 : 9),
         if (!iconOnly)
           Flexible(
@@ -565,9 +610,11 @@ class _HeroPillState extends State<HeroPill> {
     final pill = Material(
       color: fill,
       shape: StadiumBorder(
-        side: _focused
-            ? const BorderSide(color: AppColors.accent, width: 3)
-            : BorderSide(color: border),
+        side: filled
+            ? BorderSide.none
+            : _focused
+                ? const BorderSide(color: AppColors.focus, width: 3)
+                : BorderSide(color: border),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

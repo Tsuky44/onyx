@@ -10,6 +10,7 @@ import '../../providers/library_provider.dart';
 import '../../services/api_client.dart';
 import '../../services/media_details_cache.dart';
 import '../../theme/app_colors.dart';
+import '../../tv/nav/tv_region.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/on_screen.dart';
 import '../../utils/responsive.dart';
@@ -17,6 +18,7 @@ import '../../utils/format.dart';
 import '../../widgets/global/detail_actions.dart';
 import '../../widgets/global/detail_backdrop_header.dart';
 import '../../widgets/global/detail_cast_section.dart';
+import '../../widgets/global/media_countdown.dart';
 import '../../widgets/global/detail_metadata.dart';
 import '../../widgets/global/detail_summary_section.dart';
 import '../../widgets/global/episode_tile.dart';
@@ -545,250 +547,315 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
       genres: _details?.genres ?? const [],
     );
 
+    EpisodeAirRef? fallbackNext;
+    EpisodeAirRef? fallbackLast;
+    if (_details?.nextEpisodeToAir == null && lp.episodes.isNotEmpty) {
+      final now = DateTime.now();
+      final y = now.year.toString().padLeft(4, '0');
+      final m = now.month.toString().padLeft(2, '0');
+      final d = now.day.toString().padLeft(2, '0');
+      final todayStr = '$y-$m-$d';
+      for (final ep in lp.episodes) {
+        final air = ep.media.releaseDate;
+        if (air == null || air.isEmpty) continue;
+        if (air.compareTo(todayStr) >= 0) {
+          if (fallbackNext == null || air.compareTo(fallbackNext.airDate) < 0) {
+            fallbackNext = EpisodeAirRef(
+              airDate: air,
+              episodeNumber: ep.media.episodeNumber ?? 0,
+              seasonNumber: ep.media.seasonNumber ??
+                  (selectedSeason?.effectiveSeasonNumber ?? 1),
+            );
+          }
+        } else {
+          if (fallbackLast == null || air.compareTo(fallbackLast.airDate) > 0) {
+            fallbackLast = EpisodeAirRef(
+              airDate: air,
+              episodeNumber: ep.media.episodeNumber ?? 0,
+              seasonNumber: ep.media.seasonNumber ??
+                  (selectedSeason?.effectiveSeasonNumber ?? 1),
+            );
+          }
+        }
+      }
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        scrollCacheExtent: AppLayout.imageCacheExtent(context),
-        slivers: [
-          SliverToBoxAdapter(
-            child: DetailBackdropHeader(
-              fallback: _show,
-              details: _details,
-              metadata: metadata,
-              onBack: () => Navigator.of(context).pop(),
-              loading: _loadingDetails,
-              emptyOverviewLabel: _loadingDetails
-                  ? tr('Chargement des informations…')
-                  : tr('Synopsis indisponible pour cette série.'),
-              actions: DetailActions(
-                playLabel: resumeEp != null
-                    ? detailPlayLabel(
-                        resuming: resumeInProgress,
-                        episode: resumeEp.media,
-                      )
-                    : detailPlayLabel(
-                        resuming: false,
-                        episode: firstEpisode?.media,
-                        seasonOverride: _playerSeasonNumber,
+      body: TvRegion.sections(
+        child: CustomScrollView(
+          scrollCacheExtent: AppLayout.imageCacheExtent(context),
+          slivers: [
+            SliverToBoxAdapter(
+              child: TvRegion.section(
+                id: 'hero',
+                child: DetailBackdropHeader(
+                  fallback: _show,
+                  details: _details,
+                  metadata: metadata,
+                  onBack: () => Navigator.of(context).pop(),
+                  loading: _loadingDetails,
+                  emptyOverviewLabel: _loadingDetails
+                      ? tr('Chargement des informations…')
+                      : tr('Synopsis indisponible pour cette série.'),
+                  trailing: MediaCountdown.fromDetails(
+                    isTv: true,
+                    nextEpisode: _details?.nextEpisodeToAir ?? fallbackNext,
+                    lastEpisode: _details?.lastEpisodeToAir ?? fallbackLast,
+                    status: _details?.status,
+                    releaseDate: _details?.releaseDate ?? _show.releaseDate,
+                  ),
+                  actions: DetailActions(
+                    playLabel: resumeEp != null
+                        ? detailPlayLabel(
+                            resuming: resumeInProgress,
+                            episode: resumeEp.media,
+                          )
+                        : detailPlayLabel(
+                            resuming: false,
+                            episode: firstEpisode?.media,
+                            seasonOverride: _playerSeasonNumber,
+                          ),
+                    onPlay:
+                        playTarget == null ? null : () => _playEpisode(playTarget),
+                    // Même chose que sur un film : la télécommande part de Lecture.
+                    autofocusPlay: TvMode.isTv,
+                    progress: resumeInProgress ? resumeEp.percentWatched : null,
+                    progressLabel: resumeInProgress
+                        ? formatRemaining(resumeEp.effectiveDuration -
+                            resumeEp.currentPositionSeconds)
+                        : null,
+                    secondary: [
+                      AddToListButton(title: ListableTitle.server(_show)),
+                      ShareCollectionButton(
+                        mediaId: _show.id,
+                        title: _show.title,
+                        tooltip: tr('Partager la série par lien'),
+                        hasPlayableEpisode: lp.seasons.any((s) => s.isAvailable),
                       ),
-                onPlay:
-                    playTarget == null ? null : () => _playEpisode(playTarget),
-                // Même chose que sur un film : la télécommande part de Lecture.
-                autofocusPlay: TvMode.isTv,
-                progress: resumeInProgress ? resumeEp.percentWatched : null,
-                progressLabel: resumeInProgress
-                    ? formatRemaining(resumeEp.effectiveDuration -
-                        resumeEp.currentPositionSeconds)
-                    : null,
-                secondary: [
-                  AddToListButton(title: ListableTitle.server(_show)),
-                  ShareCollectionButton(
-                    mediaId: _show.id,
-                    title: _show.title,
-                    tooltip: tr('Partager la série par lien'),
-                    hasPlayableEpisode: lp.seasons.any((s) => s.isAvailable),
-                  ),
-                  ShowMetadataMenu(
-                    onRedetect: _autoRedetect,
-                    onPickOnTmdb: _rematch,
-                    onChangePoster: _changePoster,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (lp.isLoadingSeasons)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(AppLayout.pagePadding(context)),
-                child: const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2.5)),
-              ),
-            )
-          else if (lp.seasons.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: AppLayout.pageInsets(context, top: 24, bottom: 8),
-                // Les bulles d'un côté, « marquer la saison vue » de l'autre :
-                // la ligne qui dit de quelle saison on parle est aussi celle
-                // d'où on la solde d'un coup.
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SeasonTabs(
-                      seasons: lp.seasons,
-                      selected: _seasonFolded ? null : selectedSeason,
-                      onSelected: _onSeasonChanged,
-                      onOpen: _openSeason,
-                      fallbackPosterUrl: _show.posterUrl,
-                    ),
-                    if (!_seasonFolded) ...[
-                      const SizedBox(height: 12),
-                      SeasonWatchedButton(
-                        episodes: lp.episodes,
-                        busy: _updatingSeasonWatched,
-                        onSetWatched: _setSeasonWatched,
+                      ShowMetadataMenu(
+                        onRedetect: _autoRedetect,
+                        onPickOnTmdb: _rematch,
+                        onChangePoster: _changePoster,
                       ),
                     ],
-                  ],
-                ),
-              ),
-            ),
-          if (!_seasonFolded && (selectedMissing || selectedIncomplete))
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: AppLayout.pageInsets(context, top: 8),
-                child: MissingSeasonBanner(
-                  season: selectedSeason,
-                  submitting: _requesting,
-                  onRequest: () => _requestSeasons(
-                    [selectedSeason.effectiveSeasonNumber!],
                   ),
                 ),
               ),
             ),
-          if (!_seasonFolded)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: AppLayout.pageInsets(context, top: 16, bottom: 8),
-                child: Row(
-                  children: [
-                    Text(
-                      tr('Épisodes'),
-                      style: detailSectionTitleStyle(context),
+            if (lp.isLoadingSeasons)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppLayout.pagePadding(context)),
+                  child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2.5)),
+                ),
+              )
+            else if (lp.seasons.isNotEmpty)
+              SliverToBoxAdapter(
+                child: TvRegion.section(
+                  id: 'seasons',
+                  child: Padding(
+                    padding: AppLayout.pageInsets(context, top: 24, bottom: 8),
+                    // Les bulles d'un côté, « marquer la saison vue » de l'autre :
+                    // la ligne qui dit de quelle saison on parle est aussi celle
+                    // d'où on la solde d'un coup.
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SeasonTabs(
+                          seasons: lp.seasons,
+                          selected: _seasonFolded ? null : selectedSeason,
+                          onSelected: _onSeasonChanged,
+                          onOpen: _openSeason,
+                          fallbackPosterUrl: _show.posterUrl,
+                        ),
+                        if (!_seasonFolded) ...[
+                          const SizedBox(height: 12),
+                          SeasonWatchedButton(
+                            episodes: lp.episodes,
+                            busy: _updatingSeasonWatched,
+                            onSetWatched: _setSeasonWatched,
+                          ),
+                        ],
+                      ],
                     ),
-                    if (totalCount > 0) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        // Expanded et non Flexible + Spacer : les deux se partageaient
-                        // l'espace libre, et le bouton de téléchargement flottait
-                        // au milieu de la ligne au lieu de se caler à droite.
-                        child: Text(
-                          tr('{0}/{1} disponibles',
-                              [availableCount, totalCount]),
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textMuted,
-                                  ),
+                  ),
+                ),
+              ),
+            if (!_seasonFolded && (selectedMissing || selectedIncomplete))
+              SliverToBoxAdapter(
+                child: TvRegion.section(
+                  id: 'missing-season',
+                  child: Padding(
+                    padding: AppLayout.pageInsets(context, top: 8),
+                    child: MissingSeasonBanner(
+                      season: selectedSeason,
+                      submitting: _requesting,
+                      onRequest: () => _requestSeasons(
+                        [selectedSeason.effectiveSeasonNumber!],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (_seasonFolded)
+              const SliverToBoxAdapter(child: SizedBox.shrink())
+            else
+              TvRegion.section(
+                id: 'episodes',
+                child: SliverMainAxisGroup(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: AppLayout.pageInsets(context, top: 16, bottom: 8),
+                        child: Row(
+                          children: [
+                            Text(
+                              tr('Épisodes'),
+                              style: detailSectionTitleStyle(context),
+                            ),
+                            if (totalCount > 0) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                // Expanded et non Flexible + Spacer : les deux se partageaient
+                                // l'espace libre, et le bouton de téléchargement flottait
+                                // au milieu de la ligne au lieu de se caler à droite.
+                                child: Text(
+                                  tr('{0}/{1} disponibles',
+                                      [availableCount, totalCount]),
+                                  overflow: TextOverflow.ellipsis,
+                                  style:
+                                      Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            color: AppColors.textMuted,
+                                          ),
+                                ),
+                              ),
+                            ] else
+                              const Spacer(),
+                            ShareCollectionButton(
+                              mediaId: selectedSeason?.id ?? 0,
+                              title: _playerSeasonNumber == null
+                                  ? _show.title
+                                  : tr('{0} · Saison {1}',
+                                      [_show.title, _playerSeasonNumber]),
+                              tooltip: tr('Partager la saison par lien'),
+                              hasPlayableEpisode: availableCount > 0,
+                              compact: true,
+                            ),
+                            // Le geste qu'on fait avant de partir : toute la saison d'un
+                            // coup, plutôt que vingt appuis sur vingt lignes.
+                            SeasonDownloadButton(
+                              episodes: lp.episodes,
+                              showTitle: _show.title,
+                              showId: _show.id,
+                              showPosterUrl: _show.posterUrl,
+                              seasonNumber: _playerSeasonNumber,
+                            ),
+                          ],
                         ),
                       ),
-                    ] else
-                      const Spacer(),
-                    ShareCollectionButton(
-                      mediaId: selectedSeason?.id ?? 0,
-                      title: _playerSeasonNumber == null
-                          ? _show.title
-                          : tr('{0} · Saison {1}',
-                              [_show.title, _playerSeasonNumber]),
-                      tooltip: tr('Partager la saison par lien'),
-                      hasPlayableEpisode: availableCount > 0,
-                      compact: true,
                     ),
-                    // Le geste qu'on fait avant de partir : toute la saison d'un
-                    // coup, plutôt que vingt appuis sur vingt lignes.
-                    SeasonDownloadButton(
-                      episodes: lp.episodes,
-                      showTitle: _show.title,
-                      showId: _show.id,
-                      showPosterUrl: _show.posterUrl,
-                      seasonNumber: _playerSeasonNumber,
-                    ),
+                    if (lp.isLoadingEpisodes)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(AppLayout.pagePadding(context)),
+                          child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2.5)),
+                        ),
+                      )
+                    // While the seasons are still coming the spinner above speaks for
+                    // the page; "no episodes" would be a claim we cannot make yet.
+                    else if (lp.episodes.isEmpty && !lp.isLoadingSeasons)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(AppLayout.pagePadding(context)),
+                          child: Text(
+                            tr('Aucun épisode pour cette saison.'),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
+                          ),
+                        ),
+                      )
+                    else
+                      // Rejoue à chaque saison : sans ça la liste remplaçait l'autre
+                      // d'un coup sec, pendant que les bulles au-dessus prennent 0,7 à
+                      // 0,9 s pour la même transition.
+                      StaggeredEntranceScope(
+                        playKey: _playerSeasonNumber,
+                        child: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final episode = lp.episodes[index];
+                              return StaggeredEntrance(
+                                index: index,
+                                child: EpisodeTile(
+                                  episode: episode,
+                                  episodeNumber:
+                                      episode.media.episodeNumber ?? index + 1,
+                                  showTitle: _show.title,
+                                  showId: _show.id,
+                                  showPosterUrl: _show.posterUrl,
+                                  seasonNumber: _playerSeasonNumber,
+                                  onToggleWatched: episode.isAvailable
+                                      ? (watched) =>
+                                          _toggleEpisodeWatched(episode, watched)
+                                      : null,
+                                  onTap: episode.isAvailable
+                                      ? () => _playEpisode(episode)
+                                      : null,
+                                ),
+                              );
+                            },
+                            childCount: lp.episodes.length,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-            ),
-          if (_seasonFolded)
-            const SliverToBoxAdapter(child: SizedBox.shrink())
-          else if (lp.isLoadingEpisodes)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(AppLayout.pagePadding(context)),
-                child: const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2.5)),
-              ),
-            )
-          // While the seasons are still coming the spinner above speaks for
-          // the page; "no episodes" would be a claim we cannot make yet.
-          else if (lp.episodes.isEmpty && !lp.isLoadingSeasons)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(AppLayout.pagePadding(context)),
-                child: Text(
-                  tr('Aucun épisode pour cette saison.'),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
+            // Le casting, les crédits et la fiche TMDB (réalisateur, scénario,
+            // studios…) viennent après les saisons et les épisodes : sur une
+            // série, on vient pour les regarder, pas pour lire qui l'a tournée.
+            // Le casting ouvre la colonne et les crédits le suivent, sous leur
+            // propre titre — au lieu d'ouvrir sa propre section pleine largeur,
+            // il comble le vide que la fiche TMDB, plus haute, laisse sous eux.
+            if (_details != null)
+              SliverToBoxAdapter(
+                child: TvRegion.section(
+                  id: 'info',
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 32),
+                    child: DetailSummarySection.forDetails(
+                      details: _details,
+                      mainTitle: tr('Informations'),
+                      extra: _details!.cast.isEmpty
+                          ? null
+                          : CastSection(
+                              cast: _details!.cast,
+                              horizontalPadding: 0,
+                              onTapMember: (member) => openPerson(
+                                  context, member.tmdbId,
+                                  name: member.name),
+                            ),
+                    ),
+                  ),
                 ),
               ),
-            )
-          else
-            // Rejoue à chaque saison : sans ça la liste remplaçait l'autre
-            // d'un coup sec, pendant que les bulles au-dessus prennent 0,7 à
-            // 0,9 s pour la même transition.
-            StaggeredEntranceScope(
-              playKey: _playerSeasonNumber,
-              child: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final episode = lp.episodes[index];
-                    return StaggeredEntrance(
-                      index: index,
-                      child: EpisodeTile(
-                        episode: episode,
-                        episodeNumber: episode.media.episodeNumber ?? index + 1,
-                        showTitle: _show.title,
-                        showId: _show.id,
-                        showPosterUrl: _show.posterUrl,
-                        seasonNumber: _playerSeasonNumber,
-                        onToggleWatched: episode.isAvailable
-                            ? (watched) =>
-                                _toggleEpisodeWatched(episode, watched)
-                            : null,
-                        onTap: episode.isAvailable
-                            ? () => _playEpisode(episode)
-                            : null,
-                      ),
-                    );
-                  },
-                  childCount: lp.episodes.length,
+            if (_details?.similarTitles.isNotEmpty ?? false)
+              SliverToBoxAdapter(
+                child: TvRegion.section(
+                  id: 'similar',
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 32),
+                    child: SimilarTitlesSection(items: _details!.similarTitles),
+                  ),
                 ),
               ),
-            ),
-          // Le casting, les crédits et la fiche TMDB (réalisateur, scénario,
-          // studios…) viennent après les saisons et les épisodes : sur une
-          // série, on vient pour les regarder, pas pour lire qui l'a tournée.
-          // Le casting ouvre la colonne et les crédits le suivent, sous leur
-          // propre titre — au lieu d'ouvrir sa propre section pleine largeur,
-          // il comble le vide que la fiche TMDB, plus haute, laisse sous eux.
-          if (_details != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 32),
-                child: DetailSummarySection.forDetails(
-                  details: _details,
-                  mainTitle: tr('Informations'),
-                  extra: _details!.cast.isEmpty
-                      ? null
-                      : CastSection(
-                          cast: _details!.cast,
-                          horizontalPadding: 0,
-                          onTapMember: (member) => openPerson(
-                              context, member.tmdbId,
-                              name: member.name),
-                        ),
-                ),
-              ),
-            ),
-          if (_details?.similarTitles.isNotEmpty ?? false)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 32),
-                child: SimilarTitlesSection(items: _details!.similarTitles),
-              ),
-            ),
-          const SliverToBoxAdapter(child: SizedBox(height: 48)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+          ],
+        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../../utils/poster_url.dart';
 import 'app_network_image.dart';
 import 'detail_cast_section.dart';
 import 'detail_hero.dart';
+import 'media_countdown.dart';
 
 /// L'en-tête d'une fiche de la bibliothèque : [DetailHero], nourri par le
 /// catalogue.
@@ -21,6 +22,10 @@ class DetailBackdropHeader extends StatelessWidget {
   final MediaDetails? details;
   final List<Widget> metadata;
   final Widget? actions;
+
+  /// Bloc optionnel à droite de l'en-tête (compte à rebours du prochain épisode).
+  /// S'il n'est pas fourni, il est calculé automatiquement à partir de [details].
+  final Widget? trailing;
 
   /// Nul quand il n'y a rien derrière la page — celle d'un lien de partage
   /// ouvert dans le navigateur : le bouton retour n'est alors pas dessiné.
@@ -50,6 +55,7 @@ class DetailBackdropHeader extends StatelessWidget {
     required this.metadata,
     required this.onBack,
     this.actions,
+    this.trailing,
     this.badges = const [],
     this.loading = false,
     this.emptyOverviewLabel,
@@ -148,6 +154,16 @@ class DetailBackdropHeader extends StatelessWidget {
       metadata: metadata,
       badges: badges,
       actions: actions,
+      trailing: trailing ??
+          (details != null
+              ? MediaCountdown.fromDetails(
+                  isTv: (details?.type ?? fallback.type) == MediaType.show,
+                  nextEpisode: details?.nextEpisodeToAir,
+                  lastEpisode: details?.lastEpisodeToAir,
+                  status: details?.status,
+                  releaseDate: details?.releaseDate,
+                )
+              : null),
       onBack: onBack,
     );
   }

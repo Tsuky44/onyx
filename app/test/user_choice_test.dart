@@ -214,7 +214,8 @@ void main() {
   });
 
   /// Monte l'écran comme le fait l'app au lancement, télévision ou non.
-  Future<AuthProvider> mountPicker(WidgetTester tester, {bool isTv = false}) async {
+  Future<AuthProvider> mountPicker(WidgetTester tester,
+      {bool isTv = false}) async {
     // L'autofocus de TvFocusable lit le mode global, pas seulement la portée.
     TvMode.enabled.value = isTv;
     addTearDown(() => TvMode.enabled.value = false);
@@ -263,8 +264,7 @@ void main() {
         reason: 'le focus part de mathis, un pas à droite mène à Léa');
   });
 
-  test('ajouter quelqu’un sur un serveur déjà connu rend son compte',
-      () async {
+  test('ajouter quelqu’un sur un serveur déjà connu rend son compte', () async {
     final api = await sharedTelevision();
     final auth = AuthProvider(api, startupRetryPauses: const []);
     await _settle(auth);

@@ -64,7 +64,7 @@ void main() {
 
     final shape = tester.widget<Material>(find.byType(Material).last).shape
         as StadiumBorder;
-    expect(shape.side.color, AppColors.accent);
+    expect(shape.side.color, AppColors.focus);
     expect(shape.side.width, 3);
   });
 

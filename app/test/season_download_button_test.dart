@@ -12,7 +12,8 @@ import 'package:provider/provider.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  HomeMediaItem episode(int id, {bool available = true, bool watched = false}) =>
+  HomeMediaItem episode(int id,
+          {bool available = true, bool watched = false}) =>
       HomeMediaItem(
         media: Media(
           id: id,

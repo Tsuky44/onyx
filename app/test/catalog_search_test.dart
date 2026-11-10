@@ -44,10 +44,10 @@ void main() {
     });
 
     test('la ponctuation sépare les mots au lieu de les coller', () {
-      expect(foldForSearch('Spider-Man : No Way Home'),
-          'spider man no way home');
-      expect(foldForSearch('L’Empire contre-attaque'),
-          'l empire contre attaque');
+      expect(
+          foldForSearch('Spider-Man : No Way Home'), 'spider man no way home');
+      expect(
+          foldForSearch('L’Empire contre-attaque'), 'l empire contre attaque');
     });
   });
 
@@ -75,7 +75,8 @@ void main() {
       expect(searchMatchRank('Inception', ''), isNull);
     });
 
-    test('titre exact, puis début de titre, puis début de mot, puis dedans', () {
+    test('titre exact, puis début de titre, puis début de mot, puis dedans',
+        () {
       final exact = searchMatchRank('Dune', 'dune')!;
       final prefix = searchMatchRank('Dune : Deuxième partie', 'dune')!;
       final word = searchMatchRank('Les Enfants de Dune', 'dune')!;

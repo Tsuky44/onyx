@@ -94,7 +94,8 @@ void main() {
       // 0 comes from a platform view that has not reported a size yet; guessing
       // small there would quietly downgrade every session on that path.
       expect(
-        webQualityFor(sourceHeight: 2160, viewportHeight: 0, sourceCodec: 'hevc'),
+        webQualityFor(
+            sourceHeight: 2160, viewportHeight: 0, sourceCodec: 'hevc'),
         '2160p',
       );
     });

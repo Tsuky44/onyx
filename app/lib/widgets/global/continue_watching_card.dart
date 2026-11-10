@@ -11,6 +11,7 @@ import '../../utils/app_platform.dart';
 import 'media_poster.dart';
 import 'poster_card.dart';
 import 'poster_launch_route.dart';
+import 'poster_flip/poster_flip_menu.dart';
 import 'poster_more_button.dart';
 import 'pressable.dart';
 import 'progress_pill.dart';
@@ -57,6 +58,11 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
   bool _focused = false;
   final _posterKey = GlobalKey();
 
+  /// L'affiche telle qu'on la voit, soulevée par le focus ([PosterLift]) :
+  /// c'est elle qui se retourne. [_posterKey] la mesure avant ce soulèvement,
+  /// et le dos tombait un peu plus petit, décalé vers le bas.
+  final _faceKey = GlobalKey();
+
   /// Pointer hover and D-pad focus mean the same thing here.
   bool get _active => _hovered || _focused;
 
@@ -70,11 +76,58 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
 
   void _play() => widget.onTap(_origin());
 
-  /// Where a remote's context menu opens, since there is no cursor to anchor it
-  /// to: the middle of the screen.
-  void _showContextMenuCentred() {
-    final size = MediaQuery.sizeOf(context);
-    _showContextMenu(Offset(size.width / 2, size.height / 2));
+  /// Le menu d'une télécommande, qui n'a pas de curseur où l'ancrer :
+  /// l'affiche se retourne et porte le menu au dos (`showPosterFlipMenu`).
+  /// On voit ainsi de quel média il parle, sans fenêtre posée à côté.
+  Future<void> _flipPoster() async {
+    if (!_hasMenu) return;
+    final action = await showPosterFlipMenu<_CardAction>(
+      context: context,
+      posterKey: _faceKey,
+      poster: MediaPoster(
+        media: widget.item.media,
+        posterUrlOverride: widget.item.displayPosterUrl,
+        width: ContinueWatchingCard.cardWidth,
+        height: ContinueWatchingCard.posterHeight,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
+      ),
+      title: widget.item.displayTitle,
+      subtitle: _detailLine(),
+      progress: widget.item.percentWatched,
+      actions: [
+        // Le dos cache le bouton lecture de l'affiche : il revient ici, en
+        // tête, là où le focus entre.
+        PosterFlipAction(
+          value: _CardAction.play,
+          label: tr('Reprendre'),
+          icon: AppIcons.play,
+        ),
+        // Sur un téléviseur, le titre sous l'affiche n'est pas atteignable :
+        // la fiche ne l'est que par ici.
+        if (widget.onTitleTap != null)
+          PosterFlipAction(
+            value: _CardAction.details,
+            label: tr('Aller à l\'affiche'),
+            icon: AppIcons.info,
+          ),
+        if (widget.onMarkAsWatched != null)
+          PosterFlipAction(
+            value: _CardAction.watched,
+            label: tr('Marquer comme vu'),
+            icon: AppIcons.watched,
+          ),
+        if (widget.onRemoveFromRow != null)
+          PosterFlipAction(
+            value: _CardAction.hide,
+            label: tr('Supprimer de Reprendre'),
+            icon: AppIcons.delete,
+            destructive: true,
+          ),
+      ],
+    );
+    if (!mounted || action == null) return;
+    await _run(action);
   }
 
   bool get _hasMenu =>
@@ -90,8 +143,14 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
 
   Future<void> _showContextMenu(Offset globalPosition) async {
     if (!_hasMenu) return;
+    // Un appui long au doigt sur un téléviseur tactile, un clic droit sur la
+    // télé du web : la même affiche retournée que la télécommande.
+    if (TvScope.of(context)) {
+      await _flipPoster();
+      return;
+    }
 
-    final action = await showMenu<String>(
+    final action = await showMenu<_CardAction>(
       context: context,
       // The position is in screen coordinates: measured against the root
       // overlay, not the shell's navigator.
@@ -107,31 +166,36 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
         // atteignable, la fiche ne l'est que par ici.
         if (widget.onTitleTap != null)
           PopupMenuItem(
-            value: 'details',
+            value: _CardAction.details,
             child: Text(tr('Aller à l\'affiche')),
           ),
         if (widget.onMarkAsWatched != null)
           PopupMenuItem(
-            value: 'watched',
+            value: _CardAction.watched,
             child: Text(tr('Marquer comme vu')),
           ),
         if (widget.onRemoveFromRow != null)
           PopupMenuItem(
-            value: 'hide',
+            value: _CardAction.hide,
             child: Text(tr('Supprimer de Reprendre')),
           ),
       ],
     );
 
     if (!mounted || action == null) return;
+    await _run(action);
+  }
 
+  Future<void> _run(_CardAction action) async {
     try {
       switch (action) {
-        case 'details':
+        case _CardAction.play:
+          _play();
+        case _CardAction.details:
           widget.onTitleTap?.call(_origin());
-        case 'watched':
+        case _CardAction.watched:
           await widget.onMarkAsWatched?.call(widget.item);
-        case 'hide':
+        case _CardAction.hide:
           await widget.onRemoveFromRow?.call(widget.item);
       }
     } catch (e) {
@@ -153,10 +217,12 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
       onSelect: _play,
       // The remote's menu button reaches the same actions the mouse gets
       // from a right-click and the phone from a long press.
-      onContextMenu: _showContextMenuCentred,
+      onContextMenu: _flipPoster,
       autofocus: widget.autofocus,
       borderRadius: BorderRadius.circular(12),
       showRing: false,
+      // Le soulèvement de [PosterLift] suffit ; voir [PosterCard].
+      focusScale: 1.0,
       onFocusChange: (focused) {
         if (_focused == focused) return;
         setState(() => _focused = focused);
@@ -199,7 +265,9 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                             pressed: pressed,
                             child: PosterLift(
                               active: _active,
+                              focused: _focused,
                               child: Stack(
+                                key: _faceKey,
                                 fit: StackFit.expand,
                                 clipBehavior: Clip.hardEdge,
                                 children: [
@@ -312,6 +380,8 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
     return remainingStr;
   }
 }
+
+enum _CardAction { play, details, watched, hide }
 
 /// Pastille « Nouvel épisode » posée sur l'affiche d'une série dont l'épisode à
 /// reprendre vient de sortir. Fond plein plutôt que teinté : elle doit tenir

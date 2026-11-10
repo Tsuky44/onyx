@@ -214,8 +214,9 @@ void main() {
       (from: 'Reprendre 1', direction: _left, to: 'Reprendre 0'),
       (from: 'Reprendre 0', direction: _left, to: 'Reprendre 0'),
       // D'une rangée à l'autre, à la verticale.
-      (from: 'Reprendre 2', direction: _down, to: 'Ajouts 2'),
-      (from: 'Ajouts 2', direction: _up, to: 'Reprendre 2'),
+      // Changer de rangée ramène à sa première carte (ADR-0113).
+      (from: 'Reprendre 2', direction: _down, to: 'Ajouts 0'),
+      (from: 'Ajouts 2', direction: _up, to: 'Reprendre 0'),
       // Haut depuis le bandeau monte sur l'onglet affiché (ADR-0109 pour
       // l'ancien système, entrée de `TvRegion.tabs` sous dpad).
       (from: 'Bandeau', direction: _up, to: 'Accueil'),
@@ -233,7 +234,7 @@ void main() {
     }
 
     // Les mêmes flèches enchaînées : c'est la mémoire des rangées qui décide.
-    testWidgets('une rangée quittée se retrouve à la carte où l’on était',
+    testWidgets('changer de rangée ramène toujours à sa première carte',
         (tester) async {
       final nav = await pump(tester);
       await _focusOn(tester, 'Bandeau');
@@ -241,13 +242,14 @@ void main() {
         (_down, 'Reprendre 0'),
         (_right, 'Reprendre 1'),
         (_right, 'Reprendre 2'),
-        (_down, 'Ajouts 2'),
-        (_right, 'Ajouts 3'),
-        (_right, 'Ajouts 4'),
-        // La rangée du dessus rend sa carte, pas la plus proche.
-        (_up, 'Reprendre 2'),
-        // Et celle du dessous aussi.
-        (_down, 'Ajouts 4'),
+        // La rangée du dessous s'entre par sa première carte, pas par celle
+        // qui est juste en dessous (ADR-0113).
+        (_down, 'Ajouts 0'),
+        (_right, 'Ajouts 1'),
+        (_right, 'Ajouts 2'),
+        // Celle du dessus aussi, pas par la carte qu'on y avait quittée.
+        (_up, 'Reprendre 0'),
+        (_down, 'Ajouts 0'),
       ];
       for (final (direction, expected) in route) {
         await nav.press(direction);

@@ -54,9 +54,11 @@ void main() {
     // qui lit autrement qu'un iPhone serait un bug qu'on ne reproduit pas.
     String requirement(String manifest) {
       final source = File(manifest).readAsStringSync();
-      final match = RegExp(r'AetherEngine",\s*(\.upToNextMinor\(from: "[^"]+"\))')
-          .firstMatch(source);
-      expect(match, isNotNull, reason: '$manifest ne dépend plus d’AetherEngine');
+      final match =
+          RegExp(r'AetherEngine",\s*(\.upToNextMinor\(from: "[^"]+"\))')
+              .firstMatch(source);
+      expect(match, isNotNull,
+          reason: '$manifest ne dépend plus d’AetherEngine');
       return match!.group(1)!;
     }
 

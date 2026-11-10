@@ -9,9 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('tout plugin qui se déclare tvOS embarque un dossier tvos/', () {
     final config = File('.dart_tool/package_config.json');
-    final packages =
-        (jsonDecode(config.readAsStringSync()) as Map<String, dynamic>)['packages']
-            as List<dynamic>;
+    final packages = (jsonDecode(config.readAsStringSync())
+        as Map<String, dynamic>)['packages'] as List<dynamic>;
 
     final offenders = <String>[];
     for (final package in packages.cast<Map<String, dynamic>>()) {

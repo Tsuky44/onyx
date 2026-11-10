@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/tv/nav/tv_nav_engine.dart';
 import 'package:onyx/tv/tv_deferred_keyboard.dart';
@@ -94,6 +95,29 @@ void main() {
       expect(bar.field.hasFocus, isTrue);
     });
 
+    testWidgets('OK sur la barre demande l’ouverture du clavier virtuel',
+        (tester) async {
+      final calls = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.textInput,
+        (call) async {
+          calls.add(call.method);
+          return null;
+        },
+      );
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.textInput, null));
+
+      final bar = await pumpBar(tester, engine);
+      await reachBar(tester, bar.harness);
+
+      await bar.harness.select();
+      await tester.pumpAndSettle();
+
+      expect(bar.field.hasFocus, isTrue);
+      expect(calls, contains('TextInput.show'));
+    });
+
     testWidgets('le champ ressort du parcours quand le clavier se referme',
         (tester) async {
       final bar = await pumpBar(tester, engine);
@@ -145,6 +169,44 @@ void main() {
       // Rien de tout cela ne s'applique à une souris ou à un doigt : le champ
       // prend le focus au clic, comme avant.
       expect(bar.field.hasFocus, isTrue);
+    });
+
+    testWidgets('autofocus demande directement le focus et le clavier virtuel',
+        (tester) async {
+      final calls = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.textInput,
+        (call) async {
+          calls.add(call.method);
+          return null;
+        },
+      );
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.textInput, null));
+
+      final fieldNode = FocusNode();
+      addTearDown(fieldNode.dispose);
+
+      await TvNavHarness.pump(
+        tester,
+        Scaffold(
+          body: TvDeferredKeyboard(
+            fieldFocusNode: fieldNode,
+            autofocus: true,
+            builder: (context, focusNode, canRequestFocus) => TextField(
+              focusNode: focusNode,
+              canRequestFocus: canRequestFocus,
+            ),
+          ),
+        ),
+        engine: engine,
+        isTv: true,
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(fieldNode.hasFocus, isTrue);
+      expect(calls, contains('TextInput.show'));
     });
   });
 

@@ -108,8 +108,8 @@ void main() {
     final auth = _Auth(api);
     addTearDown(auth.dispose);
 
-    await tester.pumpWidget(
-        providers(api, auth, MovieDetailScreen(movie: _movie())));
+    await tester
+        .pumpWidget(providers(api, auth, MovieDetailScreen(movie: _movie())));
     await tester.pumpAndSettle();
 
     expect(find.byType(DetailHero), findsOneWidget);
@@ -199,8 +199,8 @@ void main() {
   });
 
   group('openMediaDetail', () {
-    Future<NavigatorState> pumpCard(WidgetTester tester, ApiClient api,
-        AuthProvider auth) async {
+    Future<NavigatorState> pumpCard(
+        WidgetTester tester, ApiClient api, AuthProvider auth) async {
       final navigator = GlobalKey<NavigatorState>();
       await tester.pumpWidget(MultiProvider(
         providers: [

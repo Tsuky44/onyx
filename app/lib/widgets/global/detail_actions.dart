@@ -202,8 +202,8 @@ class _ProgressLine extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             label!,
-            style:
-                const TextStyle(color: AppColors.textSecondary, fontSize: AppType.subhead),
+            style: const TextStyle(
+                color: AppColors.textSecondary, fontSize: AppType.subhead),
           ),
         ],
       ],

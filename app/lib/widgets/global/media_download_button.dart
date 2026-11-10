@@ -67,17 +67,13 @@ class MediaDownloadButton extends StatelessWidget {
   Widget _icon(OfflineDownload? entry, double size) {
     switch (entry?.status) {
       case null:
-        return const Icon(AppIcons.download,
-            color: AppColors.textSecondary);
+        return const Icon(AppIcons.download, color: AppColors.textSecondary);
       case DownloadStatus.completed:
-        return const Icon(AppIcons.downloaded,
-            color: AppColors.success);
+        return const Icon(AppIcons.downloaded, color: AppColors.success);
       case DownloadStatus.failed:
-        return const Icon(AppIcons.error,
-            color: AppColors.textSecondary);
+        return const Icon(AppIcons.error, color: AppColors.textSecondary);
       case DownloadStatus.paused:
-        return const Icon(AppIcons.pauseCircle,
-            color: AppColors.textSecondary);
+        return const Icon(AppIcons.pauseCircle, color: AppColors.textSecondary);
       case DownloadStatus.queued:
       case DownloadStatus.downloading:
         // L'anneau porte l'avancement et l'icône porte l'action : un carré
@@ -93,8 +89,7 @@ class MediaDownloadButton extends StatelessWidget {
                 value: entry!.progress,
                 strokeWidth: 2,
                 backgroundColor: AppColors.border,
-                valueColor:
-                    const AlwaysStoppedAnimation(AppColors.textPrimary),
+                valueColor: const AlwaysStoppedAnimation(AppColors.textPrimary),
               ),
               Icon(AppIcons.stop,
                   size: size * 0.5, color: AppColors.textSecondary),
@@ -133,7 +128,9 @@ class MediaDownloadButton extends StatelessWidget {
         // posée avant la mise en file, jamais après.
         final proceed = await confirmDownloadOnThisNetwork(
           context,
-          what: item.media.type == MediaType.movie ? tr('ce film') : tr('cet épisode'),
+          what: item.media.type == MediaType.movie
+              ? tr('ce film')
+              : tr('cet épisode'),
         );
         if (!proceed) return;
         await manager.download(
@@ -173,10 +170,14 @@ Future<bool> confirmDeleteDownload(
       title: Text(tr('Supprimer le téléchargement ?')),
       content: Text(
         unsynced
-            ? tr('« {0} » libérera de la place sur cet appareil. Son '
-                'avancement sera envoyé au serveur dès que possible.', [entry.title])
-            : tr('« {0} » libérera de la place sur cet appareil. Le média '
-                'reste disponible sur le serveur.', [entry.title]),
+            ? tr(
+                '« {0} » libérera de la place sur cet appareil. Son '
+                'avancement sera envoyé au serveur dès que possible.',
+                [entry.title])
+            : tr(
+                '« {0} » libérera de la place sur cet appareil. Le média '
+                'reste disponible sur le serveur.',
+                [entry.title]),
       ),
       actions: [
         TextButton(

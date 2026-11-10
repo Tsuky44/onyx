@@ -57,7 +57,8 @@ void main() {
     // Les cartes traitent OK elles-mêmes ; ce qui en dépend, ce sont les
     // contrôles qui ne sont pas des boutons — un interrupteur des réglages.
     for (final key in [LogicalKeyboardKey.enter, LogicalKeyboardKey.select]) {
-      testWidgets('${key.keyLabel} bascule un interrupteur, qui n\'est pas un '
+      testWidgets(
+          '${key.keyLabel} bascule un interrupteur, qui n\'est pas un '
           'bouton', (tester) async {
         var on = false;
         final node = FocusNode();
@@ -129,7 +130,8 @@ void main() {
       LogicalKeyboardKey.browserBack,
       LogicalKeyboardKey.goBack,
     ]) {
-      test('${key.keyLabel.isEmpty ? key.debugName : key.keyLabel} est un Retour',
+      test(
+          '${key.keyLabel.isEmpty ? key.debugName : key.keyLabel} est un Retour',
           () {
         final keys = OnyxDpad.keySetFor(isTv: true, isAndroid: false);
         expect(keys.isBack(key), isTrue);

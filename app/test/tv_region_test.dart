@@ -32,6 +32,7 @@ void main() {
       await mount(
         tester,
         const TvRegion.rail(
+          entersAtStart: false,
           id: 'home/r0',
           entersAtTop: true,
           child: TvFocusable(child: Text('a')),
@@ -75,7 +76,7 @@ void main() {
         Scaffold(
           body: Column(
             children: [
-              TvRegion.rail(id: 'r', child: _row('r', 1)),
+              TvRegion.rail(entersAtStart: false, id: 'r', child: _row('r', 1)),
               TvRegion.grid(id: 'g', child: _row('g', 1)),
               TvRegion.list(id: 'l', child: _row('l', 1)),
               TvRegion.tabs(id: 't', child: _row('t', 1)),
@@ -127,7 +128,7 @@ void main() {
           body: Column(
             children: [
               TvRegion.slide(onEdge: edges.add, child: _row('s', 2)),
-              TvRegion.rail(child: _row('r', 2)),
+              TvRegion.rail(entersAtStart: false, child: _row('r', 2)),
             ],
           ),
         ),
@@ -153,7 +154,7 @@ void main() {
           body: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TvRegion.rail(id: 'r', child: _row('c', 3)),
+              TvRegion.rail(entersAtStart: false, id: 'r', child: _row('c', 3)),
               // Plus loin à droite, mais plus bas : l'ancien saut à l'autre
               // bout de l'écran.
               Padding(
@@ -182,8 +183,10 @@ void main() {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TvRegion.rail(id: 'r0', child: _row('r0 c', 5)),
-              TvRegion.rail(id: 'r1', child: _row('r1 c', 5)),
+              TvRegion.rail(
+                  entersAtStart: false, id: 'r0', child: _row('r0 c', 5)),
+              TvRegion.rail(
+                  entersAtStart: false, id: 'r1', child: _row('r1 c', 5)),
             ],
           ),
         ),

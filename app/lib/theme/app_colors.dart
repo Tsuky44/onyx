@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Quiet Premium tokens — OLED charcoal stage, blue focus sparingly.
+/// Quiet Premium tokens — OLED charcoal stage, blue accent sparingly, white focus.
 abstract final class AppColors {
   static const background = Color(0xFF0A0A0A);
   static const surface = Color(0xFF141414);
@@ -8,11 +8,16 @@ abstract final class AppColors {
   static const surfaceHover = Color(0xFF252525);
   static const border = Color(0xFF2C2C2E);
 
-  /// Interactive accent (focus, selection, links). Not a fill wash.
+  /// Interactive accent (selection, links). Not a fill wash, not the focus.
   static const primary = Color(0xFF0A84FF);
   static const accent = Color(0xFF0A84FF);
   static const accentMuted = Color(0xFF64B5FF);
   static const onAccent = Color(0xFFFFFFFF);
+
+  /// L'anneau de focus (télécommande, clavier) : blanc, pas bleu. Le bleu se
+  /// confondait avec l'accent des boutons pleins et des sélections, et sur une
+  /// affiche il criait plus que l'image. Voir ADR-0111.
+  static const focus = Color(0xFFF5F5F7);
 
   static const textPrimary = Color(0xFFF5F5F7);
   static const textSecondary = Color(0xFFA1A1A6);

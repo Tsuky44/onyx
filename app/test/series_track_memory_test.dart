@@ -60,7 +60,8 @@ MediaAudioTrack _audio(int index, String language, {bool isDefault = false}) =>
       'default': isDefault,
     });
 
-MediaSubtitleTrack _sub(String lang, {String language = 'fr', bool forced = false}) =>
+MediaSubtitleTrack _sub(String lang,
+        {String language = 'fr', bool forced = false}) =>
     MediaSubtitleTrack(
         lang: lang, name: lang, language: language, forced: forced);
 
@@ -74,7 +75,8 @@ void main() {
 
   const frenchFull = SeriesSubtitleChoice(language: 'fr', key: 'fr');
 
-  test('un choix fait dans un épisode se retrouve dans un autre, sur un autre appareil',
+  test(
+      'un choix fait dans un épisode se retrouve dans un autre, sur un autre appareil',
       () async {
     final server = _SeriesServer();
     final phone = SeriesTrackMemory.forMedia(server, _episode(1))!;
@@ -100,7 +102,8 @@ void main() {
     memory.rememberSubtitle(const SeriesSubtitleChoice.off());
     await memory.settled;
 
-    final stored = await SeriesTrackMemory.forMedia(server, _episode(2))!.load();
+    final stored =
+        await SeriesTrackMemory.forMedia(server, _episode(2))!.load();
     expect(stored?.subtitle?.off, isTrue);
     expect(PlayerPlaybackPreferences.fromSeries(stored!).subtitlesOff, isTrue);
   });
@@ -111,7 +114,8 @@ void main() {
     expect(await memory.load(), isNull);
   });
 
-  test('un film retient son propre choix, pas celui d\'un autre film', () async {
+  test('un film retient son propre choix, pas celui d\'un autre film',
+      () async {
     final server = _SeriesServer();
     final movie = Media.fromJson({'id': 5, 'type': 'movie', 'title': 'Film'});
     final other = Media.fromJson({'id': 6, 'type': 'movie', 'title': 'Autre'});
@@ -141,7 +145,8 @@ void main() {
     await memory.settled;
 
     // Toujours hors ligne : l'épisode suivant s'ouvre avec la copie locale.
-    final offline = await SeriesTrackMemory.forMedia(server, _episode(2))!.load();
+    final offline =
+        await SeriesTrackMemory.forMedia(server, _episode(2))!.load();
     expect(offline?.audioLang, 'en');
     expect(server.writes, isEmpty);
 
@@ -150,7 +155,8 @@ void main() {
     server
       ..offline = false
       ..audioLang = 'fr';
-    final online = await SeriesTrackMemory.forMedia(server, _episode(3))!.load();
+    final online =
+        await SeriesTrackMemory.forMedia(server, _episode(3))!.load();
     expect(online?.audioLang, 'en');
     expect(server.audioLang, 'en');
     expect(server.writes, [
@@ -175,7 +181,8 @@ void main() {
 
     test('la langue audio se retrouve quel que soit l\'ordre des pistes', () {
       expect(
-          stored.audioIndexIn([_audio(0, 'fre', isDefault: true), _audio(1, 'eng')]),
+          stored.audioIndexIn(
+              [_audio(0, 'fre', isDefault: true), _audio(1, 'eng')]),
           1);
       expect(stored.audioIndexIn([_audio(0, 'eng'), _audio(1, 'fre')]), 0);
     });
@@ -191,7 +198,8 @@ void main() {
       const carried = PlayerPlaybackPreferences(
           audioIndex: 1, audioLang: 'en', subtitlesOff: true);
       expect(
-          carried.audioIndexIn([_audio(0, 'eng', isDefault: true), _audio(1, 'eng')]),
+          carried.audioIndexIn(
+              [_audio(0, 'eng', isDefault: true), _audio(1, 'eng')]),
           1);
       // Le rang ne désigne plus la même langue : la langue l'emporte.
       expect(carried.audioIndexIn([_audio(0, 'eng'), _audio(1, 'fre')]), 0);

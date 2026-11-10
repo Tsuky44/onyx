@@ -33,6 +33,17 @@ import 'tv_mode.dart';
 /// et [isSwiping] toujours faux.
 abstract final class TvTouchpad {
   static final TouchpadMotion _motion = TouchpadMotion();
+
+  /// Le pavé de la Siri Remote est enfoncé en ce moment, d'après le clic
+  /// physique (`click_s` / `click_e`) du canal du pavé, et non les touches.
+  ///
+  /// Les touches mentent sur la durée d'un appui : après un menu ouvert par
+  /// un appui long, le simulateur ne rend le relâchement qu'au Retour, puis
+  /// envoie l'appui long suivant sur la même carte en « enfoncé, relâché
+  /// 1 ms après », sans rien de plus tant que le doigt reste appuyé (vu dans
+  /// les journaux du simulateur). Pris pour un appui court, il lançait la
+  /// lecture au lieu de rouvrir le menu. Le clic physique, lui, dit vrai.
+  static final ValueNotifier<bool> clickHeld = ValueNotifier<bool>(false);
   static final Stopwatch _clock = Stopwatch()..start();
   static bool _installed = false;
 
@@ -137,6 +148,12 @@ abstract final class TvTouchpad {
     if (phase == TouchpadPhase.began || phase == TouchpadPhase.clickDown) {
       _stopGlide('doigt posé');
     }
+    if (phase == TouchpadPhase.clickDown || phase == TouchpadPhase.clickUp) {
+      debugPrint(
+          'ONYXCLICK ${DateTime.now().millisecondsSinceEpoch} ${phase.name}');
+    }
+    if (phase == TouchpadPhase.clickDown) clickHeld.value = true;
+    if (phase == TouchpadPhase.clickUp) clickHeld.value = false;
     final fling = _motion.add(phase, x, y, _now);
     if (fling != null) _startGlide(fling);
 
@@ -223,6 +240,8 @@ abstract final class TvTouchpad {
   /// Toute autre touche reprend la main sur l'élan : OK, Retour, ou une flèche
   /// dans un autre sens.
   static bool _observeKey(KeyEvent event) {
+    debugPrint(
+        'ONYXHW ${DateTime.now().millisecondsSinceEpoch} ${event.runtimeType} ${event.logicalKey.debugName} focus=${FocusManager.instance.primaryFocus?.debugLabel}');
     if (event is! KeyDownEvent || !isGliding) return false;
     final ownArrow = _arrowDirection(event.logicalKey) == _glideDirection &&
         _now - _glideStartedAt < _glideGrace;
@@ -250,6 +269,7 @@ abstract final class TvTouchpad {
     stopGlide();
     _moveListeners.clear();
     debugClock = null;
+    clickHeld.value = false;
     _motion.add(TouchpadPhase.clickUp, 0, 0, Duration.zero);
     _motion.add(TouchpadPhase.ended, 0, 0, Duration.zero);
   }
