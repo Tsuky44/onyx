@@ -2171,9 +2171,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/settings/settings_screen.dart": {
-    "mtime": 1794487207.9016294,
-    "seen": 1794487845.2708392,
-    "ast_hash": "94edc5ea903274913e2692126cb54d1f",
+    "mtime": 1794514120.9047208,
+    "seen": 1794514595.355888,
+    "ast_hash": "ac816738422b3c03de895304fd52f0a6",
     "semantic_hash": ""
   },
   "app/lib/screens/settings/settings_sections.dart": {
@@ -2267,10 +2267,10 @@
     "semantic_hash": "114d6582a0348ef73b7ac50daa03ddd0"
   },
   "app/lib/screens/settings/widgets/settings_page.dart": {
-    "mtime": 1794482460.0694323,
-    "seen": 1794487845.270903,
-    "ast_hash": "f671d8e714af1dd7c961455a6cbad53f",
-    "semantic_hash": "f671d8e714af1dd7c961455a6cbad53f"
+    "mtime": 1794514116.6823168,
+    "seen": 1794514595.3559115,
+    "ast_hash": "a5630fbb3dc59db5e9bbc6bc6c2739f9",
+    "semantic_hash": ""
   },
   "app/lib/screens/settings/widgets/settings_ui.dart": {
     "mtime": 1794487207.9016294,
@@ -3029,9 +3029,9 @@
     "semantic_hash": ""
   },
   "app/lib/tv/touchpad_motion.dart": {
-    "mtime": 1794509776.6506064,
-    "seen": 1794510731.249563,
-    "ast_hash": "0d73ad15ab57dbad8fea2c907e514873",
+    "mtime": 1794514121.0026534,
+    "seen": 1794514595.3560798,
+    "ast_hash": "e31f35fc18d9025e953fb70977ef1781",
     "semantic_hash": ""
   },
   "app/lib/tv/tv_deferred_keyboard.dart": {
@@ -3101,9 +3101,9 @@
     "semantic_hash": "1463896f625adedc8f1e52c6b9e31aab"
   },
   "app/lib/tv/tv_touchpad.dart": {
-    "mtime": 1794485321.433484,
-    "seen": 1794487845.2715044,
-    "ast_hash": "2a4d4431e191db91c405cec05d1129ff",
+    "mtime": 1794514090.580142,
+    "seen": 1794514595.3560977,
+    "ast_hash": "ca88944505f00ed3c861f04c4ee4545b",
     "semantic_hash": ""
   },
   "app/lib/tv/tv_ui_scale.dart": {
@@ -4842,9 +4842,9 @@
     "semantic_hash": "3b136b1a99f496a68cc659dcc465cece"
   },
   "app/test/touchpad_motion_test.dart": {
-    "mtime": 1794509776.6515067,
-    "seen": 1794510731.2505164,
-    "ast_hash": "8e27fdde7157f31f5e5d49a18ccaea7c",
+    "mtime": 1794514188.3737972,
+    "seen": 1794514595.3564665,
+    "ast_hash": "b29df0d991c03fbacb2dd7af4372616a",
     "semantic_hash": ""
   },
   "app/test/tv_back_action_test.dart": {
@@ -4908,9 +4908,9 @@
     "semantic_hash": ""
   },
   "app/test/tv_touchpad_test.dart": {
-    "mtime": 1794509776.6519868,
-    "seen": 1794510731.250583,
-    "ast_hash": "97d8096b51c8927b972227c8a92d5e61",
+    "mtime": 1794514229.3665724,
+    "seen": 1794514595.3564935,
+    "ast_hash": "f274065828a422568f514a2b1ceb6816",
     "semantic_hash": ""
   },
   "app/test/tv_ui_scale_test.dart": {
@@ -12678,9 +12678,9 @@
     "semantic_hash": ""
   },
   "app/test/settings_navigation_map_test.dart": {
-    "mtime": 1794512431.1037025,
-    "seen": 1794512786.0186734,
-    "ast_hash": "5b9a5e515f08701b2f36dd0838cb8006",
+    "mtime": 1794514256.7808487,
+    "seen": 1794514595.3564138,
+    "ast_hash": "cd9bbb8373cc64f7b99331c32454039d",
     "semantic_hash": ""
   },
   "app/test/tv_region_panes_test.dart": {
@@ -13074,9 +13074,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/shell/shell_tv_header.dart": {
-    "mtime": 1794509876.3282397,
-    "seen": 1794510731.2491767,
-    "ast_hash": "32107288c31fdfd30700f5aa737f8248",
+    "mtime": 1794514116.681384,
+    "seen": 1794514595.3559363,
+    "ast_hash": "69fa74efee9c593e1c89801c1357479a",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/tv_tab_bar.dart": {
@@ -13086,9 +13086,9 @@
     "semantic_hash": ""
   },
   "app/test/shell_tv_header_test.dart": {
-    "mtime": 1794509979.364009,
-    "seen": 1794510731.2504783,
-    "ast_hash": "a11003afc1bfdcae48aea1f4635aaab6",
+    "mtime": 1794514256.78114,
+    "seen": 1794514595.3564248,
+    "ast_hash": "cfca6e571ed145727895d81c53fda240",
     "semantic_hash": ""
   },
   "app/test/tv_living_room_style_test.dart": {
@@ -13098,15 +13098,15 @@
     "semantic_hash": ""
   },
   "docs/adr/0116-le-doigt-pilote-le-focus-sur-le-trackpad-de-l-apple-tv.md": {
-    "mtime": 1794510461.725024,
-    "seen": 1794510731.254032,
-    "ast_hash": "42f78c308aaffea0c150bea9f563c6ab",
+    "mtime": 1794514334.3227608,
+    "seen": 1794514595.357429,
+    "ast_hash": "cee05bfff46685ce92df122f6bce13c0",
     "semantic_hash": ""
   },
   "docs/adr/0117-la-barre-d-onglets-d-un-televiseur-est-une-pilule-centree.md": {
-    "mtime": 1794510461.725401,
-    "seen": 1794510731.2540379,
-    "ast_hash": "378992b5561df1006b76b28fd56bd8ea",
+    "mtime": 1794514334.3222325,
+    "seen": 1794514595.3574302,
+    "ast_hash": "2eeb4e301cdb1964063d727f5bb2a5d9",
     "semantic_hash": ""
   },
   "docs/adr/0118-le-style-de-salon-du-televiseur.md": {
@@ -13131,6 +13131,18 @@
     "mtime": 1794512547.983451,
     "seen": 1794512786.0198443,
     "ast_hash": "69c206c08be7b145f24d75f36f82b51b",
+    "semantic_hash": ""
+  },
+  "app/lib/tv/tv_touchpad_pace.dart": {
+    "mtime": 1794514064.4706514,
+    "seen": 1794514595.3560991,
+    "ast_hash": "33d0e3b18882a0af337d2c5348aea117",
+    "semantic_hash": ""
+  },
+  "docs/adr/0122-le-pave-va-posement-sur-les-commandes.md": {
+    "mtime": 1794514354.031331,
+    "seen": 1794514595.3574584,
+    "ast_hash": "f58a651b50476699719d89ee62cefe39",
     "semantic_hash": ""
   }
 }
