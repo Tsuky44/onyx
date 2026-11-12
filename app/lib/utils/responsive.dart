@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 
 import '../theme/lite_mode.dart';
+import '../tv/tv_mode.dart';
 import 'poster_grid_zoom.dart';
 
 /// Breakpoints and layout helpers for adaptive phone / tablet / desktop UI.
@@ -112,8 +113,15 @@ abstract final class AppLayout {
     );
   }
 
+  /// La largeur d'une affiche dans une rangée de l'accueil. Sur téléviseur,
+  /// six par écran au lieu de sept et demie (ADR-0118) : une affiche se
+  /// reconnaît de loin, et sa voisine a la place de se soulever.
   static double mediaRowCardWidth(BuildContext context) =>
-      isCompact(context) ? 118.0 : 150.0;
+      TvScope.of(context) ? 176.0 : (isCompact(context) ? 118.0 : 150.0);
+
+  /// L'écart entre deux cartes d'une rangée de l'accueil.
+  static double mediaRowGap(BuildContext context) =>
+      TvScope.of(context) ? 24.0 : 12.0;
 
   /// La marge construite hors de l'écran par une liste d'images : une
   /// fenêtre entière de chaque côté, sur l'axe du défilement.

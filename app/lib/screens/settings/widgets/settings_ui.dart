@@ -8,6 +8,9 @@ import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
 import '../../../tv/tv_mode.dart';
 import 'settings_choice_focus.dart';
+import 'settings_tile.dart';
+
+export 'settings_tile.dart';
 
 export 'settings_page.dart';
 
@@ -126,105 +129,6 @@ class SettingsIcon extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       child: Icon(icon, size: size * 0.59, color: tint),
-    );
-  }
-}
-
-class SettingsTile extends StatelessWidget {
-  const SettingsTile({
-    super.key,
-    this.icon,
-    this.iconColor,
-    this.leading,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-    this.destructive = false,
-    this.showChevron,
-  });
-
-  final IconData? icon;
-  final Color? iconColor;
-  final Widget? leading;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  final bool destructive;
-  final bool? showChevron;
-
-  @override
-  Widget build(BuildContext context) {
-    final chevron = showChevron ?? (onTap != null && trailing == null);
-    final titleColor = destructive ? AppColors.error : AppColors.textPrimary;
-    return InkWell(
-      onTap: onTap,
-      focusColor: AppColors.primary.withValues(alpha: 0.16),
-      hoverColor: Colors.white.withValues(alpha: 0.03),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 72),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: LayoutBuilder(builder: (context, constraints) {
-            final stackControl = constraints.maxWidth < 440 &&
-                trailing != null &&
-                trailing is! Switch;
-            return Row(
-              children: [
-                if (leading != null)
-                  leading!
-                else if (icon != null)
-                  SettingsIcon(
-                    icon!,
-                    color: destructive ? AppColors.error : iconColor,
-                  ),
-                if (leading != null || icon != null) const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: titleColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: AppType.callout,
-                        ),
-                      ),
-                      if (subtitle != null && subtitle!.isNotEmpty) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          subtitle!,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: AppType.subhead,
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
-                      if (stackControl) ...[
-                        const SizedBox(height: 12),
-                        trailing!,
-                      ],
-                    ],
-                  ),
-                ),
-                if (trailing != null && !stackControl) ...[
-                  const SizedBox(width: 12),
-                  trailing!,
-                ],
-                if (chevron) ...[
-                  const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: AppColors.textMuted, size: 20),
-                ],
-              ],
-            );
-          }),
-        ),
-      ),
     );
   }
 }

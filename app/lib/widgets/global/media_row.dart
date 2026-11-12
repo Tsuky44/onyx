@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
+import '../../tv/tv_mode.dart';
 import '../../tv/nav/tv_region.dart';
 import '../../utils/responsive.dart';
 import 'continue_watching_card.dart';
@@ -54,6 +56,8 @@ class MediaRow extends StatelessWidget {
     final horizontalPadding = AppLayout.pagePadding(context);
     final cardWidth = AppLayout.mediaRowCardWidth(context);
     final compact = AppLayout.isCompact(context);
+    final isTv = TvScope.of(context);
+    final gap = AppLayout.mediaRowGap(context);
     final room = PosterCard.railRoom(context);
     final rowHeight = (isContinueWatching
             ? ContinueWatchingCard.rowHeight
@@ -70,9 +74,11 @@ class MediaRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
+                  // Sur téléviseur, un cran au-dessus : le titre d'une
+                  // rangée se lit du canapé (ADR-0118).
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: compact ? 17 : 20,
+                        fontWeight: isTv ? FontWeight.w700 : FontWeight.w600,
+                        fontSize: isTv ? AppType.title1 : (compact ? 17 : 20),
                         letterSpacing: -0.3,
                       ),
                 ),
@@ -115,6 +121,9 @@ class MediaRow extends StatelessWidget {
               // simulateur jusqu'à 120 cartes).
               scrollCacheExtent: AppLayout.imageCacheExtent(context),
               scrollDirection: Axis.horizontal,
+              // Sur téléviseur, l'ombre de l'affiche soulevée déborde de la
+              // rangée : découpée à son bord, elle s'arrêtait net.
+              clipBehavior: isTv ? Clip.none : Clip.hardEdge,
               padding: EdgeInsets.only(
                 left: horizontalPadding,
                 right: horizontalPadding,
@@ -127,8 +136,8 @@ class MediaRow extends StatelessWidget {
                 return Padding(
                   // Une carte, un média (constat C7) : voir [TvRegion.itemKey].
                   key: TvRegion.itemKey(context, _mediaIdOf(item)),
-                  padding:
-                      EdgeInsets.only(right: index < items.length - 1 ? 12 : 0),
+                  padding: EdgeInsets.only(
+                      right: index < items.length - 1 ? gap : 0),
                   child: isContinueWatching
                       ? ContinueWatchingCard(
                           item: item as HomeMediaItem,

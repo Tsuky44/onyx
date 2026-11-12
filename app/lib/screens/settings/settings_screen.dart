@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/client_identity.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/focus_fill.dart';
 import '../../theme/app_motion.dart';
 import '../../tv/nav/tv_region.dart';
 import '../../tv/tv_mode.dart';
@@ -353,11 +354,18 @@ class _NavItemState extends State<_NavItem> {
   @override
   Widget build(BuildContext context) {
     final selected = widget.selected;
-    final background = selected
-        ? Colors.white.withValues(alpha: 0.08)
-        : _hovered || _focused
-            ? Colors.white.withValues(alpha: 0.04)
-            : Colors.transparent;
+    final isTv = TvScope.of(context);
+    // Sur téléviseur, la catégorie visée se remplit de blanc et son texte
+    // passe au noir (ADR-0118) : le bord bleu ne se voyait pas du canapé.
+    final filled = _focused && isTv;
+    final background = filled
+        ? FocusFill.fill
+        : selected
+            ? Colors.white.withValues(alpha: 0.08)
+            : _hovered || _focused
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.transparent;
+    final radius = BorderRadius.circular(isTv ? 22 : 10);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1.5),
@@ -365,7 +373,9 @@ class _NavItemState extends State<_NavItem> {
         color: Colors.transparent,
         child: InkWell(
           autofocus: widget.autofocus,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: radius,
+          // Le remplissage dit déjà tout : le voile de Material le grisait.
+          focusColor: isTv ? Colors.transparent : null,
           onTap: widget.onTap,
           onHover: (value) => setState(() => _hovered = value),
           onFocusChange: (value) {
@@ -378,12 +388,13 @@ class _NavItemState extends State<_NavItem> {
             duration: MediaQuery.disableAnimationsOf(context)
                 ? Duration.zero
                 : const Duration(milliseconds: 140),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            padding: EdgeInsets.symmetric(
+                horizontal: isTv ? 14 : 10, vertical: isTv ? 10 : 9),
             decoration: BoxDecoration(
               color: background,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: radius,
               border: Border.all(
-                color: _focused
+                color: _focused && !isTv
                     ? AppColors.primary.withValues(alpha: 0.8)
                     : Colors.transparent,
                 width: 1.5,
@@ -397,9 +408,11 @@ class _NavItemState extends State<_NavItem> {
                   child: Icon(
                     widget.category.icon,
                     size: 20,
-                    color: selected
-                        ? AppColors.accentMuted
-                        : AppColors.textSecondary,
+                    color: filled
+                        ? FocusFill.ink
+                        : selected
+                            ? AppColors.accentMuted
+                            : AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -407,11 +420,15 @@ class _NavItemState extends State<_NavItem> {
                   child: Text(
                     widget.category.label,
                     style: TextStyle(
-                      fontSize: AppType.body,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
+                      fontSize: isTv ? AppType.callout : AppType.body,
+                      fontWeight: selected || filled
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: filled
+                          ? FocusFill.ink
+                          : selected
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
                     ),
                   ),
                 ),

@@ -44,8 +44,8 @@ au centre, le profil à droite.
 
 - **Android TV et le web des téléviseurs LG** prennent la même barre : ils passent par le même
   `TvScope`.
-- L'onglet se choisit toujours par OK, pas au simple focus : choisir au focus (comme tvOS) monterait
-  chaque onglet survolé, et se décide avec le reste du style (maquettes).
+- L'onglet se choisit au focus après un court arrêt, comme sur tvOS : décidé sur maquettes, voir
+  l'[ADR-0118](0118-le-style-de-salon-du-televiseur.md), point 4.
 - `GlassNavTab` et `ShellDesktopHeader` ne changent pas : leurs tests restent ceux du bureau.
   `shell_navigation_map_test` éprouve toujours un en-tête de `GlassNavTab` monté à la main, donc plus
   l'onglet qu'un téléviseur monte ; les règles de zone qu'il vérifie sont les mêmes.

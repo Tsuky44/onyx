@@ -173,6 +173,10 @@ class _HomeScreenState extends State<HomeScreen>
         ? shellHeaderHeight(context)
         : MediaQuery.paddingOf(context).top + 56;
     final isTv = TvScope.of(context);
+    // Sur téléviseur, l'image du bandeau part du haut de l'écran, derrière
+    // la pilule des onglets (ADR-0118) : la barre n'est plus une bande
+    // opaque, et le texte du bandeau est calé en bas, loin d'elle.
+    final heroTop = isTv ? 0.0 : headerInset;
     final data = homeProvider.homeData;
     final discovery = data == null
         ? const <Media>[]
@@ -190,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen>
       body: homeProvider.isLoading
           ? HomeSkeleton(
               heroHeight: HeroBanner.heightFor(context),
-              topInset: headerInset,
+              topInset: heroTop,
             )
           : homeProvider.errorMessage != null
               ? ErrorStateView(
@@ -210,9 +214,14 @@ class _HomeScreenState extends State<HomeScreen>
                         slivers: [
                           // Le carrousel commence sous la barre du haut, pas
                           // derrière elle : posée sur l'affiche, elle masquait
-                          // le haut du poster et le titre.
+                          // le haut du poster et le titre. Sauf sur
+                          // téléviseur ([heroTop]), et sans bandeau, où le
+                          // texte d'accueil passerait sous la barre.
                           SliverToBoxAdapter(
-                            child: SizedBox(height: headerInset),
+                            child: SizedBox(
+                              height:
+                                  heroSlides.isEmpty ? headerInset : heroTop,
+                            ),
                           ),
                           if (heroSlides.isNotEmpty)
                             SliverToBoxAdapter(

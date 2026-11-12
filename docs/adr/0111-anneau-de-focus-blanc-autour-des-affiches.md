@@ -1,5 +1,8 @@
 # ADR-0111 — L'anneau de focus est blanc, et entoure les affiches au lieu de les border
 
+- **Remplacée sur téléviseur, pour les affiches,** par l'[ADR-0118](0118-le-style-de-salon-du-televiseur.md)
+  le 2026-11-12 : l'affiche focalisée se soulève sans anneau (l'anneau reste en mode léger, et partout
+  ailleurs que sur les affiches).
 - **Statut :** accepté
 - **Date :** 2026-11-10
 - **Portée :** le dessin du focus télécommande et clavier : `tv/tv_focus_ring.dart` (`TvFocusRing`),

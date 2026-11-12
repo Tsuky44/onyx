@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_page_transitions.dart';
+import '../tv/tv_mode.dart';
 import 'focus_fill.dart';
 import '../theme/app_type.dart';
 
@@ -312,7 +313,22 @@ abstract final class AppTheme {
   /// déjà blanc. [restOnTv] : voir [FocusFill.wrap].
   static ButtonStyle focusRinged(ButtonStyle style,
       {BorderSide? resting, Color? restOnTv}) {
-    return FocusFill.wrap(style.copyWith(side: _focusSide(resting)),
+    return FocusFill.wrap(
+        _capsuleOnTv(style).copyWith(side: _focusSide(resting)),
         restOnTv: restOnTv);
+  }
+
+  /// Sur téléviseur, un bouton est une capsule (ADR-0118) : la forme des
+  /// commandes des interfaces de salon, qui se lit de loin comme « bouton »
+  /// là où un rectangle arrondi se confond avec une carte. Ailleurs, la forme
+  /// que le style déclare.
+  static ButtonStyle _capsuleOnTv(ButtonStyle style) {
+    final shape = style.shape;
+    return style.copyWith(
+      shape: WidgetStateProperty.resolveWith(
+        (states) =>
+            TvMode.isTv ? const StadiumBorder() : shape?.resolve(states),
+      ),
+    );
   }
 }

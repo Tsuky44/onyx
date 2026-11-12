@@ -230,7 +230,47 @@ void main() {
     expect(_capsule(tester, 'Films').color, Colors.transparent);
   });
 
-  testWidgets('OK sur l’onglet focalisé le choisit', (tester) async {
+  testWidgets('s’arrêter sur un onglet l’affiche, sans OK', (tester) async {
+    final libraries = _libraries(3);
+    final taps = <String>[];
+    final nodes = await _pump(
+      tester,
+      libraries: libraries,
+      selected: ShellTabs.home,
+      taps: taps,
+    );
+
+    nodes[ShellTabs.library(libraries[0])]!.requestFocus();
+    await tester.pump();
+    expect(taps, isEmpty);
+    await tester.pump(TvTabBarItem.selectDelay);
+
+    expect(taps, [ShellTabs.library(libraries[0])]);
+  });
+
+  testWidgets('traverser la barre sans s’arrêter ne monte aucun onglet',
+      (tester) async {
+    final libraries = _libraries(3);
+    final taps = <String>[];
+    final nodes = await _pump(
+      tester,
+      libraries: libraries,
+      selected: ShellTabs.home,
+      taps: taps,
+    );
+
+    for (final library in libraries) {
+      nodes[ShellTabs.library(library)]!.requestFocus();
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+    nodes[ShellTabs.home]!.requestFocus();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(taps, isEmpty);
+  });
+
+  testWidgets('OK sur l’onglet focalisé le choisit, une seule fois',
+      (tester) async {
     final libraries = _libraries(3);
     final taps = <String>[];
     final nodes = await _pump(
@@ -243,7 +283,7 @@ void main() {
     nodes[ShellTabs.lists]!.requestFocus();
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     expect(taps, [ShellTabs.lists]);
   });

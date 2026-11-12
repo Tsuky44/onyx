@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../desktop_window.dart' show tvShellHeaderBarHeight;
@@ -21,6 +23,9 @@ import 'glass_chrome.dart';
 ///   la télécommande est dans la page ;
 /// - **focalisé**, la capsule se remplit de blanc et le texte passe au noir,
 ///   comme toute commande sur téléviseur ([FocusFill], ADR-0112).
+///
+/// S'arrêter sur un onglet l'affiche, sans appuyer sur OK : c'est le geste des
+/// barres d'onglets de tvOS ([TvTabBarItem.selectDelay]).
 ///
 /// Les onglets en trop défilent dans la pilule : le nombre de bibliothèques
 /// d'un serveur n'est pas borné.
@@ -74,15 +79,43 @@ class TvTabBarItem extends StatefulWidget {
   /// l'onglet affiché.
   final FocusNode? focusNode;
 
+  /// Le temps que le focus doit rester sur un onglet pour l'afficher. Assez
+  /// court pour sembler immédiat, assez long pour que traverser la barre d'un
+  /// glissé ne monte pas chaque onglet survolé (une page montée charge son
+  /// catalogue).
+  static const Duration selectDelay = Duration(milliseconds: 220);
+
   @override
   State<TvTabBarItem> createState() => _TvTabBarItemState();
 }
 
 class _TvTabBarItemState extends State<TvTabBarItem> {
   bool _focused = false;
+  Timer? _selectTimer;
 
   void _handleFocusChange(bool focused) {
-    if (_focused != focused) setState(() => _focused = focused);
+    if (_focused == focused) return;
+    setState(() => _focused = focused);
+    _selectTimer?.cancel();
+    _selectTimer = null;
+    if (focused && !widget.selected) {
+      _selectTimer = Timer(TvTabBarItem.selectDelay, () {
+        if (mounted && _focused && !widget.selected) widget.onTap();
+      });
+    }
+  }
+
+  /// OK n'attend pas le délai, et ne le laisse pas choisir une seconde fois.
+  void _select() {
+    _selectTimer?.cancel();
+    _selectTimer = null;
+    widget.onTap();
+  }
+
+  @override
+  void dispose() {
+    _selectTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -96,7 +129,7 @@ class _TvTabBarItemState extends State<TvTabBarItem> {
     return TvFocusable(
       focusNode: widget.focusNode,
       entry: widget.selected,
-      onSelect: widget.onTap,
+      onSelect: _select,
       onFocusChange: _handleFocusChange,
       showRing: false,
       focusScale: 1.0,
@@ -129,7 +162,7 @@ class _TvTabBarItemState extends State<TvTabBarItem> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: widget.onTap,
+          onTap: _select,
           focusNode: ownsFocus ? widget.focusNode : null,
           canRequestFocus: ownsFocus,
           onFocusChange: ownsFocus ? _handleFocusChange : null,

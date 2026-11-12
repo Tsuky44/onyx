@@ -98,17 +98,19 @@ class PosterCard extends StatefulWidget {
   /// du débord part vers le haut, là où le viewport de la liste couperait.
   static const double liftHeadroom = 10;
 
-  /// La place à réserver autour d'une rangée horizontale d'affiches, que le
-  /// viewport de la liste coupe en haut et en bas.
+  /// Le soulèvement d'une affiche focalisée sur téléviseur : elle grandit de
+  /// 10 % depuis son pied (ADR-0118).
+  static const double tvLift = 1.10;
+
+  /// La place à réserver autour d'une rangée horizontale d'affiches.
   ///
-  /// Sur téléviseur, l'affiche grandit vers le haut depuis son pied
-  /// ([PosterLift]) et porte un anneau qui la déborde de
-  /// [TvFocusRing.reach] : 12 px de soulèvement (une affiche de 150 px de
-  /// large) plus l'anneau en haut, l'anneau seul en bas. Avant, rien n'était
-  /// réservé en bas et le zoom du focus s'ajoutait au soulèvement : le liseré
-  /// était coupé des deux côtés.
+  /// Sur téléviseur, l'affiche focalisée grandit vers le haut depuis son pied
+  /// ([PosterLift], [tvLift]) : 27 px pour une affiche de 176 px de large,
+  /// que le titre de la rangée ne doit pas recevoir. En bas, la place de
+  /// l'anneau du mode léger ([TvFocusRing.reach]) ; l'ombre, elle, déborde
+  /// librement, la rangée d'un téléviseur ne se découpe pas.
   static EdgeInsets railRoom(BuildContext context) => TvScope.of(context)
-      ? const EdgeInsets.only(top: 18, bottom: 7)
+      ? const EdgeInsets.only(top: 30, bottom: 8)
       : const EdgeInsets.only(top: liftHeadroom);
 
   @override
@@ -329,6 +331,12 @@ Duration _posterMotion(BuildContext context, Duration base) =>
 /// Le zoom est calculé en pixels plutôt qu'en pourcentage, pour que le débord
 /// ([PosterCard.liftOverflow]) reste le même d'une petite carte de rangée à une
 /// grande carte de grille — et ne vienne jamais toucher la voisine.
+///
+/// Sur téléviseur, c'est le soulèvement lui-même qui dit où est le focus
+/// (ADR-0118, qui remplace l'ADR-0111) : l'affiche grandit de
+/// [PosterCard.tvLift] et porte une ombre profonde, sans anneau. En mode
+/// léger, où l'ombre est retirée (ADR-0086), l'anneau revient : sans l'un ni
+/// l'autre, 10 % de taille ne suffiraient pas à se repérer.
 class PosterLift extends StatelessWidget {
   final bool active;
 
@@ -354,6 +362,22 @@ class PosterLift extends StatelessWidget {
   /// au-dessus du titre, à la place que [PosterCard.railRoom] lui réserve.
   static const Alignment tvAnchor = Alignment.bottomCenter;
 
+  /// L'ombre d'une affiche soulevée sur téléviseur : une large et lointaine
+  /// qui la détache de la rangée, une courte qui garde son bord net.
+  static const List<BoxShadow> _tvShadow = [
+    BoxShadow(
+      color: Color(0xB3000000),
+      blurRadius: 44,
+      spreadRadius: -6,
+      offset: Offset(0, 26),
+    ),
+    BoxShadow(
+      color: Color(0x73000000),
+      blurRadius: 14,
+      offset: Offset(0, 6),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final motion = _posterMotion(context, duration);
@@ -366,9 +390,11 @@ class PosterLift extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final lifted = width.isFinite && width > 0
-            ? (1 + PosterCard.liftOverflow * 2 / width).clamp(1.0, 1.06)
-            : 1.0;
+        final lifted = tv && focused
+            ? PosterCard.tvLift
+            : width.isFinite && width > 0
+                ? (1 + PosterCard.liftOverflow * 2 / width).clamp(1.0, 1.06)
+                : 1.0;
 
         return AnimatedScale(
           scale: active ? lifted : 1.0,
@@ -384,21 +410,23 @@ class PosterLift extends StatelessWidget {
               // ombre floutée à dessiner pour chaque affiche d'une grille, à
               // chaque image d'un défilement. `lerp` entre « aucune » et la
               // liste la fait grandir depuis rien, et revenir à rien.
-              boxShadow: shadows && active
-                  ? const [
-                      BoxShadow(
-                        color: Color(0x8C000000),
-                        blurRadius: 22,
-                        spreadRadius: -4,
-                        offset: Offset(0, 12),
-                      ),
-                    ]
-                  : null,
+              boxShadow: !shadows || !active
+                  ? null
+                  : tv && focused
+                      ? _tvShadow
+                      : const [
+                          BoxShadow(
+                            color: Color(0x8C000000),
+                            blurRadius: 22,
+                            spreadRadius: -4,
+                            offset: Offset(0, 12),
+                          ),
+                        ],
             ),
             // L'ombre se redessine à chaque image du survol ; sans calque
             // propre, l'affiche et ses voiles le feraient avec elle.
             child: TvFocusRing(
-              visible: focused && tv,
+              visible: focused && tv && !shadows,
               outset: true,
               borderRadius: BorderRadius.circular(PosterCard.radius),
               child: RepaintBoundary(child: child),
