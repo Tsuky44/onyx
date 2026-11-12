@@ -67,9 +67,22 @@ class TvTabBarItem extends StatefulWidget {
     required this.selected,
     required this.onTap,
     this.focusNode,
+    this.icon,
+    this.selectOnFocus = true,
   });
 
   final String label;
+
+  /// Une icône à la place du libellé : la loupe de la recherche. Le libellé
+  /// reste son nom pour un lecteur d'écran. Une icône seule, parce que la
+  /// pilule est comptée : avec sept onglets, un mot de plus poussait le
+  /// dernier hors de vue.
+  final IconData? icon;
+
+  /// Faux pour une entrée qui ouvre une page au lieu d'afficher un onglet (la
+  /// recherche) : la traverser à la télécommande ne doit rien ouvrir, seul OK
+  /// le fait.
+  final bool selectOnFocus;
 
   /// Vrai pour l'onglet dont la page est affichée.
   final bool selected;
@@ -98,7 +111,7 @@ class _TvTabBarItemState extends State<TvTabBarItem> {
     setState(() => _focused = focused);
     _selectTimer?.cancel();
     _selectTimer = null;
-    if (focused && !widget.selected) {
+    if (focused && !widget.selected && widget.selectOnFocus) {
       _selectTimer = Timer(TvTabBarItem.selectDelay, () {
         if (mounted && _focused && !widget.selected) widget.onTap();
       });
@@ -175,7 +188,8 @@ class _TvTabBarItemState extends State<TvTabBarItem> {
             curve: AppMotion.curve,
             height: TvTabBar.height - 2 * TvTabBar._inset,
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
+            padding: EdgeInsets.symmetric(
+                horizontal: widget.icon == null ? 18 : 14),
             decoration: BoxDecoration(
               color: fill,
               borderRadius: radius,
@@ -202,7 +216,14 @@ class _TvTabBarItemState extends State<TvTabBarItem> {
                         : FontWeight.w600,
                     letterSpacing: -0.1,
                   )),
-              child: Text(widget.label, maxLines: 1),
+              child: widget.icon == null
+                  ? Text(widget.label, maxLines: 1)
+                  : Icon(
+                      widget.icon,
+                      size: 19,
+                      color: ink,
+                      semanticLabel: widget.label,
+                    ),
             ),
           ),
         ),

@@ -2,7 +2,7 @@
 
 - **Statut :** accepté, écrit sous Linux. Le Dart est analysé et testé à la milliseconde ; **aucun geste
   n'a été fait sur une vraie Siri Remote avec ce modèle**, et ses réglages sont des estimations.
-- **Date :** 2026-11-12
+- **Date :** 2026-11-12 ; réglage du même jour après le premier essai sur Apple TV (voir « Réglage »)
 - **Portée :** `tv/touchpad_motion.dart` (`TouchpadMotion`, `TouchpadCoast`, `TouchpadAxisTuning`),
   `tv/tv_touchpad.dart`, `tv/tv_key_repeat.dart` (`TvDirectionalFocusAction` ne multiplie plus les pas),
   `tv/nav/tv_nav_root.dart`, `screens/player/player_screen_remote.dart` (l'écouteur dit s'il s'est servi
@@ -74,6 +74,25 @@ et repart sur sa lancée quand on le lâche.
 - **Faire défiler la rangée au pixel sous le doigt**, focus posé à l'arrêt. C'est ce que fait tvOS
   dans ses propres collections, mais le focus d'Onyx est un nœud Flutter par carte : il faudrait un
   focus « flottant » dessiné à part, donc un second système de focus (interdit par l'ADR-0110).
+
+## Réglage après le premier essai (2026-11-12)
+
+Premier essai sur une vraie Apple TV, version 1.1.41 : le modèle plaît, mais « c'est un peu rapide ».
+Les valeurs de la décision ci-dessus sont celles de la première version ; celles qui tournent
+maintenant, dans `TouchpadAxisTuning` :
+
+| | Horizontale, avant | Horizontale, après | Verticale, avant | Verticale, après |
+|---|---|---|---|---|
+| premier pas d'un geste | 0,22 | 0,26 | 0,28 | 0,32 |
+| trajet par pas | 0,40 | 0,50 | 0,55 | 0,65 |
+| gain maximal | 2,6 (2,5 à 11 u/s) | 2,0 (3,5 à 12 u/s) | 1,5 | 1,25 |
+| vitesse de lancée | 4,5 u/s | 6 u/s | 8 u/s | 9 u/s |
+| durée de la lancée | 260 ms | 200 ms | 200 ms | 180 ms |
+| pas de lancée au plus | 18 | 10 | 2 | 2 |
+| écart minimal entre deux pas | 40 ms | 55 ms | 90 ms | 100 ms |
+
+Un balayage lent d'un bord à l'autre vaut maintenant 4 affiches (5 avant) ou 3 lignes (4 avant) ; un
+geste vif lâché, 8 affiches environ au lieu de 12.
 
 ## Conséquences
 

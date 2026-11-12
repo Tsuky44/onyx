@@ -94,16 +94,21 @@ void main() {
     expect(side?.width, greaterThan(2));
   });
 
-  test('les menus d’un téléviseur suivent l’échelle de ses pages', () {
+  test(
+      'les menus d’un téléviseur suivent l’échelle de ses pages, un quart '
+      'plus grands', () {
     // Le thème ne fixe pas toujours la taille : c'est alors celle du corps.
+    // À l'échelle seule, le menu du compte restait trop petit à l'essai sur
+    // Apple TV : `AppTheme.tvMenuBoost`.
     final base =
         AppTheme.dark.popupMenuTheme.textStyle!.fontSize ?? AppType.body;
     final scaled = AppTheme.popupMenuThemeScaled(1.5);
+    final expected = base * 1.5 * AppTheme.tvMenuBoost;
 
-    expect(scaled.textStyle!.fontSize, base * 1.5);
+    expect(scaled.textStyle!.fontSize, closeTo(expected, 1e-9));
     expect(
       scaled.labelTextStyle!.resolve(const <WidgetState>{})!.fontSize,
-      base * 1.5,
+      closeTo(expected, 1e-9),
     );
   });
 

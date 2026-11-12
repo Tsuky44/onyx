@@ -11,6 +11,7 @@ import '../../tv/tv_deferred_keyboard.dart';
 import '../../tv/tv_focus.dart';
 import '../../tv/tv_mode.dart';
 import 'glass_chrome.dart';
+import 'tv_tab_bar.dart';
 import 'search_results_route.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
@@ -31,6 +32,10 @@ class GlassCatalogSearch extends StatefulWidget {
   /// When true, the idle state is a circular search icon instead of a field.
   final bool compactTrigger;
 
+  /// Sur téléviseur, la recherche est une entrée de la pilule des onglets
+  /// ([TvTabBarItem]), à côté d'eux et dans le même dessin (ADR-0117).
+  final bool tabBarTrigger;
+
   /// Vrai quand ce champ reste à l'écran au-dessus des pages que la coquille
   /// ouvre — la barre de verre du grand écran. Il reste alors le seul champ :
   /// on continue d'y taper, et la page de résultats le suit.
@@ -45,6 +50,7 @@ class GlassCatalogSearch extends StatefulWidget {
     this.collapsedWidth = 180,
     this.expandedWidth = 300,
     this.compactTrigger = false,
+    this.tabBarTrigger = false,
     this.staysAbovePages = false,
   });
 
@@ -207,6 +213,16 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
   Widget build(BuildContext context) {
     final isTv = TvScope.of(context) || TvMode.isTv;
     if (isTv) {
+      if (widget.tabBarTrigger) {
+        return TvTabBarItem(
+          label: tr('Rechercher'),
+          icon: AppIcons.search,
+          selected: false,
+          selectOnFocus: false,
+          focusNode: _tvSearchNode,
+          onTap: () => _openTvSearch(context),
+        );
+      }
       if (widget.compactTrigger) {
         return TvFocusable(
           focusNode: _tvSearchNode,

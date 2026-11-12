@@ -144,13 +144,46 @@ void main() {
     expect(bar.center.dx, closeTo(640, 0.5));
     expect(bar.height, tvShellHeaderBarHeight);
     expect(tester.getRect(find.byType(GlassBrand)).right, lessThan(bar.left));
-    expect(tester.getRect(find.byType(GlassCatalogSearch)).left,
-        greaterThan(bar.right));
     expect(tester.getRect(find.byType(AccountMenu)).left,
         greaterThan(bar.right));
-    // Accueil, trois bibliothèques, Demandes, Listes, Téléchargements.
-    expect(find.byType(TvTabBarItem), findsNWidgets(7));
-    expect(find.text('mathis'), findsOneWidget);
+    // Accueil, trois bibliothèques, Demandes, Listes, Téléchargements, et la
+    // recherche, qui est une entrée de la pilule.
+    expect(find.byType(TvTabBarItem), findsNWidgets(8));
+    expect(
+      find.descendant(
+        of: find.byType(TvTabBar),
+        matching: find.byType(GlassCatalogSearch),
+      ),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('Rechercher'), findsOneWidget);
+    // Le disque du profil seul : son nom est dans son menu.
+    expect(find.text('mathis'), findsNothing);
+  });
+
+  testWidgets('s’arrêter sur la recherche ne l’ouvre pas : seul OK le fait',
+      (tester) async {
+    final taps = <String>[];
+    await _pump(
+      tester,
+      libraries: _libraries(3),
+      selected: ShellTabs.home,
+      taps: taps,
+    );
+
+    final finder = find.byWidgetPredicate(
+        (widget) => widget is TvTabBarItem && widget.icon != null);
+    final search = tester.widget<TvTabBarItem>(finder);
+    expect(search.selectOnFocus, isFalse);
+    search.focusNode!.requestFocus();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(taps, isEmpty);
+    expect(find.byType(ShellTvHeader), findsOneWidget,
+        reason: 'aucune page ne s’est ouverte par-dessus');
+    final capsule = tester.widget<AnimatedContainer>(find.descendant(
+        of: finder, matching: find.byType(AnimatedContainer)));
+    expect((capsule.decoration! as BoxDecoration).color, FocusFill.fill);
   });
 
   testWidgets('sa hauteur est celle que les pages laissent libre en haut',
@@ -177,13 +210,13 @@ void main() {
     expect(tester.takeException(), isNull);
     final bar = tester.getRect(find.byType(TvTabBar));
     expect(bar.center.dx, closeTo(640, 0.5));
-    for (final type in [GlassBrand, GlassCatalogSearch, AccountMenu]) {
+    for (final type in [GlassBrand, AccountMenu]) {
       final rect = tester.getRect(find.byType(type));
       expect(rect.left, greaterThanOrEqualTo(0), reason: '$type');
       expect(rect.right, lessThanOrEqualTo(1280), reason: '$type');
       expect(rect.overlaps(bar), isFalse, reason: '$type');
     }
-    expect(find.byType(TvTabBarItem), findsNWidgets(1 + 12 + 3));
+    expect(find.byType(TvTabBarItem), findsNWidgets(1 + 12 + 3 + 1));
 
     // Le dernier onglet est hors de la pilule ; lui donner le focus l'amène.
     final last = nodes[ShellTabs.downloads]!;

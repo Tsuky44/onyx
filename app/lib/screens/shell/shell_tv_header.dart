@@ -6,7 +6,6 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_type.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/global/account_menu.dart';
 import '../../widgets/global/app_download_button.dart';
@@ -17,8 +16,8 @@ import '../../widgets/global/tv_tab_bar.dart';
 import 'shell_indexer_status.dart';
 import 'shell_tabs.dart';
 
-/// L'en-tête d'un téléviseur : la marque à gauche, la pilule des onglets au
-/// centre, la recherche et le compte à droite (ADR-0117).
+/// L'en-tête d'un téléviseur : la marque à gauche, la pilule des onglets et
+/// de la recherche au centre, le compte à droite (ADR-0117).
 ///
 /// Les mêmes entrées que [ShellDesktopHeader], dans la disposition des apps de
 /// salon. La bande de verre pleine largeur a disparu : seule la pilule porte
@@ -59,7 +58,7 @@ class ShellTvHeader extends StatelessWidget {
 
   /// La place gardée de chaque côté de la pilule, pour qu'elle reste au
   /// centre quelle que soit la largeur de ce qui l'entoure.
-  static const double _sideWidth = 270;
+  static const double _sideWidth = 230;
 
   Widget _tab(String tab, String label) => TvTabBarItem(
         label: label,
@@ -70,7 +69,6 @@ class ShellTvHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final username = authProvider.currentUser?.username ?? '';
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -135,6 +133,15 @@ class ShellTvHeader extends StatelessWidget {
                           child:
                               _tab(ShellTabs.downloads, tr('Téléchargements')),
                         ),
+                      // La recherche est une entrée de la barre, comme dans
+                      // les apps de salon : OK l'ouvre, le focus seul non.
+                      const TourTarget(
+                        anchor: TourAnchor.search,
+                        child: GlassCatalogSearch(
+                          tabBarTrigger: true,
+                          staysAbovePages: true,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -146,32 +153,6 @@ class ShellTvHeader extends StatelessWidget {
                   children: [
                     ShellIndexerStatus(homeProvider: homeProvider),
                     const AppDownloadButton(),
-                    const TourTarget(
-                      anchor: TourAnchor.search,
-                      child: GlassCatalogSearch(
-                        compactTrigger: true,
-                        staysAbovePages: true,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    // Le nom à côté du disque : sur un écran partagé, on voit
-                    // d'un coup d'œil dans quel profil on est.
-                    if (username.isNotEmpty)
-                      Flexible(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Text(
-                            username,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: AppType.subhead,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
                     AccountMenu(authProvider: authProvider),
                   ],
                 ),

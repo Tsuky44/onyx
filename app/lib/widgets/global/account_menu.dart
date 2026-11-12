@@ -6,6 +6,7 @@ import '../../screens/settings/settings_screen.dart';
 import '../../screens/settings/tv_link_scanner_screen.dart';
 import '../../models/profile_avatar.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_theme.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import 'glass_chrome.dart';
@@ -41,15 +42,26 @@ class AccountMenu extends StatelessWidget {
         authProvider.apiClient.servers.otherServers(authProvider.activeServer);
     final canSwitch = otherServers.isNotEmpty;
 
+    // Sur téléviseur, le menu grandit avec son texte : des lignes plus
+    // hautes et un menu plus large, que le thème ne sait pas porter
+    // ([AppTheme.menuScaleOf]).
+    final scale = AppTheme.menuScaleOf(context);
+    final rowHeight =
+        scale > 1 ? 40 * scale : kMinInteractiveDimension.toDouble();
+
     return TourTarget(
       anchor: TourAnchor.account,
       child: PopupMenuButton<String>(
         tooltip: tr('Menu'),
         offset: const Offset(0, 44),
         padding: EdgeInsets.zero,
+        constraints: scale > 1
+            ? BoxConstraints(minWidth: 150 * scale, maxWidth: 250 * scale)
+            : null,
         itemBuilder: (_) => [
           PopupMenuItem(
             enabled: false,
+            height: rowHeight,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -65,8 +77,8 @@ class AccountMenu extends StatelessWidget {
                     // actions d'administration.
                     '${authProvider.activeServer!.displayName} · '
                     '${authProvider.permissions.isAdmin ? tr('Administrateur') : tr('Membre')}',
-                    style: const TextStyle(
-                      fontSize: AppType.caption,
+                    style: TextStyle(
+                      fontSize: AppType.caption * scale,
                       color: AppColors.textMuted,
                     ),
                   ),
@@ -78,23 +90,17 @@ class AccountMenu extends StatelessWidget {
             for (final account in otherServers)
               PopupMenuItem(
                 value: 'switch:${account.id}',
-                child: Row(
-                  children: [
-                    const Icon(AppIcons.switchServer, size: 16),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        tr('Passer sur {0}', [account.displayName]),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                height: rowHeight,
+                child: _MenuRow(
+                  icon: AppIcons.switchServer,
+                  label: tr('Passer sur {0}', [account.displayName]),
                 ),
               ),
             const PopupMenuDivider(),
           ],
           PopupMenuItem(
             value: 'users',
+            height: rowHeight,
             child: _MenuRow(
               icon: AppIcons.switchUser,
               label: tr('Changer d’utilisateur'),
@@ -102,12 +108,10 @@ class AccountMenu extends StatelessWidget {
           ),
           PopupMenuItem(
             value: 'watch-party',
-            child: Row(
-              children: [
-                Icon(AppIcons.watchParty, size: 16),
-                SizedBox(width: 8),
-                Text(tr('Rejoindre une séance')),
-              ],
+            height: rowHeight,
+            child: _MenuRow(
+              icon: AppIcons.watchParty,
+              label: tr('Rejoindre une séance'),
             ),
           ),
           const PopupMenuDivider(),
@@ -115,11 +119,13 @@ class AccountMenu extends StatelessWidget {
           // une autre section.
           PopupMenuItem(
             value: 'settings',
+            height: rowHeight,
             child: _MenuRow(icon: AppIcons.settings, label: tr('Paramètres')),
           ),
           if (canLinkTv)
             PopupMenuItem(
               value: 'tv',
+              height: rowHeight,
               child: _MenuRow(
                 icon: AppIcons.scan,
                 label: tr('Connecter un appareil'),
@@ -128,6 +134,7 @@ class AccountMenu extends StatelessWidget {
           const PopupMenuDivider(),
           PopupMenuItem(
             value: 'logout',
+            height: rowHeight,
             child:
                 _MenuRow(icon: AppIcons.signOut, label: tr('Se déconnecter')),
           ),
@@ -193,8 +200,9 @@ class AccountMenu extends StatelessWidget {
   }
 }
 
-/// Une entrée du menu : une icône de 16 px et son libellé, comme les entrées
-/// « Passer sur… » et « Rejoindre une séance » au-dessus.
+/// Une entrée du menu : une icône et son libellé. 16 px d'icône, à l'échelle
+/// des menus de l'appareil ([AppTheme.menuScaleOf]) : sur téléviseur, le texte
+/// grandissait seul et l'icône restait un point à côté de lui.
 class _MenuRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -203,11 +211,12 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scale = AppTheme.menuScaleOf(context);
     return Row(
       children: [
-        Icon(icon, size: 16),
-        const SizedBox(width: 8),
-        Text(label),
+        Icon(icon, size: 16 * scale),
+        SizedBox(width: 8 * scale),
+        Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
       ],
     );
   }

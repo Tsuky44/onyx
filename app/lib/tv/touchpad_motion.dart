@@ -37,16 +37,20 @@ class TouchpadAxisTuning {
   });
 
   /// Une rangée d'affiches : elle se traverse vite et garde son élan.
+  ///
+  /// Réglage du 2026-11-12, après le premier essai sur Apple TV (« un peu
+  /// rapide ») : un quart de pas en moins par trajet, un gain plafonné à 2 au
+  /// lieu de 2,6, une lancée presque deux fois plus courte.
   static const TouchpadAxisTuning horizontal = TouchpadAxisTuning(
-    firstStep: 0.22,
-    step: 0.40,
-    gainFrom: 2.5,
-    gainTo: 11,
-    maxGain: 2.6,
-    coastFrom: 4.5,
-    coastDecay: 0.26,
-    maxCoastSteps: 18,
-    minStepInterval: Duration(milliseconds: 40),
+    firstStep: 0.26,
+    step: 0.50,
+    gainFrom: 3.5,
+    gainTo: 12,
+    maxGain: 2.0,
+    coastFrom: 6,
+    coastDecay: 0.20,
+    maxCoastSteps: 10,
+    minStepInterval: Duration(milliseconds: 55),
   );
 
   /// La verticale change de rangée entière, ou de ligne de réglage. Au premier
@@ -54,15 +58,15 @@ class TouchpadAxisTuning {
   /// rangées entières » : elle suit donc le doigt presque sans gain, et sa
   /// lancée ne dépasse jamais deux éléments.
   static const TouchpadAxisTuning vertical = TouchpadAxisTuning(
-    firstStep: 0.28,
-    step: 0.55,
-    gainFrom: 4,
-    gainTo: 12,
-    maxGain: 1.5,
-    coastFrom: 8,
-    coastDecay: 0.20,
+    firstStep: 0.32,
+    step: 0.65,
+    gainFrom: 5,
+    gainTo: 13,
+    maxGain: 1.25,
+    coastFrom: 9,
+    coastDecay: 0.18,
     maxCoastSteps: 2,
-    minStepInterval: Duration(milliseconds: 90),
+    minStepInterval: Duration(milliseconds: 100),
   );
 
   static TouchpadAxisTuning of(TraversalDirection direction) =>
@@ -98,8 +102,8 @@ class TouchpadAxisTuning {
   final int maxCoastSteps;
 
   /// Deux pas ne se suivent jamais de plus près : le focus doit avoir le
-  /// temps de se poser et la liste de défiler. À l'horizontale, 40 ms : en
-  /// dessous les cartes ne se distinguent plus. À la verticale, 90 ms : le
+  /// temps de se poser et la liste de défiler. À l'horizontale, 55 ms : en
+  /// dessous les cartes ne se distinguent plus. À la verticale, 100 ms : le
   /// parcours des fiches fait défiler puis réessaie, et perdait des pas sous
   /// 80 ms (ADR-0110, constat C6).
   final Duration minStepInterval;

@@ -68,6 +68,32 @@ void main() {
     }
   });
 
+  group('menus', () {
+    testWidgets('ce que le thème ne porte pas lit le même facteur',
+        (tester) async {
+      late double onTv;
+      late double elsewhere;
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.dark.copyWith(
+          popupMenuTheme: AppTheme.popupMenuThemeScaled(1.5),
+        ),
+        home: Builder(builder: (context) {
+          onTv = AppTheme.menuScaleOf(context);
+          return Theme(
+            data: AppTheme.dark,
+            child: Builder(builder: (context) {
+              elsewhere = AppTheme.menuScaleOf(context);
+              return const SizedBox();
+            }),
+          );
+        }),
+      ));
+
+      expect(onTv, closeTo(1.5 * AppTheme.tvMenuBoost, 1e-9));
+      expect(elsewhere, 1);
+    });
+  });
+
   group('ligne de réglage', () {
     testWidgets('visée sur téléviseur, son texte passe au noir sur blanc',
         (tester) async {

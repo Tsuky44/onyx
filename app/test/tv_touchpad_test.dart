@@ -137,13 +137,13 @@ void main() {
         (tester) async {
       final nodes = await pumpRow(tester, scrollable: true);
 
-      // 2 unités en une seconde : le premier pas à 0,22, puis un tous les
-      // 0,40. Aucune flèche du moteur dans ce test : le doigt suffit.
+      // 2 unités en une seconde : le premier pas à 0,26, puis un tous les
+      // 0,50. Aucune flèche du moteur dans ce test : le doigt suffit.
       await swipe(tester,
           distance: 2, duration: const Duration(milliseconds: 1000));
       await TvNavHarness.settle(tester);
 
-      expect(focusedIndex(nodes), 5);
+      expect(focusedIndex(nodes), 4);
     });
 
     testWidgets('la flèche que le moteur tire du glissé ne compte pas en plus',
@@ -224,9 +224,9 @@ void main() {
       await wait(tester, const Duration(seconds: 3));
 
       expect(TvTouchpad.isGliding, isFalse);
-      // Posé, le même trajet de 1,6 unité vaut 4 affiches en tout.
-      expect(focusedIndex(nodes), greaterThan(lifted + 3));
-      expect(focusedIndex(nodes), greaterThan(4));
+      // Posé, le même trajet de 1,6 unité vaut 3 affiches en tout.
+      expect(focusedIndex(nodes), greaterThan(lifted + 2));
+      expect(focusedIndex(nodes), greaterThan(3));
     });
 
     testWidgets('poser le doigt arrête la lancée', (tester) async {

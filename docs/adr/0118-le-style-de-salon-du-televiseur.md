@@ -7,7 +7,8 @@
   `utils/responsive.dart` (`mediaRowCardWidth`, `mediaRowGap`), `widgets/global/media_row.dart`,
   `screens/home/home_screen.dart`, `theme/app_theme.dart` (`_capsuleOnTv`),
   `screens/settings/widgets/settings_tile.dart` (extrait de `settings_ui.dart`),
-  `screens/settings/settings_screen.dart`, `widgets/global/tv_tab_bar.dart`.
+  `screens/settings/settings_screen.dart`, `widgets/global/tv_tab_bar.dart`,
+  `widgets/global/account_menu.dart`.
 - **Remplace** l'[ADR-0111](0111-anneau-de-focus-blanc-autour-des-affiches.md) pour le focus des
   affiches sur téléviseur. **Étend** l'[ADR-0112](0112-sur-televiseur-la-commande-focalisee-se-remplit-de-blanc.md)
   aux lignes de réglage. **Amende** l'[ADR-0117](0117-la-barre-d-onglets-d-un-televiseur-est-une-pilule-centree.md) :
@@ -45,6 +46,11 @@ bleu de 16 % sur la ligne visée, des boutons en rectangle arrondi.
    a le focus : quand la télécommande est sur son menu ou son bouton, c'est lui qui le montre.
    Envelopper ce widget au moment où il prenait le focus le faisait renaître et le lui faisait perdre
    (droite depuis une catégorie revenait à la catégorie) ; une clé garde aussi son état.
+
+7. **Un menu est un quart plus grand que la page** (`AppTheme.tvMenuBoost`, après le premier essai
+   sur Apple TV : le menu du compte restait « trop petit »). Le thème porte le texte ;
+   `AppTheme.menuScaleOf` donne le même facteur à ce qu'il ne sait pas porter, et le menu du compte
+   s'en sert pour la hauteur de ses lignes, ses icônes et sa largeur.
 
 ## Conséquences
 

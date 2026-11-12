@@ -292,14 +292,34 @@ abstract final class AppTheme {
   /// position reste celle que calcule Flutter.
   static PopupMenuThemeData popupMenuThemeScaled(double scale) {
     final base = dark.popupMenuTheme;
+    final factor = scale * tvMenuBoost;
     TextStyle? grow(TextStyle? style) =>
-        style?.copyWith(fontSize: (style.fontSize ?? AppType.body) * scale);
+        style?.copyWith(fontSize: (style.fontSize ?? AppType.body) * factor);
     return base.copyWith(
       textStyle: grow(base.textStyle),
       labelTextStyle: WidgetStatePropertyAll(
           grow(base.labelTextStyle?.resolve(const <WidgetState>{}))),
-      menuPadding: EdgeInsets.symmetric(vertical: 8 * scale),
+      menuPadding: EdgeInsets.symmetric(vertical: 8 * factor),
     );
+  }
+
+  /// Ce qu'un menu de téléviseur prend en plus de l'échelle de la page : à
+  /// l'échelle seule, le menu du compte restait « trop petit » à l'essai sur
+  /// Apple TV (2026-11-12). Un menu se lit de plus loin qu'une page, d'un
+  /// coup d'œil, et ses lignes sont des cibles.
+  static const double tvMenuBoost = 1.25;
+
+  /// Le facteur par lequel les menus grandissent ici : celui de
+  /// [popupMenuThemeScaled] sur un téléviseur, 1 ailleurs. Pour ce que le
+  /// thème ne sait pas porter : la hauteur d'une ligne, la taille d'une
+  /// icône, la largeur du menu.
+  static double menuScaleOf(BuildContext context) {
+    // Le style de base n'a pas de taille à lui : c'est celle du corps de
+    // texte, la même que [popupMenuThemeScaled] agrandit.
+    final size = Theme.of(context).popupMenuTheme.textStyle?.fontSize;
+    final base = dark.popupMenuTheme.textStyle?.fontSize ?? AppType.body;
+    if (size == null || base <= 0) return 1;
+    return size / base;
   }
 
   /// Adds the focus ring to a button style without disturbing anything else it

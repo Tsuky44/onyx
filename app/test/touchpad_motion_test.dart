@@ -51,12 +51,12 @@ List<Duration> coastOf(TraversalDirection direction, double speed) {
 
 void main() {
   group('le trajet fait les pas', () {
-    test('un balayage lent d’un bord à l’autre avance de cinq affiches', () {
+    test('un balayage lent d’un bord à l’autre avance de quatre affiches', () {
       // 2 unités en 1 s : sous la vitesse où le trajet compte double. Le
-      // premier pas à 0,22, puis un tous les 0,40.
+      // premier pas à 0,26, puis un tous les 0,50.
       final result =
           swipe(TouchpadMotion(), distance: 2, duration: ms * 1000);
-      expect(result.steps, List.filled(5, TraversalDirection.right));
+      expect(result.steps, List.filled(4, TraversalDirection.right));
     });
 
     test('un petit trajet ne fait aucun pas, le suivant en fait un', () {
@@ -107,7 +107,7 @@ void main() {
       expect(steps.last, TraversalDirection.left);
     });
 
-    test('deux pas ne se suivent jamais à moins de 40 ms', () {
+    test('deux pas ne se suivent jamais de trop près', () {
       final motion = TouchpadMotion();
       final times = <Duration>[];
       motion.add(TouchpadPhase.began, -1, 0, Duration.zero);
@@ -126,10 +126,10 @@ void main() {
   });
 
   group('la verticale', () {
-    test('un balayage lent d’un bord à l’autre descend de quatre lignes', () {
+    test('un balayage lent d’un bord à l’autre descend de trois lignes', () {
       final result = swipe(TouchpadMotion(),
           distance: 2, duration: ms * 1000, vertical: true);
-      expect(result.steps, List.filled(4, TraversalDirection.down));
+      expect(result.steps, List.filled(3, TraversalDirection.down));
     });
 
     test('un geste vif ne saute pas de rangées entières', () {
@@ -231,7 +231,7 @@ void main() {
 
   group('la lancée', () {
     test('ralentit : chaque pas vient plus tard que le précédent', () {
-      final delays = coastOf(TraversalDirection.right, 8);
+      final delays = coastOf(TraversalDirection.right, 10);
       expect(delays.length, greaterThan(3));
       for (var i = 1; i < delays.length; i++) {
         expect(delays[i], greaterThanOrEqualTo(delays[i - 1]));
@@ -239,9 +239,9 @@ void main() {
     });
 
     test('va plus loin quand le doigt est parti plus vite', () {
-      final gentle = coastOf(TraversalDirection.right, 5).length;
-      final brisk = coastOf(TraversalDirection.right, 9).length;
-      final hard = coastOf(TraversalDirection.right, 16).length;
+      final gentle = coastOf(TraversalDirection.right, 6.5).length;
+      final brisk = coastOf(TraversalDirection.right, 10).length;
+      final hard = coastOf(TraversalDirection.right, 18).length;
       expect(gentle, greaterThan(0));
       expect(brisk, greaterThan(gentle));
       expect(hard, greaterThan(brisk));
@@ -255,11 +255,11 @@ void main() {
     });
 
     test('sous la vitesse de lancée, la liste ne bouge pas', () {
-      expect(coastOf(TraversalDirection.right, 3), isEmpty);
-      expect(coastOf(TraversalDirection.down, 5), isEmpty);
+      expect(coastOf(TraversalDirection.right, 5), isEmpty);
+      expect(coastOf(TraversalDirection.down, 8), isEmpty);
     });
 
-    test('ne fait jamais deux pas à moins de 40 ms', () {
+    test('ne fait jamais deux pas de trop près', () {
       for (final delay in coastOf(TraversalDirection.left, 40)) {
         expect(delay,
             greaterThanOrEqualTo(TouchpadAxisTuning.horizontal.minStepInterval));
