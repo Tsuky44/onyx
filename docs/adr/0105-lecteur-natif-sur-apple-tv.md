@@ -8,6 +8,8 @@
   `PlayerHost.swift`, `NativeInfoPanelController.swift`, `NativeNextUpProposalController.swift`, `NativeOverlayView.swift`,
   `NativeBitmapSubtitles.swift`), `app/lib/screens/player/playback/native_tv_*.dart`,
   `app/lib/screens/player/player_screen_native_tv.dart`, le réglage Lecteur Apple TV.
+- **Complétée** par l'[ADR-0119](0119-l-ecran-natif-d-apple-tv-s-ouvre-et-se-ferme-sans-plan-noir.md)
+  (ouverture, épisode suivant, sortie par Menu, session audio).
 - **Complète :** ADR-0038 (AetherEngine sur les appareils Apple). Étude préalable :
   `docs/agents/spike-native-tv-player.md`.
 

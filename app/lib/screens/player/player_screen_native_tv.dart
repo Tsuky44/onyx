@@ -65,7 +65,20 @@ extension _PlayerNativeTv on _PlayerScreenState {
   void _syncNativeTv() {
     final presenter = _nativeTv;
     if (presenter == null || !mounted) return;
-    presenter.sync(wanted: _nativeTvWanted, spec: _nativeTvSpec(presenter));
+    presenter.sync(
+      wanted: _nativeTvWanted,
+      spec: _nativeTvSpec(presenter),
+      playerReady:
+          _playerController.session.nativeTvScreen?.hasNativePlayer ?? true,
+    );
+    // La route du moteur n'arrive pas par une reconstruction de cet écran :
+    // tant que la présentation l'attend, on revient voir.
+    if (presenter.claimRecheck()) {
+      Future<void>.delayed(const Duration(milliseconds: 200), () {
+        presenter.recheckFired();
+        if (mounted) _syncNativeTv();
+      });
+    }
     if (!presenter.isShown) return;
     _requestNativeEpisodes(presenter.memory);
     presenter.syncFit(

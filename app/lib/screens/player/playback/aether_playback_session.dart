@@ -477,6 +477,14 @@ class _AetherNativeTvScreen implements NativeTvScreen {
   @override
   bool get softwareRoute => _session._status?.videoRoute == 'software';
 
+  // Les deux routes d'AetherEngine qui jouent par un `AVPlayer`
+  // (`VideoRoute.loopback` et `.remoteBypass`).
+  @override
+  bool get hasNativePlayer {
+    final route = _session._status?.videoRoute;
+    return route == 'loopback' || route == 'remoteBypass';
+  }
+
   @override
   bool get showsBitmapSubtitle => _session._tracksNow.currentSubtitleIsBitmap;
 

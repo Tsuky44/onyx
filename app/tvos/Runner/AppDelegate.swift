@@ -76,11 +76,16 @@ class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
 
   /// Même raison que sur iOS (ADR-0011 §3) : sans la catégorie `.playback`,
   /// le son d'un film suit les règles d'une app d'ambiance.
+  ///
+  /// La catégorie seulement, jamais `setActive(true)` : activer la session au
+  /// lancement fige la route audio sur ce que le HDMI annonce à cet instant,
+  /// la stéréo quand la liaison est au repos, et plus aucun appel ne la
+  /// relève ensuite. Un film en 5.1 était alors mixé en stéréo. C'est
+  /// l'écran de lecture qui active la session, au moment où tvOS négocie la
+  /// route (AetherEngine, issue #24).
   private func configureAudioSession() {
     do {
-      let session = AVAudioSession.sharedInstance()
-      try session.setCategory(.playback, mode: .moviePlayback)
-      try session.setActive(true)
+      try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
     } catch {
       NSLog("Onyx: configuration AVAudioSession impossible : \(error)")
     }

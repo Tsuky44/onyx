@@ -26,6 +26,12 @@
     /// Posé dès qu'une fermeture part d'ici (Dart, ou la route logicielle) :
     /// la fin de transition qui suit ne doit pas se faire passer pour un Menu.
     private var closingFromHere = false
+    /// Menu a lancé la fermeture et Dart le sait déjà : la fin de la
+    /// transition fait le ménage sans le redire.
+    private var userDismissalAnnounced = false
+    /// La spec d'une présentation qui attend que l'écran précédent ait fini
+    /// de se fermer ([present]).
+    private var pendingSpec: OnyxAppleNativeSpec?
 
     private var spec: OnyxAppleNativeSpec?
     /// L'affiche déjà téléchargée, pour qu'une spec qui ne change que les
@@ -72,7 +78,17 @@
 
     // MARK: - Commandes
 
+    /// Le nombre d'essais, espacés de [presentRetry], qu'une présentation
+    /// accorde à l'écran précédent pour finir de se fermer : trois secondes,
+    /// bien plus que la transition d'AVKit.
+    private static let presentAttempts = 30
+    private static let presentRetry: TimeInterval = 0.1
+
     func present(_ spec: OnyxAppleNativeSpec) {
+      present(spec, attempt: 0)
+    }
+
+    private func present(_ spec: OnyxAppleNativeSpec, attempt: Int) {
       if controller != nil {
         update(spec)
         return
@@ -85,6 +101,24 @@
       }
       guard let presenting = Self.presentingController(), presenting.view.window != nil else {
         emit(.unavailable, reason: .presentationFailed)
+        return
+      }
+      // À l'épisode suivant, l'écran du précédent est encore en train de se
+      // fermer : UIKit refuse une présentation pendant une fermeture, sans
+      // rien lever ni toujours appeler la complétion. L'écran restait alors
+      // noir, son joué, ou le natif se retirait pour tout l'épisode. On
+      // attend la fin de la transition.
+      if let leaving = presenting.presentedViewController, leaving.isBeingDismissed,
+        attempt < Self.presentAttempts
+      {
+        pendingSpec = spec
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.presentRetry) { [weak self] in
+          MainActor.assumeIsolated {
+            guard let self, let spec = self.pendingSpec else { return }
+            self.pendingSpec = nil
+            self.present(spec, attempt: attempt + 1)
+          }
+        }
         return
       }
 
@@ -106,6 +140,7 @@
       controller.videoGravity = engine.videoGravity
       self.controller = controller
       closingFromHere = false
+      userDismissalAnnounced = false
       attachLayers(to: controller)
       apply(spec)
       observe()
@@ -133,6 +168,11 @@
     }
 
     func update(_ spec: OnyxAppleNativeSpec) {
+      // Une présentation en attente prendra la spec la plus récente.
+      if pendingSpec != nil {
+        pendingSpec = spec
+        return
+      }
       guard controller != nil else { return }
       apply(spec)
     }
@@ -305,8 +345,14 @@
         do {
           let (data, _) = try await URLSession.shared.data(from: url)
           // Réencodé en JPEG : AVKit ne lit que le type déclaré, et le serveur
-          // peut servir du WebP.
-          guard let jpeg = UIImage(data: data)?.jpegData(compressionQuality: 0.9) else { return }
+          // peut servir du WebP. Hors du fil principal : décoder puis
+          // réencoder une affiche y prenait plusieurs images, au moment même
+          // où l'écran natif se présente. Un JPEG (`FF D8`) passe tel quel.
+          let jpeg = await Task.detached(priority: .utility) { () -> Data? in
+            if data.starts(with: [0xFF, 0xD8]) { return data }
+            return UIImage(data: data)?.jpegData(compressionQuality: 0.9)
+          }.value
+          guard let jpeg else { return }
           guard let self, !Task.isCancelled else { return }
           self.poster = (value, jpeg)
           self.applyMetadata()
@@ -558,7 +604,14 @@
     // MARK: - Fermeture
 
     private func close(then completion: (() -> Void)?) {
+      pendingSpec = nil
       guard let controller else { return }
+      // Menu a déjà lancé la fermeture : en demander une seconde par-dessus
+      // ne ferait que perturber la transition, dont la fin fait le ménage.
+      if controller.isBeingDismissed {
+        completion?()
+        return
+      }
       closingFromHere = true
       // Depuis celui qui le présente : appelé sur le lecteur, `dismiss` ne
       // fermerait que la question posée par-dessus.
@@ -594,6 +647,8 @@
       prompt = nil
       answeredPrompt = nil
       lastActivity = .distantPast
+      userDismissalAnnounced = false
+      pendingSpec = nil
       posterTask?.cancel()
       posterTask = nil
       posterRequested = nil
@@ -609,13 +664,29 @@
       true
     }
 
-    /// Menu sur la télécommande. Émis à la fin de la transition seulement :
-    /// c'est là que le focus revient à Flutter (une à trois secondes plus tard,
-    /// mesuré dans le spike).
+    /// Menu sur la télécommande, dit à Dart dès le début de la transition :
+    /// il enregistre la progression et dépile l'écran du lecteur pendant
+    /// qu'AVKit se retire, au lieu de commencer après. Attendre la fin
+    /// laissait un écran noir entre le lecteur et la fiche, le temps de la
+    /// requête au serveur puis de l'animation de retour.
+    func playerViewControllerWillBeginDismissalTransition(_ playerViewController: AVPlayerViewController) {
+      guard playerViewController === controller, !closingFromHere, !userDismissalAnnounced else { return }
+      userDismissalAnnounced = true
+      emit(.dismissed, reason: .userDismissed)
+    }
+
+    /// La fin de la transition : le ménage, et le focus rendu à Flutter (une
+    /// à trois secondes de focus vide, mesuré dans le spike, quand rien ne le
+    /// redemandait).
     func playerViewControllerDidEndDismissalTransition(_ playerViewController: AVPlayerViewController) {
       guard playerViewController === controller, !closingFromHere else { return }
+      let announced = userDismissalAnnounced
       teardown()
-      emit(.dismissed, reason: .userDismissed)
+      if !announced { emit(.dismissed, reason: .userDismissed) }
+      if let host = Self.presentingController() {
+        host.setNeedsFocusUpdate()
+        host.updateFocusIfNeeded()
+      }
     }
 
     /// Saut de 10 s, balayage, chapitre : une seule fois par navigation,

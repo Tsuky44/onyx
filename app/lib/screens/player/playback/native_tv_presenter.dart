@@ -64,8 +64,10 @@ class NativeTvPresenter {
   NativeTvPresenter({
     required NativeTvScreen screen,
     required void Function(NativeTvIntent intent) onIntent,
+    DateTime Function() now = DateTime.now,
   })  : _screen = screen,
-        _onIntent = onIntent {
+        _onIntent = onIntent,
+        _now = now {
     // Construit avec l'écran du lecteur, donc avant la première ouverture :
     // les pistes texte n'entrent dans le menu d'AVKit que déclarées au
     // chargement (spike Apple TV, Q5).
@@ -82,6 +84,27 @@ class NativeTvPresenter {
 
   final NativeTvScreen _screen;
   final void Function(NativeTvIntent intent) _onIntent;
+  final DateTime Function() _now;
+
+  /// Le temps que la première présentation accorde au moteur pour avoir un
+  /// `AVPlayer`. Au-delà, elle part quand même, comme avant : un statut qui
+  /// ne dirait jamais la route ne doit pas priver de l'écran natif.
+  static const Duration playerPatience = Duration(seconds: 4);
+
+  DateTime? _waitingSince;
+  bool _recheckClaimed = false;
+
+  /// La présentation attend l'`AVPlayer` du moteur ([sync]).
+  bool get awaitingPlayer => _waitingSince != null && !_shown;
+
+  /// Vrai une seule fois par attente : l'écran s'en sert pour ne programmer
+  /// qu'un nouvel essai à la fois, et le rend par [recheckFired].
+  bool claimRecheck() {
+    if (!awaitingPlayer || _recheckClaimed) return false;
+    return _recheckClaimed = true;
+  }
+
+  void recheckFired() => _recheckClaimed = false;
   late final StreamSubscription<OnyxAppleNativeEvent> _events;
 
   bool _shown = false;
@@ -114,13 +137,32 @@ class NativeTvPresenter {
   ///
   /// Une fermeture demandée ici n'est pas un retrait : l'interface Flutter a
   /// pu reprendre la main le temps d'une question, le natif revient ensuite.
-  void sync({required bool wanted, required OnyxAppleNativeSpec spec}) {
+  ///
+  /// [playerReady] : le moteur a un `AVPlayer` à présenter
+  /// ([NativeTvScreen.hasNativePlayer]). Une présentation l'attend, au plus
+  /// [playerPatience] : présenté trop tôt, l'écran d'AVKit restait un plan
+  /// noir sans roue pendant que la source s'ouvrait, et sur la route
+  /// logicielle il s'ouvrait pour se refermer aussitôt, retiré pour tout le
+  /// film. Un écran déjà présenté n'attend rien : entre deux rechargements
+  /// (audio, qualité) le moteur n'a pas de lecteur, et il ne doit pas se
+  /// fermer pour autant.
+  void sync({
+    required bool wanted,
+    required OnyxAppleNativeSpec spec,
+    bool playerReady = true,
+  }) {
     if (_disposed || _retired) return;
     if (!wanted) {
+      _waitingSince = null;
       if (_shown) _close();
       return;
     }
     if (!_shown) {
+      if (!playerReady) {
+        final since = _waitingSince ??= _now();
+        if (_now().difference(since) < playerPatience) return;
+      }
+      _waitingSince = null;
       _shown = true;
       _sent = spec;
       _run('présentation', () => _screen.present(spec), failOpen: true);

@@ -26,6 +26,9 @@ class _RecordingScreen implements NativeTvScreen {
   bool softwareRoute = false;
 
   @override
+  bool hasNativePlayer = true;
+
+  @override
   bool showsBitmapSubtitle = false;
 
   @override
@@ -110,6 +113,70 @@ OnyxAppleNativeEvent _event(
     );
 
 void main() {
+  group('la première présentation attend le lecteur du moteur', () {
+    // Présenté avant que le moteur ait un `AVPlayer`, l'écran d'AVKit restait
+    // un plan noir sans roue pendant que la source s'ouvrait.
+    late _RecordingScreen screen;
+    late DateTime clock;
+    late NativeTvPresenter presenter;
+    final spec = NativeTvSpecBuilder.build(_state());
+
+    setUp(() {
+      screen = _RecordingScreen();
+      clock = DateTime(2026, 11, 12);
+      presenter = NativeTvPresenter(
+        screen: screen,
+        onIntent: (_) {},
+        now: () => clock,
+      );
+      addTearDown(presenter.dispose);
+    });
+
+    test('sans lecteur, rien n’est présenté et l’interface Onyx reste', () {
+      presenter.sync(wanted: true, spec: spec, playerReady: false);
+
+      expect(screen.calls, isEmpty);
+      expect(presenter.isShown, isFalse);
+      expect(presenter.awaitingPlayer, isTrue);
+    });
+
+    test('dès que le moteur a son lecteur, l’écran se présente', () {
+      presenter.sync(wanted: true, spec: spec, playerReady: false);
+      clock = clock.add(const Duration(milliseconds: 400));
+      presenter.sync(wanted: true, spec: spec, playerReady: true);
+
+      expect(screen.calls, ['present']);
+      expect(presenter.awaitingPlayer, isFalse);
+    });
+
+    test('au bout de sa patience, il se présente quand même', () {
+      presenter.sync(wanted: true, spec: spec, playerReady: false);
+      clock = clock.add(NativeTvPresenter.playerPatience);
+      presenter.sync(wanted: true, spec: spec, playerReady: false);
+
+      expect(screen.calls, ['present']);
+    });
+
+    test('déjà présenté, un moteur sans lecteur ne le ferme pas', () {
+      // Entre deux rechargements (audio, qualité), le moteur n'a pas de
+      // lecteur : le suivant arrive juste derrière.
+      presenter.sync(wanted: true, spec: spec, playerReady: true);
+      presenter.sync(wanted: true, spec: spec, playerReady: false);
+
+      expect(screen.calls, ['present']);
+      expect(presenter.isShown, isTrue);
+    });
+
+    test('un seul nouvel essai est programmé à la fois', () {
+      presenter.sync(wanted: true, spec: spec, playerReady: false);
+
+      expect(presenter.claimRecheck(), isTrue);
+      expect(presenter.claimRecheck(), isFalse);
+      presenter.recheckFired();
+      expect(presenter.claimRecheck(), isTrue);
+    });
+  });
+
   setUp(AppLanguage.resetForTest);
   tearDown(AppLanguage.resetForTest);
 

@@ -28,6 +28,11 @@ abstract interface class NativeTvScreen {
   /// d'`AVPlayer` à présenter.
   bool get softwareRoute;
 
+  /// Le moteur a choisi une route qui passe par un `AVPlayer` : il y a
+  /// quelque chose à présenter. Faux tant que la source s'ouvre (route encore
+  /// inconnue), et sur la route logicielle.
+  bool get hasNativePlayer;
+
   /// La piste de sous-titres active du moteur est une image (PGS, VobSub,
   /// DVB), qu'AVKit ne montre pas : le natif la peint dans sa propre couche.
   bool get showsBitmapSubtitle;
