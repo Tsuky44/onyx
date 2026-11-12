@@ -206,6 +206,63 @@ void main() {
           reason: 'la page rend le réglage où l’on était, pas son premier');
     });
 
+    // Haut et bas ne quittent jamais un volet. Le parcours de Flutter cherche
+    // dans tout l'écran : en bas d'une page courte, Bas tombait sur une
+    // catégorie de la liste, plus bas à gauche, qui s'ouvrait aussitôt. On
+    // descendait dans un menu et l'on se retrouvait dans un autre. À la
+    // taille d'une page de téléviseur, où la liste descend plus bas que la
+    // page.
+    Future<TvNavHarness> onTvPage(WidgetTester tester) async {
+      final nav = await pump(tester);
+      tester.view.physicalSize = const Size(1280, 720);
+      await tester.pumpAndSettle();
+      return nav;
+    }
+
+    bool inPage() =>
+        (FocusManager.instance.primaryFocus?.rect.left ?? 0) > 260;
+
+    testWidgets('en bas d’une page, bas reste dans la page', (tester) async {
+      final nav = await onTvPage(tester);
+      await _focusOn(tester, 'Serveurs');
+      await nav.press(_right);
+      expect(inPage(), isTrue, reason: 'point de départ');
+
+      String? last;
+      for (var i = 0; i < 6; i++) {
+        await nav.press(_down);
+        expect(inPage(), isTrue,
+            reason: 'bas n° ${i + 1} a quitté la page pour « ${_focused()} »');
+        last = _focused();
+      }
+      expect(last, 'Ajouter un serveur');
+    });
+
+    testWidgets('en haut d’une page, haut reste dans la page', (tester) async {
+      final nav = await onTvPage(tester);
+      await _focusOn(tester, 'Cet appareil');
+      await nav.press(_right);
+      final first = _focused();
+
+      for (var i = 0; i < 3; i++) {
+        await nav.press(_up);
+        expect(inPage(), isTrue);
+      }
+      expect(_focused(), first);
+    });
+
+    testWidgets('au bout de la liste, bas reste sur la dernière catégorie',
+        (tester) async {
+      final nav = await onTvPage(tester);
+      await _focusOn(tester, 'Serveurs');
+
+      for (var i = 0; i < 3; i++) {
+        await nav.press(_down);
+      }
+      expect(inPage(), isFalse);
+      expect(_focused(), 'Serveurs');
+    });
+
     // Les mêmes flèches enchaînées : c'est la mémoire des deux zones qui
     // décide, et la page affichée suit la catégorie survolée.
     testWidgets('on change de catégorie, on entre dans sa page, on en revient',

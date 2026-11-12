@@ -38,7 +38,10 @@ class TvPaneRegion extends DpadRegion {
           child: _PanePolicyGroup(child: child),
           enter: DpadEnterBehavior.restore,
           horizontalEdge: DpadEdgeBehavior.leave,
-          verticalEdge: DpadEdgeBehavior.leave,
+          // Haut et bas ne quittent pas un volet : en bas d'une page de
+          // réglages, Bas tombait sur une catégorie de la liste d'à côté, qui
+          // s'ouvrait aussitôt.
+          verticalEdge: DpadEdgeBehavior.stop,
         );
 
   /// Le premier de [candidates] dans l'ordre de lecture : le plus haut, puis

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'tv_focus_panes.dart';
 import 'tv_focus_scroll.dart';
 import 'tv_mode.dart';
 
@@ -67,8 +68,11 @@ abstract final class TvFocusEntries {
     Duration? duration,
     Curve? curve,
   }) {
+    final target = resolve(node, from: FocusManager.instance.primaryFocus);
+    // Haut ou bas qui sortirait d'un volet : le focus reste où il est.
+    if (!TvFocusPanes.admits(target)) return;
     TvFocusScroll.requestFocus(
-      resolve(node, from: FocusManager.instance.primaryFocus),
+      target,
       alignmentPolicy: alignmentPolicy,
       alignment: alignment,
       duration: duration,

@@ -79,7 +79,8 @@ abstract final class TvKeyRepeat {
 ///   ligne, le focus reste où il est — sauf entre les volets d'un
 ///   [TvFocusPanes], où le passage est voulu ;
 /// - haut et bas, quand plus rien ne peut prendre le focus, font défiler la
-///   page : voir [TvFocusScroll.scrollPast].
+///   page : voir [TvFocusScroll.scrollPast]. Dans un volet ([TvFocusPanes]),
+///   ils n'en sortent pas.
 class TvDirectionalFocusAction extends DirectionalFocusAction {
   TvDirectionalFocusAction();
 
@@ -110,7 +111,12 @@ class TvDirectionalFocusAction extends DirectionalFocusAction {
         current is FocusScopeNode ||
         (direction != TraversalDirection.left &&
             direction != TraversalDirection.right)) {
-      super.invoke(intent);
+      // Haut et bas restent dans leur volet, s'ils sont dans un volet.
+      if (current == null) {
+        super.invoke(intent);
+      } else {
+        TvFocusPanes.moveWithinPane(current, () => super.invoke(intent));
+      }
       // Le focus demandé ne se pose qu'à la microtâche suivante.
       FocusManager.instance.applyFocusChangesIfNeeded();
       if (identical(primaryFocus, current) && current != null) {

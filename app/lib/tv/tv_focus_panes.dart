@@ -22,6 +22,9 @@ import 'package:flutter/widgets.dart';
 ///
 /// Les volets sont ordonnés par leur position à l'écran, pas par leur ordre
 /// dans l'arbre.
+///
+/// Haut et bas, eux, ne quittent jamais un volet ([moveWithinPane]) : en bas
+/// d'une page, Bas ne passe pas dans la liste des catégories.
 class TvFocusPanes extends StatefulWidget {
   const TvFocusPanes({super.key, required this.child});
 
@@ -30,6 +33,42 @@ class TvFocusPanes extends StatefulWidget {
   /// Les volets qui contiennent [node], s'il y en a.
   static TvFocusPanesState? maybeOf(FocusNode node) =>
       node.context?.getInheritedWidgetOfExactType<_TvFocusPanesScope>()?.state;
+
+  static FocusNode? _boundary;
+
+  /// Fait [move], un déplacement vers le haut ou le bas parti de [from], sans
+  /// laisser le focus sortir du volet de [from]. Hors de tout volet, [move]
+  /// tel quel.
+  ///
+  /// Le parcours directionnel de Flutter cherche dans tout l'écran : quand
+  /// rien ne suit dans la direction, il prend ce qu'il trouve ailleurs. En bas
+  /// d'une page de réglages, Bas tombait ainsi sur une catégorie de la liste
+  /// d'à côté, plus bas à gauche, qui s'ouvrait aussitôt : on descendait dans
+  /// un menu et l'on se retrouvait dans un autre. Un `FocusTraversalGroup` ne
+  /// confine pas ce parcours (ADR-0109) ; cette borne, si : la demande de
+  /// focus qui en sortirait est refusée ([admits]) et le focus reste où il
+  /// est.
+  static void moveWithinPane(FocusNode from, VoidCallback move) {
+    final pane = maybeOf(from)?.boundaryOf(from);
+    if (pane == null) {
+      move();
+      return;
+    }
+    final previous = _boundary;
+    _boundary = pane;
+    try {
+      move();
+    } finally {
+      _boundary = previous;
+    }
+  }
+
+  /// Faux quand un déplacement confiné à son volet ([moveWithinPane]) vise
+  /// [target] hors de ce volet.
+  static bool admits(FocusNode target) {
+    final boundary = _boundary;
+    return boundary == null || target.ancestors.contains(boundary);
+  }
 
   @override
   State<TvFocusPanes> createState() => TvFocusPanesState();
@@ -43,6 +82,16 @@ class TvFocusPanesState extends State<TvFocusPanes> {
   }
 
   void _unregister(_TvFocusPaneState pane) => _panes.remove(pane);
+
+  /// Le nœud du volet qui contient [node], nul s'il n'est dans aucun. Haut et
+  /// Bas ne le quittent pas ([TvFocusPanes.moveWithinPane]) : seules gauche et
+  /// droite passent d'un volet à l'autre ([next]).
+  FocusNode? boundaryOf(FocusNode node) {
+    for (final pane in _panes) {
+      if (pane.mounted && pane._contains(node)) return pane._node;
+    }
+    return null;
+  }
 
   /// Où va le focus depuis [from] vers la gauche ou la droite.
   ///
