@@ -52,27 +52,9 @@ func DeleteMedia(id int) (DeleteReport, error) {
 	scanRun.Lock()
 	defer scanRun.Unlock()
 
-	var mediaType string
-	err := database.DB.QueryRow(`SELECT type FROM medias WHERE id = ?`, id).Scan(&mediaType)
-	if errors.Is(err, sql.ErrNoRows) {
-		return DeleteReport{}, ErrMediaNotFound
-	}
-	if err != nil {
-		return DeleteReport{}, fmt.Errorf("delete media %d: %w", id, err)
-	}
-
-	files, err := deletableFilesOf(id, models.MediaType(mediaType))
+	mediaType, files, roots, err := planDeletion(id)
 	if err != nil {
 		return DeleteReport{}, err
-	}
-	roots := libraries.Paths(append(
-		libraries.OfKind(libraries.Current(), libraries.KindMovies),
-		libraries.OfKind(libraries.Current(), libraries.KindShows)...,
-	))
-	for _, f := range files {
-		if rootOf(f.path, roots) == "" {
-			return DeleteReport{}, fmt.Errorf("delete media %d: %s: %w", id, f.path, ErrOutsideLibrary)
-		}
 	}
 
 	var report DeleteReport
@@ -109,6 +91,43 @@ func DeleteMedia(id int) (DeleteReport, error) {
 	}
 	log.Printf("Indexer: deleted media %d (%s), %d file(s), %d bytes", id, mediaType, report.FilesRemoved, report.BytesFreed)
 	return report, nil
+}
+
+// CheckDeletable dit, sans rien toucher, si DeleteMedia accepterait id :
+// mêmes erreurs (ErrMediaNotFound, ErrOutsideLibrary). L'administration
+// d'Onyx s'en sert avant de prévenir MediaHub (ADR-0115) : un titre qu'Onyx
+// refusera ne doit pas d'abord disparaître de sorraa ou de Radarr/Sonarr.
+func CheckDeletable(id int) error {
+	_, _, _, err := planDeletion(id)
+	return err
+}
+
+// planDeletion rend le type du média, ses fichiers et les racines des
+// bibliothèques de films et de séries, après avoir vérifié que chaque
+// fichier est sous l'une d'elles.
+func planDeletion(id int) (string, []deletableFile, []string, error) {
+	var mediaType string
+	err := database.DB.QueryRow(`SELECT type FROM medias WHERE id = ?`, id).Scan(&mediaType)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil, nil, ErrMediaNotFound
+	}
+	if err != nil {
+		return "", nil, nil, fmt.Errorf("delete media %d: %w", id, err)
+	}
+	files, err := deletableFilesOf(id, models.MediaType(mediaType))
+	if err != nil {
+		return "", nil, nil, err
+	}
+	roots := libraries.Paths(append(
+		libraries.OfKind(libraries.Current(), libraries.KindMovies),
+		libraries.OfKind(libraries.Current(), libraries.KindShows)...,
+	))
+	for _, f := range files {
+		if rootOf(f.path, roots) == "" {
+			return "", nil, nil, fmt.Errorf("delete media %d: %s: %w", id, f.path, ErrOutsideLibrary)
+		}
+	}
+	return mediaType, files, roots, nil
 }
 
 // deletableFilesOf rend les fichiers vidéo indexés sous un média. Un épisode

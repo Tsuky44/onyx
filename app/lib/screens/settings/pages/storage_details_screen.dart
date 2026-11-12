@@ -66,7 +66,9 @@ class _StorageDetailsScreenState extends State<StorageDetailsScreen> {
       context,
       title: tr('Supprimer {0} ?', [what]),
       message: tr('Les fichiers ({0}) seront effacés du disque et retirés '
-          'd’Onyx, pour tous les comptes. C’est définitif.', [formatBytes(size)]),
+          'd’Onyx, pour tous les comptes. MediaHub le retire aussi de sorraa '
+          '(ou de Radarr/Sonarr) et supprime ses demandes. C’est définitif.',
+          [formatBytes(size)]),
       confirmLabel: tr('Supprimer du disque'),
     );
     if (!confirmed || !mounted) return;
@@ -75,8 +77,7 @@ class _StorageDetailsScreenState extends State<StorageDetailsScreen> {
     try {
       final report = await context.read<ApiClient>().deleteAdminStorage(id);
       if (!mounted) return;
-      showSettingsSnack(
-          context, tr('{0} libérés.', [formatBytes(report.bytesFreed)]));
+      showSettingsSnack(context, storageDeletedText(report));
       if (season == null) {
         Navigator.of(context).pop();
         return;
@@ -168,7 +169,8 @@ class _StorageDetailsScreenState extends State<StorageDetailsScreen> {
                       title: item.isShow
                           ? tr('Supprimer toute la série')
                           : tr('Supprimer le film'),
-                      subtitle: tr('Efface {0} du disque, pour tous les comptes.',
+                      subtitle: tr('Efface {0} du disque, le retire de sorraa '
+                          'ou de Radarr/Sonarr et supprime ses demandes.',
                           [formatBytes(_showSize ?? item.size)]),
                       trailing: _deleting == item.id
                           ? const SizedBox.square(
@@ -321,4 +323,21 @@ String storageViewerText(StorageViewer viewer, {required bool show}) {
           at(current.positionSeconds, current.durationSeconds),
         ]);
   return '$where · $watched';
+}
+
+/// « 12,4 Go libérés · retiré de sorraa · 2 demande(s) supprimée(s) ».
+String storageDeletedText(StorageDeleteReport report) {
+  final parts = [tr('{0} libérés', [formatBytes(report.bytesFreed)])];
+  final hub = report.mediaHub;
+  if (hub != null) {
+    if (hub.managerRemoved) {
+      parts.add(hub.manager == 'sorraa'
+          ? tr('retiré de sorraa')
+          : tr('retiré de Radarr/Sonarr'));
+    }
+    if (hub.requestsRemoved > 0) {
+      parts.add(tr('{0} demande(s) supprimée(s)', [hub.requestsRemoved]));
+    }
+  }
+  return '${parts.join(' · ')}.';
 }

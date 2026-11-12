@@ -225,7 +225,12 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   films puis séries, chaque ligne comme ci-dessus plus `"poster_url"?` et `"requests": [{ "requester",
   "requested_at"?, "status", "seasons"? }]` (les demandes MediaHub du titre, lues au nom de
   l'administrateur ; `requests_available` faux quand MediaHub n'est pas configuré ou n'a pas répondu
-  en 6 s). Le détail et `DELETE` sont ceux de `/api/integrations/mediahub/storage/:id`.
+  en 6 s). Le détail est celui de `/api/integrations/mediahub/storage/:id`. `DELETE` (film, série ou
+  saison) demande d'abord à MediaHub (`POST /library/removals`) de retirer le titre de sorraa ou de
+  Radarr/Sonarr et d'en supprimer les demandes, puis efface les fichiers → `{ "files_removed",
+  "bytes_freed", "mediahub": { "manager", "managerRemoved", "requestsRemoved" } | null }` (`null` sans
+  MediaHub configuré ou sans TMDB). `502` si MediaHub échoue, est trop ancien ou refuse : rien n'est
+  supprimé. `409` (fichier hors bibliothèque) est rendu avant tout appel à MediaHub.
 * `POST /api/integrations/onyxhub/imported` (sans compte, `Authorization: Bearer <mediahub_api_key>`,
   ADR-0074) — l'équivalent pour OnyxHub : `{ "tmdbId", "mediaType", "paths": [...] }` (100 au plus)
   → `202 { "status": "queued" }`. Capacité `onyxhub_import_signal`.

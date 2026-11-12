@@ -683,9 +683,9 @@
     "semantic_hash": "814afa5737fda3c847e70aa44887b290"
   },
   "app/lib/l10n/en.dart": {
-    "mtime": 1794299288.7396054,
-    "seen": 1794299873.11083,
-    "ast_hash": "e7d9e64eb475d6bb1ff0c4b30932f682",
+    "mtime": 1794472596.1866071,
+    "seen": 1794472817.8438761,
+    "ast_hash": "c390a190f0322559c5ed27cc8001ece5",
     "semantic_hash": ""
   },
   "app/lib/l10n/tr.dart": {
@@ -779,8 +779,8 @@
     "semantic_hash": ""
   },
   "app/lib/models/models.dart": {
-    "mtime": 1793720985.9402363,
-    "seen": 1794298696.9722,
+    "mtime": 1794472437.47904,
+    "seen": 1794472817.843895,
     "ast_hash": "04440958201f1178253f5a04abc9155a",
     "semantic_hash": ""
   },
@@ -2165,9 +2165,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/settings/settings_categories.dart": {
-    "mtime": 1793552171.5312197,
-    "seen": 1794298696.9724429,
-    "ast_hash": "9f4b4572726e6146ee66d5ecdaca6669",
+    "mtime": 1794472545.2453463,
+    "seen": 1794472817.844173,
+    "ast_hash": "6d7ce22e5f587b181b64548de8c8cd52",
     "semantic_hash": ""
   },
   "app/lib/screens/settings/settings_screen.dart": {
@@ -2177,9 +2177,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/settings/settings_sections.dart": {
-    "mtime": 1793552145.8724012,
-    "seen": 1794298696.972446,
-    "ast_hash": "d6fa380e7910e66ba21a9c3c1dccf1fc",
+    "mtime": 1794472429.7861028,
+    "seen": 1794472817.844177,
+    "ast_hash": "740eee93212234ba61de5dd9deb10cd0",
     "semantic_hash": ""
   },
   "app/lib/screens/settings/tv_link_scanner_screen.dart": {
@@ -2489,9 +2489,9 @@
     "semantic_hash": "e592fa6891c3fb2c25b8592d7754e08d"
   },
   "app/lib/services/api_client.dart": {
-    "mtime": 1793701296.9852877,
-    "seen": 1794298696.972503,
-    "ast_hash": "f9c4a7cc28fba7dae6f1751ee6d162cb",
+    "mtime": 1794472437.4792182,
+    "seen": 1794472817.844241,
+    "ast_hash": "4e1807528ff52429b7fa4605a709b940",
     "semantic_hash": ""
   },
   "app/lib/services/api_types.dart": {
@@ -3720,9 +3720,9 @@
     "semantic_hash": "97d3a20fd20a063c192e886d1822b4a8"
   },
   "app/pubspec.yaml": {
-    "mtime": 1794063363.2137396,
-    "seen": 1794298696.972768,
-    "ast_hash": "7708866fa584b815ab94c83be55587f9",
+    "mtime": 1794474489.8289328,
+    "seen": 1794474506.015193,
+    "ast_hash": "93edaddc1d021795325630985dec5097",
     "semantic_hash": ""
   },
   "app/run-windows.ps1": {
@@ -7199,10 +7199,10 @@
     "semantic_hash": "626a00d733e2ca80b6f3009d09ebfb91"
   },
   "server/go.mod": {
-    "mtime": 1790420537.5678778,
-    "seen": 1794298696.973401,
-    "ast_hash": "9ee91940c0d71357ca06f14d90119cae",
-    "semantic_hash": "9ee91940c0d71357ca06f14d90119cae"
+    "mtime": 1794473936.4701083,
+    "seen": 1794474506.0159118,
+    "ast_hash": "08a80b63f4e4a76ef1ea8583f1a60ce7",
+    "semantic_hash": ""
   },
   "server/handlers/access_requests.go": {
     "mtime": 1793382355.1084108,
@@ -8423,9 +8423,9 @@
     "semantic_hash": "e001990da3b026d8afdf251411c09ba5"
   },
   "server/main.go": {
-    "mtime": 1794325962.0684195,
-    "seen": 1794326291.154783,
-    "ast_hash": "4ac5f545d845772804138ca0ff99c725",
+    "mtime": 1794472334.6545377,
+    "seen": 1794472817.845574,
+    "ast_hash": "0adf0b3d405d9e386112e4600e1715cd",
     "semantic_hash": ""
   },
   "server/mediahub/availability.go": {
@@ -10986,9 +10986,9 @@
     "semantic_hash": ""
   },
   "server/README.md": {
-    "mtime": 1794325979.0732598,
-    "seen": 1794326291.155342,
-    "ast_hash": "15571e8bc1817d7c17bed0f9d1a1e81f",
+    "mtime": 1794472645.0549212,
+    "seen": 1794472817.8460338,
+    "ast_hash": "e1ee23182212a1295df40c2f79a85f7f",
     "semantic_hash": ""
   },
   ".impeccable/direction-cards/crouwel-board.webp": {
@@ -12948,9 +12948,9 @@
     "semantic_hash": ""
   },
   "server/handlers/mediahub_storage_details.go": {
-    "mtime": 1794325940.4113255,
-    "seen": 1794326291.154635,
-    "ast_hash": "5186eac45115aa586d626c49b3ee25d9",
+    "mtime": 1794472327.8006089,
+    "seen": 1794472817.845431,
+    "ast_hash": "63519f9aecad3aacf6ba0b03bd258652",
     "semantic_hash": ""
   },
   "server/handlers/mediahub_storage_test.go": {
@@ -12969,6 +12969,66 @@
     "mtime": 1794325993.4876597,
     "seen": 1794326291.1552808,
     "ast_hash": "0a8aa32a176e89a68cb3dc779ede1a96",
+    "semantic_hash": ""
+  },
+  "app/lib/models/storage_admin.dart": {
+    "mtime": 1794472429.4905884,
+    "seen": 1794472817.843914,
+    "ast_hash": "ef4da9f8e5afb6fd7b0b5bc0b4c8677d",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/settings/pages/storage_details_screen.dart": {
+    "mtime": 1794472545.2443085,
+    "seen": 1794472817.8441632,
+    "ast_hash": "99cff926f4c08d8c9fd31942c63ddba7",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/settings/pages/storage_page.dart": {
+    "mtime": 1794472545.2445257,
+    "seen": 1794472817.844165,
+    "ast_hash": "20978d4555a1f9b16eee215140b4da6a",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/settings/pages/storage_poster.dart": {
+    "mtime": 1794472496.4642723,
+    "seen": 1794472817.8441658,
+    "ast_hash": "ec8958a88ecc4d690d3d8aa3704836e3",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/settings/pages/storage_query.dart": {
+    "mtime": 1794472454.8183014,
+    "seen": 1794472817.844167,
+    "ast_hash": "8c62eca84228f90f1f8fa7903d382259",
+    "semantic_hash": ""
+  },
+  "app/lib/services/api/storage_admin.dart": {
+    "mtime": 1794472429.520385,
+    "seen": 1794472817.844238,
+    "ast_hash": "2fc1ed2d2b168b83459ed43a2e1b85c5",
+    "semantic_hash": ""
+  },
+  "app/test/storage_admin_test.dart": {
+    "mtime": 1794472613.7315881,
+    "seen": 1794472817.844805,
+    "ast_hash": "b0b0f52dbb9dcd602595446ce29ea19d",
+    "semantic_hash": ""
+  },
+  "server/handlers/admin_storage.go": {
+    "mtime": 1794472319.419715,
+    "seen": 1794472817.845334,
+    "ast_hash": "362511807c830b02e2cf35d4aedc24a0",
+    "semantic_hash": ""
+  },
+  "server/handlers/admin_storage_test.go": {
+    "mtime": 1794472353.8524337,
+    "seen": 1794472817.845335,
+    "ast_hash": "1ceda532556e3ae1a0802e29bf41b9b9",
+    "semantic_hash": ""
+  },
+  "docs/adr/0115-le-stockage-se-gere-aussi-depuis-l-administration.md": {
+    "mtime": 1794472645.1523557,
+    "seen": 1794472817.845995,
+    "ast_hash": "67cf5f1326616fa5bfecc990b8e6b1ea",
     "semantic_hash": ""
   }
 }

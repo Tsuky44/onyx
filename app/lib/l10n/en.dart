@@ -3494,12 +3494,8 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} episode(s)',
   'la saison {0} de {1}':
       'season {0} of {1}',
-  'Les fichiers ({0}) seront effacés du disque et retirés d’Onyx, pour tous les comptes. C’est définitif.':
-      'The files ({0}) will be erased from disk and removed from Onyx for every account. This can\'t be undone.',
   'Supprimer du disque':
       'Delete from disk',
-  '{0} libérés.':
-      '{0} freed.',
   'La suppression a échoué.':
       'Deletion failed.',
   'Aucune saison sur le disque.':
@@ -3512,8 +3508,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Delete the whole show',
   'Supprimer le film':
       'Delete the movie',
-  'Efface {0} du disque, pour tous les comptes.':
-      'Erases {0} from disk for every account.',
   'Personne ne l’a demandé : ajouté à la main.':
       'Nobody requested it: added by hand.',
   'Demandé le {0}':
@@ -3538,4 +3532,16 @@ const Map<String, String> kEnglish = <String, String>{
       'S{0} · E{1} finished',
   'S{0} · E{1} à {2}':
       'S{0} · E{1} at {2}',
+  'Les fichiers ({0}) seront effacés du disque et retirés d’Onyx, pour tous les comptes. MediaHub le retire aussi de sorraa (ou de Radarr/Sonarr) et supprime ses demandes. C’est définitif.':
+      'The files ({0}) will be erased from disk and removed from Onyx for every account. MediaHub also removes it from sorraa (or Radarr/Sonarr) and deletes its requests. This can\'t be undone.',
+  'Efface {0} du disque, le retire de sorraa ou de Radarr/Sonarr et supprime ses demandes.':
+      'Erases {0} from disk, removes it from sorraa or Radarr/Sonarr and deletes its requests.',
+  '{0} libérés':
+      '{0} freed',
+  'retiré de sorraa':
+      'removed from sorraa',
+  'retiré de Radarr/Sonarr':
+      'removed from Radarr/Sonarr',
+  '{0} demande(s) supprimée(s)':
+      '{0} request(s) deleted',
 };

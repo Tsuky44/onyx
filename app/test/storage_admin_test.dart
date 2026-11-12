@@ -99,4 +99,19 @@ void main() {
     expect(storageViewerText(viewer, show: true),
         'S2 · E4 à 12 min sur 50 min · 7/20 épisodes vus');
   });
+
+  test('la suppression dit ce que MediaHub a retiré', () {
+    final report = StorageDeleteReport.fromJson({
+      'files_removed': 3,
+      'bytes_freed': 0,
+      'mediahub': {'manager': 'sorraa', 'managerRemoved': true, 'requestsRemoved': 2},
+    });
+    expect(storageDeletedText(report),
+        endsWith('libérés · retiré de sorraa · 2 demande(s) supprimée(s).'));
+    expect(
+        storageDeletedText(
+            StorageDeleteReport.fromJson({'files_removed': 1, 'bytes_freed': 0})),
+        isNot(contains('sorraa')),
+        reason: 'sans MediaHub, rien à annoncer de son côté');
+  });
 }

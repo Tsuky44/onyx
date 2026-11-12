@@ -17,10 +17,17 @@ mixin _StorageAdminEndpoints {
         Map<String, dynamic>.from(response.data as Map));
   }
 
-  /// Supprime du disque et du catalogue le film, la série ou la saison
-  /// [mediaId]. Irréversible : l'écran confirme avant d'appeler.
+  /// Supprime partout le film, la série ou la saison [mediaId] : MediaHub le
+  /// retire de sorraa ou de Radarr/Sonarr avec ses demandes, puis le serveur
+  /// efface les fichiers. Irréversible : l'écran confirme avant d'appeler.
+  ///
+  /// Le serveur attend MediaHub jusqu'à 60 s (Sonarr relit toutes ses
+  /// séries) : l'échéance de 30 s par défaut couperait avant lui.
   Future<StorageDeleteReport> deleteAdminStorage(int mediaId) async {
-    final response = await _dio.delete('/api/admin/storage/$mediaId');
+    final response = await _dio.delete(
+      '/api/admin/storage/$mediaId',
+      options: Options(receiveTimeout: const Duration(seconds: 90)),
+    );
     return StorageDeleteReport.fromJson(
         Map<String, dynamic>.from(response.data as Map));
   }

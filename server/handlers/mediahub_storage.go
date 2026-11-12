@@ -247,16 +247,8 @@ func MediaHubDeleteStorage(w http.ResponseWriter, _ *http.Request, ps httprouter
 	_ = database.DB.QueryRow(`SELECT COALESCE(tmdb_id, 0) FROM medias WHERE id = ?`, id).Scan(&tmdbID)
 
 	report, err := indexer.DeleteMedia(id)
-	switch {
-	case errors.Is(err, indexer.ErrMediaNotFound):
-		writeJSONError(w, http.StatusNotFound, "Média introuvable dans Onyx")
-		return
-	case errors.Is(err, indexer.ErrOutsideLibrary):
-		writeJSONError(w, http.StatusConflict, "Un fichier du média n'est dans aucune bibliothèque de films ou de séries d'Onyx")
-		return
-	case err != nil:
-		log.Printf("MediaHubDeleteStorage: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Onyx n'a pas pu supprimer tous les fichiers (droits d'écriture sur le disque ?)")
+	if err != nil {
+		writeStorageDeleteError(w, "MediaHubDeleteStorage", err)
 		return
 	}
 	if tmdbID > 0 {
@@ -264,4 +256,18 @@ func MediaHubDeleteStorage(w http.ResponseWriter, _ *http.Request, ps httprouter
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(report)
+}
+
+// writeStorageDeleteError traduit une erreur de indexer.DeleteMedia ou de
+// indexer.CheckDeletable.
+func writeStorageDeleteError(w http.ResponseWriter, where string, err error) {
+	switch {
+	case errors.Is(err, indexer.ErrMediaNotFound):
+		writeJSONError(w, http.StatusNotFound, "Média introuvable dans Onyx")
+	case errors.Is(err, indexer.ErrOutsideLibrary):
+		writeJSONError(w, http.StatusConflict, "Un fichier du média n'est dans aucune bibliothèque de films ou de séries d'Onyx")
+	default:
+		log.Printf("%s: %v", where, err)
+		writeJSONError(w, http.StatusInternalServerError, "Onyx n'a pas pu supprimer tous les fichiers (droits d'écriture sur le disque ?)")
+	}
 }

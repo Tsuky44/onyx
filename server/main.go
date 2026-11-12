@@ -278,7 +278,7 @@ func main() {
 	// passe par delete_media, le droit de faire de la place.
 	router.GET("/api/admin/storage", handlers.RequirePermission(models.PermDeleteMedia, handlers.AdminStorage))
 	router.GET("/api/admin/storage/:id", handlers.RequirePermission(models.PermDeleteMedia, handlers.MediaHubStorageDetails))
-	router.DELETE("/api/admin/storage/:id", handlers.RequirePermission(models.PermDeleteMedia, handlers.MediaHubDeleteStorage))
+	router.DELETE("/api/admin/storage/:id", handlers.RequirePermission(models.PermDeleteMedia, handlers.AdminDeleteStorage))
 
 	// Serveurs liés (ADR-0017) : la progression passe d'un serveur à l'autre
 	// sans dépendre d'une app ouverte.

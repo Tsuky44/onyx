@@ -24,6 +24,20 @@ temps personne ne l'a lancé, et supprimer un film, une série entière ou une s
   par `tmdb_id` et type (`tv` ↔ `show`). Onyx ne garde pas de copie : MediaHub reste la source. Sans
   réponse en 6 s, ou sans MediaHub, la liste part sans elles et le dit (`requests_available`), plutôt
   que d'afficher « personne ne l'a demandé ».
+- **Supprimer, c'est supprimer partout.** Effacer les fichiers sans prévenir le gestionnaire ne
+  sert à rien : sorraa (ou Radarr/Sonarr) suit toujours le titre et le retélécharge. La suppression
+  de l'administration (`AdminDeleteStorage`) fait donc, dans cet ordre :
+  1. `indexer.CheckDeletable` : un titre qu'Onyx refusera (`409`, fichier hors bibliothèque) ne
+     doit pas d'abord disparaître ailleurs ;
+  2. `POST /library/removals` chez MediaHub, au nom de l'administrateur : MediaHub retire le titre,
+     ou la seule saison, du gestionnaire choisi pour ce type, *sans* ses fichiers (sorraa les
+     mettrait dans sa corbeille, qui ne libère rien), et supprime ses demandes ;
+  3. l'effacement des fichiers par Onyx.
+
+  Si MediaHub échoue, est trop ancien (`404`) ou refuse, Onyx ne supprime rien (`502`, message qui
+  le dit). Sans MediaHub configuré, Onyx efface seulement ses fichiers. Le gestionnaire de stockage
+  de MediaHub passe par le même service (`lib/services/media-forget.ts`), qui sait désormais aussi
+  retirer de sorraa.
 - **« Où il en est »** : chaque compte d'une série reçoit `current_episode`, l'épisode qu'il a lu en
   dernier, avec sa position. Le champ est en plus : MediaHub l'ignore.
 - **« Pas regardé depuis »** se mesure depuis la dernière lecture, ou depuis l'ajout pour un titre
@@ -35,3 +49,7 @@ temps personne ne l'a lancé, et supprimer un film, une série entière ou une s
 - Un compte qui a `delete_media` peut effacer des fichiers du disque depuis l'app, dans les seules
   bibliothèques de films et de séries (même garde que l'ADR-0114, `409` ailleurs).
 - La liste attend MediaHub jusqu'à 6 s quand il est lent ; le disque, lui, répond tout de suite.
+- La suppression attend MediaHub jusqu'à 60 s (Sonarr relit toutes ses séries pour en trouver une
+  par TMDB) ; l'app lui laisse 90 s.
+- Un MediaHub sans `/library/removals` bloque la suppression depuis Onyx tant qu'il n'est pas mis à
+  jour : c'est voulu, une suppression à moitié ne fait pas de place.

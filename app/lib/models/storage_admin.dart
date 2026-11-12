@@ -228,16 +228,47 @@ class StorageDetails {
       );
 }
 
-/// Ce qu'une suppression a libéré.
+/// Ce que MediaHub a oublié du titre supprimé.
+class StorageMediaHubRemoval {
+  const StorageMediaHubRemoval({
+    required this.manager,
+    required this.managerRemoved,
+    required this.requestsRemoved,
+  });
+
+  /// « sorraa » ou « arr » (Radarr/Sonarr).
+  final String manager;
+  final bool managerRemoved;
+  final int requestsRemoved;
+
+  factory StorageMediaHubRemoval.fromJson(Map<String, dynamic> json) =>
+      StorageMediaHubRemoval(
+        manager: json['manager']?.toString() ?? '',
+        managerRemoved: json['managerRemoved'] == true,
+        requestsRemoved: _int(json['requestsRemoved']),
+      );
+}
+
+/// Ce qu'une suppression a libéré, et ce que MediaHub en a oublié (nul sans
+/// MediaHub).
 class StorageDeleteReport {
-  const StorageDeleteReport({required this.filesRemoved, required this.bytesFreed});
+  const StorageDeleteReport({
+    required this.filesRemoved,
+    required this.bytesFreed,
+    this.mediaHub,
+  });
 
   final int filesRemoved;
   final int bytesFreed;
+  final StorageMediaHubRemoval? mediaHub;
 
   factory StorageDeleteReport.fromJson(Map<String, dynamic> json) =>
       StorageDeleteReport(
         filesRemoved: _int(json['files_removed']),
         bytesFreed: _int(json['bytes_freed']),
+        mediaHub: json['mediahub'] is Map
+            ? StorageMediaHubRemoval.fromJson(
+                Map<String, dynamic>.from(json['mediahub'] as Map))
+            : null,
       );
 }
