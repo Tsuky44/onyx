@@ -247,6 +247,9 @@ void main() {
         TvTouchpad.debugClock = () => clock;
         addTearDown(TvTouchpad.debugReset);
         await open(tester, raise: false);
+        // Comme `PlayerScreen` : chrome masqué, la barre de lecture suit le
+        // doigt, et l'écouteur le dit au pavé (ADR-0116).
+        TvTouchpad.addMoveListener((move) => true);
 
         TvTouchpad.handleTouch(TouchpadPhase.began, 0, 0);
         for (var i = 1; i <= 7; i++) {

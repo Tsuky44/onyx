@@ -9,9 +9,9 @@ import 'package:onyx/tv/tv_touchpad.dart';
 
 import 'support/tv_nav_harness.dart';
 
-/// Le trackpad de la Siri Remote (ADR-0039), avec l'un et l'autre système de
-/// navigation : sous dpad, l'accélération et l'élan passent par
-/// `TvArrowGate` et `StepTarget` (phase 6), mais promettent la même chose.
+/// Le trackpad de la Siri Remote (ADR-0116), avec l'un et l'autre système de
+/// navigation : le trajet du doigt fait les pas, le lâcher garde son élan, et
+/// les flèches que le moteur tire du même geste sont retenues.
 void main() {
   var clock = Duration.zero;
 
@@ -24,34 +24,67 @@ void main() {
   });
   tearDown(TvTouchpad.debugReset);
 
-  /// Un coup sec sur le trackpad : 2,1 unités en 112 ms, vers la droite ou
-  /// vers le bas.
-  void flick({bool lift = false, bool down = false}) {
+  /// Un glissé de [distance] unités en [duration], un point toutes les 16 ms,
+  /// vers la droite ou vers le bas. L'horloge du pavé et celle du test
+  /// avancent ensemble.
+  Future<void> swipe(
+    WidgetTester tester, {
+    required double distance,
+    required Duration duration,
+    bool lift = false,
+    bool down = false,
+  }) async {
     void touch(TouchpadPhase phase, double travel) => TvTouchpad.handleTouch(
           phase,
           down ? 0 : travel,
           down ? travel : 0,
         );
     touch(TouchpadPhase.began, 0);
-    for (var i = 1; i <= 7; i++) {
+    final frames = (duration.inMilliseconds / 16).ceil();
+    for (var i = 1; i <= frames; i++) {
       clock += const Duration(milliseconds: 16);
-      touch(TouchpadPhase.moved, 0.3 * i);
+      touch(TouchpadPhase.moved, distance * i / frames);
+      await tester.pump(const Duration(milliseconds: 16));
     }
-    if (lift) touch(TouchpadPhase.ended, 2.1);
+    if (lift) touch(TouchpadPhase.ended, distance);
+  }
+
+  /// Un coup sec : 1,6 unité en 160 ms, 10 unités par seconde.
+  Future<void> flick(WidgetTester tester,
+          {bool lift = false, bool down = false}) =>
+      swipe(
+        tester,
+        distance: 1.6,
+        duration: const Duration(milliseconds: 160),
+        lift: lift,
+        down: down,
+      );
+
+  /// Laisse passer [duration], pour le pavé comme pour le test.
+  Future<void> wait(WidgetTester tester, Duration duration) async {
+    const slice = Duration(milliseconds: 10);
+    for (var left = duration; left > Duration.zero; left -= slice) {
+      clock += slice;
+      await tester.pump(slice);
+    }
   }
 
   testWidgets('le lecteur reçoit chaque déplacement du doigt', (tester) async {
     final moves = <double>[];
-    void listener(TouchpadMove move) => moves.add(move.dx);
+    bool listener(TouchpadMove move) {
+      moves.add(move.dx);
+      return true;
+    }
+
     TvTouchpad.addMoveListener(listener);
 
-    flick();
+    await flick(tester);
     expect(TvTouchpad.isSwiping, isTrue);
     TvTouchpad.removeMoveListener(listener);
     TvTouchpad.handleTouch(TouchpadPhase.moved, 2.4, 0);
 
-    expect(moves, hasLength(7));
-    expect(moves.fold<double>(0, (a, b) => a + b), closeTo(2.1, 1e-9));
+    expect(moves, hasLength(10));
+    expect(moves.fold<double>(0, (a, b) => a + b), closeTo(1.6, 1e-9));
   });
 
   TvNavHarness.forEachEngine((engine) {
@@ -100,29 +133,28 @@ void main() {
     int focusedIndex(List<FocusNode> nodes) =>
         nodes.indexWhere((node) => node.hasFocus);
 
-    testWidgets('dans une rangée, un coup sec avance de plusieurs affiches',
+    testWidgets('un glissé lent avance d’une affiche par pas de trajet',
         (tester) async {
       final nodes = await pumpRow(tester, scrollable: true);
 
-      flick();
+      // 2 unités en une seconde : le premier pas à 0,22, puis un tous les
+      // 0,40. Aucune flèche du moteur dans ce test : le doigt suffit.
+      await swipe(tester,
+          distance: 2, duration: const Duration(milliseconds: 1000));
+      await TvNavHarness.settle(tester);
+
+      expect(focusedIndex(nodes), 5);
+    });
+
+    testWidgets('la flèche que le moteur tire du glissé ne compte pas en plus',
+        (tester) async {
+      final nodes = await pumpRow(tester, scrollable: true);
+
+      await swipe(tester,
+          distance: 0.5, duration: const Duration(milliseconds: 250));
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await TvNavHarness.settle(tester);
 
-      expect(focusedIndex(nodes), 3);
-    });
-
-    testWidgets('à la verticale, un glissé descend d’une ligne à la fois',
-        (tester) async {
-      // À l'essai, un glissé vers le bas sautait des rangées entières de
-      // l'accueil et des lignes des réglages.
-      final nodes =
-          await pumpRow(tester, scrollable: true, axis: Axis.vertical);
-
-      flick(lift: true, down: true);
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-      await tester.pump(const Duration(seconds: 3));
-
-      expect(TvTouchpad.isGliding, isFalse);
       expect(focusedIndex(nodes), 1);
     });
 
@@ -136,78 +168,127 @@ void main() {
       expect(focusedIndex(nodes), 1);
     });
 
-    testWidgets('hors de ce qui défile, un pas reste un pas', (tester) async {
-      // Une barre de boutons : sauter trois commandes d'un geste serait se
-      // perdre.
-      final nodes = await pumpRow(tester, scrollable: false, count: 10);
+    testWidgets('un clic sur l’anneau, le doigt posé sans glisser, passe',
+        (tester) async {
+      final nodes = await pumpRow(tester, scrollable: true);
 
-      flick();
+      TvTouchpad.handleTouch(TouchpadPhase.began, 0.8, 0);
+      clock += const Duration(milliseconds: 16);
+      TvTouchpad.handleTouch(TouchpadPhase.moved, 0.81, 0);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await TvNavHarness.settle(tester);
 
       expect(focusedIndex(nodes), 1);
     });
 
+    testWidgets('à la verticale, un glissé descend au rythme du doigt',
+        (tester) async {
+      // À l'essai, un glissé vers le bas sautait des rangées entières de
+      // l'accueil et des lignes des réglages.
+      final nodes =
+          await pumpRow(tester, scrollable: true, axis: Axis.vertical);
+
+      await swipe(
+        tester,
+        distance: 1,
+        duration: const Duration(milliseconds: 400),
+        lift: true,
+        down: true,
+      );
+      await wait(tester, const Duration(seconds: 3));
+
+      expect(TvTouchpad.isGliding, isFalse);
+      expect(focusedIndex(nodes), 2);
+    });
+
+    testWidgets('hors de ce qui défile, pas d’élan', (tester) async {
+      // Une barre de boutons : sauter des commandes d'un geste serait se
+      // perdre.
+      final nodes = await pumpRow(tester, scrollable: false, count: 10);
+
+      await flick(tester, lift: true);
+      final landed = focusedIndex(nodes);
+      await wait(tester, const Duration(seconds: 3));
+
+      expect(landed, lessThanOrEqualTo(4));
+      expect(focusedIndex(nodes), landed);
+    });
+
     testWidgets('un geste lâché vif continue sur sa lancée, puis s’arrête',
         (tester) async {
       final nodes = await pumpRow(tester, scrollable: true);
 
-      flick(lift: true);
+      await flick(tester, lift: true);
+      final lifted = focusedIndex(nodes);
       expect(TvTouchpad.isGliding, isTrue);
-      await tester.pump(const Duration(seconds: 3));
+      await wait(tester, const Duration(seconds: 3));
 
       expect(TvTouchpad.isGliding, isFalse);
-      expect(focusedIndex(nodes), 3);
+      // Posé, le même trajet de 1,6 unité vaut 4 affiches en tout.
+      expect(focusedIndex(nodes), greaterThan(lifted + 3));
+      expect(focusedIndex(nodes), greaterThan(4));
     });
 
     testWidgets('poser le doigt arrête la lancée', (tester) async {
       final nodes = await pumpRow(tester, scrollable: true);
 
-      flick(lift: true);
-      await tester.pump(const Duration(milliseconds: 70));
-      expect(focusedIndex(nodes), 1);
+      await flick(tester, lift: true);
+      await wait(tester, const Duration(milliseconds: 70));
+      final stopped = focusedIndex(nodes);
 
       TvTouchpad.handleTouch(TouchpadPhase.began, 0, 0);
-      await tester.pump(const Duration(seconds: 3));
+      await wait(tester, const Duration(seconds: 3));
 
       expect(TvTouchpad.isGliding, isFalse);
-      expect(focusedIndex(nodes), 1);
+      expect(focusedIndex(nodes), stopped);
     });
 
     testWidgets('OK pendant la lancée la coupe', (tester) async {
       final nodes = await pumpRow(tester, scrollable: true);
 
-      flick(lift: true);
-      await tester.pump(const Duration(milliseconds: 70));
+      await flick(tester, lift: true);
+      await wait(tester, const Duration(milliseconds: 70));
+      final stopped = focusedIndex(nodes);
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
-      await tester.pump(const Duration(seconds: 3));
+      await wait(tester, const Duration(seconds: 3));
 
-      expect(focusedIndex(nodes), 1);
+      expect(focusedIndex(nodes), stopped);
     });
 
     testWidgets('une flèche dans l’autre sens coupe la lancée', (tester) async {
       final nodes = await pumpRow(tester, scrollable: true);
 
-      flick(lift: true);
-      await tester.pump(const Duration(milliseconds: 70));
-      expect(focusedIndex(nodes), 1);
+      await flick(tester, lift: true);
       // Hors de la grâce de la flèche du geste lui-même.
-      clock += const Duration(milliseconds: 200);
+      await wait(tester, const Duration(milliseconds: 200));
+      final stopped = focusedIndex(nodes);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
-      await tester.pump(const Duration(seconds: 3));
+      await wait(tester, const Duration(seconds: 3));
 
       expect(TvTouchpad.isGliding, isFalse);
-      expect(focusedIndex(nodes), 0);
+      expect(focusedIndex(nodes), stopped - 1);
     });
 
     testWidgets('la lancée s’arrête au bout de la rangée', (tester) async {
       final nodes = await pumpRow(tester, scrollable: true, count: 3);
 
-      flick(lift: true);
-      await tester.pump(const Duration(seconds: 3));
+      await flick(tester, lift: true);
+      await wait(tester, const Duration(seconds: 3));
 
       expect(TvTouchpad.isGliding, isFalse);
       expect(focusedIndex(nodes), 2);
+    });
+
+    testWidgets('un geste dont le lecteur se sert ne déplace pas le focus',
+        (tester) async {
+      final nodes = await pumpRow(tester, scrollable: true);
+      bool listener(TouchpadMove move) => true;
+      TvTouchpad.addMoveListener(listener);
+
+      await flick(tester, lift: true);
+      await wait(tester, const Duration(seconds: 3));
+
+      expect(focusedIndex(nodes), 0);
     });
   });
 
@@ -217,7 +298,7 @@ void main() {
       final log = <String>[];
       TvDpadLog.debugSink = log;
       addTearDown(() => TvDpadLog.debugSink = null);
-      final nodes = [for (var i = 0; i < 10; i++) FocusNode()];
+      final nodes = [for (var i = 0; i < 30; i++) FocusNode()];
       addTearDown(() {
         for (final node in nodes) {
           node.dispose();
@@ -231,7 +312,7 @@ void main() {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                for (var i = 0; i < 10; i++)
+                for (var i = 0; i < 30; i++)
                   TvFocusable(
                     focusNode: nodes[i],
                     autofocus: i == 0,
@@ -246,12 +327,13 @@ void main() {
       );
       expect(TvTouchpad.glideStepper, isNotNull);
 
-      flick(lift: true);
-      await tester.pump(const Duration(seconds: 3));
+      await flick(tester, lift: true);
+      await wait(tester, const Duration(seconds: 3));
 
-      expect(log.first, contains('élan : right, 3 pas'));
-      expect(log.where((line) => line.contains('élan : pas →')), hasLength(3));
-      expect(log.last, contains('élan coupé : fini'));
+      final glide = log.where((line) => line.contains('élan')).toList();
+      expect(glide.first, contains('élan : right'));
+      expect(glide.where((line) => line.contains('élan : pas →')), isNotEmpty);
+      expect(glide.last, contains('élan coupé : fini'));
     });
   });
 }

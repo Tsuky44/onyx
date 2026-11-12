@@ -7,32 +7,39 @@ import '../utils/app_platform.dart';
 import 'input/tv_dpad_log.dart';
 import 'siri_remote_touches.dart';
 import 'touchpad_motion.dart';
+import 'tv_key_repeat.dart';
 import 'tv_mode.dart';
 
-/// Le trackpad de la Siri Remote, lu pour sa vitesse (ADR-0039).
+/// Le trackpad de la Siri Remote, lu comme le fait l'interface d'Apple
+/// (ADR-0116, qui remplace le point 3 de l'ADR-0039).
 ///
-/// Le moteur de flutter-tvos fait de chaque glissé une flèche : la navigation
-/// marche sans rien ici. Ce qui manquait, c'est la force du geste. Effleurer
-/// et balayer donnaient la même flèche, donc le même pas d'une affiche, et une
-/// rangée de quarante films se traversait à coups de pouce répétés.
+/// Le moteur de flutter-tvos fait de chaque glissé une flèche, la même que le
+/// doigt ait effleuré la surface ou l'ait balayée d'un coup sec : chaque geste
+/// avançait d'une affiche. Ici, c'est le doigt qui pilote :
 ///
-/// Deux choses changent, et seulement dans ce qui défile à l'horizontale (une
-/// rangée d'affiches) : dans une liste verticale, une barre de boutons ou un
-/// menu, un pas reste un pas.
+/// - **le trajet fait les pas** : le focus avance d'un élément chaque fois que
+///   le doigt a parcouru un pas de surface, plus vite quand il va vite
+///   ([TouchpadMotion.takeStep]) ;
+/// - **le lâcher garde son élan** : un doigt levé en plein mouvement laisse la
+///   liste continuer en ralentissant ([TouchpadCoast]). Poser le doigt, cliquer
+///   ou appuyer sur une touche l'arrête net ;
+/// - **les flèches que le moteur tire du même glissé sont retenues**
+///   ([_holdEngineArrow]) : elles compteraient le geste deux fois.
 ///
-/// - **L'accélération.** Une flèche arrivée pendant un glissé vif vaut
-///   plusieurs pas ([boostFor]).
-/// - **L'élan.** Un doigt lâché en pleine vitesse laisse la rangée continuer
-///   quelques éléments en ralentissant, comme sur l'interface d'Apple. Poser
-///   le doigt sur la surface l'arrête net.
+/// Un pas est une flèche comme une autre : il parcourt l'arbre de focus par
+/// les mêmes `onKeyEvent` et les mêmes raccourcis qu'une touche du pavé
+/// directionnel ([_pressArrow]), donc tout ce qui réagit aux flèches (rangées,
+/// grilles, menus, curseurs, chrome du lecteur) réagit au doigt sans le savoir.
+///
+/// Si le flux tactile n'arrive jamais (poignée de main `configure` perdue),
+/// rien n'est retenu et les flèches du moteur font tout, comme avant.
 ///
 /// Le lecteur, lui, suit le doigt directement ([addMoveListener]) : la barre
 /// de lecture avance avec lui, et d'autant plus loin qu'il va vite.
 ///
-/// Hors Apple TV, rien de tout cela ne s'installe : [boostFor] vaut toujours 1
-/// et [isSwiping] toujours faux.
+/// Hors Apple TV, rien de tout cela ne s'installe.
 abstract final class TvTouchpad {
-  static final TouchpadMotion _motion = TouchpadMotion();
+  static TouchpadMotion _motion = TouchpadMotion();
 
   /// Le pavé de la Siri Remote est enfoncé en ce moment, d'après le clic
   /// physique (`click_s` / `click_e`) du canal du pavé, et non les touches.
@@ -53,91 +60,105 @@ abstract final class TvTouchpad {
 
   static Duration get _now => debugClock?.call() ?? _clock.elapsed;
 
-  /// Premier intervalle de l'élan, puis chaque suivant s'allonge : la liste
-  /// ralentit au lieu de s'arrêter d'un coup.
-  ///
-  /// Valeurs de l'ADR-0039, les mêmes avec dpad. À valider sur vraie Apple
-  /// TV : rapport de phase 0, §5.3.
-  static const Duration _glideFirstInterval = Duration(milliseconds: 60);
-  static const double _glideSlowdown = 1.15;
-
   /// La flèche du geste lui-même peut arriver juste après que le doigt s'est
-  /// levé : elle ne doit pas couper l'élan qu'elle accompagne. À valider sur
-  /// vraie Apple TV : rapport de phase 0, §5.3.
-  static const Duration _glideGrace = Duration(milliseconds: 120);
+  /// levé : elle est encore la sienne. À valider sur vraie Apple TV.
+  static const Duration _arrowGrace = Duration(milliseconds: 120);
 
-  /// Qui fait un pas d'élan, et dit si le focus a bougé.
+  /// Après un pas, la rangée suit au plus court pendant ce temps : le pas
+  /// suivant du même geste arrive avant la fin d'un défilement posé.
+  static const Duration _trackingFor = Duration(milliseconds: 260);
+
+  /// Qui fait un pas de lancée, et dit si le focus a bougé.
   ///
   /// Sous dpad, `TvArrowGate` s'inscrit ici : le pas passe par `StepTarget`
   /// et reste dans la rangée (ADR-0110, phase 6). Nul avec l'ancien système,
-  /// où le pas est une `DirectionalFocusIntent` comme une flèche.
+  /// où le pas est une flèche comme une autre ([_pressArrow]).
   static bool Function(TraversalDirection direction)? glideStepper;
 
-  static Timer? _glideTimer;
-  static TraversalDirection? _glideDirection;
-  static Duration _glideStartedAt = Duration.zero;
-  static int _glideRemaining = 0;
-  static Duration _glideInterval = _glideFirstInterval;
+  static Timer? _coastTimer;
+  static TouchpadCoast? _coast;
+  static Duration? _lastStepAt;
 
-  /// Vrai pendant le pas d'élan que ce module est en train de faire : ce pas
-  /// n'est pas une flèche, il ne s'accélère pas lui-même.
-  static bool _stepping = false;
+  /// Les pas de la lancée restés sans effet à la suite. Un seul ne dit pas
+  /// « bout de la rangée » : la carte suivante peut ne pas être construite
+  /// encore, le défilement a un pas de retard sur le focus.
+  static int _coastMisses = 0;
 
-  static final List<void Function(TouchpadMove move)> _moveListeners =
-      <void Function(TouchpadMove move)>[];
+  /// Les flèches du moteur retenues à l'appui : leur répétition et leur
+  /// relâchement le sont aussi.
+  static final Set<LogicalKeyboardKey> _heldBack = <LogicalKeyboardKey>{};
 
-  /// Vrai tant que la liste avance sur sa lancée. Le défilement suit alors au
-  /// plus court, comme pour une flèche maintenue.
-  static bool get isGliding => _glideTimer != null;
+  /// Vrai quand un écouteur s'est servi du geste en cours ([addMoveListener]) :
+  /// son coup de pouce final n'est alors pas un pas de focus.
+  static bool _gestureUsed = false;
+
+  static final List<bool Function(TouchpadMove move)> _moveListeners =
+      <bool Function(TouchpadMove move)>[];
+
+  /// Vrai tant que la liste avance sous le doigt ou sur sa lancée. Le
+  /// défilement suit alors au plus court, comme pour une flèche maintenue.
+  static bool get isGliding {
+    if (_coastTimer != null) return true;
+    final last = _lastStepAt;
+    return last != null && _now - last < _trackingFor;
+  }
 
   /// Branché une fois au démarrage, sur Apple TV seulement.
   static void install() {
     if (_installed || !AppPlatform.isTvOS) return;
     _installed = true;
     listenToSiriRemote(handleTouch);
+    _installKeyHandlers();
+  }
+
+  static void _installKeyHandlers() {
+    HardwareKeyboard.instance.removeHandler(_observeKey);
     HardwareKeyboard.instance.addHandler(_observeKey);
+    FocusManager.instance.removeEarlyKeyEventHandler(_holdEngineArrow);
+    FocusManager.instance.addEarlyKeyEventHandler(_holdEngineArrow);
   }
 
-  /// Combien de pas vaut la flèche vers [direction] qui arrive maintenant.
-  static int boostFor(TraversalDirection direction) {
-    if (_stepping) return 1;
-    return _motion.boostFor(direction, _now);
-  }
-
-  /// Combien de pas vaut la flèche partie de [from] vers [direction] : celle
-  /// d'un glissé vif, dans une rangée, en vaut plusieurs ([boostFor]) ;
-  /// toute autre, un seul. Ce que `TvArrowGate` demande sous dpad.
-  static int stepsFrom(FocusNode from, TraversalDirection direction) =>
-      acceleratesFrom(from, direction) ? boostFor(direction) : 1;
-
-  /// Vrai quand le doigt glisse en ce moment sur le trackpad : la flèche qui
-  /// arrive maintenant est née de ce glissé.
+  /// Vrai quand le doigt glisse en ce moment sur le trackpad.
   static bool get isSwiping => _motion.swipingAt(_now);
 
-  /// Reçoit chaque déplacement du doigt pendant un glissé.
-  static void addMoveListener(void Function(TouchpadMove move) listener) {
+  /// Reçoit chaque déplacement du doigt pendant un glissé, et répond vrai
+  /// quand il s'en est servi : ce déplacement ne fait alors pas de pas de
+  /// focus en plus (la barre de lecture suit déjà le doigt).
+  static void addMoveListener(bool Function(TouchpadMove move) listener) {
     _moveListeners.add(listener);
   }
 
-  static void removeMoveListener(void Function(TouchpadMove move) listener) {
+  static void removeMoveListener(bool Function(TouchpadMove move) listener) {
     _moveListeners.remove(listener);
   }
 
-  /// Vrai quand un geste peut accélérer depuis [node] vers [direction] : le
-  /// nœud est dans une rangée qui défile à l'horizontale.
-  ///
-  /// Jamais à la verticale : à l'essai, un glissé vers le bas sautait des
-  /// rangées entières à l'accueil et des lignes dans les réglages, et l'on ne
-  /// savait plus où l'on était. Descendre se fait une rangée à la fois.
+  /// Vrai quand un geste peut accélérer et garder son élan depuis [node] vers
+  /// [direction] : le nœud est dans quelque chose qui défile sur cet axe (une
+  /// rangée d'affiches, une grille, une liste). Ailleurs (barre de boutons,
+  /// onglets, menu court), un trajet vaut ses pas et rien de plus.
   static bool acceleratesFrom(FocusNode node, TraversalDirection direction) {
-    if (direction == TraversalDirection.up ||
-        direction == TraversalDirection.down) {
-      return false;
-    }
     final context = node.context;
     if (context == null) return false;
-    return Scrollable.maybeOf(context, axis: Axis.horizontal) != null;
+    final axis = direction == TraversalDirection.left ||
+            direction == TraversalDirection.right
+        ? Axis.horizontal
+        : Axis.vertical;
+    return Scrollable.maybeOf(context, axis: axis) != null;
   }
+
+  static bool _accelerates(TraversalDirection direction) {
+    final focus = FocusManager.instance.primaryFocus;
+    return focus != null && acceleratesFrom(focus, direction);
+  }
+
+  /// Vrai quand le focus est dans un champ de texte. Le doigt n'y pilote
+  /// rien : clavier ouvert, c'est lui qui a la télécommande ; fermé, la
+  /// flèche du moteur sort du champ par `WebTvFieldExit`, qui la lit avant
+  /// tout le monde et ferait un second pas à côté du nôtre.
+  static bool get _inTextField =>
+      FocusManager.instance.primaryFocus?.context
+          ?.findAncestorWidgetOfExactType<EditableText>() !=
+      null;
 
   /// Un événement du trackpad. Public pour les tests, qui n'ont pas de
   /// Siri Remote.
@@ -146,7 +167,7 @@ abstract final class TvTouchpad {
     // Poser le doigt, ou cliquer, arrête la liste là où elle est : c'est le
     // geste que l'Apple TV apprend à ses utilisateurs.
     if (phase == TouchpadPhase.began || phase == TouchpadPhase.clickDown) {
-      _stopGlide('doigt posé');
+      _stopCoast('doigt posé');
     }
     if (phase == TouchpadPhase.clickDown || phase == TouchpadPhase.clickUp) {
       debugPrint(
@@ -154,98 +175,165 @@ abstract final class TvTouchpad {
     }
     if (phase == TouchpadPhase.clickDown) clickHeld.value = true;
     if (phase == TouchpadPhase.clickUp) clickHeld.value = false;
-    final fling = _motion.add(phase, x, y, _now);
-    if (fling != null) _startGlide(fling);
+    if (phase == TouchpadPhase.began) _gestureUsed = false;
+    final now = _now;
+    final release =
+        _motion.add(phase, x, y, now, accelerates: _accelerates);
 
-    final move = _motion.lastMove;
-    if (phase != TouchpadPhase.moved || move == null) return;
-    for (final listener in List.of(_moveListeners)) {
-      listener(move);
-    }
-  }
-
-  static void stopGlide() => _stopGlide('demandé');
-
-  static void _stopGlide(String reason) {
-    if (_glideTimer != null && glideStepper != null) {
-      TvDpadLog.log(() => 'élan coupé : $reason, '
-          '$_glideRemaining pas non faits');
-    }
-    _glideTimer?.cancel();
-    _glideTimer = null;
-    _glideDirection = null;
-    _glideRemaining = 0;
-  }
-
-  static void _startGlide(TouchpadFling fling) {
-    _stopGlide('nouveau glissé');
-    if (!TvMode.isTv) return;
-    final focus = FocusManager.instance.primaryFocus;
-    if (focus == null || !acceleratesFrom(focus, fling.direction)) return;
-    _glideDirection = fling.direction;
-    _glideRemaining = fling.steps;
-    _glideStartedAt = _now;
-    _glideInterval = _glideFirstInterval;
-    _glideTimer = Timer(_glideInterval, _glideStep);
-    if (glideStepper != null) {
-      TvDpadLog.log(() => 'élan : ${fling.direction.name}, '
-          '${fling.steps} pas, premier dans '
-          '${_glideFirstInterval.inMilliseconds} ms');
-    }
-  }
-
-  static void _glideStep() {
-    final direction = _glideDirection;
-    final focus = FocusManager.instance.primaryFocus;
-    final context = focus?.context;
-    if (direction == null ||
-        focus == null ||
-        context == null ||
-        !TvMode.isTv ||
-        !acceleratesFrom(focus, direction)) {
-      _stopGlide('hors rangée');
+    if (phase == TouchpadPhase.moved) {
+      final move = _motion.lastMove;
+      if (move == null) return;
+      var used = false;
+      for (final listener in List.of(_moveListeners)) {
+        used = listener(move) || used;
+      }
+      if (used) {
+        _gestureUsed = true;
+        _motion.dropPending();
+      }
+      if (!TvMode.isTv || _inTextField) return;
+      final step = _motion.takeStep(now);
+      if (step != null) _step(step);
       return;
     }
 
-    _stepping = true;
-    try {
-      final stepper = glideStepper;
-      if (stepper != null) {
-        stepper(direction);
-      } else {
-        Actions.maybeInvoke<DirectionalFocusIntent>(
-          context,
-          DirectionalFocusIntent(direction),
-        );
-      }
-    } finally {
-      _stepping = false;
+    if (release == null || !TvMode.isTv || _gestureUsed || _inTextField) {
+      return;
+    }
+    if (release.flick) _step(release.direction);
+    if (_accelerates(release.direction)) _startCoast(TouchpadCoast(release));
+  }
+
+  static void stopGlide() => _stopCoast('demandé');
+
+  static void _stopCoast(String reason) {
+    if (_coastTimer != null && glideStepper != null) {
+      TvDpadLog.log(() => 'élan coupé : $reason');
+    }
+    _coastTimer?.cancel();
+    _coastTimer = null;
+    _coast = null;
+    _coastMisses = 0;
+  }
+
+  static void _startCoast(TouchpadCoast coast) {
+    _stopCoast('nouveau glissé');
+    final delay = coast.next();
+    if (delay == null) return;
+    _coast = coast;
+    _coastTimer = Timer(delay, _coastStep);
+    if (glideStepper != null) {
+      TvDpadLog.log(() => 'élan : ${coast.direction.name}, premier pas dans '
+          '${delay.inMilliseconds} ms');
+    }
+  }
+
+  static void _coastStep() {
+    final coast = _coast;
+    if (coast == null || !TvMode.isTv || !_accelerates(coast.direction)) {
+      _stopCoast('hors rangée');
+      return;
+    }
+    // Le focus n'a pas bougé deux fois de suite : bout de la rangée, la
+    // lancée s'arrête là.
+    if (_step(coast.direction, coasting: true)) {
+      _coastMisses = 0;
+    } else if (++_coastMisses > 1) {
+      _stopCoast('bout de la rangée');
+      return;
+    }
+    final delay = coast.next();
+    if (delay == null) {
+      _stopCoast('fini');
+      return;
+    }
+    _coastTimer = Timer(delay, _coastStep);
+  }
+
+  /// Fait un pas vers [direction], et dit si le focus a bougé.
+  static bool _step(TraversalDirection direction, {bool coasting = false}) {
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus == null) return false;
+    _lastStepAt = _now;
+    final stepper = glideStepper;
+    if (coasting && stepper != null) {
+      stepper(direction);
+    } else {
+      _pressArrow(focus, direction);
     }
     // Le focus demandé ne se pose qu'à la microtâche suivante.
     FocusManager.instance.applyFocusChangesIfNeeded();
-
-    // Le focus n'a pas bougé : bout de la rangée, la lancée s'arrête là.
-    if (identical(FocusManager.instance.primaryFocus, focus)) {
-      _stopGlide('bout de la rangée');
-      return;
-    }
-    if (--_glideRemaining <= 0) {
-      _stopGlide('fini');
-      return;
-    }
-    _glideInterval = _glideInterval * _glideSlowdown;
-    _glideTimer = Timer(_glideInterval, _glideStep);
+    return !identical(FocusManager.instance.primaryFocus, focus);
   }
 
-  /// Toute autre touche reprend la main sur l'élan : OK, Retour, ou une flèche
-  /// dans un autre sens.
+  /// Fait parcourir à l'arbre de focus une flèche vers [direction], appuyée
+  /// puis relâchée, exactement comme `FocusManager` le fait d'une touche : du
+  /// nœud focalisé vers la racine, jusqu'au premier `onKeyEvent` qui la
+  /// prend. Les raccourcis de l'app en font un `DirectionalFocusIntent`.
+  ///
+  /// Écartée : rejouer la touche par le canal `flutter/keyevent`. Elle
+  /// passerait par `HardwareKeyboard`, dont l'état (« flèche enfoncée ») se
+  /// mêlerait à celui des vraies flèches du moteur, retenues au même moment.
+  static void _pressArrow(FocusNode from, TraversalDirection direction) {
+    final key = _arrowKey(direction);
+    final physical = _physicalArrow(direction);
+    final timeStamp = _now;
+    // Une flèche synthétique n'est jamais la répétition d'une touche tenue.
+    TvKeyRepeat.noteFreshPress();
+    for (final event in <KeyEvent>[
+      KeyDownEvent(
+        physicalKey: physical,
+        logicalKey: key,
+        timeStamp: timeStamp,
+        synthesized: true,
+      ),
+      KeyUpEvent(
+        physicalKey: physical,
+        logicalKey: key,
+        timeStamp: timeStamp,
+        synthesized: true,
+      ),
+    ]) {
+      for (final node in <FocusNode>[from, ...from.ancestors]) {
+        final result = node.onKeyEvent?.call(node, event);
+        if (result == KeyEventResult.handled ||
+            result == KeyEventResult.skipRemainingHandlers) {
+          break;
+        }
+      }
+    }
+  }
+
+  /// Retient les flèches que le moteur tire d'un glissé : le modèle fait déjà
+  /// les pas de ce geste. Passe avant tout l'arbre de focus.
+  static KeyEventResult _holdEngineArrow(KeyEvent event) {
+    final key = event.logicalKey;
+    if (_arrowDirection(key) == null) return KeyEventResult.ignored;
+    if (event is KeyDownEvent) {
+      if (!TvMode.isTv ||
+          _inTextField ||
+          !_motion.ownsArrowAt(_now, grace: _arrowGrace)) {
+        _heldBack.remove(key);
+        return KeyEventResult.ignored;
+      }
+      _heldBack.add(key);
+      return KeyEventResult.handled;
+    }
+    if (!_heldBack.contains(key)) return KeyEventResult.ignored;
+    if (event is KeyUpEvent) _heldBack.remove(key);
+    return KeyEventResult.handled;
+  }
+
+  /// Toute touche reprend la main sur la lancée : OK, Retour, une flèche du
+  /// pavé directionnel. Seule la flèche que le moteur tire du geste qui l'a
+  /// lancée ne la coupe pas.
   static bool _observeKey(KeyEvent event) {
     debugPrint(
         'ONYXHW ${DateTime.now().millisecondsSinceEpoch} ${event.runtimeType} ${event.logicalKey.debugName} focus=${FocusManager.instance.primaryFocus?.debugLabel}');
-    if (event is! KeyDownEvent || !isGliding) return false;
-    final ownArrow = _arrowDirection(event.logicalKey) == _glideDirection &&
-        _now - _glideStartedAt < _glideGrace;
-    if (!ownArrow) _stopGlide('touche ${event.logicalKey.keyLabel}');
+    if (event is! KeyDownEvent || _coastTimer == null) return false;
+    final ownArrow = _arrowDirection(event.logicalKey) != null &&
+        _motion.ownsArrowAt(_now, grace: _arrowGrace);
+    if (!ownArrow) _stopCoast('touche ${event.logicalKey.keyLabel}');
     return false;
   }
 
@@ -257,20 +345,35 @@ abstract final class TvTouchpad {
     return null;
   }
 
-  /// Installe l'observateur de touches hors Apple TV, pour les tests.
+  static LogicalKeyboardKey _arrowKey(TraversalDirection direction) =>
+      switch (direction) {
+        TraversalDirection.left => LogicalKeyboardKey.arrowLeft,
+        TraversalDirection.right => LogicalKeyboardKey.arrowRight,
+        TraversalDirection.up => LogicalKeyboardKey.arrowUp,
+        TraversalDirection.down => LogicalKeyboardKey.arrowDown,
+      };
+
+  static PhysicalKeyboardKey _physicalArrow(TraversalDirection direction) =>
+      switch (direction) {
+        TraversalDirection.left => PhysicalKeyboardKey.arrowLeft,
+        TraversalDirection.right => PhysicalKeyboardKey.arrowRight,
+        TraversalDirection.up => PhysicalKeyboardKey.arrowUp,
+        TraversalDirection.down => PhysicalKeyboardKey.arrowDown,
+      };
+
+  /// Installe les gestionnaires de touches hors Apple TV, pour les tests.
   @visibleForTesting
-  static void debugInstallKeyObserver() {
-    HardwareKeyboard.instance.removeHandler(_observeKey);
-    HardwareKeyboard.instance.addHandler(_observeKey);
-  }
+  static void debugInstallKeyObserver() => _installKeyHandlers();
 
   @visibleForTesting
   static void debugReset() {
     stopGlide();
     _moveListeners.clear();
+    _heldBack.clear();
+    _gestureUsed = false;
+    _lastStepAt = null;
     debugClock = null;
     clickHeld.value = false;
-    _motion.add(TouchpadPhase.clickUp, 0, 0, Duration.zero);
-    _motion.add(TouchpadPhase.ended, 0, 0, Duration.zero);
+    _motion = TouchpadMotion();
   }
 }

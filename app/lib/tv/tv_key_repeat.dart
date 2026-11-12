@@ -7,7 +7,6 @@ import 'tv_focus_entry.dart';
 import 'tv_focus_panes.dart';
 import 'tv_focus_scroll.dart';
 import 'tv_mode.dart';
-import 'tv_touchpad.dart';
 
 /// Ce que la télécommande fait quand on laisse une flèche enfoncée.
 ///
@@ -54,6 +53,11 @@ abstract final class TvKeyRepeat {
     return false;
   }
 
+  /// Une flèche qui ne vient pas du clavier arrive (un pas du trackpad de la
+  /// Siri Remote, voir [TvTouchpad]) : ce n'est pas la répétition d'une touche
+  /// tenue, même si la dernière vraie flèche en était une.
+  static void noteFreshPress() => _repeating = false;
+
   @visibleForTesting
   static void debugReset() {
     _repeating = false;
@@ -63,12 +67,10 @@ abstract final class TvKeyRepeat {
 
 /// Le déplacement du focus aux flèches, sur un téléviseur.
 ///
-/// Remplace [DirectionalFocusAction] à la racine de l'app. Quatre différences, et
+/// Remplace [DirectionalFocusAction] à la racine de l'app. Trois différences, et
 /// hors téléviseur aucune :
 ///
 /// - la flèche maintenue est régulée, voir [TvKeyRepeat] ;
-/// - dans ce qui défile, une flèche née d'un glissé vif sur le trackpad de
-///   l'Apple TV vaut plusieurs pas, voir [TvTouchpad] ;
 /// - gauche et droite ne quittent jamais la ligne. Au bout d'une rangée ou
 ///   d'une ligne de grille, Flutter cherche « quelque chose à droite » n'importe
 ///   où sur l'écran : l'avatar du compte dans l'en-tête, une affiche d'une autre
@@ -103,43 +105,25 @@ class TvDirectionalFocusAction extends DirectionalFocusAction {
 
     final direction = intent.direction;
     final current = primaryFocus;
-    final steps =
-        current != null && TvTouchpad.acceleratesFrom(current, direction)
-            ? TvTouchpad.boostFor(direction)
-            : 1;
     if (current == null ||
         current.context == null ||
         current is FocusScopeNode ||
         (direction != TraversalDirection.left &&
             direction != TraversalDirection.right)) {
-      for (var i = 0; i < steps; i++) {
-        final before = primaryFocus;
-        super.invoke(intent);
-        // Le focus demandé ne se pose qu'à la microtâche suivante : le pas
-        // d'après partirait encore de l'ancien élément.
-        FocusManager.instance.applyFocusChangesIfNeeded();
-        if (identical(primaryFocus, before)) {
-          if (i == 0 && before != null) {
-            TvFocusScroll.scrollPast(before, direction);
-          }
-          return;
-        }
+      super.invoke(intent);
+      // Le focus demandé ne se pose qu'à la microtâche suivante.
+      FocusManager.instance.applyFocusChangesIfNeeded();
+      if (identical(primaryFocus, current) && current != null) {
+        TvFocusScroll.scrollPast(current, direction);
       }
       return;
     }
 
-    // Les pas intermédiaires ne prennent pas le focus : seule la carte
-    // d'arrivée défile à l'écran et s'inscrit dans la mémoire de la rangée.
-    FocusNode? target;
-    for (var i = 0; i < steps; i++) {
-      final from = target ?? current;
-      final onLine = StepTarget.nextOnLine(from, direction);
-      final panes = TvFocusPanes.maybeOf(from);
-      final next =
-          panes == null ? onLine : panes.next(from, direction, onLine: onLine);
-      if (next == null) break;
-      target = next;
-    }
+    final onLine = StepTarget.nextOnLine(current, direction);
+    final panes = TvFocusPanes.maybeOf(current);
+    final target = panes == null
+        ? onLine
+        : panes.next(current, direction, onLine: onLine);
     if (target == null) return;
     TvFocusEntries.requestFocus(
       target,

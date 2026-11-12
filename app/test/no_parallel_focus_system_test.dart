@@ -152,7 +152,6 @@ const Map<String, Map<String, int>> _legacy = {
     'TvFocusLegacy': 2,
   },
   'lib/tv/tv_touchpad.dart': {
-    'DirectionalFocus': 2,
     'KeyboardHandler': 2,
   },
   'lib/tv/web_tv_field_exit.dart': {

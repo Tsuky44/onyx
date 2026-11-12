@@ -1,5 +1,7 @@
 # ADR-0039 — La force du geste sur le trackpad de l'Apple TV, et un seul défilement par pas
 
+- **Point 3 remplacé** par l'[ADR-0116](0116-le-doigt-pilote-le-focus-sur-le-trackpad-de-l-apple-tv.md) le
+  2026-11-12 : le trajet et la vitesse du doigt font les pas, les flèches du moteur nées du glissé sont retenues.
 - **Statut :** accepté, écrit sous Windows. Le Dart est analysé et testé ; **aucun geste n'a encore
   été fait sur une vraie Siri Remote**, et les seuils de vitesse sont des estimations à régler.
 - **Date :** 2026-09-29

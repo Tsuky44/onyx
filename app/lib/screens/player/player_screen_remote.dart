@@ -101,13 +101,13 @@ extension _PlayerRemote on _PlayerScreenState {
   /// Le doigt glisse sur le trackpad de l'Apple TV : là où gauche et droite
   /// feraient avancer le film (le film lui-même, ou la barre de lecture), la
   /// cible suit le doigt, d'autant plus loin qu'il va vite (ADR-0039).
-  void _handleTouchpadMove(TouchpadMove move) {
-    if (!_isInitialized || _isDisposing || !TvMode.isTv) return;
-    // Un glissé vertical appelle les commandes, par les flèches du moteur.
-    if (move.dx.abs() < move.dy.abs()) return;
-    if (_popups.isOpen || _episodesPanel.isOpen || _endCardVisible) return;
+  bool _handleTouchpadMove(TouchpadMove move) {
+    if (!_isInitialized || _isDisposing || !TvMode.isTv) return false;
+    // Un glissé vertical appelle les commandes, par les pas du trackpad.
+    if (move.dx.abs() < move.dy.abs()) return false;
+    if (_popups.isOpen || _episodesPanel.isOpen || _endCardVisible) return false;
     final seeks = !_remoteBrowsingControls || _progressFocusNode.hasPrimaryFocus;
-    if (!seeks) return;
+    if (!seeks) return false;
     _remoteEntry = _RemoteEntry.scrubber;
     _remoteSeek.scrub(
       move.dx,
@@ -116,6 +116,7 @@ extension _PlayerRemote on _PlayerScreenState {
       durationSeconds: _playerController.duration.inSeconds,
     );
     _showControlsTransient();
+    return true;
   }
 
   /// The position the chrome shows: a remote seek's target while one is
