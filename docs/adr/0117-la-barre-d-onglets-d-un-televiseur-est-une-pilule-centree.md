@@ -36,10 +36,11 @@ au centre, le profil à droite.
    vers le bas garde la marque et le compte lisibles quand une page défile dessous.
 5. **Des marges de téléviseur.** 22 px au-dessus de la pilule (33 pt), la gouttière des pages sur les
    côtés. `shellHeaderHeight` rend cette hauteur sur un téléviseur, et les pages s'y calent d'elles-mêmes.
-6. **La recherche est une entrée de la pilule**, la dernière, sous la forme d'une loupe
+6. **La recherche est une entrée de la pilule**, juste à droite d'Accueil, sous la forme d'une loupe
    (`GlassCatalogSearch.tabBarTrigger`, un `TvTabBarItem` à icône). D'abord posée à droite, à côté du
    profil ; ramenée dans la barre après le premier essai sur Apple TV (2026-11-12), comme dans les apps
-   de salon. Une icône et non le mot : avec sept onglets, un libellé de plus poussait le dernier hors
+   de salon, d'abord en dernière entrée, puis après Accueil à la demande de l'utilisateur : au bout de
+   la pilule, il fallait traverser toutes les bibliothèques pour l'atteindre. Une icône et non le mot : avec sept onglets, un libellé de plus poussait le dernier hors
    de la pilule. OK l'ouvre ; s'y arrêter ne l'ouvre pas (`selectOnFocus: false`), puisqu'elle pousse
    une page au lieu d'afficher un onglet.
 7. **À droite, le disque du profil seul.** Son nom, d'abord affiché à côté, est dans son menu.

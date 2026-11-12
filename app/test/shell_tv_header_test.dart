@@ -14,6 +14,8 @@ import 'package:onyx/services/api_client.dart';
 import 'package:onyx/theme/app_theme.dart';
 import 'package:onyx/theme/focus_fill.dart';
 import 'package:onyx/tv/tv_mode.dart';
+import 'package:onyx/tv/tv_touchpad.dart';
+import 'package:onyx/tv/tv_touchpad_pace.dart';
 import 'package:onyx/widgets/global/account_menu.dart';
 import 'package:onyx/widgets/global/glass_catalog_search.dart';
 import 'package:onyx/widgets/global/glass_chrome.dart';
@@ -159,6 +161,29 @@ void main() {
     expect(find.bySemanticsLabel('Rechercher'), findsOneWidget);
     // Le disque du profil seul : son nom est dans son menu.
     expect(find.text('mathis'), findsNothing);
+  });
+
+  testWidgets('la recherche suit Accueil, avant les bibliothèques',
+      (tester) async {
+    await _pump(tester, libraries: _libraries(3), selected: ShellTabs.home);
+
+    final home = tester.getRect(find.widgetWithText(TvTabBarItem, 'Accueil'));
+    final search = tester.getRect(find.byWidgetPredicate(
+        (widget) => widget is TvTabBarItem && widget.icon != null));
+    final films = tester.getRect(find.widgetWithText(TvTabBarItem, 'Films'));
+    expect(search.left, greaterThanOrEqualTo(home.right));
+    expect(search.right, lessThanOrEqualTo(films.left));
+  });
+
+  testWidgets(
+      'la pilule défile, mais ses onglets se parcourent posément au pavé',
+      (tester) async {
+    // ADR-0122 : parce qu'elle défile, la pilule prenait le gain et la lancée
+    // d'une rangée d'affiches.
+    final nodes =
+        await _pump(tester, libraries: _libraries(3), selected: ShellTabs.home);
+
+    expect(TvTouchpad.paceOf(nodes[ShellTabs.home]!), TouchpadPace.precise);
   });
 
   testWidgets('s’arrêter sur la recherche ne l’ouvre pas : seul OK le fait',
