@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart' show StringCharacters;
 import 'package:onyx_player_apple/onyx_player_apple.dart';
 
 import '../../../l10n/tr.dart';
@@ -112,24 +113,39 @@ abstract final class NativeTvPanels {
   }
 
   /// Comme `WatchPartyPanel`. « Copier » n'a pas de sens à la télécommande.
+  ///
+  /// Une colonne de présentation à gauche (`headline`), les lignes à droite :
+  /// hors séance, le titre, l'explication, le bouton, et à côté les trois
+  /// étapes ; en séance, le code en grand et les participants. Le premier
+  /// dessin n'avait qu'un paragraphe et un bouton au bout de la ligne, sur
+  /// un panneau de toute la largeur de l'écran : « un peu vide ».
   static OnyxAppleNativePanel watchParty(NativeTvWatchParty state) {
     final code = state.code;
     if (code == null) {
       return OnyxAppleNativePanel(
         id: NativeTvIds.watchPartyPanel,
         title: tr('Regarder ensemble'),
+        headline: tr('Regardez à plusieurs'),
         message: [
-          tr('Lancez une séance et partagez son code. Chacun la rejoint '
-              'depuis son appareil, avec son propre compte : lecture, pauses '
-              'et déplacements sont partagés entre tous.'),
+          tr('Lecture, pauses et déplacements sont partagés entre tous, '
+              'chacun sur son appareil.'),
           if (state.error != null) state.error!,
         ].join('\n\n'),
         tabs: const [],
-        rows: const [],
+        rowsTitle: tr('Comment ça marche'),
+        rows: [
+          _step(1, tr('Démarrez la séance'),
+              tr('Depuis ce panneau, pendant la lecture.')),
+          _step(2, tr('Partagez le code'),
+              tr('Il s’affiche ici une fois la séance ouverte.')),
+          _step(3, tr('Chacun la rejoint'),
+              tr('Menu du compte › Rejoindre une séance.')),
+        ],
         actions: [
           OnyxAppleNativeAction(
             id: NativeTvIds.watchPartyStart,
             label: tr('Démarrer une séance'),
+            icon: 'play.fill',
           ),
         ],
         loading: state.starting,
@@ -139,14 +155,13 @@ abstract final class NativeTvPanels {
     return OnyxAppleNativePanel(
       id: NativeTvIds.watchPartyPanel,
       title: tr('Regarder ensemble'),
-      message: [
-        tr('Code de la séance : {0}', [code]),
-        tr('Pour rejoindre : menu du compte › Rejoindre une séance.'),
-        members.length > 1
-            ? tr('{0} participants', [members.length])
-            : tr('En attente des autres participants…'),
-      ].join('\n'),
+      eyebrow: tr('Code de la séance'),
+      headline: code,
+      message: tr('Pour rejoindre : menu du compte › Rejoindre une séance.'),
       tabs: const [],
+      rowsTitle: members.length > 1
+          ? tr('{0} participants', [members.length])
+          : tr('En attente des autres participants…'),
       rows: [
         for (var i = 0; i < members.length; i++)
           () {
@@ -158,6 +173,7 @@ abstract final class NativeTvPanels {
               title: member.isYou ? tr('{0} (vous)', [name]) : name,
               subtitle: member.device,
               detail: member.isHost ? tr('Hôte') : null,
+              badge: name.characters.first.toUpperCase(),
               selected: false,
               selectable: false,
             );
@@ -172,6 +188,16 @@ abstract final class NativeTvPanels {
       loading: false,
     );
   }
+
+  static OnyxAppleNativePanelRow _step(int number, String title, String how) =>
+      OnyxAppleNativePanelRow(
+        id: '${NativeTvIds.stepRowPrefix}$number',
+        title: title,
+        subtitle: how,
+        badge: '$number',
+        selected: false,
+        selectable: false,
+      );
 
   static OnyxAppleNativePanel stats() => OnyxAppleNativePanel(
         id: NativeTvIds.statsPanel,

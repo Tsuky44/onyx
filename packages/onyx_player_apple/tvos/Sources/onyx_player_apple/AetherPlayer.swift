@@ -1,3 +1,4 @@
+import AVFoundation
 import AetherEngine
 import Combine
 import CoreGraphics
@@ -145,6 +146,17 @@ final class AetherPlayer {
   func pause() {
     wantsPlay = false
     if loadTask == nil { engine.pause() }
+  }
+
+  /// Relance la lecture que Dart a demandée quand quelque chose d'autre que
+  /// lui l'a mise en pause : l'écran natif d'Apple TV s'en sert juste après
+  /// s'être présenté. Rien pendant un chargement, dont la fin applique déjà
+  /// la dernière demande.
+  func resumeIfWanted() {
+    guard wantsPlay, !released, loadTask == nil,
+      engine.currentAVPlayer?.timeControlStatus == .paused
+    else { return }
+    engine.play()
   }
 
   func seek(toMs positionMs: Int64) {

@@ -14,7 +14,13 @@ extension _PlayerNativeTv on _PlayerScreenState {
     if (!isNativeTvPlayerEligible()) return null;
     final screen = _playerController.session.nativeTvScreen;
     if (screen == null) return null;
-    return NativeTvPresenter(screen: screen, onIntent: _handleNativeTvIntent);
+    return NativeTvPresenter(
+      screen: screen,
+      onIntent: _handleNativeTvIntent,
+      onResync: () {
+        if (mounted && !_isDisposing) _syncNativeTv();
+      },
+    );
   }
 
   /// Ce que seule l'interface Flutter sait montrer : un démarrage bloqué,

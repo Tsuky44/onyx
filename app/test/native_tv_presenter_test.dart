@@ -167,6 +167,31 @@ void main() {
       expect(presenter.isShown, isTrue);
     });
 
+    testWidgets(
+        'présenté, l’écran est rappelé pour renvoyer sa spec, même sans '
+        'reconstruction', (tester) async {
+      // Sous l'écran natif, Flutter peut ne plus rien dessiner : sans ce
+      // rappel, « Passer l'intro » ou l'épisode suivant n'arrivaient jamais.
+      var resyncs = 0;
+      final watched = NativeTvPresenter(
+        screen: screen,
+        onIntent: (_) {},
+        onResync: () => resyncs++,
+      );
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(resyncs, 0, reason: 'rien à tenir à jour tant qu’il est fermé');
+
+      watched.sync(wanted: true, spec: spec);
+      await tester.pump(const Duration(seconds: 1));
+      expect(resyncs, 4);
+
+      watched.sync(wanted: false, spec: spec);
+      await tester.pump(const Duration(seconds: 1));
+      expect(resyncs, 4, reason: 'fermé, plus rien ne le rappelle');
+      watched.dispose();
+    });
+
     test('un seul nouvel essai est programmé à la fois', () {
       presenter.sync(wanted: true, spec: spec, playerReady: false);
 
@@ -309,6 +334,9 @@ void main() {
       );
       expect(recap.actions.map((a) => a.label),
           ['Passer le récap', 'Épisode suivant']);
+      // Chacune avec son symbole : « Passer » se reconnaît avant d'être lu.
+      expect(recap.actions.map((a) => a.icon),
+          ['forward.fill', 'forward.end.fill']);
     });
 
     test('sans segment ni générique, aucune action ; chacune seule suffit', () {

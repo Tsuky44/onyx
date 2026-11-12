@@ -363,11 +363,15 @@ class OnyxAppleNativeMenu {
 /// Un bouton contextuel posé sur le lecteur : « Passer l'intro », « Épisode
 /// suivant ». Dart ajoute ou retire l'entrée selon la position.
 class OnyxAppleNativeAction {
-  OnyxAppleNativeAction({required this.id, required this.label});
+  OnyxAppleNativeAction({required this.id, required this.label, this.icon});
 
   /// Rendu dans [OnyxAppleNativeEvent.actionId] à l'appui.
   final String id;
   final String label;
+
+  /// Un symbole SF (`forward.fill`), devant le libellé : « Passer l'intro »
+  /// se reconnaît à son icône avant d'être lu.
+  final String? icon;
 }
 
 /// Un chapitre, pour `AVPlayerItem.navigationMarkerGroups`
@@ -453,11 +457,16 @@ class OnyxAppleNativePanelRow {
     this.detail,
     this.imageUrl,
     this.progress,
+    this.badge,
   });
 
   final String id;
   final String title;
   final String? subtitle;
+
+  /// Une pastille devant le titre : l'initiale d'un participant, le numéro
+  /// d'une étape.
+  final String? badge;
 
   /// À droite : une durée, « Hôte », une valeur de statistique.
   final String? detail;
@@ -486,6 +495,9 @@ class OnyxAppleNativePanel {
     required this.actions,
     required this.loading,
     this.message,
+    this.eyebrow,
+    this.headline,
+    this.rowsTitle,
   });
 
   /// `episodes`, `watchParty`, `stats` : rendu dans les événements.
@@ -494,9 +506,22 @@ class OnyxAppleNativePanel {
   /// Le titre de l'onglet (`UIViewController.title`).
   final String title;
 
-  /// Un paragraphe au-dessus des lignes : l'explication et le code de la
-  /// séance, une erreur.
+  /// Un paragraphe au-dessus des lignes : l'explication de la séance, une
+  /// erreur, « Aucun épisode disponible ».
   final String? message;
+
+  /// Avec [headline], le panneau prend une colonne de présentation à gauche :
+  /// ce grand texte, [message] dessous, puis les boutons ; les lignes passent
+  /// à droite sous [rowsTitle]. Le titre de « Regarder ensemble », ou le code
+  /// de la séance.
+  final String? headline;
+
+  /// La petite ligne au-dessus de [headline] (« Code de la séance »). Avec
+  /// elle, [headline] est un code : écrit en chasse fixe, très grand.
+  final String? eyebrow;
+
+  /// Le titre des lignes (« 3 participants », « Comment ça marche »).
+  final String? rowsTitle;
 
   /// Les saisons : un choix rendu en `panelTabSelected` (`optionId`).
   final List<OnyxAppleNativeOption> tabs;

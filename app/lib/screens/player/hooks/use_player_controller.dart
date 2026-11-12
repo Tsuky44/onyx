@@ -130,7 +130,11 @@ class PlayerController {
   /// which costs about 16ms and cannot be seen.
   void _maybeMarkFirstFrame() {
     if (hasFirstFrame || !_videoParamsReady || !_clockRunning) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Quand Flutter ne dessine pas (sa vue est sous l'écran natif d'Apple
+    // TV), il n'y a ni image à attendre ni texture à protéger : le rappel de
+    // fin d'image ne viendrait jamais, et rien de ce qui attend la première
+    // image (« Passer l'intro », l'épisode suivant) ne se proposerait.
+    void mark() {
       if (_disposed || hasFirstFrame) return;
       hasFirstFrame = true;
       // Le tampon qui se remplit au démarrage n'est pas une ligne qui cale.
@@ -140,7 +144,13 @@ class PlayerController {
       _startTimelinePreviews();
       _onFirstFrame?.call();
       unawaited(_onPictureLive());
-    });
+    }
+
+    if (!WidgetsBinding.instance.framesEnabled) {
+      mark();
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => mark());
     // Sans rien qui bouge à l'écran, aucune image ne viendrait l'appeler.
     WidgetsBinding.instance.ensureVisualUpdate();
   }

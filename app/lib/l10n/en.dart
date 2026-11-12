@@ -176,6 +176,14 @@ const Map<String, String> kEnglish = <String, String>{
       'Arabic',
   'Attendre le Wi-Fi':
       'Wait for Wi-Fi',
+  'Chacun la rejoint':
+      'Everyone joins',
+  'Comment ça marche':
+      'How it works',
+  'Depuis ce panneau, pendant la lecture.':
+      'From this panel, during playback.',
+  'Démarrez la séance':
+      'Start the session',
   'Effacer la recherche':
       'Clear search',
   'Aucun appareil connecté.':
@@ -674,6 +682,16 @@ const Map<String, String> kEnglish = <String, String>{
       'Request',
   'Cochez les saisons à ajouter.':
       'Tick the seasons to add.',
+  'Il s’affiche ici une fois la séance ouverte.':
+      'It appears here once the session is open.',
+  'Lecture, pauses et déplacements sont partagés entre tous, chacun sur son appareil.':
+      'Playback, pauses and seeks are shared by everyone, each on their own device.',
+  'Menu du compte › Rejoindre une séance.':
+      'Account menu › Join a session.',
+  'Partagez le code':
+      'Share the code',
+  'Regardez à plusieurs':
+      'Watch with others',
   'Tout cocher':
       'Select all',
   'Tout décocher':

@@ -599,7 +599,14 @@ void main() {
       expect(idle.title, 'Regarder ensemble');
       expect(idle.actions.map((a) => (a.id, a.label)),
           [(NativeTvIds.watchPartyStart, 'Démarrer une séance')]);
-      expect(idle.rows, isEmpty);
+      // Une colonne de présentation, et à côté les trois étapes : un seul
+      // paragraphe sur un panneau large comme l'écran faisait « vide ».
+      expect(idle.headline, 'Regardez à plusieurs');
+      expect(idle.eyebrow, isNull);
+      expect(idle.rowsTitle, 'Comment ça marche');
+      expect(idle.rows.map((r) => (r.id, r.badge)),
+          [('step:1', '1'), ('step:2', '2'), ('step:3', '3')]);
+      expect(idle.rows.any((r) => r.selectable), isFalse);
       expect(idle.loading, isFalse);
 
       final failed = _panel(
@@ -629,12 +636,18 @@ void main() {
         NativeTvIds.watchPartyPanel,
       );
 
-      expect(panel.message, contains('Code de la séance : K7Q2'));
-      expect(panel.message, contains('2 participants'));
-      expect(panel.rows.map((r) => (r.id, r.title, r.subtitle, r.detail)), [
-        ('member:0', 'alex (vous)', null, 'Hôte'),
-        ('member:1', 'Invité', 'iPhone', null),
-      ]);
+      // Le code en grand, sous sa petite ligne ; les participants à droite,
+      // chacun avec son initiale.
+      expect(panel.eyebrow, 'Code de la séance');
+      expect(panel.headline, 'K7Q2');
+      expect(panel.rowsTitle, '2 participants');
+      expect(
+          panel.rows
+              .map((r) => (r.id, r.title, r.subtitle, r.detail, r.badge)),
+          [
+            ('member:0', 'alex (vous)', null, 'Hôte', 'A'),
+            ('member:1', 'Invité', 'iPhone', null, 'I'),
+          ]);
       expect(panel.rows.any((r) => r.selectable), isFalse);
       expect(panel.actions.map((a) => a.id), [NativeTvIds.watchPartyLeave]);
     });
@@ -655,8 +668,8 @@ void main() {
         sleep: const NativeTvSleep(offersEpisodes: false),
       ));
 
-      expect(_panel(spec, NativeTvIds.watchPartyPanel).message,
-          contains('Session code: K7Q2'));
+      expect(_panel(spec, NativeTvIds.watchPartyPanel).eyebrow,
+          'Session code');
       expect(_panel(spec, NativeTvIds.statsPanel).rows.first.title,
           'Playback path');
       expect(_menu(spec, NativeTvIds.sleep).options.last.label, '2 hours');

@@ -65,9 +65,11 @@ class NativeTvPresenter {
     required NativeTvScreen screen,
     required void Function(NativeTvIntent intent) onIntent,
     DateTime Function() now = DateTime.now,
+    void Function()? onResync,
   })  : _screen = screen,
         _onIntent = onIntent,
-        _now = now {
+        _now = now,
+        _onResync = onResync {
     // Construit avec l'écran du lecteur, donc avant la première ouverture :
     // les pistes texte n'entrent dans le menu d'AVKit que déclarées au
     // chargement (spike Apple TV, Q5).
@@ -85,6 +87,30 @@ class NativeTvPresenter {
   final NativeTvScreen _screen;
   final void Function(NativeTvIntent intent) _onIntent;
   final DateTime Function() _now;
+
+  /// Rappelle l'écran pour qu'il relise son état et renvoie sa spec ([sync]),
+  /// quatre fois par seconde tant que l'écran natif est présenté.
+  ///
+  /// L'écran du lecteur ne se synchronise qu'en se reconstruisant, et Flutter
+  /// ne reconstruit rien quand sa vue n'est plus à l'écran : sous un
+  /// `AVPlayerViewController` plein écran, UIKit la retire et le moteur
+  /// Flutter cesse de dessiner. « Passer l'intro », l'épisode suivant, les
+  /// menus cochés, la liste des épisodes n'arrivaient alors jamais au natif.
+  /// L'écran natif se présente désormais sans retirer cette vue ; ce rappel
+  /// tient la promesse même si elle ne dessinait plus.
+  final void Function()? _onResync;
+  Timer? _resyncTimer;
+  static const Duration _resyncEvery = Duration(milliseconds: 250);
+
+  void _watchState(bool shown) {
+    final resync = _onResync;
+    if (!shown || resync == null) {
+      _resyncTimer?.cancel();
+      _resyncTimer = null;
+      return;
+    }
+    _resyncTimer ??= Timer.periodic(_resyncEvery, (_) => resync());
+  }
 
   /// Le temps que la première présentation accorde au moteur pour avoir un
   /// `AVPlayer`. Au-delà, elle part quand même, comme avant : un statut qui
@@ -164,6 +190,7 @@ class NativeTvPresenter {
       }
       _waitingSince = null;
       _shown = true;
+      _watchState(true);
       _sent = spec;
       _run('présentation', () => _screen.present(spec), failOpen: true);
       return;
@@ -190,6 +217,7 @@ class NativeTvPresenter {
   /// L'écran n'est plus là : la prochaine spec devra le présenter, pas le
   /// mettre à jour, et la scène Flutter reprend le cadrage.
   void _forget() {
+    _watchState(false);
     _shown = false;
     _sent = null;
     _sentFit = null;
@@ -238,6 +266,7 @@ class NativeTvPresenter {
   void dispose() {
     if (_disposed) return;
     if (_shown) _close();
+    _watchState(false);
     _disposed = true;
     unawaited(_events.cancel());
   }

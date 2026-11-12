@@ -207,6 +207,7 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
       // Le panneau Stats lit le moteur par la même fonction que `stats()`.
       let presenter = NativePlayerPresenter(
         playerId: id, engine: player.engine, stats: { [weak player] in player?.stats() },
+        resume: { [weak player] in player?.resumeIfWanted() },
         send: { events.send($0) })
       presenters[id] = presenter
       return presenter

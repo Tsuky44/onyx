@@ -234,9 +234,11 @@ abstract final class NativeTvIds {
   static const watchPartyPanel = 'watchParty';
   static const statsPanel = 'stats';
 
-  /// Les lignes : `episode:<id>`, `member:<id>` ; les onglets `season:<id>`.
+  /// Les lignes : `episode:<id>`, `member:<id>`, `step:<n>` (les étapes de
+  /// « Regarder ensemble ») ; les onglets `season:<id>`.
   static const episodeRowPrefix = 'episode:';
   static const memberRowPrefix = 'member:';
+  static const stepRowPrefix = 'step:';
   static const seasonTabPrefix = 'season:';
 
   /// Les options du menu `sleep` et `chapters`.
@@ -292,11 +294,13 @@ abstract final class NativeTvSpecBuilder {
               SkipSegment.recap => tr('Passer le récap'),
               SkipSegment.intro => tr('Passer l’intro'),
             },
+            icon: 'forward.fill',
           ),
         if (state.hasNextEpisode)
           OnyxAppleNativeAction(
             id: NativeTvIds.nextEpisode,
             label: tr('Épisode suivant'),
+            icon: 'forward.end.fill',
           ),
       ],
       chapters: _chapters(state),
@@ -305,11 +309,13 @@ abstract final class NativeTvSpecBuilder {
           OnyxAppleNativeAction(
             id: NativeTvIds.previousEpisode,
             label: tr('Épisode précédent'),
+            icon: 'backward.end.fill',
           ),
         if (state.canGoNext)
           OnyxAppleNativeAction(
             id: NativeTvIds.nextEpisode,
             label: tr('Épisode suivant'),
+            icon: 'forward.end.fill',
           ),
       ],
       nextUp: _nextUp(state),

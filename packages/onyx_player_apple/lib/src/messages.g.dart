@@ -1035,6 +1035,7 @@ class OnyxAppleNativeAction {
   OnyxAppleNativeAction({
     required this.id,
     required this.label,
+    this.icon,
   });
 
   /// Rendu dans [OnyxAppleNativeEvent.actionId] à l'appui.
@@ -1042,10 +1043,15 @@ class OnyxAppleNativeAction {
 
   String label;
 
+  /// Un symbole SF (`forward.fill`), devant le libellé : « Passer l'intro »
+  /// se reconnaît à son icône avant d'être lu.
+  String? icon;
+
   List<Object?> _toList() {
     return <Object?>[
       id,
       label,
+      icon,
     ];
   }
 
@@ -1057,6 +1063,7 @@ class OnyxAppleNativeAction {
     return OnyxAppleNativeAction(
       id: result[0]! as String,
       label: result[1]! as String,
+      icon: result[2] as String?,
     );
   }
 
@@ -1069,7 +1076,7 @@ class OnyxAppleNativeAction {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(id, other.id) && _deepEquals(label, other.label);
+    return _deepEquals(id, other.id) && _deepEquals(label, other.label) && _deepEquals(icon, other.icon);
   }
 
   @override
@@ -1078,7 +1085,7 @@ class OnyxAppleNativeAction {
 
   @override
   String toString() {
-    return 'OnyxAppleNativeAction(id: $id, label: $label)';
+    return 'OnyxAppleNativeAction(id: $id, label: $label, icon: $icon)';
   }
 }
 
@@ -1301,6 +1308,7 @@ class OnyxAppleNativePanelRow {
     required this.id,
     required this.title,
     this.subtitle,
+    this.badge,
     this.detail,
     this.imageUrl,
     this.progress,
@@ -1313,6 +1321,10 @@ class OnyxAppleNativePanelRow {
   String title;
 
   String? subtitle;
+
+  /// Une pastille devant le titre : l'initiale d'un participant, le numéro
+  /// d'une étape.
+  String? badge;
 
   /// À droite : une durée, « Hôte », une valeur de statistique.
   String? detail;
@@ -1333,6 +1345,7 @@ class OnyxAppleNativePanelRow {
       id,
       title,
       subtitle,
+      badge,
       detail,
       imageUrl,
       progress,
@@ -1350,11 +1363,12 @@ class OnyxAppleNativePanelRow {
       id: result[0]! as String,
       title: result[1]! as String,
       subtitle: result[2] as String?,
-      detail: result[3] as String?,
-      imageUrl: result[4] as String?,
-      progress: result[5] as double?,
-      selected: result[6]! as bool,
-      selectable: result[7]! as bool,
+      badge: result[3] as String?,
+      detail: result[4] as String?,
+      imageUrl: result[5] as String?,
+      progress: result[6] as double?,
+      selected: result[7]! as bool,
+      selectable: result[8]! as bool,
     );
   }
 
@@ -1367,7 +1381,7 @@ class OnyxAppleNativePanelRow {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(id, other.id) && _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(detail, other.detail) && _deepEquals(imageUrl, other.imageUrl) && _deepEquals(progress, other.progress) && _deepEquals(selected, other.selected) && _deepEquals(selectable, other.selectable);
+    return _deepEquals(id, other.id) && _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(badge, other.badge) && _deepEquals(detail, other.detail) && _deepEquals(imageUrl, other.imageUrl) && _deepEquals(progress, other.progress) && _deepEquals(selected, other.selected) && _deepEquals(selectable, other.selectable);
   }
 
   @override
@@ -1376,7 +1390,7 @@ class OnyxAppleNativePanelRow {
 
   @override
   String toString() {
-    return 'OnyxAppleNativePanelRow(id: $id, title: $title, subtitle: $subtitle, detail: $detail, imageUrl: $imageUrl, progress: $progress, selected: $selected, selectable: $selectable)';
+    return 'OnyxAppleNativePanelRow(id: $id, title: $title, subtitle: $subtitle, badge: $badge, detail: $detail, imageUrl: $imageUrl, progress: $progress, selected: $selected, selectable: $selectable)';
   }
 }
 
@@ -1389,6 +1403,9 @@ class OnyxAppleNativePanel {
     required this.id,
     required this.title,
     this.message,
+    this.headline,
+    this.eyebrow,
+    this.rowsTitle,
     required this.tabs,
     required this.rows,
     required this.actions,
@@ -1401,9 +1418,22 @@ class OnyxAppleNativePanel {
   /// Le titre de l'onglet (`UIViewController.title`).
   String title;
 
-  /// Un paragraphe au-dessus des lignes : l'explication et le code de la
-  /// séance, une erreur.
+  /// Un paragraphe au-dessus des lignes : l'explication de la séance, une
+  /// erreur, « Aucun épisode disponible ».
   String? message;
+
+  /// Avec [headline], le panneau prend une colonne de présentation à gauche :
+  /// ce grand texte, [message] dessous, puis les boutons ; les lignes passent
+  /// à droite sous [rowsTitle]. Le titre de « Regarder ensemble », ou le code
+  /// de la séance.
+  String? headline;
+
+  /// La petite ligne au-dessus de [headline] (« Code de la séance »). Avec
+  /// elle, [headline] est un code : écrit en chasse fixe, très grand.
+  String? eyebrow;
+
+  /// Le titre des lignes (« 3 participants », « Comment ça marche »).
+  String? rowsTitle;
 
   /// Les saisons : un choix rendu en `panelTabSelected` (`optionId`).
   List<OnyxAppleNativeOption> tabs;
@@ -1426,6 +1456,9 @@ class OnyxAppleNativePanel {
       id,
       title,
       message,
+      headline,
+      eyebrow,
+      rowsTitle,
       tabs,
       rows,
       actions,
@@ -1442,10 +1475,13 @@ class OnyxAppleNativePanel {
       id: result[0]! as String,
       title: result[1]! as String,
       message: result[2] as String?,
-      tabs: (result[3]! as List<Object?>).cast<OnyxAppleNativeOption>(),
-      rows: (result[4]! as List<Object?>).cast<OnyxAppleNativePanelRow>(),
-      actions: (result[5]! as List<Object?>).cast<OnyxAppleNativeAction>(),
-      loading: result[6]! as bool,
+      headline: result[3] as String?,
+      eyebrow: result[4] as String?,
+      rowsTitle: result[5] as String?,
+      tabs: (result[6]! as List<Object?>).cast<OnyxAppleNativeOption>(),
+      rows: (result[7]! as List<Object?>).cast<OnyxAppleNativePanelRow>(),
+      actions: (result[8]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      loading: result[9]! as bool,
     );
   }
 
@@ -1458,7 +1494,7 @@ class OnyxAppleNativePanel {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(id, other.id) && _deepEquals(title, other.title) && _deepEquals(message, other.message) && _deepEquals(tabs, other.tabs) && _deepEquals(rows, other.rows) && _deepEquals(actions, other.actions) && _deepEquals(loading, other.loading);
+    return _deepEquals(id, other.id) && _deepEquals(title, other.title) && _deepEquals(message, other.message) && _deepEquals(headline, other.headline) && _deepEquals(eyebrow, other.eyebrow) && _deepEquals(rowsTitle, other.rowsTitle) && _deepEquals(tabs, other.tabs) && _deepEquals(rows, other.rows) && _deepEquals(actions, other.actions) && _deepEquals(loading, other.loading);
   }
 
   @override
@@ -1467,7 +1503,7 @@ class OnyxAppleNativePanel {
 
   @override
   String toString() {
-    return 'OnyxAppleNativePanel(id: $id, title: $title, message: $message, tabs: $tabs, rows: $rows, actions: $actions, loading: $loading)';
+    return 'OnyxAppleNativePanel(id: $id, title: $title, message: $message, headline: $headline, eyebrow: $eyebrow, rowsTitle: $rowsTitle, tabs: $tabs, rows: $rows, actions: $actions, loading: $loading)';
   }
 }
 

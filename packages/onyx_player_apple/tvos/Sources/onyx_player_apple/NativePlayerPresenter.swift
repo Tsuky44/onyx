@@ -19,6 +19,9 @@
     private let playerId: Int64
     private let engine: AetherEngine
     private let stats: @MainActor () -> OnyxApplePlaybackStats?
+    /// Relance la lecture si Dart la veut et que l'`AVPlayer` est en pause
+    /// (`AetherPlayer.resumeIfWanted`).
+    private let resume: @MainActor () -> Void
     private let send: (OnyxAppleNativeEvent) -> Void
 
     private var controller: AVPlayerViewController?
@@ -66,11 +69,13 @@
 
     init(
       playerId: Int64, engine: AetherEngine, stats: @escaping @MainActor () -> OnyxApplePlaybackStats?,
+      resume: @escaping @MainActor () -> Void,
       send: @escaping (OnyxAppleNativeEvent) -> Void
     ) {
       self.playerId = playerId
       self.engine = engine
       self.stats = stats
+      self.resume = resume
       self.send = send
     }
 
@@ -123,6 +128,13 @@
       }
 
       let controller = AVPlayerViewController()
+      // Par-dessus Flutter, sans retirer sa vue. En plein écran (le défaut),
+      // UIKit sort la vue de Flutter de la hiérarchie : le moteur Flutter
+      // passe alors en pause et ne dessine plus rien, donc ne reconstruit
+      // plus l'écran du lecteur. Or c'est à chaque reconstruction que Dart
+      // envoie sa spec : « Passer l'intro », l'épisode suivant, les menus
+      // cochés, la liste des épisodes n'arrivaient jamais ici.
+      controller.modalPresentationStyle = .overFullScreen
       controller.delegate = self
       // Le moteur écrit seul les critères d'affichage, avant d'affecter l'item :
       // tvOS 26.5 refuse sinon les variantes HDR (README AetherEngine, « Host
@@ -163,6 +175,23 @@
           // Une question arrivée avec la première spec attendait la fin de
           // la présentation : UIKit n'en accepte pas deux à la fois.
           self.syncPrompt()
+          self.resumeAfterPresentation(of: controller)
+        }
+      }
+    }
+
+    /// À l'épisode suivant, l'écran du précédent finit de se fermer pendant
+    /// que le nouveau lecteur démarre : AVKit, en partant, met en pause ce
+    /// qui joue, et l'épisode s'ouvrait arrêté. Si Dart veut la lecture, on
+    /// la relance, tout de suite puis une seconde plus tard (la pause peut
+    /// tomber juste après la présentation). Pas au-delà : une pause qui
+    /// arrive ensuite est celle de la télécommande.
+    private func resumeAfterPresentation(of presented: AVPlayerViewController) {
+      resume()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self, weak presented] in
+        MainActor.assumeIsolated {
+          guard let self, let presented, self.controller === presented else { return }
+          self.resume()
         }
       }
     }
@@ -305,7 +334,8 @@
 
     private func action(_ action: OnyxAppleNativeAction) -> UIAction {
       let actionId = action.id
-      return UIAction(title: action.label) { [weak self] _ in
+      let image = action.icon.flatMap { UIImage(systemName: $0) }
+      return UIAction(title: action.label, image: image) { [weak self] _ in
         MainActor.assumeIsolated {
           self?.noteActivity()
           self?.emit(.action, actionId: actionId)

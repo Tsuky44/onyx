@@ -1024,39 +1024,46 @@ struct OnyxAppleNativeAction: Hashable, CustomStringConvertible {
   /// Rendu dans [OnyxAppleNativeEvent.actionId] à l'appui.
   var id: String
   var label: String
+  /// Un symbole SF (`forward.fill`), devant le libellé : « Passer l'intro »
+  /// se reconnaît à son icône avant d'être lu.
+  var icon: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleNativeAction? {
     let id = pigeonVar_list[0] as! String
     let label = pigeonVar_list[1] as! String
+    let icon: String? = nilOrValue(pigeonVar_list[2])
 
     return OnyxAppleNativeAction(
       id: id,
-      label: label
+      label: label,
+      icon: icon
     )
   }
   func toList() -> [Any?] {
     return [
       id,
       label,
+      icon,
     ]
   }
   static func == (lhs: OnyxAppleNativeAction, rhs: OnyxAppleNativeAction) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.label, rhs.label)
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.label, rhs.label) && MessagesPigeonInternal.deepEquals(lhs.icon, rhs.icon)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("OnyxAppleNativeAction")
     MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: label, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: icon, hasher: &hasher)
   }
 
   public var description: String {
-    return "OnyxAppleNativeAction(id: \(String(describing: id)), label: \(String(describing: label)))"
+    return "OnyxAppleNativeAction(id: \(String(describing: id)), label: \(String(describing: label)), icon: \(String(describing: icon)))"
   }
 }
 
@@ -1253,6 +1260,9 @@ struct OnyxAppleNativePanelRow: Hashable, CustomStringConvertible {
   var id: String
   var title: String
   var subtitle: String? = nil
+  /// Une pastille devant le titre : l'initiale d'un participant, le numéro
+  /// d'une étape.
+  var badge: String? = nil
   /// À droite : une durée, « Hôte », une valeur de statistique.
   var detail: String? = nil
   var imageUrl: String? = nil
@@ -1269,16 +1279,18 @@ struct OnyxAppleNativePanelRow: Hashable, CustomStringConvertible {
     let id = pigeonVar_list[0] as! String
     let title = pigeonVar_list[1] as! String
     let subtitle: String? = nilOrValue(pigeonVar_list[2])
-    let detail: String? = nilOrValue(pigeonVar_list[3])
-    let imageUrl: String? = nilOrValue(pigeonVar_list[4])
-    let progress: Double? = nilOrValue(pigeonVar_list[5])
-    let selected = pigeonVar_list[6] as! Bool
-    let selectable = pigeonVar_list[7] as! Bool
+    let badge: String? = nilOrValue(pigeonVar_list[3])
+    let detail: String? = nilOrValue(pigeonVar_list[4])
+    let imageUrl: String? = nilOrValue(pigeonVar_list[5])
+    let progress: Double? = nilOrValue(pigeonVar_list[6])
+    let selected = pigeonVar_list[7] as! Bool
+    let selectable = pigeonVar_list[8] as! Bool
 
     return OnyxAppleNativePanelRow(
       id: id,
       title: title,
       subtitle: subtitle,
+      badge: badge,
       detail: detail,
       imageUrl: imageUrl,
       progress: progress,
@@ -1291,6 +1303,7 @@ struct OnyxAppleNativePanelRow: Hashable, CustomStringConvertible {
       id,
       title,
       subtitle,
+      badge,
       detail,
       imageUrl,
       progress,
@@ -1302,7 +1315,7 @@ struct OnyxAppleNativePanelRow: Hashable, CustomStringConvertible {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.detail, rhs.detail) && MessagesPigeonInternal.deepEquals(lhs.imageUrl, rhs.imageUrl) && MessagesPigeonInternal.deepEquals(lhs.progress, rhs.progress) && MessagesPigeonInternal.deepEquals(lhs.selected, rhs.selected) && MessagesPigeonInternal.deepEquals(lhs.selectable, rhs.selectable)
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.badge, rhs.badge) && MessagesPigeonInternal.deepEquals(lhs.detail, rhs.detail) && MessagesPigeonInternal.deepEquals(lhs.imageUrl, rhs.imageUrl) && MessagesPigeonInternal.deepEquals(lhs.progress, rhs.progress) && MessagesPigeonInternal.deepEquals(lhs.selected, rhs.selected) && MessagesPigeonInternal.deepEquals(lhs.selectable, rhs.selectable)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1310,6 +1323,7 @@ struct OnyxAppleNativePanelRow: Hashable, CustomStringConvertible {
     MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: subtitle, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: badge, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: detail, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: imageUrl, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: progress, hasher: &hasher)
@@ -1318,7 +1332,7 @@ struct OnyxAppleNativePanelRow: Hashable, CustomStringConvertible {
   }
 
   public var description: String {
-    return "OnyxAppleNativePanelRow(id: \(String(describing: id)), title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), detail: \(String(describing: detail)), imageUrl: \(String(describing: imageUrl)), progress: \(String(describing: progress)), selected: \(String(describing: selected)), selectable: \(String(describing: selectable)))"
+    return "OnyxAppleNativePanelRow(id: \(String(describing: id)), title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), badge: \(String(describing: badge)), detail: \(String(describing: detail)), imageUrl: \(String(describing: imageUrl)), progress: \(String(describing: progress)), selected: \(String(describing: selected)), selectable: \(String(describing: selectable)))"
   }
 }
 
@@ -1333,9 +1347,19 @@ struct OnyxAppleNativePanel: Hashable, CustomStringConvertible {
   var id: String
   /// Le titre de l'onglet (`UIViewController.title`).
   var title: String
-  /// Un paragraphe au-dessus des lignes : l'explication et le code de la
-  /// séance, une erreur.
+  /// Un paragraphe au-dessus des lignes : l'explication de la séance, une
+  /// erreur, « Aucun épisode disponible ».
   var message: String? = nil
+  /// Avec [headline], le panneau prend une colonne de présentation à gauche :
+  /// ce grand texte, [message] dessous, puis les boutons ; les lignes passent
+  /// à droite sous [rowsTitle]. Le titre de « Regarder ensemble », ou le code
+  /// de la séance.
+  var headline: String? = nil
+  /// La petite ligne au-dessus de [headline] (« Code de la séance »). Avec
+  /// elle, [headline] est un code : écrit en chasse fixe, très grand.
+  var eyebrow: String? = nil
+  /// Le titre des lignes (« 3 participants », « Comment ça marche »).
+  var rowsTitle: String? = nil
   /// Les saisons : un choix rendu en `panelTabSelected` (`optionId`).
   var tabs: [OnyxAppleNativeOption]
   /// Pour `stats`, les lignes ne portent que l'identifiant de la mesure
@@ -1355,15 +1379,21 @@ struct OnyxAppleNativePanel: Hashable, CustomStringConvertible {
     let id = pigeonVar_list[0] as! String
     let title = pigeonVar_list[1] as! String
     let message: String? = nilOrValue(pigeonVar_list[2])
-    let tabs = pigeonVar_list[3] as! [OnyxAppleNativeOption]
-    let rows = pigeonVar_list[4] as! [OnyxAppleNativePanelRow]
-    let actions = pigeonVar_list[5] as! [OnyxAppleNativeAction]
-    let loading = pigeonVar_list[6] as! Bool
+    let headline: String? = nilOrValue(pigeonVar_list[3])
+    let eyebrow: String? = nilOrValue(pigeonVar_list[4])
+    let rowsTitle: String? = nilOrValue(pigeonVar_list[5])
+    let tabs = pigeonVar_list[6] as! [OnyxAppleNativeOption]
+    let rows = pigeonVar_list[7] as! [OnyxAppleNativePanelRow]
+    let actions = pigeonVar_list[8] as! [OnyxAppleNativeAction]
+    let loading = pigeonVar_list[9] as! Bool
 
     return OnyxAppleNativePanel(
       id: id,
       title: title,
       message: message,
+      headline: headline,
+      eyebrow: eyebrow,
+      rowsTitle: rowsTitle,
       tabs: tabs,
       rows: rows,
       actions: actions,
@@ -1375,6 +1405,9 @@ struct OnyxAppleNativePanel: Hashable, CustomStringConvertible {
       id,
       title,
       message,
+      headline,
+      eyebrow,
+      rowsTitle,
       tabs,
       rows,
       actions,
@@ -1385,7 +1418,7 @@ struct OnyxAppleNativePanel: Hashable, CustomStringConvertible {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.message, rhs.message) && MessagesPigeonInternal.deepEquals(lhs.tabs, rhs.tabs) && MessagesPigeonInternal.deepEquals(lhs.rows, rhs.rows) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions) && MessagesPigeonInternal.deepEquals(lhs.loading, rhs.loading)
+    return MessagesPigeonInternal.deepEquals(lhs.id, rhs.id) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.message, rhs.message) && MessagesPigeonInternal.deepEquals(lhs.headline, rhs.headline) && MessagesPigeonInternal.deepEquals(lhs.eyebrow, rhs.eyebrow) && MessagesPigeonInternal.deepEquals(lhs.rowsTitle, rhs.rowsTitle) && MessagesPigeonInternal.deepEquals(lhs.tabs, rhs.tabs) && MessagesPigeonInternal.deepEquals(lhs.rows, rhs.rows) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions) && MessagesPigeonInternal.deepEquals(lhs.loading, rhs.loading)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1393,6 +1426,9 @@ struct OnyxAppleNativePanel: Hashable, CustomStringConvertible {
     MessagesPigeonInternal.deepHash(value: id, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: message, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: headline, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: eyebrow, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: rowsTitle, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: tabs, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: rows, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: actions, hasher: &hasher)
@@ -1400,7 +1436,7 @@ struct OnyxAppleNativePanel: Hashable, CustomStringConvertible {
   }
 
   public var description: String {
-    return "OnyxAppleNativePanel(id: \(String(describing: id)), title: \(String(describing: title)), message: \(String(describing: message)), tabs: \(String(describing: tabs)), rows: \(String(describing: rows)), actions: \(String(describing: actions)), loading: \(String(describing: loading)))"
+    return "OnyxAppleNativePanel(id: \(String(describing: id)), title: \(String(describing: title)), message: \(String(describing: message)), headline: \(String(describing: headline)), eyebrow: \(String(describing: eyebrow)), rowsTitle: \(String(describing: rowsTitle)), tabs: \(String(describing: tabs)), rows: \(String(describing: rows)), actions: \(String(describing: actions)), loading: \(String(describing: loading)))"
   }
 }
 

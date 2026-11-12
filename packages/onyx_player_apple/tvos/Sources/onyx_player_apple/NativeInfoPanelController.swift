@@ -68,6 +68,24 @@
     private let actionsStack = UIStackView()
     private let messageLabel = UILabel()
     private let spinner = UIActivityIndicatorView(style: .large)
+    /// La ligne des onglets, en haut de la colonne des lignes.
+    private let header = UIStackView()
+    /// La colonne de présentation d'un panneau qui a un `headline`
+    /// (Regarder ensemble) : une carte à gauche, avec la petite ligne, le
+    /// grand texte, le paragraphe et les boutons. Les lignes passent à
+    /// droite, sous leur titre. Sans elle, le panneau n'avait qu'un
+    /// paragraphe et un bouton au bout de la ligne, sur toute la largeur de
+    /// l'écran.
+    private let lead = UIView()
+    /// La carte de présentation puis la colonne des lignes, côte à côte.
+    private let root = UIStackView()
+    private let eyebrowLabel = UILabel()
+    private let headlineLabel = UILabel()
+    private let leadMessageLabel = UILabel()
+    private let leadSpinner = UIActivityIndicatorView(style: .medium)
+    private let leadActionsRow = UIStackView()
+    private let rowsTitleLabel = UILabel()
+    private var actionsInLead = false
     /// Toute la largeur du panneau, active quand aucune ligne ne prend le
     /// focus (Regarder ensemble, sans séance ou avec ses participants) : le
     /// seul bouton est alors à droite de l'en-tête, hors de la trajectoire
@@ -77,7 +95,8 @@
     private lazy var collection = UICollectionView(frame: .zero, collectionViewLayout: layout(cards: false))
     private var dataSource: UICollectionViewDiffableDataSource<Int, String>?
     private var rows: [String: OnyxAppleNativePanelRow] = [:]
-    private var cards: Bool?
+    /// La disposition posée sur la grille (cartes ou texte, et ses colonnes).
+    private var layoutKey: String?
     private var liveStats: [String: String] = [:]
     private var statsTimer: Timer?
     /// Le focus entre une fois sur la ligne en cours, puis reste où
@@ -118,14 +137,46 @@
       tabsStack.spacing = 16
       actionsStack.axis = .horizontal
       actionsStack.spacing = 16
-      let header = UIStackView(arrangedSubviews: [tabsStack, UIView(), actionsStack])
       header.axis = .horizontal
       header.alignment = .center
+      header.addArrangedSubview(tabsStack)
+      header.addArrangedSubview(UIView())
+      header.addArrangedSubview(actionsStack)
       messageLabel.font = .preferredFont(forTextStyle: .callout)
       messageLabel.textColor = UIColor(white: 1, alpha: 0.8)
       // Sans limite : l'erreur suit le texte d'accueil, et trois lignes la
       // coupaient, si bien qu'un échec ne se voyait pas.
       messageLabel.numberOfLines = 0
+      rowsTitleLabel.font = .preferredFont(forTextStyle: .headline)
+      rowsTitleLabel.textColor = .white
+
+      eyebrowLabel.font = .preferredFont(forTextStyle: .caption1)
+      eyebrowLabel.textColor = UIColor(white: 1, alpha: 0.6)
+      headlineLabel.textColor = .white
+      headlineLabel.numberOfLines = 2
+      headlineLabel.adjustsFontSizeToFitWidth = true
+      headlineLabel.minimumScaleFactor = 0.5
+      leadMessageLabel.font = .preferredFont(forTextStyle: .body)
+      leadMessageLabel.textColor = UIColor(white: 1, alpha: 0.75)
+      leadMessageLabel.numberOfLines = 0
+      leadSpinner.color = .white
+      leadActionsRow.axis = .horizontal
+      leadActionsRow.spacing = 20
+      leadActionsRow.alignment = .center
+      leadActionsRow.addArrangedSubview(leadSpinner)
+      leadActionsRow.addArrangedSubview(UIView())
+      let leadStack = UIStackView(arrangedSubviews: [
+        eyebrowLabel, headlineLabel, leadMessageLabel, leadActionsRow,
+      ])
+      leadStack.axis = .vertical
+      leadStack.spacing = 14
+      leadStack.setCustomSpacing(6, after: eyebrowLabel)
+      leadStack.setCustomSpacing(28, after: leadMessageLabel)
+      leadStack.translatesAutoresizingMaskIntoConstraints = false
+      lead.backgroundColor = UIColor(white: 1, alpha: 0.08)
+      lead.layer.cornerRadius = 28
+      lead.layer.cornerCurve = .continuous
+      lead.addSubview(leadStack)
 
       collection.backgroundColor = .clear
       collection.delegate = self
@@ -140,12 +191,17 @@
         return cell
       }
 
-      let column = UIStackView(arrangedSubviews: [header, messageLabel, collection])
-      column.axis = .vertical
-      column.spacing = 20
-      column.translatesAutoresizingMaskIntoConstraints = false
+      let rowsColumn = UIStackView(arrangedSubviews: [header, messageLabel, rowsTitleLabel, collection])
+      rowsColumn.axis = .vertical
+      rowsColumn.spacing = 20
+      // La carte n'entre dans la pile que pour un panneau qui en a une
+      // (`render`) : masquée, sa largeur fixe se battrait avec la pile.
+      root.addArrangedSubview(rowsColumn)
+      root.axis = .horizontal
+      root.spacing = 48
+      root.translatesAutoresizingMaskIntoConstraints = false
       spinner.translatesAutoresizingMaskIntoConstraints = false
-      view.addSubview(column)
+      view.addSubview(root)
       view.addSubview(spinner)
       view.addLayoutGuide(actionsFocusGuide)
       NSLayoutConstraint.activate([
@@ -153,10 +209,16 @@
         actionsFocusGuide.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         actionsFocusGuide.leadingAnchor.constraint(equalTo: view.leadingAnchor),
         actionsFocusGuide.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-        column.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
-        column.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
-        column.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-        column.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+        root.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+        root.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+        root.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+        root.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+        lead.widthAnchor.constraint(equalToConstant: 720),
+        leadStack.leadingAnchor.constraint(equalTo: lead.leadingAnchor, constant: 40),
+        leadStack.trailingAnchor.constraint(equalTo: lead.trailingAnchor, constant: -40),
+        leadStack.centerYAnchor.constraint(equalTo: lead.centerYAnchor),
+        leadStack.topAnchor.constraint(greaterThanOrEqualTo: lead.topAnchor, constant: 32),
+        leadStack.bottomAnchor.constraint(lessThanOrEqualTo: lead.bottomAnchor, constant: -32),
         // Au centre du panneau, pas de la grille : vide pendant l'attente,
         // elle est masquée et la pile la réduit à rien, roue comprise.
         spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -192,6 +254,7 @@
     // MARK: - Rendu
 
     private func render(old: OnyxAppleNativePanel?) {
+      let hasLead = panel.headline != nil
       if old?.tabs.map({ [$0.id, $0.label] }) != panel.tabs.map({ [$0.id, $0.label] }) {
         rebuild(tabsStack, with: panel.tabs.map { ($0.id, $0.label) }) { [weak self] id in
           self?.onGesture(.tab(id))
@@ -205,14 +268,68 @@
           self?.onGesture(.action(id))
         }
       }
-      messageLabel.text = panel.message
-      messageLabel.isHidden = panel.message == nil
-      if panel.loading { spinner.startAnimating() } else { spinner.stopAnimating() }
+      // Le bouton qui ouvre une séance est celui du panneau : plein. Celui
+      // qui la quitte reste discret, à côté du code.
+      let prominent = hasLead && panel.eyebrow == nil
+      for (button, action) in zip(actionsStack.arrangedSubviews.compactMap { $0 as? UIButton }, panel.actions) {
+        button.configuration = Self.buttonConfiguration(action.label, prominent: prominent, icon: action.icon)
+        button.isEnabled = !panel.loading
+      }
+      placeActions(inLead: hasLead)
+
+      if hasLead, lead.superview == nil {
+        root.insertArrangedSubview(lead, at: 0)
+      } else if !hasLead, lead.superview != nil {
+        lead.removeFromSuperview()
+      }
+      eyebrowLabel.text = panel.eyebrow?.uppercased()
+      eyebrowLabel.isHidden = panel.eyebrow == nil
+      renderHeadline()
+      leadMessageLabel.text = panel.message
+      leadMessageLabel.isHidden = panel.message == nil
+      messageLabel.text = hasLead ? nil : panel.message
+      messageLabel.isHidden = hasLead || panel.message == nil
+      rowsTitleLabel.text = panel.rowsTitle
+      rowsTitleLabel.isHidden = panel.rowsTitle == nil
+      header.isHidden = panel.tabs.isEmpty && (hasLead || panel.actions.isEmpty)
+      // Dans la carte, la roue se pose à côté du bouton ; ailleurs, au
+      // centre du panneau.
+      if panel.loading && hasLead { leadSpinner.startAnimating() } else { leadSpinner.stopAnimating() }
+      if panel.loading && !hasLead { spinner.startAnimating() } else { spinner.stopAnimating() }
       renderRows(old: old)
       let firstAction = actionsStack.arrangedSubviews.first
       let rowsTakeFocus = panel.rows.contains(where: \.selectable)
       actionsFocusGuide.preferredFocusEnvironments = firstAction.map { [$0] } ?? []
       actionsFocusGuide.isEnabled = firstAction != nil && !rowsTakeFocus
+    }
+
+    /// Un code de séance s'écrit en chasse fixe, très grand et aéré : on le
+    /// dicte à voix haute. Un titre, en gras de titre.
+    private func renderHeadline() {
+      guard let headline = panel.headline else {
+        headlineLabel.attributedText = nil
+        return
+      }
+      if panel.eyebrow != nil {
+        headlineLabel.font = .monospacedSystemFont(ofSize: 84, weight: .bold)
+        headlineLabel.attributedText = NSAttributedString(string: headline, attributes: [.kern: 10])
+      } else {
+        headlineLabel.font = .systemFont(ofSize: 52, weight: .bold)
+        headlineLabel.attributedText = NSAttributedString(string: headline)
+      }
+    }
+
+    /// Les boutons vont dans la carte de présentation quand il y en a une,
+    /// sinon au bout de la ligne des onglets.
+    private func placeActions(inLead: Bool) {
+      guard inLead != actionsInLead || actionsStack.superview == nil else { return }
+      actionsInLead = inLead
+      actionsStack.removeFromSuperview()
+      if inLead {
+        leadActionsRow.insertArrangedSubview(actionsStack, at: 0)
+      } else {
+        header.addArrangedSubview(actionsStack)
+      }
     }
 
     /// Où le focus entre dans le panneau : la ligne en cours s'il y en a,
@@ -234,9 +351,15 @@
       }
     }
 
-    private static func buttonConfiguration(_ label: String, prominent: Bool) -> UIButton.Configuration {
+    private static func buttonConfiguration(_ label: String, prominent: Bool, icon: String? = nil)
+      -> UIButton.Configuration
+    {
       var configuration: UIButton.Configuration = prominent ? .borderedProminent() : .bordered()
       configuration.title = label
+      if let icon {
+        configuration.image = UIImage(systemName: icon)
+        configuration.imagePadding = 12
+      }
       return configuration
     }
 
@@ -250,9 +373,17 @@
       rows = Dictionary(uniqueKeysWithValues: ordered.map { ($0.id, $0) })
 
       let cards = ordered.contains { $0.imageUrl != nil }
-      if self.cards != cards {
-        self.cards = cards
-        collection.setCollectionViewLayout(layout(cards: cards), animated: false)
+      // À côté de la carte de présentation, la colonne est plus étroite :
+      // trois étapes se lisent l'une sous l'autre, des participants sur
+      // deux colonnes. Ailleurs, trois colonnes (les statistiques).
+      let hasLead = panel.headline != nil
+      let columns = hasLead ? (ordered.count <= 3 ? 1 : 2) : 3
+      let rowHeight: CGFloat = hasLead ? 116 : 96
+      let key = "\(cards)-\(columns)-\(rowHeight)"
+      if layoutKey != key {
+        layoutKey = key
+        collection.setCollectionViewLayout(
+          layout(cards: cards, columns: columns, rowHeight: rowHeight), animated: false)
       }
       var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
       snapshot.appendSections([0])
@@ -270,7 +401,9 @@
       }
     }
 
-    private func layout(cards: Bool) -> UICollectionViewCompositionalLayout {
+    private func layout(cards: Bool, columns: Int = 3, rowHeight: CGFloat = 96)
+      -> UICollectionViewCompositionalLayout
+    {
       if cards {
         let item = NSCollectionLayoutItem(
           layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .fractionalHeight(1)))
@@ -284,11 +417,12 @@
         return UICollectionViewCompositionalLayout(section: section)
       }
       let item = NSCollectionLayoutItem(
-        layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0 / 3), heightDimension: .fractionalHeight(1)))
+        layoutSize: NSCollectionLayoutSize(
+          widthDimension: .fractionalWidth(1.0 / CGFloat(columns)), heightDimension: .fractionalHeight(1)))
       item.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
       let group = NSCollectionLayoutGroup.horizontal(
-        layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(96)),
-        subitems: [item, item, item])
+        layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(rowHeight)),
+        subitems: Array(repeating: item, count: columns))
       return UICollectionViewCompositionalLayout(section: NSCollectionLayoutSection(group: group))
     }
 
@@ -326,6 +460,8 @@
     private static let images = NSCache<NSString, UIImage>()
 
     private let imageView = UIImageView()
+    /// L'initiale d'un participant, le numéro d'une étape.
+    private let badgeLabel = UILabel()
     private let progress = UIProgressView(progressViewStyle: .default)
     private let marker = UIImageView(image: UIImage(systemName: "play.fill"))
     private let titleLabel = UILabel()
@@ -356,17 +492,35 @@
       let titleRow = UIStackView(arrangedSubviews: [marker, titleLabel, detailLabel])
       titleRow.spacing = 10
       titleRow.alignment = .center
+      badgeLabel.font = .systemFont(ofSize: 30, weight: .bold)
+      badgeLabel.textColor = .white
+      badgeLabel.textAlignment = .center
+      badgeLabel.backgroundColor = UIColor(white: 1, alpha: 0.16)
+      badgeLabel.layer.cornerRadius = 30
+      badgeLabel.layer.masksToBounds = true
+      badgeLabel.isHidden = true
+
       let column = UIStackView(arrangedSubviews: [imageView, progress, titleRow, subtitleLabel])
       column.axis = .vertical
       column.spacing = 8
-      column.translatesAutoresizingMaskIntoConstraints = false
-      contentView.addSubview(column)
+      let content = UIStackView(arrangedSubviews: [badgeLabel, column])
+      content.axis = .horizontal
+      content.spacing = 18
+      content.alignment = .center
+      content.translatesAutoresizingMaskIntoConstraints = false
+      contentView.addSubview(content)
+      // Souple : une ligne de texte masque l'image, que la pile réduit à
+      // rien, et un rapport obligatoire s'y opposerait.
+      let ratio = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 9.0 / 16)
+      ratio.priority = UILayoutPriority(999)
       NSLayoutConstraint.activate([
-        column.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-        column.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -12),
-        column.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-        column.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-        imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 9.0 / 16),
+        content.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+        content.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -12),
+        content.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+        content.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+        badgeLabel.widthAnchor.constraint(equalToConstant: 60),
+        badgeLabel.heightAnchor.constraint(equalToConstant: 60),
+        ratio,
       ])
     }
 
@@ -379,6 +533,8 @@
       subtitleLabel.isHidden = row.subtitle == nil
       detailLabel.text = detail
       detailLabel.isHidden = detail == nil
+      badgeLabel.text = row.badge
+      badgeLabel.isHidden = row.badge == nil
       marker.isHidden = !row.selected
       progress.isHidden = row.progress == nil
       progress.progress = Float(row.progress ?? 0)
