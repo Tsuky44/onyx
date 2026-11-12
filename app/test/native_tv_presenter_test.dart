@@ -339,6 +339,19 @@ void main() {
           ['forward.fill', 'forward.end.fill']);
     });
 
+    test('le logo du titre passe au natif, qui le pose en haut à gauche', () {
+      // Celui de la série pour un épisode, comme dans l'interface Onyx.
+      final spec = NativeTvSpecBuilder.build(const NativeTvState(
+        title: 'Severance',
+        logoUrl: 'https://image.tmdb.org/t/p/w500/logo.png',
+        rate: 1.0,
+        rates: [1.0],
+        mode: VideoDisplayMode.original,
+      ));
+      expect(spec.logoUrl, 'https://image.tmdb.org/t/p/w500/logo.png');
+      expect(NativeTvSpecBuilder.build(_state()).logoUrl, isNull);
+    });
+
     test('sans segment ni générique, aucune action ; chacune seule suffit', () {
       expect(NativeTvSpecBuilder.build(_state()).actions, isEmpty);
       final next =

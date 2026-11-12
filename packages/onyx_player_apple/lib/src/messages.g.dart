@@ -1516,6 +1516,7 @@ class OnyxAppleNativeSpec {
     required this.title,
     this.subtitle,
     this.posterUrl,
+    this.logoUrl,
     this.overview,
     required this.settingsLabel,
     required this.menus,
@@ -1535,6 +1536,11 @@ class OnyxAppleNativeSpec {
 
   /// L'affiche, en URL absolue (avec le ticket d'image s'il en faut un).
   String? posterUrl;
+
+  /// Le logo du titre (celui de la série pour un épisode), en URL absolue :
+  /// posé en haut à gauche de l'image tant que la barre de transport est à
+  /// l'écran, comme dans l'interface Onyx.
+  String? logoUrl;
 
   /// Le synopsis (`description` est réservé en Swift).
   String? overview;
@@ -1581,6 +1587,7 @@ class OnyxAppleNativeSpec {
       title,
       subtitle,
       posterUrl,
+      logoUrl,
       overview,
       settingsLabel,
       menus,
@@ -1604,17 +1611,18 @@ class OnyxAppleNativeSpec {
       title: result[0]! as String,
       subtitle: result[1] as String?,
       posterUrl: result[2] as String?,
-      overview: result[3] as String?,
-      settingsLabel: result[4]! as String,
-      menus: (result[5]! as List<Object?>).cast<OnyxAppleNativeMenu>(),
-      actions: (result[6]! as List<Object?>).cast<OnyxAppleNativeAction>(),
-      chapters: (result[7]! as List<Object?>).cast<OnyxAppleNativeChapter>(),
-      infoActions: (result[8]! as List<Object?>).cast<OnyxAppleNativeAction>(),
-      nextUp: result[9] as OnyxAppleNativeNextUp?,
-      prompt: result[10] as OnyxAppleNativePrompt?,
-      panels: (result[11]! as List<Object?>).cast<OnyxAppleNativePanel>(),
-      toast: result[12] as String?,
-      interceptSeeks: result[13]! as bool,
+      logoUrl: result[3] as String?,
+      overview: result[4] as String?,
+      settingsLabel: result[5]! as String,
+      menus: (result[6]! as List<Object?>).cast<OnyxAppleNativeMenu>(),
+      actions: (result[7]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      chapters: (result[8]! as List<Object?>).cast<OnyxAppleNativeChapter>(),
+      infoActions: (result[9]! as List<Object?>).cast<OnyxAppleNativeAction>(),
+      nextUp: result[10] as OnyxAppleNativeNextUp?,
+      prompt: result[11] as OnyxAppleNativePrompt?,
+      panels: (result[12]! as List<Object?>).cast<OnyxAppleNativePanel>(),
+      toast: result[13] as String?,
+      interceptSeeks: result[14]! as bool,
     );
   }
 
@@ -1627,7 +1635,7 @@ class OnyxAppleNativeSpec {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(posterUrl, other.posterUrl) && _deepEquals(overview, other.overview) && _deepEquals(settingsLabel, other.settingsLabel) && _deepEquals(menus, other.menus) && _deepEquals(actions, other.actions) && _deepEquals(chapters, other.chapters) && _deepEquals(infoActions, other.infoActions) && _deepEquals(nextUp, other.nextUp) && _deepEquals(prompt, other.prompt) && _deepEquals(panels, other.panels) && _deepEquals(toast, other.toast) && _deepEquals(interceptSeeks, other.interceptSeeks);
+    return _deepEquals(title, other.title) && _deepEquals(subtitle, other.subtitle) && _deepEquals(posterUrl, other.posterUrl) && _deepEquals(logoUrl, other.logoUrl) && _deepEquals(overview, other.overview) && _deepEquals(settingsLabel, other.settingsLabel) && _deepEquals(menus, other.menus) && _deepEquals(actions, other.actions) && _deepEquals(chapters, other.chapters) && _deepEquals(infoActions, other.infoActions) && _deepEquals(nextUp, other.nextUp) && _deepEquals(prompt, other.prompt) && _deepEquals(panels, other.panels) && _deepEquals(toast, other.toast) && _deepEquals(interceptSeeks, other.interceptSeeks);
   }
 
   @override
@@ -1636,7 +1644,7 @@ class OnyxAppleNativeSpec {
 
   @override
   String toString() {
-    return 'OnyxAppleNativeSpec(title: $title, subtitle: $subtitle, posterUrl: $posterUrl, overview: $overview, settingsLabel: $settingsLabel, menus: $menus, actions: $actions, chapters: $chapters, infoActions: $infoActions, nextUp: $nextUp, prompt: $prompt, panels: $panels, toast: $toast, interceptSeeks: $interceptSeeks)';
+    return 'OnyxAppleNativeSpec(title: $title, subtitle: $subtitle, posterUrl: $posterUrl, logoUrl: $logoUrl, overview: $overview, settingsLabel: $settingsLabel, menus: $menus, actions: $actions, chapters: $chapters, infoActions: $infoActions, nextUp: $nextUp, prompt: $prompt, panels: $panels, toast: $toast, interceptSeeks: $interceptSeeks)';
   }
 }
 

@@ -5,7 +5,8 @@
   sont déduites, pas observées**, et se confirment au prochain essai.
 - **Date :** 2026-11-12
 - **Portée :** `packages/onyx_player_apple/` (`pigeons/messages.dart`, `NativePlayerPresenter.swift`,
-  `NativeInfoPanelController.swift`, `AetherPlayer.swift`, `PlayerHost.swift`),
+  `NativeInfoPanelController.swift`, `NativeOverlayView.swift`, `AetherPlayer.swift`,
+  `PlayerHost.swift`),
   `app/lib/screens/player/playback/native_tv_presenter.dart`, `native_tv_panels.dart`,
   `native_tv_spec.dart`, `app/lib/screens/player/player_screen_native_tv.dart`,
   `player_screen_remote.dart`, `hooks/use_player_controller.dart`.
@@ -53,6 +54,13 @@ d'image, peut aussi ne jamais venir, et tout ce qui l'attend avec lui.
    initiale. Avant, un paragraphe et un bouton au bout de la ligne, sur un panneau large comme l'écran.
 7. **Sous l'écran natif, le doigt sur le pavé n'est plus lu par le lecteur Flutter**
    (`_handleTouchpadMove`) : la barre d'AVKit le suit déjà.
+8. **Le logo du titre en haut à gauche, avec la barre de transport** (demandé le même jour : « comme
+   sur l'autre lecteur »). `OnyxAppleNativeSpec.logoUrl` porte le logo que le chrome d'Onyx montre déjà
+   (`_mediaLogoUrl` : celui de la série pour un épisode). `NativeOverlayView` le pose dans le
+   `contentOverlayView`, à 80 pt des bords, 96 pt de haut, et le montre dans les animations coordonnées
+   d'AVKit (`willTransitionToVisibilityOfTransportBar`) : il apparaît et s'efface avec la barre.
+   L'ADR-0105 rangeait « le logo du titre » parmi l'impossible : AVKit n'a pas de place pour lui dans sa
+   barre, mais la couche de contenu, elle, est à nous.
 
 ## Conséquences
 
@@ -62,7 +70,7 @@ d'image, peut aussi ne jamais venir, et tout ce qui l'attend avec lui.
 - **Si `.overFullScreen` posait un souci à l'écran** (la vue de Flutter visible pendant une
   transition, le focus qui ne revient pas), le point 2 suffit à tenir la promesse : la ligne se retire
   sans rien casser d'autre.
-- Le contrat Pigeon gagne cinq champs facultatifs ; `Messages.g.swift` et `messages.g.dart` sont
+- Le contrat Pigeon gagne six champs facultatifs ; `Messages.g.swift` et `messages.g.dart` sont
   régénérés (Pigeon 28.1.0), `tvos/` recopié.
 - Épinglé par `test/native_tv_presenter_test.dart` (le rappel, les symboles) et
   `test/native_tv_parity_test.dart` (le panneau). Le Swift n'a pas de test.

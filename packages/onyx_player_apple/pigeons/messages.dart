@@ -555,6 +555,7 @@ class OnyxAppleNativeSpec {
     required this.interceptSeeks,
     this.subtitle,
     this.posterUrl,
+    this.logoUrl,
     this.overview,
     this.nextUp,
     this.prompt,
@@ -566,6 +567,11 @@ class OnyxAppleNativeSpec {
 
   /// L'affiche, en URL absolue (avec le ticket d'image s'il en faut un).
   final String? posterUrl;
+
+  /// Le logo du titre (celui de la série pour un épisode), en URL absolue :
+  /// posé en haut à gauche de l'image tant que la barre de transport est à
+  /// l'écran, comme dans l'interface Onyx.
+  final String? logoUrl;
   /// Le synopsis (`description` est réservé en Swift).
   final String? overview;
 

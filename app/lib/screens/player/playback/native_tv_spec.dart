@@ -25,6 +25,7 @@ class NativeTvState {
     required this.title,
     this.subtitle,
     this.posterUrl,
+    this.logoUrl,
     this.overview,
     required this.rate,
     required this.rates,
@@ -53,6 +54,9 @@ class NativeTvState {
   final String title;
   final String? subtitle;
   final String? posterUrl;
+
+  /// Le logo du titre, celui que l'interface Onyx montre en haut à gauche.
+  final String? logoUrl;
   final String? overview;
   final double rate;
   final List<double> rates;
@@ -276,6 +280,7 @@ abstract final class NativeTvSpecBuilder {
       title: state.title,
       subtitle: state.subtitle,
       posterUrl: state.posterUrl,
+      logoUrl: state.logoUrl,
       overview: state.overview,
       // Le libellé du bouton de l'interface Onyx (`onyx_controls_layer.dart`).
       settingsLabel: tr('Réglages'),

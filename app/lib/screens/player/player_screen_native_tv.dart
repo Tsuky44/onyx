@@ -118,6 +118,10 @@ extension _PlayerNativeTv on _PlayerScreenState {
       title: _info.showTitle,
       subtitle: _info.overline,
       posterUrl: imageOf(_info.item?.displayPosterUrl ?? media.posterUrl),
+      // Le même logo que le chrome d'Onyx (`_loadMediaLogo`), en URL absolue :
+      // c'est Swift qui le télécharge.
+      logoUrl:
+          logoImageUrl(_mediaLogoUrl, serverBaseUrl: _apiClient?.baseUrl),
       overview: media.overview,
       rate: _playbackRate,
       rates: _PlayerScreenState._playbackRates,

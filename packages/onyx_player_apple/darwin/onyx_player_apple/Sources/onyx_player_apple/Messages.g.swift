@@ -1451,6 +1451,10 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
   var subtitle: String? = nil
   /// L'affiche, en URL absolue (avec le ticket d'image s'il en faut un).
   var posterUrl: String? = nil
+  /// Le logo du titre (celui de la série pour un épisode), en URL absolue :
+  /// posé en haut à gauche de l'image tant que la barre de transport est à
+  /// l'écran, comme dans l'interface Onyx.
+  var logoUrl: String? = nil
   /// Le synopsis (`description` est réservé en Swift).
   var overview: String? = nil
   /// Le titre du bouton Réglages (engrenage) qui porte [menus] dans la barre
@@ -1487,22 +1491,24 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
     let title = pigeonVar_list[0] as! String
     let subtitle: String? = nilOrValue(pigeonVar_list[1])
     let posterUrl: String? = nilOrValue(pigeonVar_list[2])
-    let overview: String? = nilOrValue(pigeonVar_list[3])
-    let settingsLabel = pigeonVar_list[4] as! String
-    let menus = pigeonVar_list[5] as! [OnyxAppleNativeMenu]
-    let actions = pigeonVar_list[6] as! [OnyxAppleNativeAction]
-    let chapters = pigeonVar_list[7] as! [OnyxAppleNativeChapter]
-    let infoActions = pigeonVar_list[8] as! [OnyxAppleNativeAction]
-    let nextUp: OnyxAppleNativeNextUp? = nilOrValue(pigeonVar_list[9])
-    let prompt: OnyxAppleNativePrompt? = nilOrValue(pigeonVar_list[10])
-    let panels = pigeonVar_list[11] as! [OnyxAppleNativePanel]
-    let toast: String? = nilOrValue(pigeonVar_list[12])
-    let interceptSeeks = pigeonVar_list[13] as! Bool
+    let logoUrl: String? = nilOrValue(pigeonVar_list[3])
+    let overview: String? = nilOrValue(pigeonVar_list[4])
+    let settingsLabel = pigeonVar_list[5] as! String
+    let menus = pigeonVar_list[6] as! [OnyxAppleNativeMenu]
+    let actions = pigeonVar_list[7] as! [OnyxAppleNativeAction]
+    let chapters = pigeonVar_list[8] as! [OnyxAppleNativeChapter]
+    let infoActions = pigeonVar_list[9] as! [OnyxAppleNativeAction]
+    let nextUp: OnyxAppleNativeNextUp? = nilOrValue(pigeonVar_list[10])
+    let prompt: OnyxAppleNativePrompt? = nilOrValue(pigeonVar_list[11])
+    let panels = pigeonVar_list[12] as! [OnyxAppleNativePanel]
+    let toast: String? = nilOrValue(pigeonVar_list[13])
+    let interceptSeeks = pigeonVar_list[14] as! Bool
 
     return OnyxAppleNativeSpec(
       title: title,
       subtitle: subtitle,
       posterUrl: posterUrl,
+      logoUrl: logoUrl,
       overview: overview,
       settingsLabel: settingsLabel,
       menus: menus,
@@ -1521,6 +1527,7 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
       title,
       subtitle,
       posterUrl,
+      logoUrl,
       overview,
       settingsLabel,
       menus,
@@ -1538,7 +1545,7 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.posterUrl, rhs.posterUrl) && MessagesPigeonInternal.deepEquals(lhs.overview, rhs.overview) && MessagesPigeonInternal.deepEquals(lhs.settingsLabel, rhs.settingsLabel) && MessagesPigeonInternal.deepEquals(lhs.menus, rhs.menus) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions) && MessagesPigeonInternal.deepEquals(lhs.chapters, rhs.chapters) && MessagesPigeonInternal.deepEquals(lhs.infoActions, rhs.infoActions) && MessagesPigeonInternal.deepEquals(lhs.nextUp, rhs.nextUp) && MessagesPigeonInternal.deepEquals(lhs.prompt, rhs.prompt) && MessagesPigeonInternal.deepEquals(lhs.panels, rhs.panels) && MessagesPigeonInternal.deepEquals(lhs.toast, rhs.toast) && MessagesPigeonInternal.deepEquals(lhs.interceptSeeks, rhs.interceptSeeks)
+    return MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.subtitle, rhs.subtitle) && MessagesPigeonInternal.deepEquals(lhs.posterUrl, rhs.posterUrl) && MessagesPigeonInternal.deepEquals(lhs.logoUrl, rhs.logoUrl) && MessagesPigeonInternal.deepEquals(lhs.overview, rhs.overview) && MessagesPigeonInternal.deepEquals(lhs.settingsLabel, rhs.settingsLabel) && MessagesPigeonInternal.deepEquals(lhs.menus, rhs.menus) && MessagesPigeonInternal.deepEquals(lhs.actions, rhs.actions) && MessagesPigeonInternal.deepEquals(lhs.chapters, rhs.chapters) && MessagesPigeonInternal.deepEquals(lhs.infoActions, rhs.infoActions) && MessagesPigeonInternal.deepEquals(lhs.nextUp, rhs.nextUp) && MessagesPigeonInternal.deepEquals(lhs.prompt, rhs.prompt) && MessagesPigeonInternal.deepEquals(lhs.panels, rhs.panels) && MessagesPigeonInternal.deepEquals(lhs.toast, rhs.toast) && MessagesPigeonInternal.deepEquals(lhs.interceptSeeks, rhs.interceptSeeks)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -1546,6 +1553,7 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
     MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: subtitle, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: posterUrl, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: logoUrl, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: overview, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: settingsLabel, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: menus, hasher: &hasher)
@@ -1560,7 +1568,7 @@ struct OnyxAppleNativeSpec: Hashable, CustomStringConvertible {
   }
 
   public var description: String {
-    return "OnyxAppleNativeSpec(title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), posterUrl: \(String(describing: posterUrl)), overview: \(String(describing: overview)), settingsLabel: \(String(describing: settingsLabel)), menus: \(String(describing: menus)), actions: \(String(describing: actions)), chapters: \(String(describing: chapters)), infoActions: \(String(describing: infoActions)), nextUp: \(String(describing: nextUp)), prompt: \(String(describing: prompt)), panels: \(String(describing: panels)), toast: \(String(describing: toast)), interceptSeeks: \(String(describing: interceptSeeks)))"
+    return "OnyxAppleNativeSpec(title: \(String(describing: title)), subtitle: \(String(describing: subtitle)), posterUrl: \(String(describing: posterUrl)), logoUrl: \(String(describing: logoUrl)), overview: \(String(describing: overview)), settingsLabel: \(String(describing: settingsLabel)), menus: \(String(describing: menus)), actions: \(String(describing: actions)), chapters: \(String(describing: chapters)), infoActions: \(String(describing: infoActions)), nextUp: \(String(describing: nextUp)), prompt: \(String(describing: prompt)), panels: \(String(describing: panels)), toast: \(String(describing: toast)), interceptSeeks: \(String(describing: interceptSeeks)))"
   }
 }
 

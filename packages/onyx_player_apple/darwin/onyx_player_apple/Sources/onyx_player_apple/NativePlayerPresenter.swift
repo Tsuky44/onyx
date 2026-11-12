@@ -291,6 +291,7 @@
       panels?.apply(spec.panels, to: controller)
       nextUp?.apply(spec.nextUp, item: engine.currentAVPlayerItem)
       overlay?.toast = spec.toast
+      overlay?.logoUrl = spec.logoUrl
       syncPrompt()
     }
 
@@ -750,6 +751,10 @@
       with coordinator: any AVPlayerViewControllerAnimationCoordinator
     ) {
       if visible { noteActivity() }
+      // Le logo du titre apparaît et s'efface avec la barre.
+      let overlay = self.overlay
+      coordinator.addCoordinatedAnimations(
+        { MainActor.assumeIsolated { overlay?.chromeVisible = visible } }, completion: nil)
     }
 
     func playerViewController(
