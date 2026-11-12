@@ -1085,20 +1085,20 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/library_screen.dart": {
-    "mtime": 1794482460.0599396,
-    "seen": 1794487845.2701392,
-    "ast_hash": "a7b4f1465bb79c7aa7b125d3a994c0c4",
+    "mtime": 1794515595.6879988,
+    "seen": 1794515928.753778,
+    "ast_hash": "6b0e7cc23c0f9a11007cde332dc5351e",
     "semantic_hash": ""
   },
   "app/lib/screens/library/movie_detail_screen.dart": {
-    "mtime": 1794482460.0599396,
-    "seen": 1794487845.2701418,
+    "mtime": 1794515174.5243251,
+    "seen": 1794515928.75378,
     "ast_hash": "22aecee41815e08432525adf5f703931",
     "semantic_hash": ""
   },
   "app/lib/screens/library/person_detail_screen.dart": {
-    "mtime": 1794482460.0599396,
-    "seen": 1794487845.270145,
+    "mtime": 1794515174.5243251,
+    "seen": 1794515928.7537813,
     "ast_hash": "03e766fcec0f542c4b6df2eb1f22943b",
     "semantic_hash": ""
   },
@@ -1115,32 +1115,32 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/season_detail_screen.dart": {
-    "mtime": 1794482460.0599396,
-    "seen": 1794487845.270192,
+    "mtime": 1794515174.5243251,
+    "seen": 1794515928.753785,
     "ast_hash": "835c1daf0bf0efb7de257283a3f7120e",
     "semantic_hash": ""
   },
   "app/lib/screens/library/show_detail_screen.dart": {
-    "mtime": 1794482460.0599396,
-    "seen": 1794487845.2701967,
+    "mtime": 1794515174.5243251,
+    "seen": 1794515928.7537858,
     "ast_hash": "33a51fdd7e5c142d77b68823fdfde4e1",
     "semantic_hash": ""
   },
   "app/lib/screens/library/show_episode_actions.dart": {
-    "mtime": 1794482460.0599396,
-    "seen": 1794487845.2702003,
+    "mtime": 1794515174.5243251,
+    "seen": 1794515928.7537866,
     "ast_hash": "c9a5ccb5ec6f4d094755df2d2caca880",
     "semantic_hash": "c9a5ccb5ec6f4d094755df2d2caca880"
   },
   "app/lib/screens/library/widgets/catalog_header.dart": {
-    "mtime": 1794482460.0599396,
-    "seen": 1794487845.2702076,
-    "ast_hash": "d349533c36f95e40ba539ede03c4f843",
+    "mtime": 1794515148.5010037,
+    "seen": 1794515928.7537894,
+    "ast_hash": "ecc931706f010db40492d91e4ed0ea5c",
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/missing_season_banner.dart": {
-    "mtime": 1794482460.0605419,
-    "seen": 1794487845.2702107,
+    "mtime": 1794515174.5243251,
+    "seen": 1794515928.7537935,
     "ast_hash": "41eb883b4774958cf42aeb90dfe7eea7",
     "semantic_hash": ""
   },
@@ -3443,9 +3443,9 @@
     "semantic_hash": "9b36aaa513dafaca366cf6fd4f09f4c2"
   },
   "app/lib/widgets/global/media_card.dart": {
-    "mtime": 1794482460.0780346,
-    "seen": 1794487845.271703,
-    "ast_hash": "69eb21d5f9a8d361d8d4861a5298955f",
+    "mtime": 1794515072.1549203,
+    "seen": 1794515928.754376,
+    "ast_hash": "300775e5c8c70d386a8774cdfe770921",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/media_detail_widgets.dart": {
@@ -3533,9 +3533,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_card.dart": {
-    "mtime": 1794487165.337627,
-    "seen": 1794487845.2717493,
-    "ast_hash": "709407768e7f2e0df4d817171ac9b6d2",
+    "mtime": 1794515072.1546476,
+    "seen": 1794515928.7543917,
+    "ast_hash": "f1a9b76e73558502ea45015b377851b6",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_flight.dart": {
@@ -13074,9 +13074,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/shell/shell_tv_header.dart": {
-    "mtime": 1794514116.681384,
-    "seen": 1794514595.3559363,
-    "ast_hash": "69fa74efee9c593e1c89801c1357479a",
+    "mtime": 1794515072.1538312,
+    "seen": 1794515928.7540739,
+    "ast_hash": "9f8b804a88eae177aa06db992880b699",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/tv_tab_bar.dart": {
@@ -13086,9 +13086,9 @@
     "semantic_hash": ""
   },
   "app/test/shell_tv_header_test.dart": {
-    "mtime": 1794514256.78114,
-    "seen": 1794514595.3564248,
-    "ast_hash": "cfca6e571ed145727895d81c53fda240",
+    "mtime": 1794515183.1529117,
+    "seen": 1794515928.7546842,
+    "ast_hash": "6cacc515b22e9bf54b405375e85ca932",
     "semantic_hash": ""
   },
   "app/test/tv_living_room_style_test.dart": {
@@ -13104,9 +13104,9 @@
     "semantic_hash": ""
   },
   "docs/adr/0117-la-barre-d-onglets-d-un-televiseur-est-une-pilule-centree.md": {
-    "mtime": 1794514334.3222325,
-    "seen": 1794514595.3574302,
-    "ast_hash": "2eeb4e301cdb1964063d727f5bb2a5d9",
+    "mtime": 1794515671.828644,
+    "seen": 1794515928.7557251,
+    "ast_hash": "4168eaff46d7196fa2bb258f33c9abf3",
     "semantic_hash": ""
   },
   "docs/adr/0118-le-style-de-salon-du-televiseur.md": {
@@ -13143,6 +13143,30 @@
     "mtime": 1794514354.031331,
     "seen": 1794514595.3574584,
     "ast_hash": "f58a651b50476699719d89ee62cefe39",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/library/widgets/library_spotlight.dart": {
+    "mtime": 1794515595.6876888,
+    "seen": 1794515928.753791,
+    "ast_hash": "0c8164e03ef05fd764bbaeeef0f7d0b5",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/library/widgets/library_tv_view.dart": {
+    "mtime": 1794515581.6827056,
+    "seen": 1794515928.7537923,
+    "ast_hash": "5787ecfabbf43b3d0e0eadd40dbcac99",
+    "semantic_hash": ""
+  },
+  "app/test/library_tv_view_test.dart": {
+    "mtime": 1794515625.8478386,
+    "seen": 1794515928.7545502,
+    "ast_hash": "8fd0cec424afb5854e5d028807d065c0",
+    "semantic_hash": ""
+  },
+  "docs/adr/0123-la-bibliotheque-d-un-televiseur-presente-le-titre-focalise-en-tete.md": {
+    "mtime": 1794515679.6786368,
+    "seen": 1794515928.755732,
+    "ast_hash": "052bcdaa0a19ad670a933285954846f0",
     "semantic_hash": ""
   }
 }
