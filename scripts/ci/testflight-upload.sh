@@ -55,11 +55,30 @@ cat > "$PLIST" <<'EOF'
 </plist>
 EOF
 
-xcodebuild -exportArchive \
+# App Store Connect refuse de clore un envoi tant qu'il traite le precedent
+# (« This resource is currently being updated », vu le 2026-11-12 sur le
+# build 135, envoye 17 minutes apres le 134) : xcodebuild abandonne au bout de
+# trois secondes, et l'etape, qui ne bloque pas la release, laisse le job vert
+# sans que le build arrive sur TestFlight. Le traitement d'Apple dure quelques
+# minutes : on attend et on renvoie, trois essais en tout.
+ATTEMPTS="${TESTFLIGHT_ATTEMPTS:-3}"
+PAUSE="${TESTFLIGHT_RETRY_PAUSE:-150}"
+
+attempt=1
+until xcodebuild -exportArchive \
   -archivePath "$ARCHIVE" \
   -exportOptionsPlist "$PLIST" \
   -exportPath "$WORK/export" \
   -allowProvisioningUpdates \
   -authenticationKeyPath "$KEY_PATH" \
   -authenticationKeyID "$ASC_KEY_ID" \
-  -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+  -authenticationKeyIssuerID "$ASC_ISSUER_ID"; do
+  if (( attempt >= ATTEMPTS )); then
+    echo "::error::Envoi TestFlight en echec apres $attempt essais." >&2
+    exit 1
+  fi
+  echo "::warning::Envoi TestFlight en echec (essai $attempt/$ATTEMPTS), nouvel essai dans ${PAUSE} s." >&2
+  rm -rf "$WORK/export"
+  sleep "$PAUSE"
+  attempt=$((attempt + 1))
+done
