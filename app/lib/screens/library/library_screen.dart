@@ -14,7 +14,9 @@ import '../../widgets/global/media_card.dart';
 import '../../widgets/global/poster_grid_zoom_region.dart';
 import '../../widgets/global/skeleton.dart';
 import '../shell/shell_tabs.dart';
+import '../../tv/tv_mode.dart';
 import 'widgets/catalog_header.dart';
+import 'widgets/library_tv_view.dart';
 
 enum _SortOption { recent, title, progress }
 
@@ -23,9 +25,6 @@ const Map<_SortOption, String> _sortLabels = {
   _SortOption.title: 'A → Z',
   _SortOption.progress: 'En cours',
 };
-
-/// Une affiche de la grille : un film avec sa progression, ou une série.
-typedef _Entry = ({Media media, HomeMediaItem? movie});
 
 /// L'icône d'une bibliothèque, d'après ce qu'elle contient. [selected] rend la
 /// variante pleine, celle d'un onglet actif.
@@ -77,8 +76,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     });
   }
 
-  List<_Entry> _entries(LibraryProvider lp) {
-    final List<_Entry> entries = _isShows
+  List<LibraryEntry> _entries(LibraryProvider lp) {
+    final List<LibraryEntry> entries = _isShows
         ? [
             for (final show in lp.showsOf(widget.library))
               (media: show, movie: null)
@@ -94,7 +93,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       case _SortOption.recent:
         entries.sort((a, b) => b.media.createdAt.compareTo(a.media.createdAt));
       case _SortOption.progress:
-        double progress(_Entry entry) {
+        double progress(LibraryEntry entry) {
           final movie = entry.movie;
           if (movie == null) return 0;
           return movie.isFinished ? -1.0 : movie.percentWatched;
@@ -118,6 +117,37 @@ class _LibraryScreenState extends State<LibraryScreen> {
         lp.isLoadingLibrary(library) || !lp.hasLoadedLibrary(library);
     final entries = _entries(lp);
     final count = entries.length;
+    final sortOptions = {
+      for (final option in _sortLabels.entries)
+        // Une série n'a pas de position de lecture à elle.
+        if (!_isShows || option.key != _SortOption.progress)
+          option.key: option.value,
+    };
+
+    // Sur téléviseur, la fiche du titre focalisé en tête et une rangée
+    // dessous (ADR-0123), dès le chargement. L'erreur et la bibliothèque
+    // vide gardent la page commune.
+    if (TvScope.of(context) &&
+        error == null &&
+        (loading || entries.isNotEmpty)) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: LibraryTvView(
+          title: ShellTabs.label(library),
+          countLabel: loading
+              ? null
+              : tr('{0} titre{1}', [count, count > 1 ? 's' : '']),
+          entries: loading ? const [] : entries,
+          order: _sort,
+          embedded: widget.embedded,
+          sortControl: CatalogSortCapsule<_SortOption>(
+            sortOptions: sortOptions,
+            sort: _sort,
+            onSortChanged: (v) => setState(() => _sort = v),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -153,13 +183,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               ? null
                               : tr('{0} titre{1}',
                                   [count, count > 1 ? 's' : '']),
-                          sortOptions: {
-                            for (final option in _sortLabels.entries)
-                              // Une série n'a pas de position de lecture à elle.
-                              if (!_isShows ||
-                                  option.key != _SortOption.progress)
-                                option.key: option.value,
-                          },
+                          sortOptions: sortOptions,
                           sort: _sort,
                           onSortChanged: (v) => setState(() => _sort = v),
                           compact: compact,

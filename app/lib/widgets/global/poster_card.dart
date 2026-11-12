@@ -64,6 +64,11 @@ class PosterCard extends StatefulWidget {
   /// the moment to warm what [onTap] is about to open. See `DetailPrefetch`.
   final VoidCallback? onPrefetch;
 
+  /// Où l'affiche se pose une fois ramenée à l'écran par la télécommande ;
+  /// 0,5 la centre (`TvFocusable.scrollAlignment`). Une grille qui montre une
+  /// seule rangée sous une fiche la cale en haut (ADR-0123).
+  final double scrollAlignment;
+
   const PosterCard({
     super.key,
     required this.posterUrl,
@@ -79,6 +84,7 @@ class PosterCard extends StatefulWidget {
     this.compact = false,
     this.autofocus = false,
     this.onPrefetch,
+    this.scrollAlignment = 0.5,
   });
 
   static const double radius = 12;
@@ -170,6 +176,7 @@ class _PosterCardState extends State<PosterCard> {
       // [PosterLift] soulève déjà l'affiche : un second zoom, de toute la
       // carte, la faisait déborder de la rangée.
       focusScale: 1.0,
+      scrollAlignment: widget.scrollAlignment,
       onFocusChange: (focused) {
         if (_focused == focused) return;
         setState(() => _focused = focused);

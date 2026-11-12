@@ -35,6 +35,14 @@ class MediaCard extends StatelessWidget {
   /// See [PosterCard.autofocus].
   final bool autofocus;
 
+  /// Faux quand l'écran présente déjà le titre pointé ailleurs (la fiche en
+  /// tête d'une bibliothèque sur téléviseur) : le cartouche posé sur
+  /// l'affiche le dirait deux fois.
+  final bool showDetails;
+
+  /// Voir [PosterCard.scrollAlignment].
+  final double scrollAlignment;
+
   const MediaCard({
     super.key,
     required this.media,
@@ -44,6 +52,8 @@ class MediaCard extends StatelessWidget {
     this.onTap,
     this.compact = false,
     this.autofocus = false,
+    this.showDetails = true,
+    this.scrollAlignment = 0.5,
   });
 
   @override
@@ -66,13 +76,16 @@ class MediaCard extends StatelessWidget {
       onPrefetch: () => DetailPrefetch.warm(context, media),
       compact: compact,
       autofocus: autofocus,
+      scrollAlignment: scrollAlignment,
       placeholderIcon: isShow ? AppIcons.series : AppIcons.movie,
-      hoverDetails: PosterCardDetails(
-        title: media.title,
-        typeLabel: isShow ? tr('Série') : tr('Film'),
-        facts: year,
-        overview: media.overview,
-      ),
+      hoverDetails: showDetails
+          ? PosterCardDetails(
+              title: media.title,
+              typeLabel: isShow ? tr('Série') : tr('Film'),
+              facts: year,
+              overview: media.overview,
+            )
+          : null,
       overlays: [
         if (badge != null)
           Positioned(
