@@ -106,6 +106,7 @@ void main() {
             homeProvider: context.watch<HomeProvider>(),
             authProvider: context.watch<AuthProvider>(),
             canDownload: true,
+            canRequestMedia: true,
             nodeFor: (tab) => nodes.putIfAbsent(tab, FocusNode.new),
           ),
         ),

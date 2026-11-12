@@ -31,6 +31,7 @@ import '../settings/tv_pairing_screen.dart';
 import '../downloads/downloads_screen.dart';
 import '../home/home_screen.dart';
 import '../library/library_screen.dart';
+import '../requests/request_availability.dart';
 import '../requests/requests_screen.dart';
 import '../lists/lists_screen.dart';
 import 'mobile_bottom_nav.dart';
@@ -436,6 +437,7 @@ class _MainShellState extends State<MainShell> {
     final authProvider = Provider.of<AuthProvider>(context);
     final downloads = Provider.of<DownloadManager>(context);
     final canUseLists = Provider.of<WatchListsProvider>(context).isSupported;
+    final canRequest = canRequestMedia(context, listen: true);
 
     // Une session ouverte sur un profil en cache n'a rien à montrer d'autre que
     // le disque : chaque autre onglet ne saurait afficher qu'une erreur. On les
@@ -480,8 +482,9 @@ class _MainShellState extends State<MainShell> {
           ShellTabs.library(library),
           LibraryScreen(library: library, embedded: isWide),
         ),
-      ShellTabs.requests:
-          _trackScroll(ShellTabs.requests, RequestsScreen(embedded: isWide)),
+      if (canRequest)
+        ShellTabs.requests:
+            _trackScroll(ShellTabs.requests, RequestsScreen(embedded: isWide)),
       if (canUseLists)
         ShellTabs.lists:
             _trackScroll(ShellTabs.lists, ListsScreen(embedded: isWide)),
@@ -520,7 +523,7 @@ class _MainShellState extends State<MainShell> {
                     selected: selectedTab,
                     onTabSelected: _selectTab,
                     libraries: libraries,
-                    canRequestMedia: authProvider.permissions.requestMedia,
+                    canRequestMedia: canRequest,
                     canDownload: downloads.isSupported,
                     canUseLists: canUseLists,
                   ),
@@ -543,6 +546,7 @@ class _MainShellState extends State<MainShell> {
                   authProvider: authProvider,
                   canDownload: downloads.isSupported,
                   canUseLists: canUseLists,
+                  canRequestMedia: canRequest,
                   nodeFor: _tabNode,
                 ),
               ),

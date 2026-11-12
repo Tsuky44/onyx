@@ -35,6 +35,9 @@ class ShellDesktopHeader extends StatelessWidget {
   /// Le serveur tient des listes (ADR-0070).
   final bool canUseLists;
 
+  /// Le droit request_media et un compagnon réglé ([canRequestMedia]).
+  final bool canRequestMedia;
+
   /// Le nœud de focus d'un onglet, possédé par la coquille.
   final FocusNode Function(String tab) nodeFor;
 
@@ -48,6 +51,7 @@ class ShellDesktopHeader extends StatelessWidget {
     required this.canDownload,
     required this.nodeFor,
     this.canUseLists = false,
+    this.canRequestMedia = false,
   });
 
   Widget _tab(String tab, String label) => GlassNavTab(
@@ -97,9 +101,10 @@ class ShellDesktopHeader extends StatelessWidget {
                       ),
                     ),
                     // The whole request catalog sits behind request_media
-                    // server-side, so an account without it gets no entry
-                    // point either.
-                    if (authProvider.permissions.requestMedia)
+                    // server-side, and asks MediaHub for every request: an
+                    // account without the right, or a server without a
+                    // companion, gets no entry point either.
+                    if (canRequestMedia)
                       TourTarget(
                         anchor: TourAnchor.requests,
                         child: _tab(ShellTabs.requests, tr('Demandes')),

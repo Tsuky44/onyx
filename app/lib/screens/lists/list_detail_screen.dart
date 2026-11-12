@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/tr.dart';
 import '../../models/watch_list.dart';
-import '../../providers/auth_provider.dart';
+import '../requests/request_availability.dart';
 import '../../providers/watch_lists_provider.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_colors.dart';
@@ -70,7 +70,7 @@ class _ListDetailScreenState extends State<ListDetailScreen> {
     final media = item.media;
     if (media != null) {
       await openMediaDetail(cardContext, media.media, item: media);
-    } else if (context.read<AuthProvider>().permissions.requestMedia &&
+    } else if (canRequestMedia(context) &&
         item.tmdbId > 0) {
       // Ce que le serveur n'a pas s'ouvre là où on peut le demander.
       await openRequestDetail(cardContext, item.toRequestItem());

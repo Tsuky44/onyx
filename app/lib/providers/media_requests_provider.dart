@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../models/media_request.dart';
@@ -53,6 +55,9 @@ class MediaRequestsProvider extends ChangeNotifier {
     _loadGeneration++;
     _ahead.clear();
     _access = null;
+    _companionGeneration++;
+    _companionConfigured = null;
+    _checkingCompanion = false;
     _items = const [];
     _type = 'all';
     _query = '';
@@ -205,6 +210,47 @@ class MediaRequestsProvider extends ChangeNotifier {
   }
 
   Future<RequestAccess>? _access;
+
+  /// MediaHub (ou OnyxHub) est réglé sur ce serveur. Sans lui, rien de ce que
+  /// montre l'onglet Demandes ne peut être demandé : la coquille le retire,
+  /// comme sans le droit request_media.
+  ///
+  /// Lu une fois par serveur, au premier appel. Tant que la réponse n'est pas
+  /// là, et après une panne passagère (502, réseau), l'onglet reste : seul le
+  /// 503 « pas de compagnon » du serveur le retire (ADR-0077).
+  bool get companionConfigured {
+    if (_companionConfigured == null && !_checkingCompanion) {
+      unawaited(recheckCompanion());
+    }
+    return _companionConfigured ?? true;
+  }
+
+  bool? _companionConfigured;
+  bool _checkingCompanion = false;
+  int _companionGeneration = 0;
+
+  /// Relit l'état du compagnon, par exemple après l'avoir réglé.
+  Future<void> recheckCompanion() async {
+    final generation = ++_companionGeneration;
+    _checkingCompanion = true;
+    bool configured;
+    try {
+      final access = await apiClient.getRequestAccess();
+      if (generation == _companionGeneration) _access = Future.value(access);
+      configured = true;
+    } on DioException catch (error) {
+      configured = error.response?.statusCode != 503;
+    } catch (_) {
+      // Une réponse illisible ne prouve pas l'absence du compagnon : l'onglet
+      // reste, et ses écrans diront l'erreur.
+      configured = true;
+    }
+    if (generation != _companionGeneration) return;
+    _checkingCompanion = false;
+    if (_companionConfigured == configured) return;
+    _companionConfigured = configured;
+    notifyListeners();
+  }
 
   /// Les releases d'une saison ou d'un épisode (recherche interactive).
   Future<List<RequestRelease>> loadReleases(RequestReleaseTarget target) {

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../providers/media_requests_provider.dart';
 import '../../../services/api_client.dart';
 import '../../../theme/app_colors.dart';
 import '../../../tv/tv_deferred_keyboard.dart';
@@ -141,6 +144,8 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
           );
       if (!mounted) return;
       setState(() => _apply(updated));
+      // L'onglet Demandes paraît ou disparaît avec le compagnon.
+      unawaited(context.read<MediaRequestsProvider>().recheckCompanion());
       showSettingsSnack(
           context, clearKey ? tr('Clé effacée.') : tr('MediaHub enregistré.'));
     } catch (e) {

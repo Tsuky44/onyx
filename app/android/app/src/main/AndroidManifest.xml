@@ -1,7 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Injectée par androidx.work (WorkManager). Onyx n'a aucun service au
+         premier plan : la tâche périodique des alertes tourne en simple tâche
+         de fond. On la retire pour ne pas avoir à la justifier sur Play. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+        tools:node="remove"/>
     <!-- Les vidéos de l'appareil (ADR-0104) : lire les fichiers d'un dossier
          que l'utilisateur a choisi. READ_MEDIA_VIDEO depuis Android 13, la
          permission de stockage d'avant pour les versions plus anciennes. -->

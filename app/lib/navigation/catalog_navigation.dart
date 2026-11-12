@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../models/media_request.dart';
 import '../models/models.dart';
-import '../providers/auth_provider.dart';
+import '../screens/requests/request_availability.dart';
 import '../screens/library/collection_screen.dart';
 import '../screens/library/person_detail_screen.dart';
 import '../screens/requests/request_detail_launch.dart';
@@ -51,9 +50,7 @@ void openCatalogItem(BuildContext cardContext, CatalogItem item) {
 /// Without the request permission — or without a TMDB id to look it up with —
 /// it falls back to telling the user the title is absent.
 void _openRequestFor(BuildContext context, CatalogItem item) {
-  final canRequest =
-      context.read<AuthProvider>().permissions.requestMedia;
-  if (!canRequest || item.tmdbId <= 0) {
+  if (!canRequestMedia(context) || item.tmdbId <= 0) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(tr('« {0} » n’est pas dans ta bibliothèque', [item.title])),
