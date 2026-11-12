@@ -3430,4 +3430,112 @@ const Map<String, String> kEnglish = <String, String>{
       'Full cast',
   'Saga':
       'Collection',
+  'Dossiers, analyse, stockage':
+      'Folders, scanning, storage',
+  'Analyse, stockage':
+      'Scanning, storage',
+  'Impossible de charger le stockage.':
+      'Couldn\'t load storage.',
+  'Impossible de charger ce titre.':
+      'Couldn\'t load this title.',
+  'Ce que chaque film et chaque série occupe sur le disque, qui l’a demandé et qui le regarde. Supprimez ce qui ne sert plus.':
+      'How much disk space each movie and show takes, who requested it and who watches it. Delete what\'s no longer used.',
+  'Sur le disque':
+      'On disk',
+  'Pas vu depuis 6 mois':
+      'Unwatched for 6 months',
+  '{0} titre(s)':
+      '{0} title(s)',
+  'MediaHub n’a pas répondu : les demandes ne s’affichent pas.':
+      'MediaHub didn\'t respond: requests aren\'t shown.',
+  'Type':
+      'Type',
+  'Pas regardé depuis':
+      'Not watched for',
+  'Peu importe':
+      'Any time',
+  '3 mois':
+      '3 months',
+  '6 mois':
+      '6 months',
+  '1 an':
+      '1 year',
+  'Jamais lancé':
+      'Never played',
+  'Plus longtemps oublié':
+      'Longest unwatched',
+  'Ajout récent':
+      'Recently added',
+  'Titre':
+      'Title',
+  '{0} titre(s) · {1}':
+      '{0} title(s) · {1}',
+  'Aucun film ni série dans les bibliothèques.':
+      'No movies or shows in the libraries.',
+  'Aucun titre ne correspond à ces filtres.':
+      'No title matches these filters.',
+  'Afficher {0} de plus':
+      'Show {0} more',
+  '{0} restant(s)':
+      '{0} left',
+  'Jamais lancé · ajouté {0}':
+      'Never played · added {0}',
+  'aujourd’hui':
+      'today',
+  'il y a {0} j':
+      '{0} d ago',
+  'il y a {0} mois':
+      '{0} months ago',
+  'il y a 1 an':
+      '1 year ago',
+  'il y a {0} ans':
+      '{0} years ago',
+  '{0} épisode(s)':
+      '{0} episode(s)',
+  'la saison {0} de {1}':
+      'season {0} of {1}',
+  'Les fichiers ({0}) seront effacés du disque et retirés d’Onyx, pour tous les comptes. C’est définitif.':
+      'The files ({0}) will be erased from disk and removed from Onyx for every account. This can\'t be undone.',
+  'Supprimer du disque':
+      'Delete from disk',
+  '{0} libérés.':
+      '{0} freed.',
+  'La suppression a échoué.':
+      'Deletion failed.',
+  'Aucune saison sur le disque.':
+      'No seasons on disk.',
+  '{0} · {1} épisode(s)':
+      '{0} · {1} episode(s)',
+  'Supprimer cette saison':
+      'Delete this season',
+  'Supprimer toute la série':
+      'Delete the whole show',
+  'Supprimer le film':
+      'Delete the movie',
+  'Efface {0} du disque, pour tous les comptes.':
+      'Erases {0} from disk for every account.',
+  'Personne ne l’a demandé : ajouté à la main.':
+      'Nobody requested it: added by hand.',
+  'Demandé le {0}':
+      'Requested on {0}',
+  'En téléchargement':
+      'Downloading',
+  'En partie disponible':
+      'Partially available',
+  'Qui regarde':
+      'Who\'s watching',
+  'Aucun compte ne l’a encore lancé.':
+      'No account has played it yet.',
+  'Film terminé':
+      'Movie finished',
+  '{0} ({1} %)':
+      '{0} ({1}%)',
+  '{0}/{1} épisodes vus':
+      '{0}/{1} episodes watched',
+  'Série terminée · {0}':
+      'Show finished · {0}',
+  'S{0} · E{1} fini':
+      'S{0} · E{1} finished',
+  'S{0} · E{1} à {2}':
+      'S{0} · E{1} at {2}',
 };

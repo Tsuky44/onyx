@@ -214,11 +214,18 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   "duration"?, "path"?, "seasons": [{ "id", "number", "title", "size", "episode_count", "path" }],
   "viewers": [{ "user_id", "username", "finished", "last_played_at"?, "position_seconds",
   "duration_seconds", "watched_episodes"?, "total_episodes"?, "seasons"?: [{ "number", "total",
-  "watched" }] }] }` (`404` pour une saison ou un épisode). `DELETE` (film, série, saison ou épisode)
+  "watched" }], "current_episode"?: { "season", "episode", "position_seconds", "duration_seconds",
+  "finished" } }] }` (`current_episode` : l'épisode lu en dernier, séries seulement) (`404` pour une saison ou un épisode). `DELETE` (film, série, saison ou épisode)
   supprime les fichiers du disque, le dossier qui ne contient plus de vidéo (jamais la racine d'une
   bibliothèque) et les lignes du catalogue → `{ "files_removed", "bytes_freed" }` ; un fichier déjà
   absent compte comme supprimé. `404` média inconnu, `409` fichier hors des bibliothèques de films et
   de séries, `500` fichier impossible à supprimer. Capacité `mediahub_storage`.
+* `GET /api/admin/storage`, `GET|DELETE /api/admin/storage/:id` (`delete_media`, ADR-0115) — le même
+  gestionnaire dans l'administration de l'app. La liste → `{ "items": [...], "requests_available" }`,
+  films puis séries, chaque ligne comme ci-dessus plus `"poster_url"?` et `"requests": [{ "requester",
+  "requested_at"?, "status", "seasons"? }]` (les demandes MediaHub du titre, lues au nom de
+  l'administrateur ; `requests_available` faux quand MediaHub n'est pas configuré ou n'a pas répondu
+  en 6 s). Le détail et `DELETE` sont ceux de `/api/integrations/mediahub/storage/:id`.
 * `POST /api/integrations/onyxhub/imported` (sans compte, `Authorization: Bearer <mediahub_api_key>`,
   ADR-0074) — l'équivalent pour OnyxHub : `{ "tmdbId", "mediaType", "paths": [...] }` (100 au plus)
   → `202 { "status": "queued" }`. Capacité `onyxhub_import_signal`.

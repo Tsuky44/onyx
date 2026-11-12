@@ -76,9 +76,9 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
 
   void _play() => widget.onTap(_origin());
 
-  /// Le menu d'une télécommande, qui n'a pas de curseur où l'ancrer :
-  /// l'affiche se retourne et porte le menu au dos (`showPosterFlipMenu`).
-  /// On voit ainsi de quel média il parle, sans fenêtre posée à côté.
+  /// Le menu de la carte, sur tous les appareils : l'affiche se retourne et
+  /// porte le menu au dos (`showPosterFlipMenu`). On voit ainsi de quel média
+  /// il parle, sans fenêtre posée à côté.
   Future<void> _flipPoster() async {
     if (!_hasMenu) return;
     final action = await showPosterFlipMenu<_CardAction>(
@@ -141,50 +141,10 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
     if (anchor != null) _showContextMenu(anchor);
   }
 
-  Future<void> _showContextMenu(Offset globalPosition) async {
-    if (!_hasMenu) return;
-    // Un appui long au doigt sur un téléviseur tactile, un clic droit sur la
-    // télé du web : la même affiche retournée que la télécommande.
-    if (TvScope.of(context)) {
-      await _flipPoster();
-      return;
-    }
-
-    final action = await showMenu<_CardAction>(
-      context: context,
-      // The position is in screen coordinates: measured against the root
-      // overlay, not the shell's navigator.
-      useRootNavigator: true,
-      position: RelativeRect.fromRect(
-        Rect.fromLTWH(globalPosition.dx, globalPosition.dy, 0, 0),
-        Offset.zero & MediaQuery.sizeOf(context),
-      ),
-      color: AppColors.surfaceElevated,
-      items: [
-        // En tête : l'action sans conséquence, celle que le focus TV trouve en
-        // premier. Sur un téléviseur, le titre sous l'affiche n'est pas
-        // atteignable, la fiche ne l'est que par ici.
-        if (widget.onTitleTap != null)
-          PopupMenuItem(
-            value: _CardAction.details,
-            child: Text(tr('Aller à l\'affiche')),
-          ),
-        if (widget.onMarkAsWatched != null)
-          PopupMenuItem(
-            value: _CardAction.watched,
-            child: Text(tr('Marquer comme vu')),
-          ),
-        if (widget.onRemoveFromRow != null)
-          PopupMenuItem(
-            value: _CardAction.hide,
-            child: Text(tr('Supprimer de Reprendre')),
-          ),
-      ],
-    );
-
-    if (!mounted || action == null) return;
-    await _run(action);
-  }
+  /// Clic droit, appui long, « ⋯ » de la carte ou de l'aperçu : partout la
+  /// même affiche retournée que la télécommande. La position du geste ne sert
+  /// plus, le menu se pose sur l'affiche elle-même.
+  Future<void> _showContextMenu(Offset _) => _flipPoster();
 
   Future<void> _run(_CardAction action) async {
     try {

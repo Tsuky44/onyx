@@ -273,6 +273,12 @@ func main() {
 	router.GET("/api/integrations/mediahub/storage", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubStorage)))
 	router.GET("/api/integrations/mediahub/storage/:id", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubStorageDetails)))
 	router.DELETE("/api/integrations/mediahub/storage/:id", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubDeleteStorage)))
+	// Le même gestionnaire dans l'administration de l'app (ADR-0115) : la
+	// liste dit qui regarde quoi et la page supprime du disque, donc tout
+	// passe par delete_media, le droit de faire de la place.
+	router.GET("/api/admin/storage", handlers.RequirePermission(models.PermDeleteMedia, handlers.AdminStorage))
+	router.GET("/api/admin/storage/:id", handlers.RequirePermission(models.PermDeleteMedia, handlers.MediaHubStorageDetails))
+	router.DELETE("/api/admin/storage/:id", handlers.RequirePermission(models.PermDeleteMedia, handlers.MediaHubDeleteStorage))
 
 	// Serveurs liés (ADR-0017) : la progression passe d'un serveur à l'autre
 	// sans dépendre d'une app ouverte.

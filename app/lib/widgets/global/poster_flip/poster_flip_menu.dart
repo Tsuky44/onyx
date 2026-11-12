@@ -207,6 +207,8 @@ class _PosterFlipStage<T> extends StatelessWidget {
       actions: route.actions,
       borderRadius: radius,
       onSelected: (value) => Navigator.of(context).pop(value),
+      onClose:
+          TvScope.of(context) ? null : () => Navigator.of(context).maybePop(),
     );
 
     return AnimatedBuilder(
@@ -300,6 +302,18 @@ class _Face extends StatelessWidget {
   final BorderRadius radius;
   final Widget child;
 
+  /// Au repos, la face est posée à plat : une matrice identité, sans
+  /// perspective. Certains téléviseurs gardaient en cache la couche 3D d'une
+  /// image de la rotation et peignaient le dos en miroir une fois la carte
+  /// retournée. Le même `Transform` reste en place pour ne pas reconstruire le
+  /// dos, qui perdrait le focus du menu.
+  Matrix4 _matrix() {
+    if (angle.abs() < 1e-6) return Matrix4.identity();
+    return Matrix4.identity()
+      ..setEntry(3, 2, perspective)
+      ..rotateY(angle);
+  }
+
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
@@ -308,9 +322,7 @@ class _Face extends StatelessWidget {
         opacity: visible ? opacity : 0,
         child: Transform(
           alignment: Alignment.center,
-          transform: Matrix4.identity()
-            ..setEntry(3, 2, perspective)
-            ..rotateY(angle),
+          transform: _matrix(),
           child: Stack(
             fit: StackFit.expand,
             children: [

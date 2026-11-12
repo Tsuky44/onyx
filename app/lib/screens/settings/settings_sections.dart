@@ -19,6 +19,7 @@ abstract final class SettingsSections {
   static const users = 'users';
   static const devices = 'devices';
   static const library = 'library';
+  static const storage = 'storage';
   static const integrations = 'integrations';
   static const linkedServers = 'linked-servers';
   static const announcement = 'announcement';

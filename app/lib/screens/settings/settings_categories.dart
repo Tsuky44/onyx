@@ -20,6 +20,7 @@ import 'pages/server_logs_page.dart';
 import 'pages/servers_page.dart';
 import 'pages/shares_page.dart';
 import 'pages/stats_page.dart';
+import 'pages/storage_page.dart';
 import 'pages/users_page.dart';
 import 'settings_sections.dart';
 import 'widgets/settings_category_body.dart';
@@ -231,16 +232,29 @@ List<SettingsCategory> settingsCategoriesFor(Permissions p) {
       id: SettingsSections.library,
       label: tr('Bibliothèque'),
       icon: Icons.video_library_rounded,
-      hint: p.manageSettings
-          ? tr('Dossiers, analyse, maintenance')
-          : tr('Analyse, maintenance'),
+      hint: p.deleteMedia
+          ? (p.manageSettings
+              ? tr('Dossiers, analyse, stockage')
+              : tr('Analyse, stockage'))
+          : (p.manageSettings
+              ? tr('Dossiers, analyse, maintenance')
+              : tr('Analyse, maintenance')),
       admin: true,
+      layout: SettingsSectionsLayout.tabbed,
       sections: [
         if (p.manageSettings || p.manageLibrary)
           SettingsSection(
             id: SettingsSections.library,
             label: tr('Bibliothèque'),
             builder: (_) => const LibraryPage(),
+          ),
+        // Faire de la place (ADR-0115) : la page supprime du disque, elle
+        // suit donc delete_media, comme les routes du serveur.
+        if (p.deleteMedia)
+          SettingsSection(
+            id: SettingsSections.storage,
+            label: tr('Stockage'),
+            builder: (_) => const StoragePage(),
           ),
       ],
     ),

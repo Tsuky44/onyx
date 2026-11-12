@@ -2,7 +2,9 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
+import '../../../l10n/tr.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_icons.dart';
 import '../../../theme/app_motion.dart';
 import '../../../theme/app_type.dart';
 import '../../../tv/nav/tv_focusable.dart';
@@ -40,6 +42,7 @@ class PosterFlipBack<T> extends StatelessWidget {
     required this.actions,
     required this.borderRadius,
     required this.onSelected,
+    this.onClose,
   });
 
   final Widget poster;
@@ -49,6 +52,11 @@ class PosterFlipBack<T> extends StatelessWidget {
   final List<PosterFlipAction<T>> actions;
   final BorderRadius borderRadius;
   final ValueChanged<T> onSelected;
+
+  /// Hors téléviseur, un bouton retour en haut à droite referme la carte :
+  /// à la souris ou au doigt, il n'y a pas de touche retour pour le faire.
+  /// Nul sur un téléviseur, où la télécommande a la sienne.
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -96,16 +104,20 @@ class PosterFlipBack<T> extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: AppType.callout,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                    letterSpacing: -0.2,
+                Padding(
+                  // Le titre ne passe pas sous le bouton retour.
+                  padding: EdgeInsets.only(right: onClose == null ? 0 : 30),
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: AppType.callout,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -145,7 +157,67 @@ class PosterFlipBack<T> extends StatelessWidget {
               ],
             ),
           ),
+          if (onClose != null)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _CloseButton(onPressed: onClose!),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// Le bouton retour du dos, hors téléviseur : un rond discret qui s'éclaire
+/// au survol, comme les actions.
+class _CloseButton extends StatefulWidget {
+  const _CloseButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  State<_CloseButton> createState() => _CloseButtonState();
+}
+
+class _CloseButtonState extends State<_CloseButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final fade = AppMotion.fade(context, AppMotion.micro);
+    return Semantics(
+      button: true,
+      label: tr('Retour'),
+      excludeSemantics: true,
+      child: Tooltip(
+        message: tr('Retour'),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onPressed,
+            child: AnimatedContainer(
+              duration: fade,
+              curve: AppMotion.curve,
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _hovered
+                    ? AppColors.textPrimary
+                    : Colors.white.withValues(alpha: 0.12),
+              ),
+              child: Icon(
+                AppIcons.back,
+                size: 15,
+                color: _hovered ? AppColors.background : AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

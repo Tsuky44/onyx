@@ -46,6 +46,17 @@ type mediaHubStorageViewer struct {
 	WatchedEpisodes int                    `json:"watched_episodes,omitempty"`
 	TotalEpisodes   int                    `json:"total_episodes,omitempty"`
 	Seasons         []mediaHubViewerSeason `json:"seasons,omitempty"`
+	// CurrentEpisode : l'épisode lu le plus récemment par le compte, pour
+	// dire « où il en est » d'une série (ADR-0115). Absent pour un film.
+	CurrentEpisode *mediaHubViewerEpisode `json:"current_episode,omitempty"`
+}
+
+type mediaHubViewerEpisode struct {
+	Season          int  `json:"season"`
+	Episode         int  `json:"episode"`
+	PositionSeconds int  `json:"position_seconds"`
+	DurationSeconds int  `json:"duration_seconds"`
+	Finished        bool `json:"finished"`
 }
 
 type mediaHubStorageDetails struct {
@@ -66,6 +77,7 @@ type storagePlay struct {
 	username   string
 	mediaID    int
 	season     int
+	episode    int
 	position   int
 	duration   int
 	finished   bool
@@ -165,7 +177,7 @@ func loadStorageSeasons(showID int) ([]mediaHubStorageSeason, error) {
 // que celui des totaux de loadStorageSeasons.
 func loadStoragePlays(where string, id int) ([]storagePlay, error) {
 	rows, err := database.DB.Query(`
-		SELECT p.user_id, u.username, e.id, COALESCE(se.season_number, e.season_number, 0), p.current_position_seconds,
+		SELECT p.user_id, u.username, e.id, COALESCE(se.season_number, e.season_number, 0), COALESCE(e.episode_number, 0), p.current_position_seconds,
 			COALESCE(e.duration, 0), p.is_finished, p.updated_at,
 			(SELECT MAX(h.ended_at) FROM playback_history h WHERE h.user_id = p.user_id AND h.media_id = e.id)
 		FROM medias e
@@ -181,7 +193,7 @@ func loadStoragePlays(where string, id int) ([]storagePlay, error) {
 	for rows.Next() {
 		var p storagePlay
 		var progressAt, historyAt sql.NullString
-		if err := rows.Scan(&p.userID, &p.username, &p.mediaID, &p.season, &p.position, &p.duration, &p.finished, &progressAt, &historyAt); err != nil {
+		if err := rows.Scan(&p.userID, &p.username, &p.mediaID, &p.season, &p.episode, &p.position, &p.duration, &p.finished, &progressAt, &historyAt); err != nil {
 			return nil, err
 		}
 		p.lastPlayed = latest(scanSQLiteTime(progressAt), scanSQLiteTime(historyAt))
@@ -210,7 +222,10 @@ func aggregateStorageViewers(plays []storagePlay, show bool, seasonTotals map[in
 		}
 		if p.lastPlayed.After(a.last) || a.last.IsZero() {
 			a.last = p.lastPlayed
-			if !show {
+			if show {
+				a.viewer.CurrentEpisode = &mediaHubViewerEpisode{Season: p.season, Episode: p.episode,
+					PositionSeconds: p.position, DurationSeconds: p.duration, Finished: p.finished}
+			} else {
 				a.viewer.PositionSeconds, a.viewer.DurationSeconds, a.viewer.Finished = p.position, p.duration, p.finished
 			}
 		}
