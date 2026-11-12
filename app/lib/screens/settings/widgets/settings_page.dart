@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_type.dart';
+import '../../../tv/tv_touchpad_pace.dart';
 
 /// Ce que la coquille dit aux pages : sont-elles affichées à côté de la
 /// navigation (titre dans la page) ou poussées seules (titre dans la barre).
@@ -152,7 +153,9 @@ class SettingsPage extends StatelessWidget {
     if (onRefresh != null) {
       scroll = RefreshIndicator(onRefresh: onRefresh!, child: scroll);
     }
-    return scroll;
+    // Aussi pour une page poussée seule, hors de l'écran des réglages : ses
+    // lignes restent des commandes pour le pavé de la Siri Remote (ADR-0122).
+    return TvTouchpadPace.precise(child: scroll);
   }
 
   /// La page réduite à une section de celle qui la porte : un filet, un

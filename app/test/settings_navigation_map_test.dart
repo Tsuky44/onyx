@@ -6,6 +6,8 @@ import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/screens/settings/settings_screen.dart';
 import 'package:onyx/screens/settings/widgets/settings_ui.dart';
 import 'package:onyx/services/api_client.dart';
+import 'package:onyx/tv/tv_touchpad.dart';
+import 'package:onyx/tv/tv_touchpad_pace.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -261,6 +263,22 @@ void main() {
       }
       expect(inPage(), isFalse);
       expect(_focused(), 'Serveurs');
+    });
+
+    // ADR-0122 : une ligne de réglage est une commande quelle que soit sa
+    // hauteur (jusqu'à 170 px avec son texte et son choix). Le pavé de la
+    // Siri Remote y avance cran par cran, sans la lancée d'une rangée
+    // d'affiches.
+    testWidgets('les réglages se parcourent posément, catégories et lignes',
+        (tester) async {
+      await onTvPage(tester);
+
+      for (final label in ['Cet appareil', 'Passer l’intro automatiquement']) {
+        final nodes = _nodesLabelled(label).toList()
+          ..sort((a, b) => b.rect.width.compareTo(a.rect.width));
+        expect(TvTouchpad.paceOf(nodes.first), TouchpadPace.precise,
+            reason: label);
+      }
     });
 
     // Les mêmes flèches enchaînées : c'est la mémoire des deux zones qui

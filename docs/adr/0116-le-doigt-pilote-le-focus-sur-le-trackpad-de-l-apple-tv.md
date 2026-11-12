@@ -94,6 +94,10 @@ maintenant, dans `TouchpadAxisTuning` :
 Un balayage lent d'un bord à l'autre vaut maintenant 4 affiches (5 avant) ou 3 lignes (4 avant) ; un
 geste vif lâché, 8 affiches environ au lieu de 12.
 
+Second essai (2026-11-12) : les affiches sont « parfaites », les onglets et les réglages « super
+rapides ». Ce réglage ne bouge plus ; les commandes prennent le leur
+([ADR-0122](0122-le-pave-va-posement-sur-les-commandes.md)).
+
 ## Conséquences
 
 - **Tout est à régler sur une Apple TV**, dans `TouchpadAxisTuning` : `step` (trajet par pas),

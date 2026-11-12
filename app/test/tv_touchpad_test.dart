@@ -6,6 +6,7 @@ import 'package:onyx/tv/nav/tv_focusable.dart';
 import 'package:onyx/tv/nav/tv_nav_engine.dart';
 import 'package:onyx/tv/touchpad_motion.dart';
 import 'package:onyx/tv/tv_touchpad.dart';
+import 'package:onyx/tv/tv_touchpad_pace.dart';
 
 import 'support/tv_nav_harness.dart';
 
@@ -93,6 +94,8 @@ void main() {
       required bool scrollable,
       Axis axis = Axis.horizontal,
       int count = 30,
+      double height = 100,
+      bool declaredPrecise = false,
     }) async {
       final nodes = [
         for (var i = 0; i < count; i++) FocusNode(debugLabel: 'card$i'),
@@ -108,20 +111,25 @@ void main() {
             focusNode: nodes[i],
             autofocus: i == 0,
             onSelect: () {},
-            child: TvTestTile('card$i', width: 100, height: 100),
+            child: TvTestTile('card$i', width: 100, height: height),
           ),
       ];
+      final Widget list = scrollable
+          ? ListView(scrollDirection: axis, children: cards)
+          : Row(children: cards);
       await TvNavHarness.pump(
         tester,
         Scaffold(
           body: Align(
             alignment: Alignment.topLeft,
             child: SizedBox(
-              height: axis == Axis.horizontal ? 120 : 1000,
+              // Une liste horizontale étire ses enfants à sa hauteur : elle
+              // suit donc celle des cartes, qui décide du rythme du pavé.
+              height: axis == Axis.horizontal ? height + 20 : 1000,
               width: axis == Axis.horizontal ? 1900 : 120,
-              child: scrollable
-                  ? ListView(scrollDirection: axis, children: cards)
-                  : Row(children: cards),
+              child: declaredPrecise
+                  ? TvTouchpadPace.precise(child: list)
+                  : list,
             ),
           ),
         ),
@@ -212,6 +220,64 @@ void main() {
 
       expect(landed, lessThanOrEqualTo(4));
       expect(focusedIndex(nodes), landed);
+    });
+
+    // ADR-0122 : la pilule des onglets défile, et prenait donc le gain et la
+    // lancée d'une rangée d'affiches (« super rapide », essai de la 1.1.42).
+    testWidgets(
+        'une barre d’onglets qui défile se parcourt cran par cran, sans '
+        'lancée', (tester) async {
+      final nodes = await pumpRow(tester, scrollable: true, height: 36);
+      expect(TvTouchpad.paceOf(nodes.first), TouchpadPace.precise);
+
+      await flick(tester, lift: true);
+      expect(focusedIndex(nodes), 1);
+      expect(TvTouchpad.isGliding, isFalse,
+          reason: 'un pas posé ne presse pas le défilement');
+      await wait(tester, const Duration(seconds: 3));
+
+      expect(focusedIndex(nodes), 1);
+    });
+
+    testWidgets('sur des onglets, un long glissé posé avance de deux crans',
+        (tester) async {
+      final nodes = await pumpRow(tester, scrollable: true, height: 36);
+
+      await swipe(
+        tester,
+        distance: 1.6,
+        duration: const Duration(milliseconds: 700),
+        lift: true,
+      );
+
+      expect(focusedIndex(nodes), 2);
+    });
+
+    testWidgets(
+        'une zone déclarée posée l’emporte sur la hauteur de ses lignes',
+        (tester) async {
+      // Une ligne de réglage monte jusqu'à 170 px : plus qu'une vignette
+      // d'épisode, et pourtant une commande.
+      final nodes = await pumpRow(
+        tester,
+        scrollable: true,
+        axis: Axis.vertical,
+        height: 120,
+        declaredPrecise: true,
+      );
+      expect(TvTouchpad.paceOf(nodes.first), TouchpadPace.precise);
+
+      await flick(tester, lift: true, down: true);
+      await wait(tester, const Duration(seconds: 3));
+
+      expect(focusedIndex(nodes), 1);
+    });
+
+    testWidgets('une carte reste une carte : sa hauteur la désigne',
+        (tester) async {
+      final nodes = await pumpRow(tester, scrollable: true);
+
+      expect(TvTouchpad.paceOf(nodes.first), TouchpadPace.browse);
     });
 
     testWidgets('un geste lâché vif continue sur sa lancée, puis s’arrête',

@@ -19,6 +19,18 @@ typedef TouchpadRelease = ({
   bool flick,
 });
 
+/// Le rythme du pavé, selon ce que le focus désigne (ADR-0122).
+enum TouchpadPace {
+  /// Des affiches, des vignettes : on parcourt. Le trajet fait les pas, la
+  /// vitesse les allonge et le lâcher garde son élan.
+  browse,
+
+  /// Des commandes (onglets, boutons, lignes de réglage) : on choisit. Plus
+  /// de trajet par pas, ni accélération ni lancée : un glissé ordinaire avance
+  /// d'un cran, et le focus s'arrête avec le doigt.
+  precise,
+}
+
 /// Les réglages d'un axe du pavé.
 ///
 /// Des estimations écrites sans appareil (ADR-0116) : tout se règle ici, sur
@@ -69,13 +81,53 @@ class TouchpadAxisTuning {
     minStepInterval: Duration(milliseconds: 100),
   );
 
-  static TouchpadAxisTuning of(TraversalDirection direction) =>
-      switch (direction) {
-        TraversalDirection.left ||
-        TraversalDirection.right =>
-          horizontal,
-        TraversalDirection.up || TraversalDirection.down => vertical,
-      };
+  /// Une barre d'onglets, une rangée de boutons ([TouchpadPace.precise]).
+  ///
+  /// Réglage du 2026-11-12, après l'essai de la 1.1.42 (« super rapide » sur
+  /// les onglets et les réglages, alors que les affiches étaient « parfaites »)
+  /// : les onglets défilent dans leur pilule, ils prenaient donc le gain et la
+  /// lancée d'une rangée d'affiches, jusqu'à dix onglets pour un coup de
+  /// pouce. Ici un glissé ordinaire (la moitié de la surface) avance d'un
+  /// cran, un balayage d'un bord à l'autre de deux ou trois, et rien ne
+  /// continue une fois le doigt levé. 160 ms entre deux pas : la capsule du
+  /// focus (180 ms) a le temps de se poser.
+  static const TouchpadAxisTuning preciseHorizontal = TouchpadAxisTuning(
+    firstStep: 0.30,
+    step: 0.80,
+    gainFrom: double.infinity,
+    gainTo: double.infinity,
+    maxGain: 1,
+    coastFrom: double.infinity,
+    coastDecay: 0.20,
+    maxCoastSteps: 0,
+    minStepInterval: Duration(milliseconds: 160),
+  );
+
+  /// Une liste de réglages, un menu ([TouchpadPace.precise]) : comme
+  /// [preciseHorizontal], avec le trajet un peu plus long de la verticale.
+  static const TouchpadAxisTuning preciseVertical = TouchpadAxisTuning(
+    firstStep: 0.34,
+    step: 0.90,
+    gainFrom: double.infinity,
+    gainTo: double.infinity,
+    maxGain: 1,
+    coastFrom: double.infinity,
+    coastDecay: 0.18,
+    maxCoastSteps: 0,
+    minStepInterval: Duration(milliseconds: 160),
+  );
+
+  static TouchpadAxisTuning of(
+    TraversalDirection direction, {
+    TouchpadPace pace = TouchpadPace.browse,
+  }) {
+    final sideways = direction == TraversalDirection.left ||
+        direction == TraversalDirection.right;
+    return switch (pace) {
+      TouchpadPace.browse => sideways ? horizontal : vertical,
+      TouchpadPace.precise => sideways ? preciseHorizontal : preciseVertical,
+    };
+  }
 
   /// Trajet du doigt, en unités de surface, avant le premier pas d'un geste.
   /// Plus court que les suivants : un coup de pouce répond tout de suite (le
@@ -180,13 +232,16 @@ class TouchpadMotion {
   ///
   /// [accelerates] dit si un geste vers cette direction peut valoir plus que
   /// son trajet (une rangée qui défile) ; sans lui, un trajet vaut toujours
-  /// ses pas, jamais plus.
+  /// ses pas, jamais plus. [pace] est le rythme de ce que le focus désigne à
+  /// cet instant : il peut changer d'un événement à l'autre, quand un pas
+  /// fait passer d'un bouton à une affiche.
   TouchpadRelease? add(
     TouchpadPhase phase,
     double x,
     double y,
     Duration at, {
     bool Function(TraversalDirection direction)? accelerates,
+    TouchpadPace pace = TouchpadPace.browse,
   }) {
     switch (phase) {
       case TouchpadPhase.began:
@@ -219,9 +274,10 @@ class TouchpadMotion {
           _reach,
           math.max((x - _startX).abs(), (y - _startY).abs()),
         );
-        _pendingX += dx * _gain(dx, velocity?.dx, accelerates, horizontal: true);
+        _pendingX +=
+            dx * _gain(dx, velocity?.dx, accelerates, pace, horizontal: true);
         _pendingY +=
-            dy * _gain(dy, velocity?.dy, accelerates, horizontal: false);
+            dy * _gain(dy, velocity?.dy, accelerates, pace, horizontal: false);
         return null;
       case TouchpadPhase.clickDown:
         _clicking = true;
@@ -233,7 +289,7 @@ class TouchpadMotion {
         _clicking = false;
         return null;
       case TouchpadPhase.ended:
-        final release = _clicking || !_touching ? null : _releaseAt(at);
+        final release = _clicking || !_touching ? null : _releaseAt(at, pace);
         _endedPanning = _panningAt(at);
         _endedAt = at;
         _touching = false;
@@ -247,11 +303,17 @@ class TouchpadMotion {
 
   /// Le pas que le trajet accumulé doit maintenant, ou nul. À rappeler après
   /// chaque déplacement : un seul pas par appel, et jamais deux à moins de
-  /// [TouchpadAxisTuning.minStepInterval].
-  TraversalDirection? takeStep(Duration at) {
+  /// [TouchpadAxisTuning.minStepInterval]. [pace] fixe le trajet d'un pas et
+  /// cet intervalle : ceux de ce que le focus désigne maintenant.
+  TraversalDirection? takeStep(
+    Duration at, {
+    TouchpadPace pace = TouchpadPace.browse,
+  }) {
     if (_clicking || !_touching) return null;
-    const horizontalTuning = TouchpadAxisTuning.horizontal;
-    const verticalTuning = TouchpadAxisTuning.vertical;
+    final horizontalTuning =
+        TouchpadAxisTuning.of(TraversalDirection.right, pace: pace);
+    final verticalTuning =
+        TouchpadAxisTuning.of(TraversalDirection.down, pace: pace);
     final needX = _threshold(horizontalTuning);
     final needY = _threshold(verticalTuning);
     final horizontal = _pendingX.abs() / needX >= _pendingY.abs() / needY;
@@ -329,7 +391,8 @@ class TouchpadMotion {
   double _gain(
     double delta,
     double? velocity,
-    bool Function(TraversalDirection direction)? accelerates, {
+    bool Function(TraversalDirection direction)? accelerates,
+    TouchpadPace pace, {
     required bool horizontal,
   }) {
     if (velocity == null || accelerates == null || delta == 0) return 1;
@@ -337,10 +400,10 @@ class TouchpadMotion {
         ? (delta > 0 ? TraversalDirection.right : TraversalDirection.left)
         : (delta > 0 ? TraversalDirection.down : TraversalDirection.up);
     if (!accelerates(direction)) return 1;
-    return TouchpadAxisTuning.of(direction).gainAt(velocity.abs());
+    return TouchpadAxisTuning.of(direction, pace: pace).gainAt(velocity.abs());
   }
 
-  TouchpadRelease? _releaseAt(Duration at) {
+  TouchpadRelease? _releaseAt(Duration at, TouchpadPace pace) {
     final velocity = _velocityAt(at);
     if (velocity == null) return null;
     final horizontal = velocity.dx.abs() >= velocity.dy.abs();
@@ -356,7 +419,8 @@ class TouchpadMotion {
     final flick = _stepsThisGesture == 0 &&
         _reach >= _flickTravel &&
         speed >= _flickSpeed;
-    if (!flick && speed < TouchpadAxisTuning.of(direction).coastFrom) {
+    if (!flick &&
+        speed < TouchpadAxisTuning.of(direction, pace: pace).coastFrom) {
       return null;
     }
     return (direction: direction, speed: speed, flick: flick);

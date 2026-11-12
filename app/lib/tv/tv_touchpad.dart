@@ -9,6 +9,7 @@ import 'siri_remote_touches.dart';
 import 'touchpad_motion.dart';
 import 'tv_key_repeat.dart';
 import 'tv_mode.dart';
+import 'tv_touchpad_pace.dart';
 
 /// Le trackpad de la Siri Remote, lu comme le fait l'interface d'Apple
 /// (ADR-0116, qui remplace le point 3 de l'ADR-0039).
@@ -25,6 +26,10 @@ import 'tv_mode.dart';
 ///   ou appuyer sur une touche l'arrête net ;
 /// - **les flèches que le moteur tire du même glissé sont retenues**
 ///   ([_holdEngineArrow]) : elles compteraient le geste deux fois.
+///
+/// - **le rythme suit ce que le focus désigne** ([paceOf], ADR-0122) : une
+///   rangée d'affiches se traverse vite, une barre d'onglets ou une liste de
+///   réglages se parcourt cran par cran, sans accélération ni lancée.
 ///
 /// Un pas est une flèche comme une autre : il parcourt l'arbre de focus par
 /// les mêmes `onKeyEvent` et les mêmes raccourcis qu'une touche du pavé
@@ -68,6 +73,12 @@ abstract final class TvTouchpad {
   /// suivant du même geste arrive avant la fin d'un défilement posé.
   static const Duration _trackingFor = Duration(milliseconds: 260);
 
+  /// Sous cette hauteur, en pixels de la page, ce que le focus désigne est
+  /// une commande : un onglet (36), un bouton (36 à 56), une ligne de menu
+  /// (50). Au-dessus, c'est une carte : la plus basse, la vignette d'un
+  /// épisode, en fait 101.
+  static const double _controlHeight = 64;
+
   /// Qui fait un pas de lancée, et dit si le focus a bougé.
   ///
   /// Sous dpad, `TvArrowGate` s'inscrit ici : le pas passe par `StepTarget`
@@ -95,8 +106,10 @@ abstract final class TvTouchpad {
   static final List<bool Function(TouchpadMove move)> _moveListeners =
       <bool Function(TouchpadMove move)>[];
 
-  /// Vrai tant que la liste avance sous le doigt ou sur sa lancée. Le
-  /// défilement suit alors au plus court, comme pour une flèche maintenue.
+  /// Vrai tant qu'une liste de cartes avance sous le doigt ou sur sa lancée.
+  /// Le défilement suit alors au plus court, comme pour une flèche maintenue.
+  /// Un pas posé ([TouchpadPace.precise]) n'en est pas : la page défile à
+  /// son rythme ordinaire.
   static bool get isGliding {
     if (_coastTimer != null) return true;
     final last = _lastStepAt;
@@ -134,8 +147,11 @@ abstract final class TvTouchpad {
 
   /// Vrai quand un geste peut accélérer et garder son élan depuis [node] vers
   /// [direction] : le nœud est dans quelque chose qui défile sur cet axe (une
-  /// rangée d'affiches, une grille, une liste). Ailleurs (barre de boutons,
-  /// onglets, menu court), un trajet vaut ses pas et rien de plus.
+  /// rangée d'affiches, une grille, une liste). Ailleurs (rangée de boutons,
+  /// menu court), un trajet vaut ses pas et rien de plus.
+  ///
+  /// Ne dit rien du rythme : la pilule des onglets défile elle aussi, et
+  /// c'est [paceOf] qui l'écarte.
   static bool acceleratesFrom(FocusNode node, TraversalDirection direction) {
     final context = node.context;
     if (context == null) return false;
@@ -148,7 +164,36 @@ abstract final class TvTouchpad {
 
   static bool _accelerates(TraversalDirection direction) {
     final focus = FocusManager.instance.primaryFocus;
-    return focus != null && acceleratesFrom(focus, direction);
+    return focus != null &&
+        paceOf(focus) == TouchpadPace.browse &&
+        acceleratesFrom(focus, direction);
+  }
+
+  /// Le rythme du pavé pour ce que [node] désigne (ADR-0122) :
+  ///
+  /// 1. celui que sa zone a déclaré ([TvTouchpadPace]), les réglages par
+  ///    exemple ;
+  /// 2. sinon posé pour une cible basse ([_controlHeight]) : onglet, bouton,
+  ///    puce, ligne de menu ;
+  /// 3. sinon vif : une affiche, une vignette, une carte.
+  ///
+  /// La hauteur est celle de la mise en page, pas celle de l'écran : ni
+  /// l'échelle du téléviseur ni le soulèvement d'une affiche ne la changent.
+  static TouchpadPace paceOf(FocusNode node) {
+    final context = node.context;
+    if (context == null) return TouchpadPace.browse;
+    final declared = TvTouchpadPace.maybeOf(context);
+    if (declared != null) return declared;
+    final box = context.findRenderObject();
+    if (box is RenderBox && box.hasSize && box.size.height < _controlHeight) {
+      return TouchpadPace.precise;
+    }
+    return TouchpadPace.browse;
+  }
+
+  static TouchpadPace get _pace {
+    final focus = FocusManager.instance.primaryFocus;
+    return focus == null ? TouchpadPace.browse : paceOf(focus);
   }
 
   /// Vrai quand le focus est dans un champ de texte. Le doigt n'y pilote
@@ -177,8 +222,18 @@ abstract final class TvTouchpad {
     if (phase == TouchpadPhase.clickUp) clickHeld.value = false;
     if (phase == TouchpadPhase.began) _gestureUsed = false;
     final now = _now;
-    final release =
-        _motion.add(phase, x, y, now, accelerates: _accelerates);
+    // Le rythme de ce que le focus désigne à cet instant : il change en
+    // cours de geste quand un pas passe d'un bouton à une affiche.
+    final pace = _pace;
+    final browsing = pace == TouchpadPace.browse;
+    final release = _motion.add(
+      phase,
+      x,
+      y,
+      now,
+      accelerates: _accelerates,
+      pace: pace,
+    );
 
     if (phase == TouchpadPhase.moved) {
       final move = _motion.lastMove;
@@ -192,16 +247,20 @@ abstract final class TvTouchpad {
         _motion.dropPending();
       }
       if (!TvMode.isTv || _inTextField) return;
-      final step = _motion.takeStep(now);
-      if (step != null) _step(step);
+      final step = _motion.takeStep(now, pace: pace);
+      if (step != null) _step(step, gliding: browsing);
       return;
     }
 
     if (release == null || !TvMode.isTv || _gestureUsed || _inTextField) {
       return;
     }
-    if (release.flick) _step(release.direction);
-    if (_accelerates(release.direction)) _startCoast(TouchpadCoast(release));
+    if (release.flick) _step(release.direction, gliding: browsing);
+    // Parti d'une commande, le geste s'arrête avec le doigt, même si son
+    // dernier pas vient de poser le focus sur une rangée d'affiches.
+    if (browsing && _accelerates(release.direction)) {
+      _startCoast(TouchpadCoast(release));
+    }
   }
 
   static void stopGlide() => _stopCoast('demandé');
@@ -250,11 +309,17 @@ abstract final class TvTouchpad {
     _coastTimer = Timer(delay, _coastStep);
   }
 
-  /// Fait un pas vers [direction], et dit si le focus a bougé.
-  static bool _step(TraversalDirection direction, {bool coasting = false}) {
+  /// Fait un pas vers [direction], et dit si le focus a bougé. [gliding] faux
+  /// pour un pas posé : le défilement qui le suit n'est pas pressé
+  /// ([isGliding]).
+  static bool _step(
+    TraversalDirection direction, {
+    bool coasting = false,
+    bool gliding = true,
+  }) {
     final focus = FocusManager.instance.primaryFocus;
     if (focus == null) return false;
-    _lastStepAt = _now;
+    _lastStepAt = gliding ? _now : null;
     final stepper = glideStepper;
     if (coasting && stepper != null) {
       stepper(direction);

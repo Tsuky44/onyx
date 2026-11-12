@@ -17,6 +17,7 @@ bool _always(TraversalDirection direction) => true;
   bool vertical = false,
   double drift = 0,
   bool Function(TraversalDirection direction)? accelerates = _always,
+  TouchpadPace pace = TouchpadPace.browse,
 }) {
   final steps = <TraversalDirection>[];
   motion.add(TouchpadPhase.began, 0, 0, start);
@@ -32,8 +33,9 @@ bool _always(TraversalDirection direction) => true;
       vertical ? travelled : across,
       at,
       accelerates: accelerates,
+      pace: pace,
     );
-    final step = motion.takeStep(at);
+    final step = motion.takeStep(at, pace: pace);
     if (step != null) steps.add(step);
   }
   return (steps: steps, at: at);
@@ -121,6 +123,123 @@ void main() {
       for (var i = 1; i < times.length; i++) {
         expect(times[i] - times[i - 1],
             greaterThanOrEqualTo(TouchpadAxisTuning.horizontal.minStepInterval));
+      }
+    });
+  });
+
+  // ADR-0122 : sur des commandes (onglets, boutons, réglages), on choisit.
+  group('le rythme posé', () {
+    const precise = TouchpadPace.precise;
+
+    test('un glissé ordinaire avance d’un cran', () {
+      // 1 unité, la moitié de la surface : le premier pas à 0,30, et le
+      // suivant en demanderait 0,80 de plus.
+      final result = swipe(
+        TouchpadMotion(),
+        distance: 1,
+        duration: ms * 400,
+        pace: precise,
+      );
+      expect(result.steps, [TraversalDirection.right]);
+    });
+
+    test('un balayage lent d’un bord à l’autre avance de trois crans', () {
+      final result = swipe(
+        TouchpadMotion(),
+        distance: 2,
+        duration: ms * 1000,
+        pace: precise,
+      );
+      expect(result.steps, List.filled(3, TraversalDirection.right));
+    });
+
+    test('la vitesse ne change rien au trajet, même dans ce qui défile', () {
+      // La pilule des onglets défile : elle prenait le gain d'une rangée
+      // d'affiches, et un geste vif y traversait toute la barre.
+      final slow = swipe(
+        TouchpadMotion(),
+        distance: 1.3,
+        duration: ms * 1000,
+        pace: precise,
+      );
+      final fast = swipe(
+        TouchpadMotion(),
+        distance: 1.3,
+        duration: ms * 320,
+        pace: precise,
+      );
+      expect(slow.steps, hasLength(2));
+      expect(fast.steps, hasLength(2));
+    });
+
+    test('à la verticale, un glissé ordinaire descend d’une ligne', () {
+      final result = swipe(
+        TouchpadMotion(),
+        distance: 1,
+        duration: ms * 400,
+        vertical: true,
+        pace: precise,
+      );
+      expect(result.steps, [TraversalDirection.down]);
+    });
+
+    test('deux pas ne se suivent jamais à moins de 160 ms', () {
+      final motion = TouchpadMotion();
+      final times = <Duration>[];
+      motion.add(TouchpadPhase.began, -1, 0, Duration.zero);
+      for (var i = 1; i <= 25; i++) {
+        final at = ms * (8 * i);
+        motion.add(TouchpadPhase.moved, -1 + 0.08 * i, 0, at,
+            accelerates: _always, pace: precise);
+        if (motion.takeStep(at, pace: precise) != null) times.add(at);
+      }
+      expect(times.length, greaterThan(1));
+      for (var i = 1; i < times.length; i++) {
+        expect(
+          times[i] - times[i - 1],
+          greaterThanOrEqualTo(
+              TouchpadAxisTuning.preciseHorizontal.minStepInterval),
+        );
+      }
+    });
+
+    test('un geste lâché vif ne lance rien', () {
+      final motion = TouchpadMotion();
+      final result = swipe(
+        motion,
+        distance: 1.6,
+        duration: ms * 160,
+        pace: precise,
+      );
+      expect(result.steps, hasLength(1));
+      expect(
+        motion.add(TouchpadPhase.ended, 1.6, 0, result.at, pace: precise),
+        isNull,
+      );
+    });
+
+    test('un coup de pouce trop court pour un pas en vaut quand même un', () {
+      final motion = TouchpadMotion();
+      final result = swipe(
+        motion,
+        distance: 0.18,
+        duration: ms * 64,
+        pace: precise,
+      );
+      expect(result.steps, isEmpty);
+      final release = motion.add(TouchpadPhase.ended, 0.18, 0, result.at,
+          pace: precise)!;
+      expect(release.flick, isTrue);
+    });
+
+    test('ses réglages ne portent ni gain ni lancée', () {
+      for (final tuning in const [
+        TouchpadAxisTuning.preciseHorizontal,
+        TouchpadAxisTuning.preciseVertical,
+      ]) {
+        expect(tuning.gainAt(50), 1);
+        expect(tuning.maxCoastSteps, 0);
+        expect(tuning.step, greaterThan(TouchpadAxisTuning.vertical.step));
       }
     });
   });

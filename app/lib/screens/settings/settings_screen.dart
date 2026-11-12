@@ -8,6 +8,7 @@ import '../../theme/focus_fill.dart';
 import '../../theme/app_motion.dart';
 import '../../tv/nav/tv_region.dart';
 import '../../tv/tv_mode.dart';
+import '../../tv/tv_touchpad_pace.dart';
 import 'settings_categories.dart';
 import 'settings_search.dart';
 import 'settings_sections.dart';
@@ -60,7 +61,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final categories = settingsCategoriesFor(auth.permissions);
     final searchIndex = buildSettingsSearchIndex(categories, auth.permissions);
 
-    return LayoutBuilder(builder: (context, constraints) {
+    // Des commandes, quelle que soit leur hauteur : le pavé de la Siri Remote
+    // les parcourt cran par cran (ADR-0122).
+    return TvTouchpadPace.precise(
+        child: LayoutBuilder(builder: (context, constraints) {
       final wide = constraints.maxWidth >= _wideBreakpoint;
       if (!categories.any((c) => c.opens(_selected))) {
         _selected = categories.first.id;
@@ -87,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               searchIndex: searchIndex,
               onSelect: (id) => _open(context, categories, id, wide: false),
             );
-    });
+    }));
   }
 }
 
