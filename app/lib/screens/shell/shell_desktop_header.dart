@@ -5,8 +5,6 @@ import '../../l10n/tr.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_type.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/window_controls.dart';
 import '../../widgets/global/account_menu.dart';
@@ -14,6 +12,7 @@ import '../../widgets/global/app_download_button.dart';
 import '../../widgets/global/glass_catalog_search.dart';
 import '../../widgets/global/glass_chrome.dart';
 import '../../widgets/global/interface_tour/tour_anchor.dart';
+import 'shell_indexer_status.dart';
 import 'shell_tabs.dart';
 
 /// L'en-tête de verre des grands écrans : la marque, les onglets, la
@@ -131,7 +130,7 @@ class ShellDesktopHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            _IndexerActions(homeProvider: homeProvider),
+            ShellIndexerStatus(homeProvider: homeProvider),
             const AppDownloadButton(),
             AccountMenu(authProvider: authProvider),
           ],
@@ -152,80 +151,6 @@ class ShellDesktopHeader extends StatelessWidget {
               ],
             )
           : header,
-    );
-  }
-}
-
-class _IndexerActions extends StatelessWidget {
-  final HomeProvider homeProvider;
-
-  const _IndexerActions({required this.homeProvider});
-
-  @override
-  Widget build(BuildContext context) {
-    if (homeProvider.isScanning) {
-      return _StatusBadge(label: tr('Scan…'));
-    }
-    if (homeProvider.isBackfillingMetadata) {
-      return _StatusBadge(label: tr('Affiches…'));
-    }
-    if (homeProvider.isRedetectingAll) {
-      final stats = homeProvider.redetectAllProgress;
-      final label = stats.total > 0
-          ? tr('Match {0}/{1}', [stats.processed, stats.total])
-          : tr('Match…');
-      return _StatusBadge(label: label);
-    }
-    if (homeProvider.isExtractingSubtitles) {
-      final stats = homeProvider.subtitleStats;
-      final label = stats.total > 0
-          ? tr('Sous-titres {0}/{1}', [stats.processed, stats.total])
-          : tr('Sous-titres…');
-      return _StatusBadge(label: label);
-    }
-    return const SizedBox.shrink();
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String label;
-
-  const _StatusBadge({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.accent.withValues(alpha: 0.85),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: AppColors.textMuted.withValues(alpha: 0.95),
-                fontSize: AppType.caption,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

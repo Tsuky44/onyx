@@ -38,6 +38,7 @@ import 'mobile_bottom_nav.dart';
 import 'mobile_top_bar.dart';
 import 'pending_announcement.dart';
 import 'shell_desktop_header.dart';
+import 'shell_tv_header.dart';
 import 'shell_header_zone.dart';
 import 'shell_page_open_listener.dart';
 import 'shell_tab_stack.dart';
@@ -538,17 +539,31 @@ class _MainShellState extends State<MainShell> {
               child: ShellHeaderZone(
                 focusNode: _headerNode,
                 entryFor: _headerEntry,
-                child: ShellDesktopHeader(
-                  selected: selectedTab,
-                  onTabSelected: _selectTab,
-                  libraries: libraries,
-                  homeProvider: homeProvider,
-                  authProvider: authProvider,
-                  canDownload: downloads.isSupported,
-                  canUseLists: canUseLists,
-                  canRequestMedia: canRequest,
-                  nodeFor: _tabNode,
-                ),
+                // Un téléviseur a sa propre barre : la pilule des onglets
+                // au centre (ADR-0117).
+                child: isTv
+                    ? ShellTvHeader(
+                        selected: selectedTab,
+                        onTabSelected: _selectTab,
+                        libraries: libraries,
+                        homeProvider: homeProvider,
+                        authProvider: authProvider,
+                        canDownload: downloads.isSupported,
+                        canUseLists: canUseLists,
+                        canRequestMedia: canRequest,
+                        nodeFor: _tabNode,
+                      )
+                    : ShellDesktopHeader(
+                        selected: selectedTab,
+                        onTabSelected: _selectTab,
+                        libraries: libraries,
+                        homeProvider: homeProvider,
+                        authProvider: authProvider,
+                        canDownload: downloads.isSupported,
+                        canUseLists: canUseLists,
+                        canRequestMedia: canRequest,
+                        nodeFor: _tabNode,
+                      ),
               ),
             ),
           // Hidden over an open page: it would sit on top of its back button.

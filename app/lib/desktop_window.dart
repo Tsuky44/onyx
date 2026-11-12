@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'theme/app_colors.dart';
 import 'theme/app_motion.dart';
+import 'tv/tv_mode.dart';
 import 'utils/app_platform.dart';
 import 'utils/responsive.dart';
 import 'utils/window_controls.dart';
@@ -20,8 +21,24 @@ bool get useHiddenNativeTitleBar =>
 /// Vertical space for macOS traffic lights — UI controls sit just below.
 double get macOSWindowControlsTopInset => AppPlatform.isMacOS ? 40 : 0;
 
+/// Les marges de l'en-tête d'un téléviseur (`ShellTvHeader`), en pixels de la
+/// page TV de 1280 de large : 22 px valent 33 pt sur une Apple TV, hors de la
+/// zone qu'un téléviseur peut rogner. Sa pilule fait [tvShellHeaderBarHeight].
+const double tvShellHeaderTopGap = 22;
+const double tvShellHeaderBottomGap = 12;
+const double tvShellHeaderBarHeight = 44;
+
 /// Height of the desktop glass nav (≥900px), from the top of the window.
+///
+/// Sur un téléviseur, celle de `ShellTvHeader` : la pilule des onglets et ses
+/// marges (ADR-0117).
 double shellHeaderHeight(BuildContext context) {
+  if (TvScope.of(context)) {
+    return MediaQuery.paddingOf(context).top +
+        tvShellHeaderTopGap +
+        tvShellHeaderBarHeight +
+        tvShellHeaderBottomGap;
+  }
   const headerVerticalPadding = 16.0; // matches _DesktopGlassHeader (6 + 10)
   const navRowHeight = 44.0;
   return MediaQuery.paddingOf(context).top +
