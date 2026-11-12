@@ -17,7 +17,8 @@ import 'shell_indexer_status.dart';
 import 'shell_tabs.dart';
 
 /// L'en-tête d'un téléviseur : la marque à gauche, la pilule des onglets au
-/// centre (la recherche y suit Accueil), le compte à droite (ADR-0117).
+/// centre (la recherche l'ouvre, à gauche d'Accueil), le compte à droite
+/// (ADR-0117).
 ///
 /// Les mêmes entrées que [ShellDesktopHeader], dans la disposition des apps de
 /// salon. La bande de verre pleine largeur a disparu : seule la pilule porte
@@ -109,26 +110,26 @@ class ShellTvHeader extends StatelessWidget {
                   heightFactor: 1,
                   child: TvTabBar(
                     children: [
+                      // La recherche est une entrée de la barre, comme dans
+                      // les apps de salon : OK l'ouvre, le focus seul non. La
+                      // première, à gauche d'Accueil (demande du 2026-11-12),
+                      // comme dans l'app TV d'Apple : au bout de la pilule, il
+                      // fallait traverser toutes les bibliothèques pour
+                      // l'atteindre, et entre Accueil et la première
+                      // bibliothèque elle coupait le trajet le plus courant.
+                      const TourTarget(
+                        anchor: TourAnchor.search,
+                        child: GlassCatalogSearch(
+                          tabBarTrigger: true,
+                          staysAbovePages: true,
+                        ),
+                      ),
                       TourTarget(
                         anchor: TourAnchor.library,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _tab(ShellTabs.home, tr('Accueil')),
-                            // La recherche est une entrée de la barre, comme
-                            // dans les apps de salon : OK l'ouvre, le focus
-                            // seul non. Juste à droite d'Accueil (demande du
-                            // 2026-11-12) : au bout de la pilule, il fallait
-                            // traverser toutes les bibliothèques pour
-                            // l'atteindre, et elle sortait de vue dès qu'un
-                            // serveur en compte trop.
-                            const TourTarget(
-                              anchor: TourAnchor.search,
-                              child: GlassCatalogSearch(
-                                tabBarTrigger: true,
-                                staysAbovePages: true,
-                              ),
-                            ),
                             for (final library in libraries)
                               _tab(ShellTabs.library(library),
                                   ShellTabs.label(library)),

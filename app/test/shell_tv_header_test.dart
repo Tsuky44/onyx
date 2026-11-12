@@ -163,16 +163,16 @@ void main() {
     expect(find.text('mathis'), findsNothing);
   });
 
-  testWidgets('la recherche suit Accueil, avant les bibliothèques',
+  testWidgets('la recherche ouvre la pilule, à gauche d’Accueil',
       (tester) async {
     await _pump(tester, libraries: _libraries(3), selected: ShellTabs.home);
 
+    final bar = tester.getRect(find.byType(TvTabBar));
     final home = tester.getRect(find.widgetWithText(TvTabBarItem, 'Accueil'));
     final search = tester.getRect(find.byWidgetPredicate(
         (widget) => widget is TvTabBarItem && widget.icon != null));
-    final films = tester.getRect(find.widgetWithText(TvTabBarItem, 'Films'));
-    expect(search.left, greaterThanOrEqualTo(home.right));
-    expect(search.right, lessThanOrEqualTo(films.left));
+    expect(search.left, greaterThanOrEqualTo(bar.left));
+    expect(search.right, lessThanOrEqualTo(home.left));
   });
 
   testWidgets(
