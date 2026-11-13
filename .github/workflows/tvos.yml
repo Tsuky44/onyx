@@ -20,7 +20,10 @@ name: Apple TV
 #   - `gh workflow run tvos.yml --ref <branche>` ;
 #   - ou un tag `tvos-*` pousse sur le commit a construire, qui marche aussi
 #     depuis une branche que la branche par defaut ne connait pas encore :
-#     `git tag tvos-20261113-1 && git push origin tvos-20261113-1`.
+#     `git tag tvos-20261113-1 && git push origin tvos-20261113-1` ;
+#   - ou une branche `tvos-release/*` poussee sur ce commit, pour qui ne peut
+#     pas pousser de tag : `git push origin HEAD:refs/heads/tvos-release/20261113`.
+#     Elle ne sert qu'a declencher, et se supprime apres le run.
 #
 # Les etapes de build sont celles du job build-tvos de release.yml : un
 # changement de l'outillage (flutter-tvos, xcconfig, archive) se fait des deux
@@ -30,6 +33,8 @@ on:
   push:
     tags:
       - "tvos-*"
+    branches:
+      - "tvos-release/**"
   workflow_dispatch:
     inputs:
       version:

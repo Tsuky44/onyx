@@ -86,6 +86,7 @@ l'horodatage UTC du lancement.
 ```bash
 gh workflow run tvos.yml --ref ma-branche          # fichier présent sur la branche par défaut
 git tag tvos-20261113-1 && git push origin tvos-20261113-1   # sinon, depuis n'importe quel commit
+git push origin HEAD:refs/heads/tvos-release/20261113        # ou une branche de déclenchement, à supprimer après
 ```
 
 Pousser un tag reste possible :
