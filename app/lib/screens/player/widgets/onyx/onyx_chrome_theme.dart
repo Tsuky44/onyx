@@ -164,22 +164,22 @@ class OnyxChromeMetrics {
   /// The insets keep every control inside the title-safe area: a good share of
   /// televisions still crop a few percent off each edge.
   const OnyxChromeMetrics.tv()
-      : gutter = 48,
+      : gutter = 53,
         hitSize = 52,
         iconSize = 28,
         playIconSize = 56,
-        titleSize = 24,
-        metaSize = 15,
+        titleSize = 28,
+        metaSize = 17,
         timeSize = 15,
-        barThickness = 5,
+        barThickness = 6,
         barThicknessActive = 8,
         handleSize = 16,
-        clusterGap = 12,
+        clusterGap = 14,
         isCompact = true,
-        logoHeight = 40,
-        brandTextSize = 20,
-        bottomInset = 28,
-        topInset = 24,
+        logoHeight = 60,
+        brandTextSize = 26,
+        bottomInset = 30,
+        topInset = 40,
         skipIntroTextSize = 16,
         previewWidth = 400;
 

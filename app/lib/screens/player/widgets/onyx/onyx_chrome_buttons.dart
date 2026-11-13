@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../l10n/tr.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../theme/focus_fill.dart';
+import '../../../../theme/app_type.dart';
 import '../../../../tv/tv_focus.dart';
 import '../../../../widgets/global/app_slider.dart';
 import '../../../../widgets/global/optimistic_volume.dart';
@@ -38,6 +40,11 @@ class OnyxIconButton extends StatefulWidget {
   /// transport is built around.
   final bool prominent;
 
+  /// Le bouton rond du lecteur d'Apple (ADR-0124) : un disque de verre au
+  /// repos, blanc à l'encre noire sous la télécommande, comme toute commande
+  /// d'un téléviseur ([FocusFill], ADR-0112).
+  final bool glass;
+
   const OnyxIconButton({
     super.key,
     required this.icon,
@@ -49,7 +56,12 @@ class OnyxIconButton extends StatefulWidget {
     this.focusNode,
     this.isTv = false,
     this.prominent = false,
+    this.glass = false,
   });
+
+  /// Le diamètre d'un bouton de verre, et la taille de son icône.
+  static const double glassSize = 44;
+  static const double _glassIcon = 22;
 
   @override
   State<OnyxIconButton> createState() => _OnyxIconButtonState();
@@ -77,9 +89,15 @@ class _OnyxIconButtonState extends State<OnyxIconButton> {
   @override
   Widget build(BuildContext context) {
     final m = widget.metrics;
-    final iconSize = widget.size ?? m.iconSize;
+    final glass = widget.glass;
+    final iconSize =
+        widget.size ?? (glass ? OnyxIconButton._glassIcon : m.iconSize);
     // The box grows with an oversized icon so play/pause is not clipped.
-    final box = iconSize > m.iconSize ? iconSize + 18 : m.hitSize;
+    final box = glass
+        ? OnyxIconButton.glassSize
+        : iconSize > m.iconSize
+            ? iconSize + 18
+            : m.hitSize;
 
     return Tooltip(
       message: widget.tooltip,
@@ -110,9 +128,9 @@ class _OnyxIconButtonState extends State<OnyxIconButton> {
                 final active = _hovered || focused;
                 final filled = widget.isTv && focused;
                 final Color? disc = filled
-                    ? AppColors.accent
-                    : widget.prominent
-                        ? Colors.white.withValues(alpha: 0.16)
+                    ? (glass ? FocusFill.fill : AppColors.accent)
+                    : widget.prominent || glass
+                        ? Colors.white.withValues(alpha: glass ? 0.18 : 0.16)
                         : null;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 140),
@@ -125,8 +143,11 @@ class _OnyxIconButtonState extends State<OnyxIconButton> {
                     boxShadow: filled
                         ? [
                             BoxShadow(
-                              color: AppColors.accent.withValues(alpha: 0.45),
-                              blurRadius: 18,
+                              color: glass
+                                  ? const Color(0x59000000)
+                                  : AppColors.accent.withValues(alpha: 0.45),
+                              blurRadius: glass ? 14 : 18,
+                              offset: glass ? const Offset(0, 4) : Offset.zero,
                             ),
                           ]
                         : null,
@@ -134,9 +155,11 @@ class _OnyxIconButtonState extends State<OnyxIconButton> {
                   child: Icon(
                     widget.icon,
                     size: iconSize,
-                    color: active
-                        ? OnyxChromeTheme.iconActive
-                        : OnyxChromeTheme.icon,
+                    color: filled && glass
+                        ? FocusFill.ink
+                        : active
+                            ? OnyxChromeTheme.iconActive
+                            : OnyxChromeTheme.icon,
                   ),
                 );
               },
@@ -267,4 +290,85 @@ List<Widget> onyxWindowButtons({
       onPressed: onToggleFullscreen,
     ),
   ];
+}
+
+/// Un onglet sous la barre de lecture d'un téléviseur (ADR-0124) : « Infos »,
+/// « Épisodes », « Regarder ensemble ». Du texte au repos, une capsule blanche
+/// à l'encre noire sous la télécommande ; [active] le garde clair quand ce
+/// qu'il ouvre est à l'écran.
+class OnyxChromeTab extends StatefulWidget {
+  const OnyxChromeTab({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.active = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool active;
+
+  static const double height = 36;
+
+  @override
+  State<OnyxChromeTab> createState() => _OnyxChromeTabState();
+}
+
+class _OnyxChromeTabState extends State<OnyxChromeTab> {
+  final FocusNode _node = FocusNode(debugLabel: 'onyx-tab');
+
+  @override
+  void dispose() {
+    _node.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const radius = BorderRadius.all(Radius.circular(OnyxChromeTab.height / 2));
+    return TvFocusable(
+      focusNode: _node,
+      onSelect: widget.onPressed,
+      borderRadius: radius,
+      // La capsule dit le focus : pas d'anneau en plus.
+      showRing: false,
+      focusScale: 1.04,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onPressed,
+        child: ListenableBuilder(
+          listenable: _node,
+          builder: (context, _) {
+            final focused = _node.hasFocus;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              curve: Curves.easeOut,
+              height: OnyxChromeTab.height,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: focused ? FocusFill.fill : Colors.transparent,
+                borderRadius: radius,
+              ),
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                style: TextStyle(
+                  color: focused
+                      ? FocusFill.ink
+                      : widget.active
+                          ? OnyxChromeTheme.title
+                          : OnyxChromeTheme.meta,
+                  fontSize: AppType.headline,
+                  fontWeight: focused || widget.active
+                      ? FontWeight.w700
+                      : FontWeight.w600,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 }

@@ -586,6 +586,7 @@ extension _PlayerChrome on _PlayerScreenState {
       title: _info.showTitle,
       overline: _info.overline,
       logoUrl: _mediaLogoUrl,
+      overview: _info.media.overview,
       volume: _playerController.session.volume,
       onVolumeChanged: (v) => _playerController.session.setVolume(v),
       brightness: _screenBrightness,

@@ -84,7 +84,14 @@ class OnyxProgressBar extends StatefulWidget {
     this.focusNode,
     this.previews,
     this.previewAtProgress = false,
+    this.marker = false,
   });
+
+  /// L'arrangement d'un téléviseur, celui du lecteur d'Apple (ADR-0124) : la
+  /// barre reste blanche sous la télécommande, et la position se lit à un
+  /// repère vertical, toujours visible, qui s'allonge et s'éclaire au focus.
+  /// La rangée est plus basse : elle n'a pas de doigt à recevoir.
+  final bool marker;
 
   @override
   State<OnyxProgressBar> createState() => _OnyxProgressBarState();
@@ -147,7 +154,7 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
     final m = widget.metrics;
     // The row is taller than the bar so there is something to aim at: a 4px
     // bar is not a target, on a mouse or a finger.
-    final rowHeight = m.hitSize;
+    final rowHeight = widget.marker ? _markerRowHeight : m.hitSize;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -191,7 +198,10 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
                 alignment: Alignment.centerLeft,
                 children: [
                   _buildBar(width),
-                  if (_active) _buildHandle(width),
+                  if (widget.marker)
+                    _buildMarker(width)
+                  else if (_active)
+                    _buildHandle(width),
                   if (_previewFraction != null &&
                       widget.duration > Duration.zero)
                     _buildPointerLabel(width, rowHeight),
@@ -245,8 +255,35 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
 
   /// The played part and the handle: the accent under the remote, white
   /// otherwise.
-  Color get _playedColor =>
-      _focused ? AppColors.accent : OnyxChromeTheme.progressPlayed;
+  Color get _playedColor => _focused && !widget.marker
+      ? AppColors.accent
+      : OnyxChromeTheme.progressPlayed;
+
+  static const double _markerRowHeight = 30;
+
+  /// Le repère de position du lecteur d'Apple : un trait vertical, plus haut
+  /// et lumineux quand la barre a la télécommande.
+  Widget _buildMarker(double width) {
+    const thickness = 4.0;
+    final height = _focused ? 26.0 : 16.0;
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      left: (_shownFraction * width) - thickness / 2,
+      top: (_markerRowHeight - height) / 2,
+      width: thickness,
+      height: height,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: OnyxChromeTheme.progressPlayed,
+          borderRadius: BorderRadius.circular(thickness / 2),
+          boxShadow: _focused
+              ? const [BoxShadow(color: Color(0x8CFFFFFF), blurRadius: 14)]
+              : null,
+        ),
+      ),
+    );
+  }
 
   Widget _buildBar(double width) {
     final m = widget.metrics;

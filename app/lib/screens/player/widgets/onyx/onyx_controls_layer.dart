@@ -15,6 +15,7 @@ import 'onyx_chrome_theme.dart';
 import 'onyx_progress_bar.dart';
 import 'onyx_scrim.dart';
 import 'onyx_skip_intro_button.dart';
+import 'onyx_tv_tabs.dart';
 import '../../../../l10n/tr.dart';
 
 part 'onyx_controls_rows.dart';
@@ -27,8 +28,8 @@ part 'onyx_controls_rows.dart';
 /// Two arrangements, one breakpoint ([OnyxChromeTheme.compactBreakpoint]):
 /// wide puts the title block and the utility cluster on one row above the
 /// scrubber, compact stacks them so nothing collides at phone widths. A
-/// television gets its own, built for the remote — see
-/// [_buildTvChrome].
+/// television gets its own, built for the remote on the model of Apple's
+/// player — see [_buildTvChrome].
 class OnyxControlsLayer extends StatelessWidget {
   final bool visible;
 
@@ -68,6 +69,9 @@ class OnyxControlsLayer extends StatelessWidget {
   final String? overline;
 
   final String? logoUrl;
+
+  /// Le résumé du titre, pour l'onglet « Infos » d'un téléviseur.
+  final String? overview;
 
   // --- Volume -------------------------------------------------------------
 
@@ -237,6 +241,7 @@ class OnyxControlsLayer extends StatelessWidget {
     this.title,
     this.overline,
     this.logoUrl,
+    this.overview,
     this.onSkipNext,
     this.onSkipPrevious,
     this.onOpenEpisodes,

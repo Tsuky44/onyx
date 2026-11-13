@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_brightness_slider.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_chrome_buttons.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_chrome_theme.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_controls_layer.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_progress_bar.dart';
 import 'package:onyx/theme/app_colors.dart';
+import 'package:onyx/theme/focus_fill.dart';
 import 'package:onyx/tv/nav/tv_nav_engine.dart';
 import 'package:onyx/widgets/global/app_slider.dart';
 
@@ -36,6 +38,9 @@ Future<void> pumpChrome(
   VoidCallback? onForward,
   VoidCallback? onPlayPause,
   VoidCallback? onLockScreen,
+  VoidCallback? onOpenWatchParty,
+  String? overview,
+  String? logoUrl,
 }) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = Size(width, height);
@@ -75,6 +80,9 @@ Future<void> pumpChrome(
           onSkipPrevious: onSkipPrevious,
           onOpenEpisodes: onOpenEpisodes,
           onSkipIntro: onSkipIntro,
+          onOpenWatchParty: onOpenWatchParty,
+          overview: overview,
+          logoUrl: logoUrl,
           isTv: isTv,
           playPauseFocusNode: playPauseFocusNode,
           progressFocusNode: progressFocusNode,
@@ -96,6 +104,8 @@ Future<TvNavHarness> pumpTvChrome(
   VoidCallback? onBack,
   VoidCallback? onRewind,
   VoidCallback? onSkipNext,
+  VoidCallback? onPlayPause,
+  VoidCallback? onOpenEpisodes,
 }) {
   return TvNavHarness.pump(
     tester,
@@ -110,7 +120,7 @@ Future<TvNavHarness> pumpTvChrome(
         title: 'Avatar : La Voie de l’eau',
         overline: '2022',
         volume: 70,
-        onPlayPause: () {},
+        onPlayPause: onPlayPause ?? () {},
         onRewind: onRewind ?? () {},
         onForward: () {},
         onSeekFraction: (_) {},
@@ -127,6 +137,7 @@ Future<TvNavHarness> pumpTvChrome(
         onOpenSettings: () {},
         onToggleFullscreen: () {},
         onSkipNext: onSkipNext,
+        onOpenEpisodes: onOpenEpisodes,
         isTv: true,
         playPauseFocusNode: playPauseFocusNode,
         progressFocusNode: progressFocusNode,
@@ -682,22 +693,29 @@ void main() {
       expect(find.byType(AppSlider), findsNothing);
     });
 
-    testWidgets('the remote is handed play/pause on the way in',
+    testWidgets('the remote is handed the timeline on the way in',
         (tester) async {
-      final playPause = FocusNode();
-      addTearDown(playPause.dispose);
+      // Le lecteur d'Apple : pas de bouton lecture à l'écran, la télécommande
+      // tient la barre, et OK met en pause (ADR-0124).
+      var toggled = 0;
+      final progress = FocusNode();
+      addTearDown(progress.dispose);
 
       await pumpChrome(
         tester,
         width: 1280,
         isTv: true,
-        playPauseFocusNode: playPause,
+        progressFocusNode: progress,
+        onPlayPause: () => toggled++,
       );
 
-      playPause.requestFocus();
+      progress.requestFocus();
       await tester.pump();
+      expect(progress.hasFocus, isTrue);
 
-      expect(playPause.hasFocus, isTrue);
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+      expect(toggled, 1);
     });
 
     testWidgets('every control in the bar can take the focus', (tester) async {
@@ -708,180 +726,200 @@ void main() {
         onSkipNext: () {},
         onSkipPrevious: () {},
         onOpenEpisodes: () {},
+        onOpenWatchParty: () {},
+        overview: 'Un résumé.',
       );
 
-      // One per control: back, episodes, subtitles, audio, settings,
-      // previous, rewind, play/pause, forward, next, and the scrubber. A count
-      // is what catches a control added later without a way to reach it.
+      // One per control: previous, subtitles, audio, settings, next, the
+      // scrubber, and the three tabs. A count is what catches a control added
+      // later without a way to reach it.
       final focusable = tester
           .widgetList<Focus>(find.byType(Focus))
           .where((f) => f.canRequestFocus)
           .length;
-      expect(focusable, greaterThanOrEqualTo(11));
+      expect(focusable, greaterThanOrEqualTo(9));
     });
 
     testWidgets('a hidden chrome holds no focus', (tester) async {
-      final playPause = FocusNode();
-      addTearDown(playPause.dispose);
+      final progress = FocusNode();
+      addTearDown(progress.dispose);
 
       await pumpChrome(
         tester,
         width: 1280,
         isTv: true,
         visible: false,
-        playPauseFocusNode: playPause,
+        progressFocusNode: progress,
       );
 
-      playPause.requestFocus();
+      progress.requestFocus();
       await tester.pump();
 
-      // Faded out, the bar is still in the tree. If its buttons could still be
-      // focused the remote would walk a control bar nobody can see.
-      expect(playPause.hasFocus, isFalse);
+      // Faded out, the bar is still in the tree. If its controls could still
+      // be focused the remote would walk a control bar nobody can see.
+      expect(progress.hasFocus, isFalse);
     });
   });
 
   group('the D-pad walks the television chrome', () {
     TvNavHarness.forEachEngine((engine) {
-      /// Mounts the television chrome on the bench, with the remote on
-      /// play/pause.
+      /// Mounts the television chrome on the bench, with the remote on the
+      /// timeline.
       Future<(TvNavHarness, FocusNode)> pumpTv(
         WidgetTester tester, {
-        FocusNode? progress,
         VoidCallback? onRewind,
         VoidCallback? onSkipNext,
-        VoidCallback? onBack,
+        VoidCallback? onOpenEpisodes,
       }) async {
-        final playPause = FocusNode(debugLabel: 'play-pause');
-        addTearDown(playPause.dispose);
+        final progress = FocusNode(debugLabel: 'progress');
+        addTearDown(progress.dispose);
         final nav = await pumpTvChrome(
           tester,
           engine,
-          playPauseFocusNode: playPause,
           progressFocusNode: progress,
           onRewind: onRewind,
           onSkipNext: onSkipNext,
-          onBack: onBack,
+          onOpenEpisodes: onOpenEpisodes,
         );
-        playPause.requestFocus();
+        progress.requestFocus();
         await TvNavHarness.settle(tester);
-        return (nav, playPause);
+        return (nav, progress);
       }
 
-      bool focusedOn(WidgetTester tester, IconData icon) {
+      bool focusedOn(WidgetTester tester, Finder what) {
         final context = primaryFocus?.context;
         if (context == null) return false;
         return find
-            .descendant(
-              of: find.byWidget(context.widget),
-              matching: find.byIcon(icon),
-            )
+            .descendant(of: find.byWidget(context.widget), matching: what)
             .evaluate()
             .isNotEmpty;
       }
 
-      testWidgets('down from play/pause lands on the timeline, which seeks',
+      testWidgets('left on the timeline seeks, it does not leave it',
           (tester) async {
         var rewound = 0;
-        final progress = FocusNode(debugLabel: 'progress');
-        addTearDown(progress.dispose);
-        final (nav, _) =
-            await pumpTv(tester, progress: progress, onRewind: () => rewound++);
-
-        await nav.press(TraversalDirection.down);
-        expect(progress.hasFocus, isTrue);
+        final (nav, progress) =
+            await pumpTv(tester, onRewind: () => rewound++);
 
         await nav.press(TraversalDirection.left);
         expect(rewound, 1);
-        expect(progress.hasFocus, isTrue,
-            reason: 'left on the timeline seeks, it does not leave it');
-      });
-
-      testWidgets('up from the timeline comes back to play/pause',
-          (tester) async {
-        final progress = FocusNode(debugLabel: 'progress');
-        addTearDown(progress.dispose);
-        final (nav, playPause) = await pumpTv(tester, progress: progress);
-
-        progress.requestFocus();
-        await TvNavHarness.settle(tester);
-        await nav.press(TraversalDirection.up);
-
-        expect(playPause.hasFocus, isTrue);
+        expect(progress.hasFocus, isTrue);
       });
 
       testWidgets(
-          'up from play/pause reaches the top row, where right walks '
-          'to the settings and stops there', (tester) async {
-        final (nav, _) = await pumpTv(tester);
+          'up from the timeline reaches the round buttons, where right '
+          'walks to the last one and stops there', (tester) async {
+        final (nav, progress) = await pumpTv(tester);
 
         await nav.press(TraversalDirection.up);
+        expect(progress.hasFocus, isFalse);
 
-        var reached = focusedOn(tester, Icons.settings_rounded);
+        final settings = find.byIcon(Icons.more_horiz_rounded);
+        var reached = focusedOn(tester, settings);
         for (var press = 0; press < 6 && !reached; press++) {
           await nav.press(TraversalDirection.right);
-          reached = focusedOn(tester, Icons.settings_rounded);
+          reached = focusedOn(tester, settings);
         }
         expect(reached, isTrue,
             reason: 'the settings button was never reached');
 
         await nav.press(TraversalDirection.right);
-        expect(focusedOn(tester, Icons.settings_rounded), isTrue,
+        expect(focusedOn(tester, settings), isTrue,
             reason: 'the edge of a row is a wall');
+
+        await nav.press(TraversalDirection.up);
+        expect(focusedOn(tester, settings), isTrue,
+            reason: 'nothing above the round buttons');
+
+        await nav.press(TraversalDirection.down);
+        expect(progress.hasFocus, isTrue);
       });
 
-      testWidgets('left and right stay on the transport row', (tester) async {
+      testWidgets('with a next episode, its button ends the row',
+          (tester) async {
         final (nav, _) = await pumpTv(tester, onSkipNext: () {});
 
-        for (var press = 0; press < 4; press++) {
-          await nav.press(TraversalDirection.left);
-        }
-        expect(focusedOn(tester, Icons.replay_10_rounded), isTrue);
-
+        await nav.press(TraversalDirection.up);
         for (var press = 0; press < 6; press++) {
           await nav.press(TraversalDirection.right);
         }
-        expect(focusedOn(tester, Icons.skip_next_rounded), isTrue);
+        expect(
+            focusedOn(tester, find.byIcon(Icons.skip_next_rounded)), isTrue);
       });
 
-      testWidgets('up from the top row goes nowhere', (tester) async {
-        var backs = 0;
-        final (nav, _) = await pumpTv(tester, onBack: () => backs++);
+      testWidgets('down from the timeline reaches the tabs, and OK opens one',
+          (tester) async {
+        var opened = 0;
+        final (nav, progress) =
+            await pumpTv(tester, onOpenEpisodes: () => opened++);
 
-        await nav.press(TraversalDirection.up);
-        for (var press = 0; press < 6; press++) {
-          await nav.press(TraversalDirection.left);
-        }
-        expect(focusedOn(tester, Icons.arrow_back_ios_new_rounded), isTrue);
-
-        await nav.press(TraversalDirection.up);
+        await nav.press(TraversalDirection.down);
+        expect(focusedOn(tester, find.text('Épisodes')), isTrue);
         await nav.select(key: LogicalKeyboardKey.enter);
-        expect(backs, 1);
+        expect(opened, 1);
+
+        await nav.press(TraversalDirection.down);
+        expect(focusedOn(tester, find.text('Épisodes')), isTrue,
+            reason: 'nothing below the tabs');
+        await nav.press(TraversalDirection.up);
+        expect(progress.hasFocus, isTrue);
+      });
+
+      testWidgets('without tabs, down from the timeline is a wall',
+          (tester) async {
+        final (nav, progress) = await pumpTv(tester);
+
+        await nav.press(TraversalDirection.down);
+        expect(progress.hasFocus, isTrue);
       });
     });
   });
 
   group('the television chrome is laid out for the remote', () {
+    // ADR-0124 : l'arrangement du lecteur d'Apple.
     testWidgets(
-        'menus at the top right, transport in the middle, timeline '
-        'at the bottom', (tester) async {
+        'nothing in the middle: title and round buttons above the '
+        'timeline, times below', (tester) async {
       await pumpChrome(tester, width: 960, height: 540, isTv: true);
 
-      final play = tester.getCenter(find.byIcon(Icons.pause_rounded));
-      final settings = tester.getCenter(find.byIcon(Icons.settings_rounded));
-      final subtitles =
-          tester.getCenter(find.byIcon(Icons.closed_caption_rounded));
-      final audio = tester.getCenter(find.byIcon(Icons.graphic_eq_rounded));
-      final elapsed = tester.getCenter(find.text('42:00'));
-
-      expect((play.dx - 480).abs(), lessThan(4));
-      expect((play.dy - 270).abs(), lessThan(4),
-          reason: 'the transport sits in the middle of the picture');
-      for (final menu in [settings, subtitles, audio]) {
-        expect(menu.dy, lessThan(100));
-        expect(menu.dx, greaterThan(600));
+      // Ni lecture/pause, ni ±10 s, ni Retour : la télécommande les porte.
+      for (final icon in [
+        Icons.pause_rounded,
+        Icons.play_arrow_rounded,
+        Icons.replay_10_rounded,
+        Icons.forward_10_rounded,
+        Icons.arrow_back_ios_new_rounded,
+      ]) {
+        expect(find.byIcon(icon), findsNothing, reason: '$icon');
       }
-      expect(elapsed.dy, greaterThan(play.dy));
+
+      final bar = tester.getRect(find.byType(OnyxProgressBar));
+      final title = tester.getRect(find.text('Avatar : La Voie de l’eau'));
+      final overline = tester.getRect(find.text('2022'));
+      final elapsed = tester.getRect(find.text('42:00'));
+      final remaining = tester.getRect(find.text('-01:18:00'));
+
+      // Le titre en gras, sa ligne dessous, tous deux à gauche.
+      expect(title.bottom, lessThanOrEqualTo(overline.top));
+      expect(overline.bottom, lessThanOrEqualTo(bar.top));
+      expect(title.left, bar.left);
+      // Les boutons ronds à droite, au-dessus de la barre.
+      for (final icon in [
+        Icons.subtitles_rounded,
+        Icons.graphic_eq_rounded,
+        Icons.more_horiz_rounded,
+      ]) {
+        final button = tester.getRect(find.byIcon(icon));
+        expect(button.bottom, lessThanOrEqualTo(bar.top), reason: '$icon');
+        expect(button.left, greaterThan(480), reason: '$icon');
+      }
+      // Les temps dessous : écoulé à gauche, restant à droite, sans heure de
+      // fin.
+      expect(elapsed.top, greaterThanOrEqualTo(bar.bottom - 1));
+      expect(elapsed.left, bar.left);
+      expect(remaining.right, closeTo(bar.right, 0.5));
+      // Tout tient dans le bas de l'image.
+      expect(title.top, greaterThan(270));
     });
 
     testWidgets('no speed button: the rate is in the settings menu',
@@ -890,42 +928,37 @@ void main() {
       expect(find.byIcon(Icons.speed_rounded), findsNothing);
     });
 
-    testWidgets('the button under the remote is filled with the accent',
-        (tester) async {
-      final playPause = FocusNode();
-      addTearDown(playPause.dispose);
-      await pumpChrome(
-        tester,
-        width: 960,
-        height: 540,
-        isTv: true,
-        playPauseFocusNode: playPause,
-      );
+    testWidgets(
+        'a round button is glass at rest, white with dark ink under the '
+        'remote', (tester) async {
+      await pumpChrome(tester, width: 960, height: 540, isTv: true);
 
-      bool filled(IconData icon) => tester
+      final icon = find.byIcon(Icons.more_horiz_rounded);
+      BoxDecoration disc() => tester
           .widgetList<AnimatedContainer>(find.ancestor(
-            of: find.byIcon(icon),
+            of: icon,
             matching: find.byType(AnimatedContainer),
           ))
-          .any((box) =>
-              (box.decoration as BoxDecoration?)?.color == AppColors.accent);
+          .first
+          .decoration! as BoxDecoration;
 
-      expect(filled(Icons.pause_rounded), isFalse);
+      expect(disc().shape, BoxShape.circle);
+      expect(disc().color, isNot(FocusFill.fill));
+      expect(disc().color, isNot(Colors.transparent));
+      expect(tester.getSize(find.ancestor(
+        of: icon,
+        matching: find.byType(AnimatedContainer),
+      ).first), const Size.square(OnyxIconButton.glassSize));
 
-      playPause.requestFocus();
+      Focus.of(tester.element(icon)).requestFocus();
       await tester.pumpAndSettle();
-      expect(filled(Icons.pause_rounded), isTrue);
-
-      // Moved to the next button: the fill follows.
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pumpAndSettle();
-      expect(filled(Icons.pause_rounded), isFalse);
-      expect(filled(Icons.forward_10_rounded), isTrue);
+      expect(disc().color, FocusFill.fill);
+      expect(tester.widget<Icon>(icon).color, FocusFill.ink);
     });
 
     testWidgets(
-        'the focused timeline thickens and turns to the accent, with '
-        'no frame around it', (tester) async {
+        'the focused timeline stays white: it thickens and its marker '
+        'grows', (tester) async {
       final progress = FocusNode();
       addTearDown(progress.dispose);
       await pumpChrome(
@@ -942,35 +975,117 @@ void main() {
               find.descendant(of: bar, matching: find.byType(DecoratedBox)))
           .any((box) =>
               (box.decoration as BoxDecoration).color == AppColors.accent);
-      bool framed() => tester
-          .widgetList<DecoratedBox>(
-              find.descendant(of: bar, matching: find.byType(DecoratedBox)))
-          .any((box) => (box.decoration as BoxDecoration).border != null);
       double thickness() => tester
           .getSize(find
               .descendant(of: bar, matching: find.byType(AnimatedContainer))
               .first)
           .height;
+      double marker() => tester
+          .getSize(find.descendant(
+              of: bar, matching: find.byType(AnimatedPositioned)))
+          .height;
 
       final restingThickness = thickness();
-      expect(accentFill(), isFalse);
+      final restingMarker = marker();
 
       progress.requestFocus();
       await tester.pumpAndSettle();
 
-      expect(accentFill(), isTrue);
-      expect(framed(), isFalse);
+      expect(accentFill(), isFalse);
       expect(thickness(), greaterThan(restingThickness));
+      expect(marker(), greaterThan(restingMarker));
     });
 
     testWidgets('drawn larger than the phone chrome', (tester) async {
+      double titleSize() => tester
+          .widgetList<Text>(find.text('Avatar : La Voie de l’eau'))
+          .map((text) => text.style!.fontSize!)
+          .reduce((a, b) => a > b ? a : b);
+
       await pumpChrome(tester, width: 960, height: 540, isTv: true);
-      final tvIcon = tester.getSize(find.byIcon(Icons.settings_rounded));
+      final tv = titleSize();
 
       await pumpChrome(tester, width: 700, height: 400, showVolume: false);
-      final phoneIcon = tester.getSize(find.byIcon(Icons.settings_rounded));
+      expect(tv, greaterThan(titleSize()));
+    });
 
-      expect(tvIcon.height, greaterThan(phoneIcon.height));
+    testWidgets('without a logo, nothing is drawn at the top left',
+        (tester) async {
+      await pumpChrome(tester, width: 960, height: 540, isTv: true);
+
+      // Le titre n'est écrit qu'une fois, au-dessus de la barre.
+      expect(find.text('Avatar : La Voie de l’eau'), findsOneWidget);
+    });
+
+    testWidgets('the tabs: only the ones with something to open',
+        (tester) async {
+      await pumpChrome(tester, width: 960, height: 540, isTv: true);
+      expect(find.byType(OnyxChromeTab), findsNothing);
+
+      var episodes = 0;
+      var party = 0;
+      await pumpChrome(
+        tester,
+        width: 960,
+        height: 540,
+        isTv: true,
+        overview: 'Sur une lune lointaine, une famille défend son récif.',
+        onOpenEpisodes: () => episodes++,
+        onOpenWatchParty: () => party++,
+      );
+
+      final bar = tester.getRect(find.byType(OnyxProgressBar));
+      for (final label in ['Infos', 'Épisodes', 'Regarder ensemble']) {
+        expect(tester.getRect(find.text(label)).top, greaterThan(bar.bottom),
+            reason: label);
+      }
+      expect(tester.getRect(find.text('Infos')).left, closeTo(bar.left, 0.5));
+
+      await tester.tap(find.text('Épisodes'));
+      await tester.tap(find.text('Regarder ensemble'));
+      expect((episodes, party), (1, 1));
+    });
+
+    testWidgets('« Infos » unfolds the synopsis, and hiding the chrome folds it',
+        (tester) async {
+      const overview = 'Sur une lune lointaine, une famille défend son récif.';
+      await pumpChrome(
+        tester,
+        width: 960,
+        height: 540,
+        isTv: true,
+        overview: overview,
+      );
+      expect(find.text(overview), findsNothing);
+
+      await tester.tap(find.text('Infos'));
+      await tester.pumpAndSettle();
+      expect(find.text(overview), findsOneWidget);
+
+      await tester.tap(find.text('Infos'));
+      await tester.pumpAndSettle();
+      expect(find.text(overview), findsNothing);
+    });
+
+    testWidgets('the skip-intro offer is a glass capsule on a television',
+        (tester) async {
+      await pumpChrome(
+        tester,
+        width: 960,
+        height: 540,
+        isTv: true,
+        onSkipIntro: () {},
+      );
+
+      final material = tester.widget<Material>(find
+          .ancestor(
+            of: find.text('Passer l’intro'),
+            matching: find.byType(Material),
+          )
+          .first);
+      final shape = material.shape! as RoundedRectangleBorder;
+      expect(shape.side, BorderSide.none);
+      expect(shape.borderRadius, const BorderRadius.all(Radius.circular(21)));
     });
 
     testWidgets('no brightness bar, even when a brightness is supplied',

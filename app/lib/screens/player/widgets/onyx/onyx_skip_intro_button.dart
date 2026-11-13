@@ -30,7 +30,12 @@ class OnyxSkipIntroButton extends StatefulWidget {
     required this.metrics,
     this.autoSkipIn,
     this.segment = SkipSegment.intro,
+    this.capsule = false,
   });
+
+  /// La capsule de verre du lecteur d'Apple, sur téléviseur (ADR-0124), au
+  /// lieu du rectangle à liseré.
+  final bool capsule;
 
   @override
   State<OnyxSkipIntroButton> createState() => _OnyxSkipIntroButtonState();
@@ -42,7 +47,10 @@ class _OnyxSkipIntroButtonState extends State<OnyxSkipIntroButton>
   // that is rebuilt or off screen can neither skip twice nor fail to.
   late final AnimationController _fill = AnimationController(vsync: this);
 
-  static const BorderRadius _radius = BorderRadius.all(Radius.circular(6));
+  static const BorderRadius _square = BorderRadius.all(Radius.circular(6));
+  static const BorderRadius _round = BorderRadius.all(Radius.circular(21));
+
+  BorderRadius get _radius => widget.capsule ? _round : _square;
 
   @override
   void initState() {
@@ -80,11 +88,15 @@ class _OnyxSkipIntroButtonState extends State<OnyxSkipIntroButton>
       borderRadius: _radius,
       focusScale: 1.06,
       child: Material(
-        color: Colors.black.withValues(alpha: 0.55),
+        color: widget.capsule
+            ? const Color(0x52FFFFFF)
+            : Colors.black.withValues(alpha: 0.55),
         clipBehavior: Clip.antiAlias,
-        shape: const RoundedRectangleBorder(
+        shape: RoundedRectangleBorder(
           borderRadius: _radius,
-          side: BorderSide(color: OnyxChromeTheme.icon, width: 1.4),
+          side: widget.capsule
+              ? BorderSide.none
+              : const BorderSide(color: OnyxChromeTheme.icon, width: 1.4),
         ),
         child: InkWell(
           borderRadius: _radius,
@@ -106,8 +118,10 @@ class _OnyxSkipIntroButtonState extends State<OnyxSkipIntroButton>
                   ),
                 ),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.capsule ? 22 : 18,
+                  vertical: 10,
+                ),
                 child: Text(
                   switch (widget.segment) {
                     SkipSegment.recap => tr('Passer le récap'),
@@ -147,7 +161,11 @@ class OnyxSkipIntroSlot extends StatelessWidget {
     this.autoSkipIn,
     this.segment = SkipSegment.intro,
     this.focusRow = false,
+    this.capsule = false,
   });
+
+  /// Voir [OnyxSkipIntroButton.capsule].
+  final bool capsule;
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +174,7 @@ class OnyxSkipIntroSlot extends StatelessWidget {
       metrics: metrics,
       autoSkipIn: autoSkipIn,
       segment: segment,
+      capsule: capsule,
     );
     return Padding(
       padding: EdgeInsets.fromLTRB(metrics.gutter, 0, metrics.gutter, 14),

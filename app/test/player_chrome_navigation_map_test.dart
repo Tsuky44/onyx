@@ -50,8 +50,9 @@ void main() {
       return tooltip ?? focusedLabelOf(node) ?? node.toString();
     }
 
-    /// Lance le lecteur depuis la carte, chrome levé par OK, télécommande
-    /// sur lecture/pause.
+    /// Lance le lecteur depuis la carte, chrome levé par Haut, télécommande
+    /// sur la barre de lecture : c'est elle qui répond à OK, à gauche et à
+    /// droite, comme dans le lecteur d'Apple (ADR-0124).
     Future<void> open(
       WidgetTester tester, {
       bool skipIntro = false,
@@ -77,10 +78,32 @@ void main() {
       await tester.pumpAndSettle();
       expect(focused(tester), 'lecteur');
       if (!raise) return;
-      // Haut : le chrome monte, la télécommande sur lecture/pause.
+      // Haut : le chrome monte, la télécommande sur la barre.
       await nav.press(up);
       await tester.pumpAndSettle();
-      expect(focused(tester), 'Pause');
+      expect(focused(tester), 'barre');
+    }
+
+    /// Les boutons ronds, de gauche à droite (le banc joue une série).
+    const buttons = [
+      'Épisode précédent',
+      'Sous-titres',
+      'Pistes audio',
+      'Réglages',
+      'Épisode suivant',
+    ];
+
+    /// De la barre au bouton Réglages, le quatrième de sa rangée.
+    Future<void> toSettings(WidgetTester tester) async {
+      await nav.press(up);
+      for (var i = 0; i < 6; i++) {
+        await nav.press(left);
+      }
+      for (var i = 0; i < 3; i++) {
+        await nav.press(right);
+      }
+      await tester.pumpAndSettle();
+      expect(focused(tester), 'Réglages');
     }
 
     Future<void> press(WidgetTester tester, TraversalDirection direction,
@@ -92,95 +115,85 @@ void main() {
     }
 
     group('carte du chrome', () {
-      testWidgets('depuis lecture/pause : Bas la barre, Haut la rangée du haut',
+      testWidgets('depuis la barre : Haut les boutons ronds, Bas les onglets',
           (tester) async {
         await open(tester);
+        await press(tester, up);
+        expect(buttons, contains(focused(tester)));
         await press(tester, down);
         expect(focused(tester), 'barre');
+        await press(tester, down);
+        expect(focused(tester), 'Épisodes');
         await press(tester, up);
-        expect(focused(tester), 'Pause');
-        await press(tester, up);
-        expect(
-          [
-            'Retour',
-            'Épisodes suivants',
-            'Sous-titres',
-            'Pistes audio',
-            'Réglages'
-          ],
-          contains(focused(tester)),
-        );
+        expect(focused(tester), 'barre');
       });
 
-      testWidgets('la rangée du milieu se parcourt, ses bords sont des murs',
-          (tester) async {
-        await open(tester);
-        await press(tester, left, times: 5);
-        expect(focused(tester), 'Épisode précédent');
-        await press(tester, right, times: 6);
-        expect(focused(tester), 'Épisode suivant');
-      });
-
-      testWidgets(
-          'la rangée du haut : de Retour à Réglages, murs aux deux bouts',
+      testWidgets('les boutons ronds se parcourent, leurs bords sont des murs',
           (tester) async {
         await open(tester);
         await press(tester, up);
         await press(tester, left, times: 6);
-        expect(focused(tester), 'Retour');
+        expect(focused(tester), buttons.first);
         await press(tester, up);
-        expect(focused(tester), 'Retour', reason: 'rien au-dessus du chrome');
-        await press(tester, right, times: 8);
-        expect(focused(tester), 'Réglages');
+        expect(focused(tester), buttons.first,
+            reason: 'rien au-dessus du chrome');
+        for (final button in buttons.skip(1)) {
+          await press(tester, right);
+          expect(focused(tester), button);
+        }
+        await press(tester, right);
+        expect(focused(tester), buttons.last);
       });
 
-      testWidgets(
-          'Bas depuis Réglages ou Retour mène à lecture/pause, pas à la barre',
+      testWidgets('Bas depuis un bouton rond ramène à la barre',
           (tester) async {
-        // La barre, pleine largeur, est dans le faisceau de Réglages, et la
-        // lecture au centre ne l'est pas : la géométrie seule y sautait la
-        // rangée du milieu.
         await open(tester);
         await press(tester, up);
-        await press(tester, right, times: 8);
-        expect(focused(tester), 'Réglages');
+        await press(tester, left, times: 6);
         await press(tester, down);
-        expect(focused(tester), 'Pause');
+        expect(focused(tester), 'barre');
 
         await press(tester, up);
-        await press(tester, left, times: 8);
-        expect(focused(tester), 'Retour');
+        await press(tester, right, times: 6);
+        expect(focused(tester), buttons.last);
         await press(tester, down);
-        expect(focused(tester), 'Pause');
+        expect(focused(tester), 'barre');
       });
 
-      testWidgets('la barre cherche à gauche et à droite, Bas est un mur',
-          (tester) async {
+      testWidgets('la barre cherche à gauche et à droite', (tester) async {
         await open(tester);
-        await press(tester, down);
         final before = player(tester).seeks;
         await press(tester, left);
         await press(tester, right);
         expect(player(tester).seeks, before + 2);
         expect(focused(tester), 'barre');
+      });
+
+      testWidgets('sous les onglets, Bas est un mur', (tester) async {
+        await open(tester);
         await press(tester, down);
-        expect(focused(tester), 'barre');
+        expect(focused(tester), 'Épisodes');
+        await press(tester, down);
+        expect(focused(tester), 'Épisodes');
+        await press(tester, left);
+        await press(tester, right);
+        expect(focused(tester), 'Épisodes');
       });
 
       testWidgets(
-          '« Passer l’intro » est sa propre rangée, entre la lecture '
-          'et la barre', (tester) async {
+          '« Passer l’intro » est sa propre rangée, au-dessus des '
+          'boutons ronds', (tester) async {
         await open(tester, skipIntro: true);
-        await press(tester, down);
+        await press(tester, up);
+        expect(buttons, contains(focused(tester)));
+        await press(tester, up);
         final pill = focused(tester);
+        expect(buttons, isNot(contains(pill)));
         expect(pill, isNot('barre'));
-        expect(pill, isNot('Pause'));
+        await press(tester, down);
+        expect(buttons, contains(focused(tester)));
         await press(tester, down);
         expect(focused(tester), 'barre');
-        await press(tester, up);
-        expect(focused(tester), pill);
-        await press(tester, up);
-        expect(focused(tester), 'Pause');
       });
     });
 
@@ -267,9 +280,7 @@ void main() {
           'un Retour défait une couche : section, menu, chrome, lecteur',
           (tester) async {
         await open(tester);
-        await press(tester, up);
-        await press(tester, right, times: 8);
-        expect(focused(tester), 'Réglages');
+        await toSettings(tester);
 
         await nav.select();
         await tester.pumpAndSettle();
@@ -295,9 +306,9 @@ void main() {
         expect(find.text('Vitesse de lecture'), findsNothing);
         expect(player(tester).chromeVisible, isTrue);
         // dpad rend la télécommande au bouton qui a ouvert le menu ;
-        // l'ancien système la pose sur lecture/pause.
+        // l'ancien système la pose sur la barre de lecture.
         expect(
-            focused(tester), engine == TvNavEngine.dpad ? 'Réglages' : 'Pause');
+            focused(tester), engine == TvNavEngine.dpad ? 'Réglages' : 'barre');
 
         await back();
         expect(player(tester).chromeVisible, isFalse);
@@ -311,8 +322,7 @@ void main() {
 
       testWidgets('le menu piège les flèches', (tester) async {
         await open(tester);
-        await press(tester, up);
-        await press(tester, right, times: 8);
+        await toSettings(tester);
         await nav.select();
         await tester.pumpAndSettle();
         for (final direction in [up, up, up, right, right, down]) {
