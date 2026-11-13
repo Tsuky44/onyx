@@ -145,13 +145,13 @@ void main() {
         (tester) async {
       final nodes = await pumpRow(tester, scrollable: true);
 
-      // 2 unités en une seconde : le premier pas à 0,26, puis un tous les
-      // 0,50. Aucune flèche du moteur dans ce test : le doigt suffit.
+      // 2 unités en une seconde : le premier pas à 0,32, puis un tous les
+      // 0,75. Aucune flèche du moteur dans ce test : le doigt suffit.
       await swipe(tester,
           distance: 2, duration: const Duration(milliseconds: 1000));
       await TvNavHarness.settle(tester);
 
-      expect(focusedIndex(nodes), 4);
+      expect(focusedIndex(nodes), 3);
     });
 
     testWidgets('la flèche que le moteur tire du glissé ne compte pas en plus',
@@ -206,7 +206,8 @@ void main() {
       await wait(tester, const Duration(seconds: 3));
 
       expect(TvTouchpad.isGliding, isFalse);
-      expect(focusedIndex(nodes), 2);
+      // Un glissé ordinaire descend d'une rangée (réglage du 2026-11-13).
+      expect(focusedIndex(nodes), 1);
     });
 
     testWidgets('hors de ce qui défile, pas d’élan', (tester) async {
@@ -224,22 +225,41 @@ void main() {
 
     // ADR-0122 : la pilule des onglets défile, et prenait donc le gain et la
     // lancée d'une rangée d'affiches (« super rapide », essai de la 1.1.42).
+    // Puis « trop faible » à un cran par glissé : le trajet vaut maintenant
+    // deux ou trois crans, rendus même si le doigt est allé plus vite que le
+    // focus.
     testWidgets(
-        'une barre d’onglets qui défile se parcourt cran par cran, sans '
-        'lancée', (tester) async {
+        'une barre d’onglets qui défile avance de trois crans pour un coup '
+        'sec, sans la lancée d’une rangée', (tester) async {
       final nodes = await pumpRow(tester, scrollable: true, height: 36);
       expect(TvTouchpad.paceOf(nodes.first), TouchpadPace.precise);
 
+      // 1,6 unité en 160 ms : deux crans sous le doigt, un troisième dû.
       await flick(tester, lift: true);
-      expect(focusedIndex(nodes), 1);
-      expect(TvTouchpad.isGliding, isFalse,
-          reason: 'un pas posé ne presse pas le défilement');
+      expect(focusedIndex(nodes), 2);
       await wait(tester, const Duration(seconds: 3));
 
-      expect(focusedIndex(nodes), 1);
+      // Sur des affiches, le même geste en traverserait bien davantage.
+      expect(focusedIndex(nodes), 3);
+      expect(TvTouchpad.isGliding, isFalse);
     });
 
-    testWidgets('sur des onglets, un long glissé posé avance de deux crans',
+    testWidgets('sur des onglets, un glissé ordinaire avance de deux crans',
+        (tester) async {
+      final nodes = await pumpRow(tester, scrollable: true, height: 36);
+
+      await swipe(
+        tester,
+        distance: 1,
+        duration: const Duration(milliseconds: 300),
+        lift: true,
+      );
+      await wait(tester, const Duration(seconds: 1));
+
+      expect(focusedIndex(nodes), 2);
+    });
+
+    testWidgets('sur des onglets, un long glissé posé avance de quatre crans',
         (tester) async {
       final nodes = await pumpRow(tester, scrollable: true, height: 36);
 
@@ -249,6 +269,18 @@ void main() {
         duration: const Duration(milliseconds: 700),
         lift: true,
       );
+      await wait(tester, const Duration(seconds: 1));
+
+      expect(focusedIndex(nodes), 4);
+    });
+
+    testWidgets('poser le doigt arrête les crans dus', (tester) async {
+      final nodes = await pumpRow(tester, scrollable: true, height: 36);
+
+      await flick(tester, lift: true);
+      expect(focusedIndex(nodes), 2);
+      TvTouchpad.handleTouch(TouchpadPhase.began, 0, 0);
+      await wait(tester, const Duration(seconds: 1));
 
       expect(focusedIndex(nodes), 2);
     });
@@ -270,7 +302,8 @@ void main() {
       await flick(tester, lift: true, down: true);
       await wait(tester, const Duration(seconds: 3));
 
-      expect(focusedIndex(nodes), 1);
+      // Trois lignes, pas la traversée d'une liste d'affiches.
+      expect(focusedIndex(nodes), 3);
     });
 
     testWidgets('une carte reste une carte : sa hauteur la désigne',

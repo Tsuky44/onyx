@@ -66,6 +66,25 @@ Trois précisions :
   durée ordinaire (200 ms) et non celle d'une flèche maintenue (90 ms). C'est le « plus smooth » des
   réglages.
 
+## Réglage après l'essai (2026-11-13)
+
+Retour : « dans les menus c'est trop faible, je veux quand même que si on glisse à droite ou en bas ça
+descende de 2 ou 3 ». Le premier réglage posé (tableau ci-dessus) valait un cran par glissé.
+
+| | Horizontale, avant | Horizontale, après | Verticale, avant | Verticale, après |
+|---|---|---|---|---|
+| premier cran d'un geste | 0,30 | 0,24 | 0,34 | 0,26 |
+| trajet par cran | 0,80 | 0,40 | 0,90 | 0,42 |
+| écart minimal entre deux crans | 160 ms | 110 ms | 160 ms | 110 ms |
+| crans dus rendus après le lâcher | aucun | 2 au plus | aucun | 2 au plus |
+
+Toujours ni gain ni lancée : **c'est le trajet seul qui compte**, deux ou trois crans pour un glissé
+ordinaire, cinq pour un balayage lent d'un bord à l'autre. Pour que ce soit vrai aussi d'un geste vif,
+le lâcher rend les crans que le trajet a gagnés pendant que le focus ne pouvait pas suivre
+(`TouchpadRelease.owed`, `TouchpadCoast.owed`) : deux au plus, à 110 ms l'un de l'autre, et poser le
+doigt ou appuyer sur une touche les arrête. Sans cela un coup de pouce rapide n'avançait que d'un
+cran, quel que soit son trajet. Un doigt qui s'arrête avant de se lever ne rend rien.
+
 ### Écarté
 
 - **La taille seule.** Mesuré sur l'écran des réglages : une ligne fait de 72 à 171 px de haut avec
@@ -86,4 +105,4 @@ Trois précisions :
   (pilule qui défile, zone déclarée, carte), `test/shell_tv_header_test.dart` et
   `test/settings_navigation_map_test.dart`.
 - **À régler sur une Apple TV**, dans `TouchpadAxisTuning.preciseHorizontal` et `preciseVertical` :
-  encore trop vif, monter `step` ; trop lent pour une longue liste, le baisser vers 0,65.
+  trop vif, monter `step` ; trop lent, le baisser ou relever `maxOwedSteps`.

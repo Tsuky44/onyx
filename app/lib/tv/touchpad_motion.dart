@@ -11,12 +11,15 @@ enum TouchpadPhase { began, moved, ended, clickDown, clickUp }
 typedef TouchpadMove = ({double dx, double dy, double speed});
 
 /// Un doigt qui quitte la surface en mouvement : dans quel sens il allait, à
-/// quelle vitesse (unités de surface par seconde), et si le geste était franc
-/// sans avoir encore fait un seul pas ([flick]) : un coup de pouce vaut un pas.
+/// quelle vitesse (unités de surface par seconde), si le geste était franc
+/// sans avoir encore fait un seul pas ([flick]) : un coup de pouce vaut un pas,
+/// et combien de pas son trajet a gagnés sans avoir eu le temps de les faire
+/// ([owed], sur des commandes seulement).
 typedef TouchpadRelease = ({
   TraversalDirection direction,
   double speed,
   bool flick,
+  int owed,
 });
 
 /// Le rythme du pavé, selon ce que le focus désigne (ADR-0122).
@@ -25,9 +28,9 @@ enum TouchpadPace {
   /// vitesse les allonge et le lâcher garde son élan.
   browse,
 
-  /// Des commandes (onglets, boutons, lignes de réglage) : on choisit. Plus
-  /// de trajet par pas, ni accélération ni lancée : un glissé ordinaire avance
-  /// d'un cran, et le focus s'arrête avec le doigt.
+  /// Des commandes (onglets, boutons, lignes de réglage) : on choisit. Ni
+  /// accélération ni lancée : c'est le trajet seul qui compte, deux ou trois
+  /// crans pour un glissé ordinaire, que le doigt aille vite ou non.
   precise,
 }
 
@@ -46,6 +49,7 @@ class TouchpadAxisTuning {
     required this.coastDecay,
     required this.maxCoastSteps,
     required this.minStepInterval,
+    this.maxOwedSteps = 0,
   });
 
   /// Une rangée d'affiches : elle se traverse vite et garde son élan.
@@ -53,31 +57,39 @@ class TouchpadAxisTuning {
   /// Réglage du 2026-11-12, après le premier essai sur Apple TV (« un peu
   /// rapide ») : un quart de pas en moins par trajet, un gain plafonné à 2 au
   /// lieu de 2,6, une lancée presque deux fois plus courte.
+  ///
+  /// Réglage du 2026-11-13 (« encore trop sensible dans les médias, si on
+  /// était à 60 % passe à 40 % ») : un tiers de moins partout. Le trajet par
+  /// pas passe de 0,50 à 0,75, le gain plafonne à 1,5 et la lancée à six
+  /// affiches.
   static const TouchpadAxisTuning horizontal = TouchpadAxisTuning(
-    firstStep: 0.26,
-    step: 0.50,
+    firstStep: 0.32,
+    step: 0.75,
     gainFrom: 3.5,
     gainTo: 12,
-    maxGain: 2.0,
-    coastFrom: 6,
-    coastDecay: 0.20,
-    maxCoastSteps: 10,
-    minStepInterval: Duration(milliseconds: 55),
+    maxGain: 1.5,
+    coastFrom: 6.5,
+    coastDecay: 0.18,
+    maxCoastSteps: 6,
+    minStepInterval: Duration(milliseconds: 60),
   );
 
   /// La verticale change de rangée entière, ou de ligne de réglage. Au premier
   /// essai sur appareil (ADR-0039), une verticale accélérée « sautait des
   /// rangées entières » : elle suit donc le doigt presque sans gain, et sa
-  /// lancée ne dépasse jamais deux éléments.
+  /// lancée ne dépasse jamais un élément.
+  ///
+  /// Réglage du 2026-11-13, avec [horizontal] : un tiers de moins. Un glissé
+  /// ordinaire descend d'une rangée, un balayage d'un bord à l'autre de deux.
   static const TouchpadAxisTuning vertical = TouchpadAxisTuning(
-    firstStep: 0.32,
-    step: 0.65,
+    firstStep: 0.40,
+    step: 0.95,
     gainFrom: 5,
     gainTo: 13,
-    maxGain: 1.25,
-    coastFrom: 9,
+    maxGain: 1.15,
+    coastFrom: 10,
     coastDecay: 0.18,
-    maxCoastSteps: 2,
+    maxCoastSteps: 1,
     minStepInterval: Duration(milliseconds: 100),
   );
 
@@ -87,34 +99,41 @@ class TouchpadAxisTuning {
   /// les onglets et les réglages, alors que les affiches étaient « parfaites »)
   /// : les onglets défilent dans leur pilule, ils prenaient donc le gain et la
   /// lancée d'une rangée d'affiches, jusqu'à dix onglets pour un coup de
-  /// pouce. Ici un glissé ordinaire (la moitié de la surface) avance d'un
-  /// cran, un balayage d'un bord à l'autre de deux ou trois, et rien ne
-  /// continue une fois le doigt levé. 160 ms entre deux pas : la capsule du
-  /// focus (180 ms) a le temps de se poser.
+  /// pouce. Ni gain ni lancée ici.
+  ///
+  /// Réglage du 2026-11-13 (« dans les menus c'est trop faible, un glissé doit
+  /// avancer de 2 ou 3 ») : le premier essai demandait 0,80 de trajet par
+  /// cran, un par glissé. C'est maintenant 0,40 : un glissé ordinaire (la
+  /// moitié de la surface) vaut deux ou trois crans. Et le trajet compte même
+  /// quand le doigt va plus vite que le focus : les crans qu'il a gagnés sans
+  /// avoir eu le temps de les faire sont rendus après le lâcher, deux au plus
+  /// ([maxOwedSteps]). 110 ms entre deux crans : on les voit passer.
   static const TouchpadAxisTuning preciseHorizontal = TouchpadAxisTuning(
-    firstStep: 0.30,
-    step: 0.80,
+    firstStep: 0.24,
+    step: 0.40,
     gainFrom: double.infinity,
     gainTo: double.infinity,
     maxGain: 1,
     coastFrom: double.infinity,
     coastDecay: 0.20,
     maxCoastSteps: 0,
-    minStepInterval: Duration(milliseconds: 160),
+    minStepInterval: Duration(milliseconds: 110),
+    maxOwedSteps: 2,
   );
 
   /// Une liste de réglages, un menu ([TouchpadPace.precise]) : comme
   /// [preciseHorizontal], avec le trajet un peu plus long de la verticale.
   static const TouchpadAxisTuning preciseVertical = TouchpadAxisTuning(
-    firstStep: 0.34,
-    step: 0.90,
+    firstStep: 0.26,
+    step: 0.42,
     gainFrom: double.infinity,
     gainTo: double.infinity,
     maxGain: 1,
     coastFrom: double.infinity,
     coastDecay: 0.18,
     maxCoastSteps: 0,
-    minStepInterval: Duration(milliseconds: 160),
+    minStepInterval: Duration(milliseconds: 110),
+    maxOwedSteps: 2,
   );
 
   static TouchpadAxisTuning of(
@@ -152,6 +171,11 @@ class TouchpadAxisTuning {
 
   /// Le focus ne part jamais plus loin que cela après le lâcher.
   final int maxCoastSteps;
+
+  /// Les pas que le trajet a gagnés pendant que le focus ne pouvait pas
+  /// suivre ([minStepInterval]) et qui sont rendus après le lâcher, au plus.
+  /// Zéro pour des affiches : c'est leur lancée qui prolonge le geste.
+  final int maxOwedSteps;
 
   /// Deux pas ne se suivent jamais de plus près : le focus doit avoir le
   /// temps de se poser et la liste de défiler. À l'horizontale, 55 ms : en
@@ -416,14 +440,36 @@ class TouchpadMotion {
       direction =
           velocity.dy > 0 ? TraversalDirection.down : TraversalDirection.up;
     }
-    final flick = _stepsThisGesture == 0 &&
+    final tuning = TouchpadAxisTuning.of(direction, pace: pace);
+    final owed = _owedSteps(direction, tuning);
+    // Un pas dû compte déjà le premier pas du geste : pas de coup de pouce
+    // en plus.
+    final flick = owed == 0 &&
+        _stepsThisGesture == 0 &&
         _reach >= _flickTravel &&
         speed >= _flickSpeed;
-    if (!flick &&
-        speed < TouchpadAxisTuning.of(direction, pace: pace).coastFrom) {
-      return null;
+    if (!flick && owed == 0 && speed < tuning.coastFrom) return null;
+    return (direction: direction, speed: speed, flick: flick, owed: owed);
+  }
+
+  /// Les pas que le trajet en attente vaut encore vers [direction], dans la
+  /// limite de [TouchpadAxisTuning.maxOwedSteps].
+  int _owedSteps(TraversalDirection direction, TouchpadAxisTuning tuning) {
+    if (tuning.maxOwedSteps == 0) return 0;
+    var left = switch (direction) {
+      TraversalDirection.right => _pendingX,
+      TraversalDirection.left => -_pendingX,
+      TraversalDirection.down => _pendingY,
+      TraversalDirection.up => -_pendingY,
+    };
+    var need = _threshold(tuning);
+    var owed = 0;
+    while (left >= need && owed < tuning.maxOwedSteps) {
+      left -= need;
+      owed++;
+      need = tuning.step;
     }
-    return (direction: direction, speed: speed, flick: flick);
+    return owed;
   }
 
   /// La vitesse moyenne sur la dernière [_window] de mouvement, en unités par
@@ -456,15 +502,31 @@ class TouchpadMotion {
 class TouchpadCoast {
   TouchpadCoast(TouchpadRelease release)
       : direction = release.direction,
+        momentum = true,
         _tuning = TouchpadAxisTuning.of(release.direction),
+        _owed = 0,
         _speed = release.speed;
+
+  /// Les pas dus d'un geste sur des commandes ([TouchpadRelease.owed]) : pas
+  /// d'élan, un pas tous les [TouchpadAxisTuning.minStepInterval] jusqu'au
+  /// compte.
+  TouchpadCoast.owed(TouchpadRelease release, TouchpadAxisTuning tuning)
+      : direction = release.direction,
+        momentum = false,
+        _tuning = tuning,
+        _owed = release.owed,
+        _speed = 0;
 
   /// Une lancée plus lente que cela n'en est plus une : le pas suivant
   /// arriverait après qu'on a cru la liste arrêtée.
   static const Duration _slowest = Duration(milliseconds: 220);
 
   final TraversalDirection direction;
+
+  /// Vrai pour la lancée d'une rangée d'affiches, faux pour des pas dus.
+  final bool momentum;
   final TouchpadAxisTuning _tuning;
+  final int _owed;
   double _speed;
   int _steps = 0;
 
@@ -473,6 +535,11 @@ class TouchpadCoast {
 
   /// Le délai avant le pas suivant, ou nul quand la lancée est finie.
   Duration? next() {
+    if (!momentum) {
+      if (_steps >= _owed) return null;
+      _steps++;
+      return _tuning.minStepInterval;
+    }
     if (_steps == 0 && _speed < _tuning.coastFrom) return null;
     if (_steps >= _tuning.maxCoastSteps) return null;
     final distance = _tuning.step / _tuning.gainAt(_speed);

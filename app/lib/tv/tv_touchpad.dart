@@ -256,10 +256,16 @@ abstract final class TvTouchpad {
       return;
     }
     if (release.flick) _step(release.direction, gliding: browsing);
-    // Parti d'une commande, le geste s'arrête avec le doigt, même si son
-    // dernier pas vient de poser le focus sur une rangée d'affiches.
+    // Parti d'une commande, le geste ne prend pas l'élan d'une rangée, même
+    // si son dernier pas vient de poser le focus sur des affiches : il ne
+    // rend que les crans que son trajet a gagnés.
     if (browsing && _accelerates(release.direction)) {
       _startCoast(TouchpadCoast(release));
+    } else if (release.owed > 0) {
+      _startCoast(TouchpadCoast.owed(
+        release,
+        TouchpadAxisTuning.of(release.direction, pace: pace),
+      ));
     }
   }
 
@@ -289,13 +295,16 @@ abstract final class TvTouchpad {
 
   static void _coastStep() {
     final coast = _coast;
-    if (coast == null || !TvMode.isTv || !_accelerates(coast.direction)) {
+    if (coast == null ||
+        !TvMode.isTv ||
+        (coast.momentum && !_accelerates(coast.direction))) {
       _stopCoast('hors rangée');
       return;
     }
     // Le focus n'a pas bougé deux fois de suite : bout de la rangée, la
-    // lancée s'arrête là.
-    if (_step(coast.direction, coasting: true)) {
+    // lancée s'arrête là. Un pas dû est une flèche ordinaire : sous dpad, il
+    // ne passe pas par le pas de lancée, qui reste dans sa rangée.
+    if (_step(coast.direction, coasting: coast.momentum)) {
       _coastMisses = 0;
     } else if (++_coastMisses > 1) {
       _stopCoast('bout de la rangée');

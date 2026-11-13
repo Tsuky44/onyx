@@ -95,8 +95,27 @@ Un balayage lent d'un bord à l'autre vaut maintenant 4 affiches (5 avant) ou 3 
 geste vif lâché, 8 affiches environ au lieu de 12.
 
 Second essai (2026-11-12) : les affiches sont « parfaites », les onglets et les réglages « super
-rapides ». Ce réglage ne bouge plus ; les commandes prennent le leur
+rapides » ; les commandes prennent leur propre réglage
 ([ADR-0122](0122-le-pave-va-posement-sur-les-commandes.md)).
+
+## Réglage après le troisième essai (2026-11-13)
+
+Retour : « dans les médias elle est encore trop sensible, baisse-la un peu : si on était à 60 %, passe
+à 40 % ». Un tiers de moins partout, pour les affiches seulement.
+
+| | Horizontale, avant | Horizontale, après | Verticale, avant | Verticale, après |
+|---|---|---|---|---|
+| premier pas d'un geste | 0,26 | 0,32 | 0,32 | 0,40 |
+| trajet par pas | 0,50 | 0,75 | 0,65 | 0,95 |
+| gain maximal | 2,0 | 1,5 | 1,25 | 1,15 |
+| vitesse de lancée | 6 u/s | 6,5 u/s | 9 u/s | 10 u/s |
+| durée de la lancée | 200 ms | 180 ms | 180 ms | 180 ms |
+| pas de lancée au plus | 10 | 6 | 2 | 1 |
+| écart minimal entre deux pas | 55 ms | 60 ms | 100 ms | 100 ms |
+
+Un glissé ordinaire et posé (la moitié de la surface) vaut maintenant une affiche ou une rangée, un
+balayage lent d'un bord à l'autre trois affiches (quatre avant) ou deux rangées (trois avant), et un
+coup sec lâché à 10 u/s laisse courir trois affiches au lieu de cinq.
 
 ## Conséquences
 
