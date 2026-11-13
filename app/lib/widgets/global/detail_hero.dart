@@ -495,6 +495,7 @@ class HeroPill extends StatefulWidget {
     this.iconColor,
     this.onPressed,
     this.autofocus = false,
+    this.focusNode,
     this.loading = false,
     this.beam = false,
     this.track = false,
@@ -510,6 +511,11 @@ class HeroPill extends StatefulWidget {
 
   /// La télécommande arrive ici à l'ouverture de la fiche.
   final bool autofocus;
+
+  /// Pour une rangée qui pose elle-même le focus sur sa première action,
+  /// quand elle arrive après l'ouverture de la fiche et que [autofocus] ne
+  /// suffit plus (`RequestDetailActions`).
+  final FocusNode? focusNode;
 
   /// Une barre court sous le libellé (envoi en cours).
   final bool loading;
@@ -620,6 +626,7 @@ class _HeroPillState extends State<HeroPill> {
       child: InkWell(
         onTap: widget.onPressed,
         autofocus: widget.autofocus,
+        focusNode: widget.focusNode,
         canRequestFocus: widget.onPressed != null,
         onFocusChange: (focused) => setState(() => _focused = focused),
         customBorder: const StadiumBorder(),

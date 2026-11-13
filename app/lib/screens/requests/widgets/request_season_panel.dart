@@ -6,6 +6,8 @@ import '../../../providers/media_requests_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_icons.dart';
 import '../../../theme/app_type.dart';
+import '../../../tv/nav/tv_focusable.dart';
+import '../../../tv/tv_mode.dart';
 import '../../../utils/format.dart';
 import '../../../widgets/global/app_network_image.dart';
 import '../../../l10n/tr.dart';
@@ -198,7 +200,10 @@ class _RequestSeasonPanelState extends State<RequestSeasonPanel>
               style: HeroPillStyle.request,
               dense: true,
               loading: _requesting,
-              onPressed: _requesting ? null : _requestThisSeason,
+              // Garde son action pendant l'envoi ([_requestThisSeason]
+              // l'ignore) : sans elle, la pastille perdait le focus de la
+              // télécommande.
+              onPressed: _requestThisSeason,
             )
           // Une saison là n'a rien à dire de plus que ses épisodes.
           else if (season.status != RequestMediaStatus.available)
@@ -398,10 +403,10 @@ class _EpisodeCard extends StatelessWidget {
 
     // Verre léger plutôt qu'un aplat : les cartes posent sur le cadre du
     // panneau, comme les cartes d'OnyxHub (blanc à 3 %, arête à 6 %).
-    return Container(
+    final card = Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: _radius,
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       padding: const EdgeInsets.all(12),
@@ -425,7 +430,21 @@ class _EpisodeCard extends StatelessWidget {
               ],
             ),
     );
+    // Sur un téléviseur, chaque épisode est un pas de la télécommande, comme
+    // les lignes d'épisodes d'une série de la bibliothèque : sans cible, la
+    // liste ne se lisait pas, Bas la sautait d'un bond jusqu'au bas de la
+    // fiche. OK ouvre la recherche de l'épisode quand le compte y a droit.
+    if (!TvScope.of(context)) return card;
+    return TvFocusable(
+      onSelect: onSearch,
+      focusScale: 1.0,
+      scrollAlignment: 0.3,
+      borderRadius: _radius,
+      child: card,
+    );
   }
+
+  static const _radius = BorderRadius.all(Radius.circular(16));
 
   Widget _still() {
     return ClipRRect(
