@@ -106,6 +106,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Maximize',
   'Aide':
       'Help',
+  'Ajouts récents':
+      'Recently added',
   'Ajouter':
       'Add',
   'Ajouter les nouveaux fichiers et retirer ceux qui ont disparu':

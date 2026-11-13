@@ -190,6 +190,13 @@ class GlassSearchInput extends StatelessWidget {
   /// Voir [TextField.selectAllOnFocus]. Nul garde le défaut de la plateforme.
   final bool? selectAllOnFocus;
 
+  /// Vrai pour le champ de la page de recherche d'un téléviseur : il y est ce
+  /// qu'on lit de loin, pas un champ parmi d'autres dans une barre.
+  final bool large;
+
+  /// La hauteur du champ, selon [large].
+  static double heightFor({required bool large}) => large ? 48 : 34;
+
   const GlassSearchInput({
     super.key,
     required this.controller,
@@ -202,6 +209,7 @@ class GlassSearchInput extends StatelessWidget {
     this.hasText = false,
     this.canRequestFocus = true,
     this.selectAllOnFocus,
+    this.large = false,
   });
 
   @override
@@ -210,6 +218,9 @@ class GlassSearchInput extends StatelessWidget {
     final focusBorder = Colors.white.withValues(alpha: 0.22);
     final idleFill = Colors.white.withValues(alpha: 0.05);
     final focusFill = Colors.white.withValues(alpha: 0.1);
+    final height = heightFor(large: large);
+    final textSize = large ? AppType.title3 : AppType.subhead;
+    final radius = BorderRadius.circular(height / 2);
 
     return Theme(
       data: Theme.of(context).copyWith(
@@ -221,7 +232,7 @@ class GlassSearchInput extends StatelessWidget {
         ),
       ),
       child: SizedBox(
-        height: 34,
+        height: height,
         child: TvFieldKeyHandler(
           controller: controller,
           canRequestFocus: canRequestFocus,
@@ -241,10 +252,10 @@ class GlassSearchInput extends StatelessWidget {
             },
             textInputAction: TextInputAction.search,
             cursorColor: AppColors.textPrimary,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: AppType.subhead,
-              fontWeight: FontWeight.w500,
+              fontSize: textSize,
+              fontWeight: large ? FontWeight.w600 : FontWeight.w500,
               height: 1.2,
             ),
             decoration: InputDecoration(
@@ -255,17 +266,17 @@ class GlassSearchInput extends StatelessWidget {
               hintText: hint,
               hintStyle: TextStyle(
                 color: AppColors.textMuted.withValues(alpha: 0.7),
-                fontSize: AppType.subhead,
+                fontSize: large ? AppType.headline : AppType.subhead,
                 fontWeight: FontWeight.w400,
               ),
               prefixIcon: Icon(
                 AppIcons.search,
-                size: 17,
+                size: large ? 22 : 17,
                 color: AppColors.textSecondary
                     .withValues(alpha: focused ? 0.95 : 0.65),
               ),
               prefixIconConstraints:
-                  const BoxConstraints(minWidth: 36, minHeight: 34),
+                  BoxConstraints(minWidth: large ? 52 : 36, minHeight: height),
               suffixIcon: hasText
                   ? IconButton(
                       icon: Icon(
@@ -275,21 +286,21 @@ class GlassSearchInput extends StatelessWidget {
                       ),
                       padding: EdgeInsets.zero,
                       constraints:
-                          const BoxConstraints(minWidth: 32, minHeight: 34),
+                          BoxConstraints(minWidth: 32, minHeight: height),
                       onPressed: onClear,
                     )
                   : null,
-              contentPadding: const EdgeInsets.symmetric(vertical: 9),
+              contentPadding: EdgeInsets.symmetric(vertical: large ? 12 : 9),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(17),
+                borderRadius: radius,
                 borderSide: BorderSide(color: idleBorder),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(17),
+                borderRadius: radius,
                 borderSide: BorderSide(color: focusBorder),
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(17),
+                borderRadius: radius,
                 borderSide: BorderSide(color: idleBorder),
               ),
             ),
