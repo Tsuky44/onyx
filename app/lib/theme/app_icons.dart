@@ -88,6 +88,9 @@ abstract final class AppIcons {
   static const IconData moreVertical =
       IconData(0xe208, fontFamily: _regular); // dotsThreeVertical
   static const IconData info = IconData(0xe2ce, fontFamily: _regular); // info
+  // Une lecture en cours sur un autre appareil du compte (ADR-0127).
+  static const IconData devices =
+      IconData(0xeba4, fontFamily: _regular); // devices
   // Le message de l'administrateur à tous les comptes (ADR-0069).
   static const IconData announcement =
       IconData(0xe324, fontFamily: _regular); // megaphone

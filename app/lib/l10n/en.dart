@@ -920,6 +920,20 @@ const Map<String, String> kEnglish = <String, String>{
       'Sending the session to {0}.',
   'Envoyer la demande':
       'Send request',
+  'En lecture sur {0}':
+      'Playing on {0}',
+  'En lecture sur {0} : {1}. Maintenir lecture/pause pour reprendre ici.':
+      'Playing on {0}: {1}. Hold play/pause to resume here.',
+  'Continuez d\'appuyer…':
+      'Keep holding…',
+  'Maintenir pour reprendre ici':
+      'Hold to resume here',
+  'En lecture sur {0} : {1}. Reprendre ici.':
+      'Playing on {0}: {1}. Resume here.',
+  'OK pour reprendre ici':
+      'OK to resume here',
+  'Reprendre ici':
+      'Resume here',
   'Erreur':
       'Error',
   'Erreur lors de l\'extraction des sous-titres : {0}':

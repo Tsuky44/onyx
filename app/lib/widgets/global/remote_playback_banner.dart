@@ -10,6 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../screens/player/player_screen.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_motion.dart';
 import '../../utils/on_screen.dart';
 import '../../utils/poster_url.dart';
 import '../../theme/app_icons.dart';
@@ -17,7 +18,7 @@ import '../../theme/app_type.dart';
 import '../../tv/tv_mode.dart';
 import '../../l10n/tr.dart';
 import 'app_network_image.dart';
-import 'remote_playback_tv_card.dart';
+import 'remote_playback_notice.dart';
 
 /// « Lecture en cours sur un autre appareil » : ce que le compte lit ailleurs,
 /// avec de quoi le reprendre ici là où il en est.
@@ -25,28 +26,89 @@ import 'remote_playback_tv_card.dart';
 /// Reprendre ouvre le lecteur, dont le premier signal met l'autre appareil en
 /// pause (voir `server/handlers/playback_handoff.go`).
 ///
-/// Sur un téléviseur le bandeau n'est pas posé par-dessus l'accueil mais dans
-/// sa page ([inline]) : un élément en surimpression n'entre dans aucune rangée
-/// de la télécommande, et « Reprendre » y restait hors d'atteinte.
+/// Deux dessins (ADR-0127) :
+///
+/// - partout sauf sur un téléphone, une notification de verre en haut à
+///   droite de l'accueil ([RemotePlaybackBanner.notice],
+///   [RemotePlaybackNotice]). Avec une télécommande ([hold]), on reprend en
+///   maintenant la touche lecture/pause ;
+/// - sur un téléphone, une carte en bas de l'écran, avec son bouton.
 class RemotePlaybackBanner extends StatefulWidget {
-  /// Dans le flux de la page, à la largeur de ses rangées, plutôt qu'en
-  /// surimpression.
-  final bool inline;
+  /// La notification, et non la carte du téléphone.
+  final bool notice;
 
-  const RemotePlaybackBanner({super.key, this.inline = false});
+  /// Vrai sur un téléviseur : un appui maintenu sur lecture/pause reprend,
+  /// un appui court ne fait rien.
+  final bool hold;
+
+  /// Vrai sur un téléviseur dont la télécommande peut ne pas avoir de touche
+  /// lecture/pause (tout sauf la Siri Remote) : la notification prend aussi
+  /// le focus, et OK reprend.
+  final bool selectable;
+
+  const RemotePlaybackBanner({super.key})
+      : notice = false,
+        hold = false,
+        selectable = false;
+
+  const RemotePlaybackBanner.notice({
+    super.key,
+    this.hold = false,
+    this.selectable = false,
+  }) : notice = true;
+
+  /// Le temps que lecture/pause doit rester enfoncée pour reprendre. Assez
+  /// long pour ne pas partir d'un appui machinal, assez court pour ne pas
+  /// faire douter : l'anneau se remplit sous les yeux.
+  static const Duration holdDuration = Duration(milliseconds: 900);
+
+  /// Un relâchement suivi d'un nouvel appui dans ce délai est le même appui
+  /// qui continue : la télécommande du simulateur Apple TV coupe un appui
+  /// tenu en « enfoncé, relâché, ré-enfoncé » (voir `TvFocusable`).
+  static const Duration holdBounce = Duration(milliseconds: 40);
 
   @override
   State<RemotePlaybackBanner> createState() => _RemotePlaybackBannerState();
 }
 
 class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
-    with OnScreenState {
+    with OnScreenState, SingleTickerProviderStateMixin {
   static const _pollInterval = Duration(seconds: 10);
 
   Timer? _timer;
   RemotePlayback? _current;
   final Set<String> _dismissed = {};
   bool _opening = false;
+
+  /// L'appui en cours sur lecture/pause ([RemotePlaybackBanner.hold]) :
+  /// il avance tant que la touche est tenue, et la lecture reprend au bout.
+  late final AnimationController _hold;
+
+  /// Le relâchement en attente de [RemotePlaybackBanner.holdBounce].
+  Timer? _release;
+
+  @override
+  void initState() {
+    super.initState();
+    // Ici et non à la première lecture : un bandeau qui ne s'en sert pas le
+    // créerait dans `dispose`, quand l'arbre ne se lit plus.
+    _hold = AnimationController(
+      vsync: this,
+      duration: RemotePlaybackBanner.holdDuration,
+      reverseDuration: const Duration(milliseconds: 180),
+    )..addStatusListener(_onHoldStatus);
+  }
+
+  void _onHoldStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    if (_current == null) {
+      // L'autre appareil s'est arrêté pendant l'appui : rien à reprendre, et
+      // l'anneau ne doit pas rester plein pour la prochaine fois.
+      _hold.value = 0;
+      return;
+    }
+    unawaited(_resume());
+  }
 
   /// Le sondage ne tourne que quand l'accueil est vu : sous le lecteur, dans
   /// un autre onglet ou fenêtre réduite, il demandait au serveur toutes les
@@ -66,28 +128,53 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
   @override
   void dispose() {
     _timer?.cancel();
+    _release?.cancel();
     HardwareKeyboard.instance.removeHandler(_onMediaKey);
+    _hold.dispose();
     super.dispose();
   }
 
   /// Lecture/pause de la télécommande : sur une télévision, c'est le geste qui
-  /// reprend ce que le compte lit ailleurs, sans avoir à viser le bouton. La
+  /// reprend ce que le compte lit ailleurs, sans avoir à viser un bouton. La
   /// Siri Remote n'a qu'une touche pour cela, et c'est celle que l'on presse en
-  /// pensant « reprendre ».
+  /// pensant « reprendre ». Il faut la maintenir ([_onHoldKey]).
   ///
   /// Seulement quand l'accueil est au premier plan : sous le lecteur ou une
   /// fiche, la touche garde son sens habituel.
   bool _onMediaKey(KeyEvent event) {
-    if (event is! KeyDownEvent || !TvMode.isTv) return false;
+    if (!TvMode.isTv) return false;
     final key = event.logicalKey;
     if (key != LogicalKeyboardKey.mediaPlayPause &&
         key != LogicalKeyboardKey.mediaPlay) {
       return false;
     }
+    return widget.hold && _onHoldKey(event);
+  }
+
+  /// Il faut maintenir la touche : un appui court ne reprend rien, pour
+  /// qu'une lecture ne parte pas d'un geste machinal. L'appui avance [_hold],
+  /// le relâchement le ramène à zéro.
+  bool _onHoldKey(KeyEvent event) {
+    if (event is KeyUpEvent) {
+      // Toujours entendu, même une fois le lecteur ouvert par-dessus : sans
+      // cela l'appui resterait « tenu » au retour.
+      if (_hold.value == 0 && _release == null) return false;
+      _release?.cancel();
+      _release = Timer(RemotePlaybackBanner.holdBounce, () {
+        _release = null;
+        if (mounted && !_opening) _hold.reverse();
+      });
+      return true;
+    }
     if (_current == null || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       return false;
     }
-    unawaited(_resume());
+    if (event is KeyDownEvent && !_opening) {
+      _release?.cancel();
+      _release = null;
+      if (_hold.status != AnimationStatus.completed) _hold.forward();
+    }
+    // La répétition d'une touche tenue ne relance rien.
     return true;
   }
 
@@ -141,6 +228,7 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
     ));
     if (!mounted) return;
     _opening = false;
+    _hold.value = 0;
     Provider.of<HomeProvider>(context, listen: false).loadHome(silent: true);
     unawaited(_refresh());
   }
@@ -148,13 +236,55 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
   @override
   Widget build(BuildContext context) {
     final play = _current;
+    if (widget.notice) {
+      // Elle entre et sort par la droite, comme une notification de tvOS.
+      return AnimatedSwitcher(
+        duration: AppMotion.move(context, AppMotion.emphasis),
+        switchInCurve: AppMotion.curve,
+        switchOutCurve: AppMotion.curve,
+        layoutBuilder: (current, previous) => Stack(
+          alignment: Alignment.topRight,
+          children: [...previous, if (current != null) current],
+        ),
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.12, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        ),
+        child: play == null ? const SizedBox.shrink() : _notice(play),
+      );
+    }
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 220),
-      child: play == null
-          ? const SizedBox.shrink()
-          : widget.inline
-              ? _tvCard(context, play)
-              : _card(context, play),
+      child: play == null ? const SizedBox.shrink() : _card(context, play),
+    );
+  }
+
+  void _dismiss(RemotePlayback play) => setState(() {
+        _dismissed.add(_dismissKey(play));
+        _current = null;
+      });
+
+  /// Partout sauf sur un téléphone : voir [RemotePlaybackNotice].
+  Widget _notice(RemotePlayback play) {
+    final baseUrl =
+        Provider.of<AuthProvider>(context, listen: false).apiClient.baseUrl;
+    // Sur Apple TV, rien ne reprend d'un seul appui : il n'y a que la touche
+    // maintenue.
+    final direct = !widget.hold || widget.selectable;
+    return RemotePlaybackNotice(
+      key: ValueKey(_dismissKey(play)),
+      play: play,
+      posterUrl: cardPosterUrl(play.session.posterUrl, serverBaseUrl: baseUrl),
+      hold: widget.hold ? _hold : null,
+      selectable: widget.selectable,
+      onResume: direct && !_opening ? _resume : null,
+      onDismiss: widget.hold ? null : () => _dismiss(play),
     );
   }
 
@@ -245,10 +375,7 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
                   ),
                   IconButton(
                     tooltip: tr('Ignorer'),
-                    onPressed: () => setState(() {
-                      _dismissed.add(_dismissKey(play));
-                      _current = null;
-                    }),
+                    onPressed: () => _dismiss(play),
                     icon: const Icon(AppIcons.close,
                         color: AppColors.textSecondary, size: 20),
                   ),
@@ -266,18 +393,5 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
       ),
     );
     return card;
-  }
-
-  /// Sur un téléviseur : voir [RemotePlaybackTvCard].
-  Widget _tvCard(BuildContext context, RemotePlayback play) {
-    final baseUrl =
-        Provider.of<AuthProvider>(context, listen: false).apiClient.baseUrl;
-    return RemotePlaybackTvCard(
-      key: ValueKey(_dismissKey(play)),
-      play: play,
-      posterUrl: cardPosterUrl(play.session.posterUrl, serverBaseUrl: baseUrl),
-      enabled: !_opening,
-      onResume: _resume,
-    );
   }
 }
