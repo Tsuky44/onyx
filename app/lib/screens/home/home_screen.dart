@@ -354,9 +354,9 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     if (isPhone)
                       const Positioned(
-                        left: 16,
-                        right: 16,
-                        bottom: 16,
+                        left: 12,
+                        right: 12,
+                        bottom: 14,
                         child: SafeArea(
                           top: false,
                           child: Center(child: RemotePlaybackBanner()),

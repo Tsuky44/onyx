@@ -1,9 +1,9 @@
 # ADR-0127 — La lecture d'un autre appareil s'annonce en notification, et se reprend en maintenant Lecture
 
 - **Statut :** accepté. Maquette validée par l'utilisateur (2026-11-13, piste A : « celle-là elle est
-  vraiment bien »), puis étendue le même jour : « mets-le sur tout sauf téléphone ». Rendu vérifié sur
-  une capture de l'app ; pas encore vu sur une Apple TV, et **l'appui maintenu n'a pas été essayé avec
-  une vraie télécommande**.
+  vraiment bien »), puis étendue le même jour : « mets-le sur tout sauf téléphone », et une forme à
+  elle pour le téléphone (« la 1 bis est parfaite »). Rendu vérifié sur des captures de l'app ; pas
+  encore vu sur un appareil, et **l'appui maintenu n'a pas été essayé avec une vraie télécommande**.
 - **Date :** 2026-11-13
 - **Portée :** `widgets/global/remote_playback_notice.dart` (`RemotePlaybackNotice`),
   `widgets/global/remote_playback_banner.dart` (`RemotePlaybackBanner.notice`, `_onHoldKey`),
@@ -26,9 +26,9 @@ de l'écran ; **C**, la carte dans la page, redessinée. L'utilisateur a choisi 
 
 ## Décision
 
-**Partout sauf sur un téléphone, la lecture d'un autre appareil est une notification de verre en haut à
-droite de l'accueil** (`RemotePlaybackNotice`), sous le compte, comme celles de tvOS. Elle ne déplace
-rien.
+**La lecture d'un autre appareil est une notification de verre en haut à droite de l'accueil**
+(`RemotePlaybackNotice`), sous le compte, comme celles de tvOS. Elle ne déplace rien. Sur un téléphone,
+elle est en bas de l'écran, sous une forme ramassée (point 7).
 
 1. **Ce qu'elle dit.** L'affiche, « EN LECTURE SUR » et le nom de l'appareil, le titre, l'épisode et le
    temps restant, la progression. Puis, sous un filet, une ligne qui dit toujours quoi faire.
@@ -46,8 +46,11 @@ rien.
    « OK pour reprendre ici ».
 6. **À la souris** (ordinateur, tablette, web) : un clic sur la notification reprend, la croix
    l'écarte. La ligne dit « Reprendre ici ».
-7. **Le téléphone garde sa carte en bas de l'écran** : il n'a ni télécommande ni coin libre en haut à
-   droite. Deux maquettes dans le même style attendent le choix de l'utilisateur.
+7. **Sur un téléphone, la même notification, ramassée, en bas de l'écran** (`compact`) : il n'a ni
+   télécommande ni coin libre en haut à droite. Une seule hauteur, à la largeur de l'écran : le bouton
+   lecture est à droite du titre, il n'y a pas de ligne de texte dessous, toucher la carte reprend et
+   la croix du coin l'écarte. Maquette « 1 bis », validée le 2026-11-13 après une première piste où
+   la ligne « Toucher pour reprendre ici » alourdissait la carte.
 8. **Elle reste tant que l'autre appareil lit.** Le sondage de dix secondes et la relecture de la
    position au moment de reprendre ne changent pas.
 
@@ -68,7 +71,10 @@ rien.
   l'accueil propose toujours le titre. À vérifier au premier essai sur appareil.
 - **Android TV et le web des téléviseurs LG** changent aussi : la carte dans la page disparaît au
   profit de la notification, focalisable.
-- **L'ordinateur et la tablette** perdent la carte du bas pour la notification du haut.
+- **L'ordinateur et la tablette** perdent la carte du bas pour la notification du haut ; **le
+  téléphone** garde la sienne en bas, redessinée.
+- La carte opaque au bouton bleu (`_card`) et la carte de la page d'un téléviseur
+  (`RemotePlaybackTvCard`) disparaissent : il n'y a plus qu'un dessin, sous deux formes.
 - Épinglé par `test/remote_playback_notice_test.dart` : Apple TV (ni focus ni appui court, appui tenu,
-  appui coupé), autre téléviseur (focus et OK), souris (clic et croix), sur les deux systèmes de
-  navigation.
+  appui coupé), autre téléviseur (focus et OK), souris (clic et croix), téléphone (une hauteur, toucher
+  et croix), sur les deux systèmes de navigation.

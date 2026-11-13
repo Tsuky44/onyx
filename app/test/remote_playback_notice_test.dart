@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'support/tv_nav_harness.dart';
 
 /// « En lecture sur un autre appareil » (ADR-0127) : une notification en
-/// haut à droite, partout sauf sur un téléphone.
+/// haut à droite, et sa forme ramassée en bas de l'écran d'un téléphone.
 ///
 /// Demande de l'utilisateur sur Apple TV : « pour lancer il faut qu'on reste
 /// appuyé sur play », avec « un petit texte pour que ce soit facilement
@@ -26,7 +26,8 @@ import 'support/tv_nav_harness.dart';
 /// - Apple TV : elle ne prend pas le focus, on maintient lecture/pause ;
 /// - un autre téléviseur : le même geste, et OK sur la notification pour les
 ///   télécommandes qui n'ont pas cette touche ;
-/// - une souris : un clic reprend, la croix l'écarte.
+/// - une souris : un clic reprend, la croix l'écarte ;
+/// - un téléphone : la même, ramassée en bas de l'écran (maquette « 1 bis »).
 
 class _Api extends ApiClient {
   /// Les lectures demandées au serveur : une au sondage, une de plus quand la
@@ -173,6 +174,85 @@ void main() {
       api.holdNext = true;
       await tester.tap(find.text('Phare Nord'));
       await tester.pump();
+      expect(api.fetches, polled + 1);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets("la croix l'écarte, sans reprendre", (tester) async {
+      final api = await open(tester);
+      final polled = api.fetches;
+
+      await tester.tap(find.byTooltip('Ignorer'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RemotePlaybackNotice), findsNothing);
+      expect(api.fetches, polled);
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
+
+  group('sur un téléphone', () {
+    Future<_Api> open(WidgetTester tester) async {
+      final api = _Api();
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: _providers(
+          api,
+          const Scaffold(
+            body: Stack(
+              children: [
+                // Là où l'accueil la pose : en bas, au-dessus des onglets.
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 14,
+                  child: Center(child: RemotePlaybackBanner()),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.byType(RemotePlaybackNotice), findsOneWidget);
+      return api;
+    }
+
+    testWidgets(
+        'une seule hauteur, à la largeur de l\'écran, sans ligne de texte '
+        'dessous', (tester) async {
+      await open(tester);
+
+      expect(find.text('EN LECTURE SUR IPHONE'), findsOneWidget);
+      expect(find.text('Phare Nord'), findsOneWidget);
+      // Maquette « 1 bis » : le bouton lecture est à droite du titre, et la
+      // ligne « … pour reprendre ici » a disparu.
+      expect(find.textContaining('reprendre ici'), findsNothing);
+      expect(find.textContaining('Reprendre ici'), findsNothing);
+      final rect = tester.getRect(find.byType(RemotePlaybackNotice));
+      expect(rect.left, 12);
+      expect(rect.right, 390 - 12);
+      expect(rect.bottom, 844 - 14);
+      expect(rect.height, lessThan(104));
+      // La croix est dans le coin, au-dessus du bouton lecture.
+      final close = tester.getRect(find.byTooltip('Ignorer'));
+      expect(close.top, greaterThanOrEqualTo(rect.top));
+      expect(close.right, lessThanOrEqualTo(rect.right));
+      expect(close.center.dx,
+          greaterThan(tester.getRect(find.text('Phare Nord')).right));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('toucher la carte reprend', (tester) async {
+      final api = await open(tester);
+      final polled = api.fetches;
+      api.holdNext = true;
+
+      await tester.tap(find.text('Phare Nord'));
+      await tester.pump();
+
       expect(api.fetches, polled + 1);
       await tester.pumpWidget(const SizedBox());
     });

@@ -14,8 +14,8 @@ import 'app_network_image.dart';
 import 'glass_chrome.dart';
 
 /// « En lecture sur un autre appareil » : une notification de verre en haut à
-/// droite de l'accueil, comme celles de tvOS (ADR-0127). Partout sauf sur un
-/// téléphone.
+/// droite de l'accueil, comme celles de tvOS (ADR-0127). Sur un téléphone,
+/// la même en plus ramassé, en bas de l'écran ([compact]).
 ///
 /// Elle ne déplace rien : la carte d'avant tenait toute la largeur de la page
 /// d'un téléviseur et poussait les rangées vers le bas. La dernière ligne dit
@@ -29,6 +29,9 @@ import 'glass_chrome.dart';
 ///   prend aussi le focus, et OK reprend ;
 /// - **une souris ou un doigt** ([onResume] sans [hold]) : un clic reprend,
 ///   la croix ([onDismiss]) l'écarte.
+///
+/// Sur un téléphone ([compact]) cette ligne n'existe pas : le bouton lecture
+/// est à droite du titre, et toucher la carte reprend.
 class RemotePlaybackNotice extends StatefulWidget {
   const RemotePlaybackNotice({
     super.key,
@@ -38,6 +41,7 @@ class RemotePlaybackNotice extends StatefulWidget {
     this.onResume,
     this.onDismiss,
     this.selectable = false,
+    this.compact = false,
   });
 
   final RemotePlayback play;
@@ -59,8 +63,17 @@ class RemotePlaybackNotice extends StatefulWidget {
   /// lecture/pause : la notification entre dans le parcours du focus.
   final bool selectable;
 
+  /// Vrai sur un téléphone : une seule hauteur, à la largeur de l'écran, le
+  /// bouton lecture à droite du titre et pas de ligne de texte dessous
+  /// (maquette « 1 bis », validée le 2026-11-13).
+  final bool compact;
+
   /// La largeur de la notification, en pixels de la page.
   static const double width = 388;
+
+  /// La largeur que la carte d'un téléphone ne dépasse pas, sur un écran
+  /// plus large que lui.
+  static const double compactMaxWidth = 560;
 
   @override
   State<RemotePlaybackNotice> createState() => _RemotePlaybackNoticeState();
@@ -70,6 +83,9 @@ class _RemotePlaybackNoticeState extends State<RemotePlaybackNotice> {
   static const double _posterWidth = 46;
   static const double _posterHeight = 69;
   static const BorderRadius _radius = BorderRadius.all(Radius.circular(22));
+
+  /// Le bouton lecture de la carte d'un téléphone : une cible pour le doigt.
+  static const double _compactKeySize = 44;
   static const Animation<double> _still = AlwaysStoppedAnimation<double>(0);
 
   bool _focused = false;
@@ -99,6 +115,176 @@ class _RemotePlaybackNoticeState extends State<RemotePlaybackNotice> {
     final remote = widget.hold != null;
     final onDismiss = widget.onDismiss;
 
+    final posterBox = ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: _posterWidth,
+        height: _posterHeight,
+        child: poster == null
+            ? const ColoredBox(color: AppColors.surfaceHover)
+            : AppNetworkImage(
+                url: poster,
+                width: _posterWidth,
+                height: _posterHeight,
+                errorWidget: const ColoredBox(color: AppColors.surfaceHover),
+              ),
+      ),
+    );
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            const Icon(AppIcons.devices,
+                size: 14, color: AppColors.textSecondary),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                tr('En lecture sur {0}', [device]).toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: AppType.caption,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.9,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Text(
+          s.headline,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: AppType.headline,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+            height: 1.25,
+          ),
+        ),
+        if (detail.isNotEmpty)
+          Text(
+            detail,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: AppType.subhead,
+              fontWeight: FontWeight.w500,
+              height: 1.3,
+            ),
+          ),
+        const SizedBox(height: 7),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            value: s.progress,
+            minHeight: 3,
+            color: AppColors.textPrimary,
+            backgroundColor: Colors.white.withValues(alpha: 0.22),
+          ),
+        ),
+      ],
+    );
+    final dismiss = onDismiss == null
+        ? null
+        : IconButton(
+            tooltip: tr('Ignorer'),
+            onPressed: onDismiss,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(AppIcons.close,
+                color: AppColors.textSecondary, size: 18),
+          );
+
+    final Widget body;
+    if (widget.compact) {
+      // Une seule hauteur : le bouton lecture à droite du titre, un peu
+      // bas pour laisser le coin à la croix.
+      body = Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
+            child: Row(
+              children: [
+                posterBox,
+                const SizedBox(width: 14),
+                Expanded(child: text),
+                const SizedBox(width: 14),
+                Padding(
+                  padding: EdgeInsets.only(top: dismiss == null ? 0 : 14),
+                  child: const CustomPaint(
+                    size: Size.square(_compactKeySize),
+                    painter: _ResumeKeyPainter(progress: 0, playPause: false),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (dismiss != null) Positioned(top: 0, right: 2, child: dismiss),
+        ],
+      );
+    } else {
+      body = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(14, 14, dismiss == null ? 16 : 6, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                posterBox,
+                const SizedBox(width: 14),
+                Expanded(child: text),
+                if (dismiss != null) dismiss,
+              ],
+            ),
+          ),
+          ColoredBox(
+            color: Colors.white.withValues(alpha: 0.10),
+            child: const SizedBox(height: 1),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 16, 11),
+            child: AnimatedBuilder(
+              animation: hold,
+              builder: (context, _) => Row(
+                children: [
+                  CustomPaint(
+                    size: const Size.square(_ResumeKeyPainter.size),
+                    painter: _ResumeKeyPainter(
+                      progress: hold.value,
+                      playPause: remote,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _hint(hold.value),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: AppType.body,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     final card = DecoratedBox(
       decoration: const BoxDecoration(
         borderRadius: _radius,
@@ -122,147 +308,7 @@ class _RemotePlaybackNoticeState extends State<RemotePlaybackNotice> {
             color:
                 Colors.white.withValues(alpha: _hovered || _focused ? 0.07 : 0),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding:
-                    EdgeInsets.fromLTRB(14, 14, onDismiss == null ? 16 : 6, 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: SizedBox(
-                        width: _posterWidth,
-                        height: _posterHeight,
-                        child: poster == null
-                            ? const ColoredBox(color: AppColors.surfaceHover)
-                            : AppNetworkImage(
-                                url: poster,
-                                width: _posterWidth,
-                                height: _posterHeight,
-                                errorWidget: const ColoredBox(
-                                    color: AppColors.surfaceHover),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(AppIcons.devices,
-                                  size: 14, color: AppColors.textSecondary),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  tr('En lecture sur {0}', [device])
-                                      .toUpperCase(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: AppType.caption,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.9,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            s.headline,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: AppType.headline,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.2,
-                              height: 1.25,
-                            ),
-                          ),
-                          if (detail.isNotEmpty)
-                            Text(
-                              detail,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: AppType.subhead,
-                                fontWeight: FontWeight.w500,
-                                height: 1.3,
-                              ),
-                            ),
-                          const SizedBox(height: 7),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(2),
-                            child: LinearProgressIndicator(
-                              value: s.progress,
-                              minHeight: 3,
-                              color: AppColors.textPrimary,
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: 0.22),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (onDismiss != null)
-                      IconButton(
-                        tooltip: tr('Ignorer'),
-                        onPressed: onDismiss,
-                        visualDensity: VisualDensity.compact,
-                        icon: const Icon(AppIcons.close,
-                            color: AppColors.textSecondary, size: 18),
-                      ),
-                  ],
-                ),
-              ),
-              ColoredBox(
-                color: Colors.white.withValues(alpha: 0.10),
-                child: const SizedBox(height: 1),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 16, 11),
-                child: AnimatedBuilder(
-                  animation: hold,
-                  builder: (context, _) => Row(
-                    children: [
-                      CustomPaint(
-                        size: const Size.square(_ResumeKeyPainter.size),
-                        painter: _ResumeKeyPainter(
-                          progress: hold.value,
-                          playPause: remote,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _hint(hold.value),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: AppType.body,
-                            fontWeight: FontWeight.w600,
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+          child: body,
         ),
       ),
     );
@@ -315,7 +361,13 @@ class _RemotePlaybackNoticeState extends State<RemotePlaybackNotice> {
             )
           : tr(
               'En lecture sur {0} : {1}. Reprendre ici.', [device, s.headline]),
-      child: SizedBox(width: RemotePlaybackNotice.width, child: notice),
+      child: widget.compact
+          ? ConstrainedBox(
+              constraints: const BoxConstraints(
+                  maxWidth: RemotePlaybackNotice.compactMaxWidth),
+              child: notice,
+            )
+          : SizedBox(width: RemotePlaybackNotice.width, child: notice),
     );
   }
 }

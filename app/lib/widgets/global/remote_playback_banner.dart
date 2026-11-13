@@ -9,15 +9,10 @@ import '../../navigation/search_route_observer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../screens/player/player_screen.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../utils/on_screen.dart';
 import '../../utils/poster_url.dart';
-import '../../theme/app_icons.dart';
-import '../../theme/app_type.dart';
 import '../../tv/tv_mode.dart';
-import '../../l10n/tr.dart';
-import 'app_network_image.dart';
 import 'remote_playback_notice.dart';
 
 /// « Lecture en cours sur un autre appareil » : ce que le compte lit ailleurs,
@@ -32,9 +27,11 @@ import 'remote_playback_notice.dart';
 ///   droite de l'accueil ([RemotePlaybackBanner.notice],
 ///   [RemotePlaybackNotice]). Avec une télécommande ([hold]), on reprend en
 ///   maintenant la touche lecture/pause ;
-/// - sur un téléphone, une carte en bas de l'écran, avec son bouton.
+/// - sur un téléphone, la même en plus ramassé, en bas de l'écran : toucher
+///   reprend, la croix l'écarte.
 class RemotePlaybackBanner extends StatefulWidget {
-  /// La notification, et non la carte du téléphone.
+  /// La notification en haut à droite, et non la carte ramassée du
+  /// téléphone.
   final bool notice;
 
   /// Vrai sur un téléviseur : un appui maintenu sur lecture/pause reprend,
@@ -259,9 +256,22 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
         child: play == null ? const SizedBox.shrink() : _notice(play),
       );
     }
+    // Sur un téléphone, elle monte du bas de l'écran.
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      child: play == null ? const SizedBox.shrink() : _card(context, play),
+      duration: AppMotion.move(context, AppMotion.emphasis),
+      switchInCurve: AppMotion.curve,
+      switchOutCurve: AppMotion.curve,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.25),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
+      child: play == null ? const SizedBox.shrink() : _notice(play),
     );
   }
 
@@ -270,7 +280,7 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
         _current = null;
       });
 
-  /// Partout sauf sur un téléphone : voir [RemotePlaybackNotice].
+  /// Voir [RemotePlaybackNotice].
   Widget _notice(RemotePlayback play) {
     final baseUrl =
         Provider.of<AuthProvider>(context, listen: false).apiClient.baseUrl;
@@ -283,115 +293,9 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
       posterUrl: cardPosterUrl(play.session.posterUrl, serverBaseUrl: baseUrl),
       hold: widget.hold ? _hold : null,
       selectable: widget.selectable,
+      compact: !widget.notice,
       onResume: direct && !_opening ? _resume : null,
       onDismiss: widget.hold ? null : () => _dismiss(play),
     );
-  }
-
-  Widget _card(BuildContext context, RemotePlayback play) {
-    final s = play.session;
-    final baseUrl =
-        Provider.of<AuthProvider>(context, listen: false).apiClient.baseUrl;
-    final poster = cardPosterUrl(s.posterUrl, serverBaseUrl: baseUrl);
-    final device =
-        s.deviceName.isNotEmpty ? s.deviceName : tr('un autre appareil');
-
-    final card = ConstrainedBox(
-      key: ValueKey(_dismissKey(play)),
-      constraints: const BoxConstraints(maxWidth: 560),
-      child: Material(
-        color: AppColors.surfaceElevated,
-        elevation: 12,
-        shadowColor: Colors.black,
-        borderRadius: BorderRadius.circular(14),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 6, 12),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: SizedBox(
-                      width: 40,
-                      height: 60,
-                      child: poster == null
-                          ? const ColoredBox(color: AppColors.surfaceHover)
-                          : AppNetworkImage(
-                              url: poster,
-                              width: 40,
-                              height: 60,
-                              errorWidget: const ColoredBox(
-                                  color: AppColors.surfaceHover),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          tr('Lecture en cours sur {0}', [device]),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: AppType.footnote,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          s.headline,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: AppType.callout,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (s.detail.isNotEmpty)
-                          Text(
-                            s.detail,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: AppType.footnote,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: _opening ? null : _resume,
-                    icon: const Icon(AppIcons.play, size: 20),
-                    label: Text(tr('Reprendre')),
-                  ),
-                  IconButton(
-                    tooltip: tr('Ignorer'),
-                    onPressed: () => _dismiss(play),
-                    icon: const Icon(AppIcons.close,
-                        color: AppColors.textSecondary, size: 20),
-                  ),
-                ],
-              ),
-            ),
-            LinearProgressIndicator(
-              value: s.progress,
-              minHeight: 3,
-              color: AppColors.progress,
-              backgroundColor: AppColors.border,
-            ),
-          ],
-        ),
-      ),
-    );
-    return card;
   }
 }
