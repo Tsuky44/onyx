@@ -76,6 +76,18 @@ gh workflow run release.yml -f bump=patch -f android=false -f windows=false -f m
 
 Un tag poussé (`git push origin v1.0.1`) n'a pas de cases : il reconstruit tout.
 
+## Apple TV seul, sans toucher au serveur
+
+`.github/workflows/tvos.yml` construit l'app Apple TV et l'envoie sur TestFlight, rien
+d'autre : ni image Docker, ni tag de version, ni Release. Les serveurs ne se mettent pas
+à jour. La version reste celle du dernier tag `vX.Y.Z` ; le numéro de build est
+l'horodatage UTC du lancement.
+
+```bash
+gh workflow run tvos.yml --ref ma-branche          # fichier présent sur la branche par défaut
+git tag tvos-20261113-1 && git push origin tvos-20261113-1   # sinon, depuis n'importe quel commit
+```
+
 Pousser un tag reste possible :
 
 ```bash

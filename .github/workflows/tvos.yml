@@ -1,0 +1,171 @@
+name: Apple TV
+
+# Envoie un build Apple TV sur TestFlight, et rien d'autre.
+#
+# release.yml publie une version entiere : meme en ne cochant qu'Apple TV, il
+# reconstruit l'image Docker, la pousse sur :latest et cree une GitHub Release —
+# tous les serveurs se mettent a jour pour un correctif qui ne concerne que la
+# telecommande. Ici, ni image, ni tag de version, ni Release : le serveur ne
+# voit rien passer.
+#
+# La version reste celle du dernier tag vX.Y.Z (le build s'ajoute a la version
+# deja publiee sur TestFlight), sauf version explicite. Le numero de build est
+# l'horodatage UTC du lancement : toujours plus grand que les numeros de run de
+# release.yml dans la meme version, et le prochain release.yml ouvre une
+# version neuve, ou son numero de run repart sans conflit.
+#
+# Declenchement :
+#   - Actions -> Apple TV -> Run workflow (une fois ce fichier sur la branche
+#     par defaut ; la branche a construire se choisit dans le menu) ;
+#   - `gh workflow run tvos.yml --ref <branche>` ;
+#   - ou un tag `tvos-*` pousse sur le commit a construire, qui marche aussi
+#     depuis une branche que la branche par defaut ne connait pas encore :
+#     `git tag tvos-20261113-1 && git push origin tvos-20261113-1`.
+#
+# Les etapes de build sont celles du job build-tvos de release.yml : un
+# changement de l'outillage (flutter-tvos, xcconfig, archive) se fait des deux
+# cotes.
+
+on:
+  push:
+    tags:
+      - "tvos-*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version explicite, sans le v (optionnel ; par defaut celle du dernier tag)"
+        required: false
+        type: string
+
+# Deux envois simultanes se generaient l'un l'autre chez App Store Connect
+# (« This resource is currently being updated ») : le second attend.
+concurrency:
+  group: tvos
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Les memes tests que release.yml : un build ne part pas sur TestFlight s'ils
+  # sont rouges.
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: test
+    runs-on: macos-latest
+    env:
+      FLUTTER_TVOS_VERSION: v3.44.9-tvos.1.5.1
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+    steps:
+      # Historique complet : sans les tags, impossible de trouver la derniere
+      # version publiee.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Sans la cle App Store Connect, ce workflow n'a rien a livrer : il le
+      # dit tout de suite au lieu de construire vingt minutes pour rien.
+      - name: Cle App Store Connect
+        run: |
+          if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_P8" ]; then
+            echo "::error::Secrets ASC_KEY_ID, ASC_ISSUER_ID et ASC_KEY_P8 requis pour TestFlight."
+            exit 1
+          fi
+
+      - id: resolve
+        env:
+          # Par l'environnement, jamais par interpolation dans le script : une
+          # saisie manuelle ne doit pas pouvoir devenir du shell.
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -n "${VERSION_INPUT// /}" ]; then
+            VERSION="${VERSION_INPUT#v}"
+          else
+            # Tri semantique : un tri alphabetique placerait v1.0.9 apres v1.0.34.
+            VERSION="$(git tag -l 'v*' --sort=-v:refname \
+              | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)"
+            VERSION="${VERSION#v}"
+          fi
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Version invalide : '$VERSION' (format attendu : X.Y.Z)"
+            exit 1
+          fi
+          BUILD_NUMBER="$(date -u +%Y%m%d%H%M)"
+          {
+            echo "version=$VERSION"
+            echo "build_number=$BUILD_NUMBER"
+          } >> "$GITHUB_OUTPUT"
+          echo "### Apple TV $VERSION, build $BUILD_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+
+      # Le SDK tvOS n'est pas toujours installe avec Xcode sur les images
+      # GitHub : sans lui, xcodebuild ne trouve aucune destination.
+      - name: Plateforme tvOS
+        run: |
+          set -euo pipefail
+          if ! xcodebuild -showsdks | grep -q appletvos; then
+            xcodebuild -downloadPlatform tvOS
+          fi
+          xcodebuild -showsdks | grep appletv
+
+      - name: Installer flutter-tvos
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "$FLUTTER_TVOS_VERSION" \
+            https://github.com/fluttertv/flutter-tvos.git "$RUNNER_TEMP/flutter-tvos"
+          echo "$RUNNER_TEMP/flutter-tvos/bin" >> "$GITHUB_PATH"
+
+      - name: flutter-tvos precache
+        run: flutter-tvos precache
+
+      # Signature coupee par XCODE_XCCONFIG_FILE, comme dans release.yml : ce
+      # tag de flutter-tvos n'a pas de --no-codesign.
+      - name: Build tvOS
+        working-directory: app
+        env:
+          LANG: en_US.UTF-8
+          VERSION: ${{ steps.resolve.outputs.version }}
+          BUILD_NUMBER: ${{ steps.resolve.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          XCCONFIG="$RUNNER_TEMP/no-codesign.xcconfig"
+          printf '%s\n' \
+            'CODE_SIGNING_ALLOWED = NO' \
+            'CODE_SIGNING_REQUIRED = NO' \
+            'CODE_SIGN_IDENTITY =' \
+            'EXPANDED_CODE_SIGN_IDENTITY =' > "$XCCONFIG"
+          export XCODE_XCCONFIG_FILE="$XCCONFIG"
+          flutter-tvos build tvos --release \
+            --build-name="$VERSION" \
+            --build-number="$BUILD_NUMBER"
+
+      # flutter-tvos ne sait pas archiver : on archive le projet Xcode que son
+      # build vient de preparer (Generated.xcconfig porte deja version et
+      # numero de build), toujours sans signature, par le meme xcconfig.
+      - name: Archiver pour TestFlight
+        working-directory: app/tvos
+        env:
+          LANG: en_US.UTF-8
+          XCODE_XCCONFIG_FILE: ${{ runner.temp }}/no-codesign.xcconfig
+        run: |
+          xcodebuild archive \
+            -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=tvOS' \
+            -archivePath ../build/tvos/archive/Runner.xcarchive
+
+      # Ici l'envoi est tout l'objet du run : un echec le rend rouge, la ou
+      # release.yml le laisse passer pour ne pas retenir les autres plateformes.
+      - name: Envoyer sur TestFlight
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+          BUILD_NUMBER: ${{ steps.resolve.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          bash scripts/ci/testflight-upload.sh app/build/tvos/archive/Runner.xcarchive
+          echo "TestFlight Apple TV : $VERSION ($BUILD_NUMBER) envoye, disponible apres le traitement Apple (10 a 30 min)." >> "$GITHUB_STEP_SUMMARY"
