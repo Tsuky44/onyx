@@ -9,6 +9,7 @@ import 'siri_remote_touches.dart';
 import 'touchpad_motion.dart';
 import 'tv_key_repeat.dart';
 import 'tv_mode.dart';
+import 'tv_page.dart';
 import 'tv_touchpad_pace.dart';
 
 /// Le trackpad de la Siri Remote, lu comme le fait l'interface d'Apple
@@ -29,7 +30,9 @@ import 'tv_touchpad_pace.dart';
 ///
 /// - **le rythme suit ce que le focus désigne** ([paceOf], ADR-0122) : une
 ///   rangée d'affiches se traverse vite, une barre d'onglets ou une liste de
-///   réglages se parcourt cran par cran, sans accélération ni lancée.
+///   réglages se parcourt cran par cran, sans accélération ni lancée ;
+/// - **une fiche se descend étape par étape** ([TvTouchpadStop], ADR-0128) :
+///   le pas vertical qui change de section est le dernier de son geste.
 ///
 /// Un pas est une flèche comme une autre : il parcourt l'arbre de focus par
 /// les mêmes `onKeyEvent` et les mêmes raccourcis qu'une touche du pavé
@@ -102,6 +105,26 @@ abstract final class TvTouchpad {
   /// Vrai quand un écouteur s'est servi du geste en cours ([addMoveListener]) :
   /// son coup de pouce final n'est alors pas un pas de focus.
   static bool _gestureUsed = false;
+
+  /// Vrai quand un pas a fini le geste en cours ([_endsGesture]) : le doigt
+  /// peut continuer sa course, il ne fait plus de pas, et le lâcher ne rend
+  /// ni élan ni cran dû. Le geste suivant repart de zéro.
+  static bool _gestureEnded = false;
+
+  /// Le dernier déplacement du doigt, pour reconnaître une pause.
+  static Duration? _lastMoveAt;
+
+  /// Un doigt immobile aussi longtemps a fini son geste, même resté posé :
+  /// s'il repart, c'en est un autre. Sans cela, qui descend une fiche d'un
+  /// glissé lent et continu n'avancerait que d'une étape, et devrait lever
+  /// le doigt pour la suivante. Un peu au-dessus du seuil où le pavé tient
+  /// le doigt pour arrêté (150 ms, `TouchpadMotion`).
+  static const Duration _restBetweenGestures = Duration(milliseconds: 200);
+
+  /// Vrai quand le geste en cours a déjà fait un pas vertical d'une carte à
+  /// l'autre dans une étape ([TvTouchpadStop]) : il s'arrête à la dernière
+  /// carte, au lieu de finir sur une commande ou dans l'étape suivante.
+  static bool _gestureInStop = false;
 
   static final List<bool Function(TouchpadMove move)> _moveListeners =
       <bool Function(TouchpadMove move)>[];
@@ -230,8 +253,18 @@ abstract final class TvTouchpad {
     }
     if (phase == TouchpadPhase.clickDown) clickHeld.value = true;
     if (phase == TouchpadPhase.clickUp) clickHeld.value = false;
-    if (phase == TouchpadPhase.began) _gestureUsed = false;
     final now = _now;
+    if (phase == TouchpadPhase.began) {
+      _gestureUsed = false;
+      _gestureEnded = false;
+      _gestureInStop = false;
+      _lastMoveAt = null;
+    }
+    final lastMove = _lastMoveAt;
+    final rested = phase == TouchpadPhase.moved &&
+        lastMove != null &&
+        now - lastMove >= _restBetweenGestures;
+    if (phase == TouchpadPhase.moved) _lastMoveAt = now;
     // Le rythme de ce que le focus désigne à cet instant : il change en
     // cours de geste quand un pas passe d'un bouton à une affiche.
     final pace = _pace;
@@ -257,15 +290,34 @@ abstract final class TvTouchpad {
         _motion.dropPending();
       }
       if (!TvMode.isTv || _inTextField) return;
+      if (_gestureEnded) {
+        if (!rested) {
+          // Le geste a fait son dernier pas : le trajet qui suit ne compte
+          // plus, ni maintenant ni au lâcher.
+          _motion.dropPending();
+          return;
+        }
+        // Le doigt s'est arrêté puis repart : un nouveau geste.
+        _gestureEnded = false;
+        _gestureInStop = false;
+        _motion.rearm();
+      }
       final step = _motion.takeStep(now, pace: pace);
       if (step != null) _step(step, gliding: browsing);
       return;
     }
 
-    if (release == null || !TvMode.isTv || _gestureUsed || _inTextField) {
+    if (release == null ||
+        !TvMode.isTv ||
+        _gestureUsed ||
+        _gestureEnded ||
+        _inTextField) {
       return;
     }
     if (release.flick) _step(release.direction, gliding: browsing);
+    // Le coup de pouce vient de changer d'étape, ou la fiche se descend
+    // étape par étape : rien ne prolonge le geste.
+    if (_gestureEnded || _inStops(release.direction)) return;
     // Parti d'une commande, le geste ne prend pas l'élan d'une rangée, même
     // si son dernier pas vient de poser le focus sur des affiches : il ne
     // rend que les crans que son trajet a gagnés.
@@ -314,7 +366,10 @@ abstract final class TvTouchpad {
     // Le focus n'a pas bougé deux fois de suite : bout de la rangée, la
     // lancée s'arrête là. Un pas dû est une flèche ordinaire : sous dpad, il
     // ne passe pas par le pas de lancée, qui reste dans sa rangée.
-    if (_step(coast.direction, coasting: coast.momentum)) {
+    final moved = _step(coast.direction, coasting: coast.momentum);
+    // Le pas a fini le geste ([_endsGesture]) et coupé la lancée avec lui.
+    if (!identical(_coast, coast)) return;
+    if (moved) {
       _coastMisses = 0;
     } else if (++_coastMisses > 1) {
       _stopCoast('bout de la rangée');
@@ -338,6 +393,17 @@ abstract final class TvTouchpad {
   }) {
     final focus = FocusManager.instance.primaryFocus;
     if (focus == null) return false;
+    // Sur une fiche, la page dit où mène le pas avant qu'il ne parte : sous
+    // dpad le focus ne se pose qu'à la microtâche suivante, et le geste doit
+    // savoir tout de suite s'il vient de faire son dernier pas.
+    final target = _alongRow(direction) ? null : _stopTarget(focus, direction);
+    final last = target != null && _endsGesture(focus, target);
+    if (last && _gestureInStop) {
+      // Une liste parcourue d'un trait s'arrête à sa dernière carte : son
+      // en-tête ou la section suivante demandent leur propre geste.
+      _endGesture('bout de la liste');
+      return false;
+    }
     _lastStepAt = gliding && _alongRow(direction) ? _now : null;
     final stepper = glideStepper;
     if (coasting && stepper != null) {
@@ -347,7 +413,56 @@ abstract final class TvTouchpad {
     }
     // Le focus demandé ne se pose qu'à la microtâche suivante.
     FocusManager.instance.applyFocusChangesIfNeeded();
+    if (last) {
+      _endGesture('étape franchie');
+    } else if (target != null) {
+      _gestureInStop = true;
+    }
     return !identical(FocusManager.instance.primaryFocus, focus);
+  }
+
+  static void _endGesture(String reason) {
+    _gestureEnded = true;
+    _motion.dropPending();
+    _stopCoast(reason);
+  }
+
+  /// Où Haut ou Bas mène depuis [from] quand il est dans une étape d'une
+  /// page qui tient son parcours ([TvPage], [TvTouchpadStop]). Nul ailleurs :
+  /// l'accueil, une grille, les réglages gardent leur rythme.
+  static FocusNode? _stopTarget(FocusNode from, TraversalDirection direction) {
+    final context = from.context;
+    if (context == null || TvTouchpadStop.maybeOf(context) == null) {
+      return null;
+    }
+    return TvPageScope.maybeOf(context)?.targetFor(from, direction);
+  }
+
+  /// Vrai quand le pas vertical de [from] à [to] est le dernier de son geste
+  /// (ADR-0128) : toujours quand il change d'étape (de « Lecture » à la
+  /// distribution), et dans une même étape dès qu'une commande est en jeu.
+  /// Seules des cartes qui se suivent dans leur étape, les épisodes d'une
+  /// saison, se parcourent en continu.
+  static bool _endsGesture(FocusNode from, FocusNode to) {
+    final fromContext = from.context;
+    final toContext = to.context;
+    if (fromContext == null || toContext == null) return false;
+    if (!identical(
+      TvTouchpadStop.maybeOf(fromContext),
+      TvTouchpadStop.maybeOf(toContext),
+    )) {
+      return true;
+    }
+    return paceOf(from) != TouchpadPace.browse ||
+        paceOf(to) != TouchpadPace.browse;
+  }
+
+  /// Vrai quand un geste vers [direction] part d'une étape de fiche : il n'y
+  /// prend ni élan ni cran dû, chaque glissé vaut son pas.
+  static bool _inStops(TraversalDirection direction) {
+    if (_alongRow(direction)) return false;
+    final context = FocusManager.instance.primaryFocus?.context;
+    return context != null && TvTouchpadStop.maybeOf(context) != null;
   }
 
   /// Fait parcourir à l'arbre de focus une flèche vers [direction], appuyée
@@ -455,6 +570,9 @@ abstract final class TvTouchpad {
     _moveListeners.clear();
     _heldBack.clear();
     _gestureUsed = false;
+    _gestureEnded = false;
+    _gestureInStop = false;
+    _lastMoveAt = null;
     _lastStepAt = null;
     debugClock = null;
     clickHeld.value = false;

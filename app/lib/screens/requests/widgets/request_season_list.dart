@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../models/media_request.dart';
 import '../../../theme/app_motion.dart';
 import '../../../theme/app_type.dart';
-import '../../../tv/nav/tv_region.dart';
 import '../../../widgets/global/season_bubbles.dart';
 import '../../../widgets/global/season_hover_preview.dart';
 import '../../../l10n/tr.dart';
@@ -162,19 +161,12 @@ class _RequestSeasonListState extends State<RequestSeasonList> {
                   key: _frameKey,
                   beamX: _beamX,
                   direction: _direction,
-                  // Sa propre section sous la télécommande : Bas depuis une
-                  // bulle entre par le haut du panneau (« Demander »). Dans
-                  // la section des bulles, le parcours géométrique sautait
-                  // la pastille, hors du faisceau d'une bulle calée à gauche,
-                  // pour la première affiche tout en bas de la fiche.
-                  child: TvRegion.section(
-                    child: RequestSeasonPanel(
-                      key: ValueKey(selected.number),
-                      tmdbId: widget.tmdbId,
-                      showItem: widget.showItem,
-                      season: selected,
-                      cache: _cache,
-                    ),
+                  child: RequestSeasonPanel(
+                    key: ValueKey(selected.number),
+                    tmdbId: widget.tmdbId,
+                    showItem: widget.showItem,
+                    season: selected,
+                    cache: _cache,
                   ),
                 ),
         ),

@@ -75,6 +75,20 @@ abstract final class AppMotion {
   /// animations », les deux faces se fondent l'une dans l'autre.
   static const Duration flip = Duration(milliseconds: 420);
 
+  /// Le défilement d'une fiche de téléviseur d'une section à l'autre
+  /// (`TvSectionsScroll`, ADR-0128) : de « Lecture » à la distribution, la
+  /// page parcourt plus d'un demi-écran. Hors de la plage 180–280 ms : à
+  /// [standard], l'écran entier changeait dans le temps d'un pas d'affiche
+  /// (retour d'essai sur Apple TV : « un peu rapide »). C'est la durée du
+  /// trajet le plus long ; un pas dans une liste garde une durée proche de
+  /// [standard]. Passé par [move] : nul sous « réduire les animations ».
+  static const Duration section = Duration(milliseconds: 460);
+
+  /// La courbe du défilement d'une fiche ([section]). Comme le fondu d'une
+  /// page entière ([revealFade]) : un ease-out lance tout l'écran à pleine
+  /// vitesse dès la première image. La page part et se pose en douceur.
+  static const Curve sectionCurve = Curves.easeInOut;
+
   /// La courbe du retournement ([flip]). Un ease-out pur lançait l'affiche à
   /// pleine vitesse dès la première image, comme arrachée : la rotation
   /// démarre en douceur et se pose, comme une carte qu'on retourne à la main.

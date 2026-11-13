@@ -509,12 +509,14 @@ class HeroPill extends StatefulWidget {
   final Color? iconColor;
   final VoidCallback? onPressed;
 
-  /// La télécommande arrive ici à l'ouverture de la fiche.
+  /// La télécommande arrive ici à l'ouverture de la fiche, et chaque fois
+  /// qu'elle entre dans la rangée de la pastille depuis une autre ligne
+  /// (`TvSections`).
   final bool autofocus;
 
-  /// Pour une rangée qui pose elle-même le focus sur sa première action,
+  /// Pour une rangée qui rend elle-même le focus à sa première action,
   /// quand elle arrive après l'ouverture de la fiche et que [autofocus] ne
-  /// suffit plus (`RequestDetailActions`).
+  /// suffit plus (`TvEntryFocus` : `DetailActions`, `RequestDetailActions`).
   final FocusNode? focusNode;
 
   /// Une barre court sous le libellé (envoi en cours).

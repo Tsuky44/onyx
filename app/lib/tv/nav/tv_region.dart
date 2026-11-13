@@ -222,14 +222,17 @@ class TvRegion extends StatelessWidget {
         onEdge = null,
         preferredFocus = null;
 
-  /// Un ensemble de sections verticales ordonnées selon l'écran.
+  /// Une fiche : des sections empilées, parcourues dans l'ordre de l'écran
+  /// (`TvSections`, ADR-0128).
   ///
   /// Posé autour d'une page découpée en sections (en-tête, saisons, épisodes,
   /// informations) : chaque section est un [TvRegion.section].
   ///
-  /// Quand le focus est au plus bas d'une section et que l'utilisateur descend,
-  /// il passe au plus haut de la section suivante. Quand il est au plus haut
-  /// et monte, il passe au plus bas de la section précédente.
+  /// Haut et Bas y suivent les lignes, sans en sauter : la ligne voisine dans
+  /// la section, puis la première ou la dernière ligne de la section voisine.
+  /// La page se pose toujours de la même façon pour une ligne donnée, et un
+  /// glissé du pavé de l'Apple TV s'arrête à chaque section. Les deux systèmes
+  /// de navigation tiennent la même promesse.
   const TvRegion.sections({super.key, required this.child})
       : kind = TvRegionKind.sections,
         entersAtStart = false,
@@ -239,15 +242,19 @@ class TvRegion extends StatelessWidget {
         preferredFocus = null,
         onNavigate = null;
 
-  /// Une section verticale d'un [TvRegion.sections].
+  /// Une section d'un [TvRegion.sections] : l'en-tête, les saisons, la
+  /// distribution. On y entre par sa première ligne en descendant et par sa
+  /// dernière en montant ; [preferredFocus] y désigne l'entrée de sa ligne
+  /// quand la ligne ne la marque pas elle-même (`TvFocusable.entry`,
+  /// `autofocus`).
   const TvRegion.section({
     super.key,
     this.id,
     this.preferredFocus,
-    this.entersAtTop = true,
     required this.child,
   })  : kind = TvRegionKind.section,
         entersAtStart = false,
+        entersAtTop = false,
         onEdge = null,
         onNavigate = null;
 
@@ -284,7 +291,8 @@ class TvRegion extends StatelessWidget {
   /// Gauche ou droite au bord d'une [TvRegion.slide].
   final ValueChanged<TraversalDirection>? onEdge;
 
-  /// L'entrée d'une [TvRegion.controls].
+  /// L'entrée d'une [TvRegion.controls], ou de sa ligne dans une
+  /// [TvRegion.section].
   final FocusNode? preferredFocus;
 
   /// Voir [TvRegion.controlRows] : ancien système seulement.
@@ -333,7 +341,6 @@ class TvRegion extends StatelessWidget {
         return TvSection(
           id: id,
           preferredFocus: preferredFocus,
-          entersAtTop: entersAtTop,
           child: child,
         );
       case TvRegionKind.rail:
@@ -407,7 +414,6 @@ class TvRegion extends StatelessWidget {
         return TvSection(
           id: id,
           preferredFocus: preferredFocus,
-          entersAtTop: entersAtTop,
           child: child,
         );
       case TvRegionKind.tabs:

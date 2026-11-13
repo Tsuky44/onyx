@@ -4,6 +4,7 @@ import '../../../l10n/tr.dart';
 import '../../../models/media_request.dart';
 import '../../../models/watch_list.dart';
 import '../../../theme/app_icons.dart';
+import '../../../tv/nav/tv_entry_focus.dart';
 import '../../../tv/tv_focus_caption.dart';
 import '../../../tv/tv_mode.dart';
 import '../../../utils/long_date.dart';
@@ -21,11 +22,9 @@ import '../../../widgets/global/detail_hero.dart';
 /// sur le bouton retour, et Bas depuis lui sautait toute la rangée : les
 /// saisons, pleine largeur, sont dans son faisceau, « Demander » non.
 ///
-/// La rangée pose ce focus elle-même, une fois montée. Un `autofocus` ne
-/// suffit pas ici : la fiche attend le réseau, la route a déjà le focus quand
-/// les actions arrivent, et le garde-fou (`TvFocusGuard`), qui voit une route
-/// sans cible, donnait la main au premier élément de l'écran — le bouton
-/// retour — dans la même image.
+/// La rangée rend ce focus elle-même, une fois montée ([TvEntryFocus]). Un
+/// `autofocus` ne suffit pas ici : la fiche attend le réseau, et la route a
+/// déjà son focus, sur le bouton retour, quand les actions arrivent.
 class RequestDetailActions extends StatefulWidget {
   const RequestDetailActions({
     super.key,
@@ -75,12 +74,7 @@ class _RequestDetailActionsState extends State<RequestDetailActions> {
   @override
   void initState() {
     super.initState();
-    if (!TvMode.isTv) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _entry.context != null && _entry.canRequestFocus) {
-        _entry.requestFocus();
-      }
-    });
+    TvEntryFocus.claim(_entry);
   }
 
   @override
@@ -142,8 +136,9 @@ class _RequestDetailActionsState extends State<RequestDetailActions> {
       return _entry;
     }
 
-    // `autofocus` en plus du focus posé par [initState] : sous dpad, c'est
-    // lui que la restauration de focus respecte.
+    // `autofocus` en plus du focus rendu par [initState] : il marque l'entrée
+    // de la rangée (`TvSections`), et sous dpad c'est lui que la restauration
+    // de focus respecte.
     bool isEntry(FocusNode? node) => node != null && TvMode.isTv;
 
     // Disponible, même en partie : le bouton lance le média. Le statut se

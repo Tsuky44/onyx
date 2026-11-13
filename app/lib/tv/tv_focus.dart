@@ -11,6 +11,7 @@ import 'tv_focus_memory.dart';
 import 'tv_focus_ring.dart';
 import 'tv_focus_scroll.dart';
 import 'tv_mode.dart';
+import 'tv_page.dart';
 import 'tv_touchpad.dart';
 
 export 'nav/tv_focusable.dart' show TvFocusable;
@@ -333,6 +334,13 @@ class _TvLegacyFocusableState extends State<TvLegacyFocusable> {
       // Plus le focus : une rangée qui se souvient l'a déjà rendu à une autre
       // carte, et défiler jusqu'à celle-ci ferait un aller-retour visible.
       if (!mounted || !_node.hasFocus) return;
+      // Une page qui pose elle-même son défilement (une fiche, [TvPage]) a
+      // une place pour chaque ligne, la même d'où qu'on vienne.
+      final page = TvPageScope.maybeOf(context);
+      if (page != null) {
+        page.reveal(_node, alignment: widget.scrollAlignment);
+        return;
+      }
       Scrollable.ensureVisible(
         context,
         alignment: widget.scrollAlignment,

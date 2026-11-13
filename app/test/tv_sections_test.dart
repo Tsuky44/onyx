@@ -269,5 +269,167 @@ void main() {
         expect(_focused(), 'Reprendre');
       },
     );
+
+    // ADR-0128. Vu sur Apple TV : depuis le bouton retour d'une fiche, Bas
+    // sautait les actions, plus à droite, pour la première cible pleine
+    // largeur d'une section plus bas, et rien ne ramenait sur « Lecture ».
+    testWidgets(
+      '[$engine] dans une section, Bas mène à la ligne suivante même décalée, '
+      'pas à la cible la mieux alignée d’une autre section',
+      (tester) async {
+        final nav = await TvNavHarness.pump(
+          tester,
+          TvRegion.sections(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TvRegion.section(
+                    id: 'hero',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Target('Retour', left: 48, autofocus: true),
+                        const SizedBox(height: 200),
+                        Row(
+                          children: [
+                            _Target('Lecture', left: 600),
+                            _Target('Vu', left: 16),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  TvRegion.section(
+                    id: 'collection',
+                    child: _Target('La saga', width: double.infinity),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          engine: engine,
+        );
+        expect(_focused(), 'Retour');
+
+        await nav.press(TraversalDirection.down);
+        expect(_focused(), 'Lecture');
+        await nav.press(TraversalDirection.down);
+        expect(_focused(), 'La saga');
+        await nav.press(TraversalDirection.up);
+        expect(_focused(), 'Lecture');
+        await nav.press(TraversalDirection.up);
+        expect(_focused(), 'Retour');
+      },
+    );
+
+    testWidgets(
+      '[$engine] on entre dans une ligne par son entrée, quelle que soit la '
+      'cible qu’on y avait quittée',
+      (tester) async {
+        final nav = await TvNavHarness.pump(
+          tester,
+          TvRegion.sections(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TvRegion.section(
+                    id: 'hero',
+                    child: Row(
+                      children: [
+                        _Target('Vu', left: 300),
+                        // L'entrée : la cible que la page focalise en
+                        // s'ouvrant. Ni la première de sa ligne, ni celle
+                        // qui se trouve au-dessus de « Similaire ».
+                        _Target('Lecture', left: 16, autofocus: true),
+                        _Target('Liste', left: 16),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  TvRegion.section(
+                    id: 'similar',
+                    // Sous « Liste », loin de « Lecture ».
+                    child: _Target('Similaire', left: 620),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          engine: engine,
+        );
+        expect(_focused(), 'Lecture');
+
+        await nav.press(TraversalDirection.right);
+        expect(_focused(), 'Liste');
+        await nav.press(TraversalDirection.down);
+        expect(_focused(), 'Similaire');
+        await nav.press(TraversalDirection.up);
+        expect(_focused(), 'Lecture');
+      },
+    );
+
+    testWidgets(
+      '[$engine] une section qui n’a rien à focaliser se franchit d’un pas',
+      (tester) async {
+        final nav = await TvNavHarness.pump(
+          tester,
+          TvRegion.sections(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TvRegion.section(
+                    id: 'hero',
+                    child: _Target('Lecture', left: 300, autofocus: true),
+                  ),
+                  const TvRegion.section(
+                    id: 'progress',
+                    child: SizedBox(height: 120, child: Text('Téléchargement')),
+                  ),
+                  TvRegion.section(
+                    id: 'seasons',
+                    child: _Target('Saison 1', left: 48),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          engine: engine,
+        );
+
+        await nav.press(TraversalDirection.down);
+        expect(_focused(), 'Saison 1');
+        await nav.press(TraversalDirection.up);
+        expect(_focused(), 'Lecture');
+      },
+    );
   });
+}
+
+/// Une cible nommée, décalée de [left] pixels sur sa ligne.
+class _Target extends StatelessWidget {
+  const _Target(
+    this.label, {
+    this.left = 0,
+    this.width = 160,
+    this.autofocus = false,
+  });
+
+  final String label;
+  final double left;
+  final double width;
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.only(left: left),
+        child: TvFocusable(
+          autofocus: autofocus,
+          onSelect: () {},
+          child: SizedBox(width: width, height: 60, child: Text(label)),
+        ),
+      );
 }

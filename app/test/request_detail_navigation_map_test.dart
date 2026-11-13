@@ -11,8 +11,6 @@ import 'package:onyx/services/api_client.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:onyx/tv/nav/tv_nav_engine.dart';
-
 import 'support/tv_nav_harness.dart';
 
 /// La carte de navigation de la fiche d'une demande, à la télécommande : le
@@ -184,8 +182,27 @@ void main() {
         'Bas depuis « Demander » entre dans les saisons, Haut y revient',
         (tester) async {
       final nav = await pump(tester, _show());
+      // Aucune saison n'est ouverte : on entre par la première bulle, pas par
+      // la plus proche de « Demander » (ADR-0128).
       await press(tester, nav, _down);
-      expect(_focused(), startsWith('Saison'));
+      expect(_focused(), 'Saison 1');
+      await press(tester, nav, _up);
+      expect(_focused(), 'Demander');
+    });
+
+    testWidgets(
+        'depuis le bouton retour, Bas mène à « Demander », et Haut depuis '
+        'les saisons y ramène toujours', (tester) async {
+      final nav = await pump(tester, _show());
+      await press(tester, nav, _up);
+      expect(_focused(), isNot('Demander'), reason: 'le bouton retour');
+      await press(tester, nav, _down);
+      expect(_focused(), 'Demander');
+
+      await press(tester, nav, _right);
+      expect(_focused(), 'Bande-annonce');
+      await press(tester, nav, _down);
+      expect(_focused(), 'Saison 1');
       await press(tester, nav, _up);
       expect(_focused(), 'Demander');
     });
@@ -200,13 +217,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(_focused(), startsWith('Saison'), reason: 'OK ouvre le panneau');
 
-      // L'ancien système passe par la pastille ; dpad, qui ne connaît pas les
-      // sections, va droit au premier épisode sous la bulle.
+      // La ligne suivante de la section, pas la mieux alignée de l'écran :
+      // la pastille de la saison, puis ses épisodes.
       await press(tester, nav, _down);
-      if (engine == TvNavEngine.legacy) {
-        expect(_focused(), 'Demander la saison');
-        await press(tester, nav, _down);
-      }
+      expect(_focused(), 'Demander la saison');
+      await press(tester, nav, _down);
       expect(_focused(), 'E1');
       await press(tester, nav, _down);
       expect(_focused(), 'E2');
