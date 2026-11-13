@@ -7,6 +7,7 @@ import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../tv/tv_mode.dart';
+import '../../utils/app_platform.dart';
 import '../../utils/hero_slides.dart';
 import '../../utils/on_screen.dart';
 import '../../navigation/detail_flight.dart';
@@ -173,6 +174,9 @@ class _HomeScreenState extends State<HomeScreen>
         ? shellHeaderHeight(context)
         : MediaQuery.paddingOf(context).top + 56;
     final isTv = TvScope.of(context);
+    // Un téléphone garde sa carte en bas de l'écran ; tous les autres
+    // écrans ont la notification en haut à droite (ADR-0127).
+    final isPhone = !isTv && AppLayout.isCompact(context);
     // Sur téléviseur, l'image du bandeau part du haut de l'écran, derrière
     // la pilule des onglets (ADR-0118) : la barre n'est plus une bande
     // opaque, et le texte du bandeau est calé en bas, loin d'elle.
@@ -249,23 +253,13 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                               ),
                             ),
-                          // Sur un téléviseur, dans la page et non par-dessus : un
-                          // élément en surimpression n'entre dans aucune rangée
-                          // de la télécommande, et « Reprendre » restait hors
-                          // d'atteinte. Sous le carrousel, où bas depuis
-                          // « Lecture » y mène.
-                          if (isTv)
-                            const SliverToBoxAdapter(
-                              child: RemotePlaybackBanner(inline: true),
-                            ),
                           if (data != null &&
                               data.continueWatching.isEmpty &&
                               data.recentMovies.isEmpty &&
                               data.recentShows.isEmpty)
                             SliverFillRemaining(
                               child: Consumer<LibraryProvider>(
-                                builder: (context, library, _) =>
-                                    HomeEmptyView(
+                                builder: (context, library, _) => HomeEmptyView(
                                   libraries: library.librariesLoaded
                                       ? library.libraries
                                       : null,
@@ -296,16 +290,19 @@ class _HomeScreenState extends State<HomeScreen>
                                     onItemTap: (item) =>
                                         _playMedia(context, item),
                                     onContinueWatchingPlay: (item, origin) =>
-                                        _playMedia(context, item, origin: origin),
-                                    onContinueWatchingTitleTap: (item, origin) =>
-                                        _openContinueWatchingDetails(
+                                        _playMedia(context, item,
+                                            origin: origin),
+                                    onContinueWatchingTitleTap:
+                                        (item, origin) =>
+                                            _openContinueWatchingDetails(
                                       context,
                                       item,
                                       origin: origin,
                                     ),
                                     onContinueWatchingMarkWatched: (item) =>
                                         homeProvider
-                                            .markContinueWatchingAsWatched(item),
+                                            .markContinueWatchingAsWatched(
+                                                item),
                                     onContinueWatchingRemove: (item) =>
                                         homeProvider
                                             .hideContinueWatchingItem(item),
@@ -341,11 +338,25 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
-                    if (!isTv)
+                    // Une notification en haut à droite, sous le compte : elle
+                    // ne déplace rien. Sur téléviseur on reprend en
+                    // maintenant lecture/pause. La Siri Remote a toujours
+                    // cette touche ; les autres télécommandes pas toutes, et
+                    // la notification y prend aussi le focus, pour OK.
+                    if (!isPhone)
+                      Positioned(
+                        top: headerInset + 6,
+                        right: AppLayout.pagePadding(context),
+                        child: RemotePlaybackBanner.notice(
+                          hold: isTv,
+                          selectable: isTv && !AppPlatform.isTvOS,
+                        ),
+                      ),
+                    if (isPhone)
                       const Positioned(
-                        left: 16,
-                        right: 16,
-                        bottom: 16,
+                        left: 12,
+                        right: 12,
+                        bottom: 14,
                         child: SafeArea(
                           top: false,
                           child: Center(child: RemotePlaybackBanner()),

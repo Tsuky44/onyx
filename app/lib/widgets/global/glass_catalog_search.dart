@@ -5,6 +5,7 @@ import '../../navigation/shell_navigator.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../screens/library/search_results_screen.dart';
+import '../../screens/search/tv_search_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../tv/tv_deferred_keyboard.dart';
@@ -196,13 +197,10 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
   }
 
   Future<void> _openTvSearch(BuildContext context) async {
+    // La page de recherche d'un téléviseur : le clavier du système s'ouvre
+    // avec elle (ADR-0126).
     await shellNavigatorOf(context).push(
-      MaterialPageRoute(
-        builder: (_) => const SearchResultsScreen(
-          query: '',
-          autofocusField: true,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => const TvSearchScreen()),
     );
     if (mounted) {
       _tvSearchNode.requestFocus();

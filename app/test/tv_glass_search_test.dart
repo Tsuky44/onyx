@@ -6,10 +6,12 @@ import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/library_provider.dart';
 import 'package:onyx/providers/search_provider.dart';
 import 'package:onyx/screens/library/search_results_screen.dart';
+import 'package:onyx/screens/search/tv_search_screen.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/tv/tv_mode.dart';
 import 'package:onyx/widgets/global/glass_catalog_search.dart';
 import 'package:onyx/widgets/global/glass_chrome.dart';
+import 'package:onyx/widgets/global/media_card.dart';
 import 'package:provider/provider.dart';
 
 import 'support/tv_nav_harness.dart';
@@ -149,8 +151,8 @@ void main() {
   group('GlassCatalogSearch sur téléviseur', () {
     TvNavHarness.forEachEngine((engine) {
       testWidgets(
-          'OK ouvre le clavier et confirmer avec OK ouvre les résultats directement',
-          (tester) async {
+          'OK ouvre la page de recherche et le clavier du système '
+          '(ADR-0126)', (tester) async {
         final calls = <String>[];
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
           SystemChannels.textInput,
@@ -184,72 +186,19 @@ void main() {
           engine: engine,
           isTv: true,
         );
-
-        // 1. Navigation télécommande vers la recherche (premier focusable)
-        expect(find.byType(GlassCatalogSearch), findsOneWidget);
         await tester.pumpAndSettle();
 
-        // 2. Clic sur OK avec focus sur la recherche : le clavier virtuel s'ouvre
         await tester.sendKeyEvent(LogicalKeyboardKey.select);
         await tester.pumpAndSettle();
 
+        // La page de recherche d'un téléviseur, et non la grille du bureau.
+        // Un seul OK : le clavier du système s'ouvre avec elle. Son parcours
+        // est épinglé par `tv_search_screen_test.dart`.
+        expect(find.byType(TvSearchScreen), findsOneWidget);
+        expect(find.byType(SearchResultsScreen), findsNothing);
         expect(calls, contains('TextInput.show'));
-
-        // 3. Saisie du texte recherché
-        await tester.enterText(find.byType(TextField), 'Dune');
-        await tester.pumpAndSettle();
-
-        // 4. Confirmation via Select / OK : les résultats s'ouvrent directement sans faire retour
-        await tester.sendKeyEvent(LogicalKeyboardKey.select);
-        await tester.pumpAndSettle();
-
-        expect(find.byType(SearchResultsScreen), findsOneWidget);
-        expect(find.text('Résultats pour « Dune »'), findsOneWidget);
-      });
-
-      testWidgets('la saisie affiche les résultats en direct sans validation',
-          (tester) async {
-        final apiClient = _FakeApiClient();
-        final libraryProvider = LibraryProvider(apiClient);
-        final authProvider = AuthProvider(apiClient);
-        final searchProvider = SearchProvider();
-
-        await TvNavHarness.pump(
-          tester,
-          const Scaffold(
-            body: GlassCatalogSearch(),
-          ),
-          around: (app) => MultiProvider(
-            providers: [
-              Provider<ApiClient>.value(value: apiClient),
-              ChangeNotifierProvider.value(value: libraryProvider),
-              ChangeNotifierProvider.value(value: authProvider),
-              ChangeNotifierProvider.value(value: searchProvider),
-            ],
-            child: app,
-          ),
-          engine: engine,
-          isTv: true,
-        );
-
-        // 1. Clic sur OK avec focus sur la recherche : ouvre directement l'écran de résultats
-        await tester.sendKeyEvent(LogicalKeyboardKey.select);
-        await tester.pumpAndSettle();
-
-        expect(find.byType(SearchResultsScreen), findsOneWidget);
-
-        // Un seul OK suffit : la page s'ouvre avec le champ déjà actif.
-        final field = tester.widget<TextField>(find.byType(TextField));
-        expect(field.focusNode!.hasFocus, isTrue,
-            reason: 'le champ de la page de résultats doit avoir le focus');
-        expect(field.canRequestFocus, isTrue);
-
-        // 2. Dès qu'on tape, les résultats apparaissent en direct sans valider
-        await tester.enterText(find.byType(TextField), 'Dune');
-        await tester.pumpAndSettle();
-
-        expect(find.text('Résultats pour « Dune »'), findsOneWidget);
-        expect(find.text('Dune'), findsWidgets);
+        // Le catalogue est déjà là : le film du serveur est proposé.
+        expect(find.byType(MediaCard), findsOneWidget);
       });
     });
   });

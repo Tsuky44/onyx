@@ -8,6 +8,7 @@ import 'package:onyx/providers/home_provider.dart';
 import 'package:onyx/providers/library_provider.dart';
 import 'package:onyx/screens/library/library_screen.dart';
 import 'package:onyx/screens/library/widgets/catalog_header.dart';
+import 'package:onyx/screens/library/widgets/catalog_sort_capsule.dart';
 import 'package:onyx/screens/library/widgets/library_spotlight.dart';
 import 'package:onyx/screens/library/widgets/library_tv_view.dart';
 import 'package:onyx/services/api_client.dart';
@@ -87,9 +88,9 @@ HomeMediaItem _movie(int id) => HomeMediaItem(
 
 const _library = MediaLibrary(id: 1, name: 'Films', kind: LibraryKind.movies);
 
-/// La hauteur de l'onglet posé au-dessus de la page.
-const double _tabHeight = 48;
-
+/// L'onglet flotte au-dessus de la page, comme la barre de la coquille : la
+/// page a toute la hauteur de l'écran. Il est au-dessus de la première
+/// colonne de la grille, où se trouve la pilule des onglets.
 Widget _tab(_Api api) => MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: api),
@@ -98,23 +99,23 @@ Widget _tab(_Api api) => MultiProvider(
         ChangeNotifierProvider(create: (_) => LibraryProvider(api)),
       ],
       child: Scaffold(
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        body: Stack(
           children: [
-            TvRegion.tabs(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 48),
+            const Positioned.fill(
+              child: TvRegion.page(
+                child: LibraryScreen(library: _library, embedded: true),
+              ),
+            ),
+            Positioned(
+              left: 500,
+              top: 22,
+              child: TvRegion.tabs(
                 child: TvFocusable(
                   autofocus: true,
                   entry: true,
                   onSelect: () {},
-                  child: const TvTestTile('Films', height: _tabHeight),
+                  child: const TvTestTile('Films', height: 44),
                 ),
-              ),
-            ),
-            const Expanded(
-              child: TvRegion.page(
-                child: LibraryScreen(library: _library, embedded: true),
               ),
             ),
           ],
@@ -138,6 +139,10 @@ Rect _poster(WidgetTester tester, String title) => tester.getRect(
 /// prédicat.
 Finder get _catalogHeader =>
     find.byWidgetPredicate((widget) => widget is CatalogHeader);
+
+/// La capsule du tri. Son type porte celui, privé, des tris de l'écran.
+Finder get _sort =>
+    find.byWidgetPredicate((widget) => widget is CatalogSortCapsule);
 
 Finder _inSpotlight(Finder finder) =>
     find.descendant(of: find.byType(LibrarySpotlight), matching: finder);
@@ -176,13 +181,11 @@ void main() {
       expect(fourth.right, closeTo(1280 - 48, 0.1));
       expect(fifth.left, first.left);
       expect(fifth.top - first.bottom, LibraryTvView.rowGap);
-      // La grille prend toute la hauteur : deux rangées entières, et sur
-      // les 720 px d'un écran (ce banc en prend 48 pour son onglet) la
-      // troisième pointe en bas.
+      // La grille prend toute la hauteur : deux rangées entières sous le
+      // tri.
+      expect(view.height, 720);
+      expect(first.top, 90 + LibraryTvView.rowTop);
       expect(fifth.bottom, lessThan(view.bottom));
-      final thirdRow = fifth.bottom + LibraryTvView.rowGap - view.top;
-      expect(thirdRow, lessThan(720 - 24));
-      expect(thirdRow + first.height, greaterThan(720));
       // Plus de titre de page ni de cartouche sur les affiches : la fiche les
       // remplace.
       expect(_catalogHeader, findsNothing);
@@ -297,94 +300,65 @@ void main() {
     });
 
     testWidgets(
-        'le tri est une capsule en haut du volet, sur la ligne de la '
-        'première rangée', (tester) async {
+        'le tri est une capsule de verre en haut à droite, au-dessus de la '
+        'grille', (tester) async {
       await open(tester, _Api(20));
 
-      final sort = tester.getRect(find.byType(OutlinedButton));
-      final first = _poster(tester, 'Film 1');
-      expect(sort.left, 48);
-      expect(sort.right, lessThan(first.left));
-      expect(sort.top, first.top);
-      // Au-dessus du surtitre de la fiche, sans le toucher.
-      final eyebrow =
-          tester.getRect(_inSpotlight(find.text('FILMS · 20 TITRES')));
-      expect(sort.bottom, lessThan(eyebrow.top));
-      expect(
-        find.descendant(
-            of: find.byType(OutlinedButton), matching: find.text('Récents')),
-        findsOneWidget,
-      );
+      final sort = tester.getRect(_sort);
+      final fourth = _poster(tester, 'Film 4');
+      // Calé sur le bord droit de la grille, sous la barre d'onglets.
+      expect(sort.right, closeTo(fourth.right, 0.1));
+      expect(sort.top, 90 + LibraryTvView.sortTop);
+      expect(sort.height, CatalogSortCapsule.height);
+      // L'affiche soulevée (un dixième de sa hauteur) ne passe pas dessus.
+      expect(sort.bottom, lessThan(fourth.top - fourth.height * 0.1));
+      expect(find.descendant(of: _sort, matching: find.text('Récents')),
+          findsOneWidget);
     });
 
     testWidgets(
-        'gauche depuis la première colonne mène au tri, droite ramène à '
-        'l\'affiche quittée', (tester) async {
+        'haut depuis la dernière colonne mène au tri, bas ramène à la '
+        'rangée', (tester) async {
       final nav = await open(tester, _Api(20));
       await nav.press(TraversalDirection.down);
-      await nav.press(TraversalDirection.down);
-      await tester.pumpAndSettle();
-      expect(_focused(), 'Film 5');
+      for (var i = 0; i < 3; i++) {
+        await nav.press(TraversalDirection.right);
+      }
+      expect(_focused(), 'Film 4');
 
-      await nav.press(TraversalDirection.left);
+      await nav.press(TraversalDirection.up);
       expect(_focused(), 'Récents');
       // La fiche présente toujours l'affiche quittée.
-      expect(_inSpotlight(find.text('Film 5')), findsOneWidget);
+      expect(_inSpotlight(find.text('Film 4')), findsOneWidget);
 
-      await nav.press(TraversalDirection.right);
-      await tester.pumpAndSettle();
-      expect(_focused(), 'Film 5');
-
-      // Bas depuis le tri rentre lui aussi dans la rangée quittée : le focus
-      // part dans le sens de la flèche.
-      await nav.press(TraversalDirection.left);
-      expect(_focused(), 'Récents');
       await nav.press(TraversalDirection.down);
       await tester.pumpAndSettle();
-      expect(_focused(), 'Film 5');
+      expect(_focused(), 'Film 4');
     });
 
-    testWidgets('haut depuis le tri monte aux onglets', (tester) async {
+    testWidgets(
+        'haut depuis la première colonne monte aux onglets, et bas en '
+        'revient dans la grille, pas sur le tri', (tester) async {
       final nav = await open(tester, _Api(20));
       await nav.press(TraversalDirection.down);
-      await nav.press(TraversalDirection.left);
-      expect(_focused(), 'Récents');
+      expect(_focused(), 'Film 1');
 
       await nav.press(TraversalDirection.up);
       await tester.pumpAndSettle();
       expect(_focused(), 'Films');
-      // Et Bas, depuis l'onglet, entre dans la grille, pas sur le tri.
       await nav.press(TraversalDirection.down);
       await tester.pumpAndSettle();
-      expect(_focusedCard(), isNotNull);
-    });
-
-    testWidgets('un geste qui court le long de la rangée s\'arrête à son bord',
-        (tester) async {
-      final nav = await open(tester, _Api(20));
-      await nav.press(TraversalDirection.down);
-      await nav.press(TraversalDirection.right);
-      await nav.press(TraversalDirection.right);
-      expect(_focused(), 'Film 3');
-
-      // Trois pas vers la gauche coup sur coup : le troisième ne finit pas
-      // sur le tri.
-      await nav.press(TraversalDirection.left);
-      await nav.press(TraversalDirection.left);
-      await nav.press(TraversalDirection.left);
       expect(_focused(), 'Film 1');
-
-      // Le focus posé, gauche y mène.
-      await tester.pump(LibraryTvView.rest);
-      await nav.press(TraversalDirection.left);
-      expect(_focused(), 'Récents');
     });
 
     testWidgets('à la télécommande, le tri choisi rend le focus à sa capsule',
         (tester) async {
       final nav = await open(tester, _Api(20));
       await nav.press(TraversalDirection.down);
-      await nav.press(TraversalDirection.left);
+      for (var i = 0; i < 3; i++) {
+        await nav.press(TraversalDirection.right);
+      }
+      await nav.press(TraversalDirection.up);
       expect(_focused(), 'Récents');
       await nav.select();
       await tester.pumpAndSettle();
@@ -393,17 +367,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // La grille est retriée, et la télécommande n'a pas perdu sa place.
-      expect(
-        find.descendant(
-            of: find.byType(OutlinedButton), matching: find.text('A → Z')),
-        findsOneWidget,
-      );
+      expect(find.descendant(of: _sort, matching: find.text('A → Z')),
+          findsOneWidget);
       expect(_focused(), 'A → Z');
 
-      // L'affiche quittée n'existe plus : droite entre par la première.
-      await nav.press(TraversalDirection.right);
+      // Bas rentre dans la grille retriée.
+      await nav.press(TraversalDirection.down);
       await tester.pumpAndSettle();
-      expect(_focused(), 'Film 1');
+      expect(_focusedCard(), isNotNull);
     });
 
     testWidgets('pendant le chargement, la page a déjà sa forme',
@@ -418,7 +389,7 @@ void main() {
       expect(find.byType(LibrarySpotlight), findsNothing);
       expect(find.byType(MediaCard), findsNothing);
       // Rien à trier.
-      expect(find.byType(OutlinedButton), findsNothing);
+      expect(_sort, findsNothing);
       // Le nom de la bibliothèque tient la place du titre de la fiche.
       expect(
         find.descendant(
@@ -444,7 +415,7 @@ void main() {
       await nav.press(TraversalDirection.right);
       expect(_inSpotlight(find.text('Film 2')), findsOneWidget);
 
-      await tester.tap(find.byType(OutlinedButton));
+      await tester.tap(_sort);
       await tester.pumpAndSettle();
       // Le libellé d'une ligne de menu ne reçoit pas le toucher lui-même :
       // c'est sa ligne qui le prend.

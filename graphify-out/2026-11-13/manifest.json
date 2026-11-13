@@ -683,9 +683,9 @@
     "semantic_hash": "814afa5737fda3c847e70aa44887b290"
   },
   "app/lib/l10n/en.dart": {
-    "mtime": 1794571601.1944363,
-    "seen": 1794571674.266307,
-    "ast_hash": "d7b4bc9641d1a9492f2f9359a9252166",
+    "mtime": 1794573439.8978589,
+    "seen": 1794573506.129431,
+    "ast_hash": "89ec985dc6e5e8acdf3579263e75e2a7",
     "semantic_hash": ""
   },
   "app/lib/l10n/tr.dart": {
@@ -1031,9 +1031,9 @@
     "semantic_hash": "46305a2c60b5fbcc20aae414b2a8d555"
   },
   "app/lib/screens/auth/user_choice_screen.dart": {
-    "mtime": 1794571601.1950521,
-    "seen": 1794571674.2663739,
-    "ast_hash": "d2a1e4198ee297c8805e19670ec6edc8",
+    "mtime": 1794573439.8949552,
+    "seen": 1794573506.129502,
+    "ast_hash": "c09699bd691ebf020da5c97cc96e5be1",
     "semantic_hash": ""
   },
   "app/lib/screens/auth/widgets/closes_on_sign_in.dart": {
@@ -1043,9 +1043,9 @@
     "semantic_hash": "12261979b21f7584498ac756840b2ec9"
   },
   "app/lib/screens/auth/widgets/profile_tile.dart": {
-    "mtime": 1794568344.1965022,
-    "seen": 1794569020.340945,
-    "ast_hash": "7b8e55533acd04ae79dffc9a612fd4bc",
+    "mtime": 1794573439.8944492,
+    "seen": 1794573506.129504,
+    "ast_hash": "3867b51163589100ffed952c22b384b5",
     "semantic_hash": ""
   },
   "app/lib/screens/downloads/download_group_headers.dart": {
@@ -2963,9 +2963,9 @@
     "semantic_hash": ""
   },
   "app/lib/theme/app_icons.dart": {
-    "mtime": 1794315001.2724283,
-    "seen": 1794566957.114641,
-    "ast_hash": "d8930b206baa66023e779c2e042142cd",
+    "mtime": 1794573445.4084346,
+    "seen": 1794573506.129921,
+    "ast_hash": "91fefdd976822921f3360e5fe78b0ab6",
     "semantic_hash": ""
   },
   "app/lib/theme/app_motion.dart": {
@@ -4548,9 +4548,9 @@
     "semantic_hash": "2634f305cc2dcdf65cb36b1721874964"
   },
   "app/test/profile_avatar_test.dart": {
-    "mtime": 1794568349.7645843,
-    "seen": 1794569020.3417659,
-    "ast_hash": "8cd4cf47da6c1d9a26ce76998361756e",
+    "mtime": 1794573439.8984687,
+    "seen": 1794573506.130315,
+    "ast_hash": "f2100522eddddf2f88cb3bd62db413ee",
     "semantic_hash": ""
   },
   "app/test/progress_revision_watch_test.dart": {
@@ -4926,9 +4926,9 @@
     "semantic_hash": ""
   },
   "app/test/user_choice_test.dart": {
-    "mtime": 1794568355.6344917,
-    "seen": 1794569020.341873,
-    "ast_hash": "0172ef84a373f9e9c2e7cb4a4d86a433",
+    "mtime": 1794573451.0403075,
+    "seen": 1794573506.1304169,
+    "ast_hash": "2d69ff79236b359d0874fedff37571b0",
     "semantic_hash": ""
   },
   "app/test/video_display_mode_test.dart": {
@@ -10660,9 +10660,9 @@
     "semantic_hash": ""
   },
   "docs/adr/0078-plusieurs-utilisateurs-sur-un-appareil.md": {
-    "mtime": 1794568987.531323,
-    "seen": 1794569020.3429492,
-    "ast_hash": "bae98ba2b9e019a67c697a05072816ca",
+    "mtime": 1794573475.8777518,
+    "seen": 1794573506.131516,
+    "ast_hash": "a4db1b5298a5ef63f14f93ff66251234",
     "semantic_hash": ""
   },
   "docs/adr/0079-durcissement-apres-audit-de-securite.md": {
