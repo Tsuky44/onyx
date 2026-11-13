@@ -1073,9 +1073,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/home/home_screen.dart": {
-    "mtime": 1794573325.2180822,
-    "seen": 1794573895.1071045,
-    "ast_hash": "9763d6f0de6141d67f7122c2ae1251e3",
+    "mtime": 1794574020.9730957,
+    "seen": 1794574403.4345546,
+    "ast_hash": "bc5e6f21eff9822fdb37f29ea4a5936c",
     "semantic_hash": ""
   },
   "app/lib/screens/library/collection_screen.dart": {
@@ -3587,9 +3587,9 @@
     "semantic_hash": "7b92df5aab0bddc1e0ce66f209b09f24"
   },
   "app/lib/widgets/global/remote_playback_banner.dart": {
-    "mtime": 1794573325.218535,
-    "seen": 1794573895.1081035,
-    "ast_hash": "2b185836d5d00963c60b9ee40fb24d6f",
+    "mtime": 1794574039.5702357,
+    "seen": 1794574403.4352386,
+    "ast_hash": "1573309956e47d575551baf13f56ae8b",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/resume_preview/hover_preview_preference.dart": {
@@ -13206,21 +13206,21 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/remote_playback_notice.dart": {
-    "mtime": 1794573325.2939217,
-    "seen": 1794573895.108106,
-    "ast_hash": "d640da124f9c1fd9e61b921b211bed01",
+    "mtime": 1794574021.0579631,
+    "seen": 1794574403.4352407,
+    "ast_hash": "1dd8a2b9f369d6dfd4790e824a3786ea",
     "semantic_hash": ""
   },
   "app/test/remote_playback_notice_test.dart": {
-    "mtime": 1794573528.6729329,
-    "seen": 1794573895.1084812,
-    "ast_hash": "1e08e4584dc9524286fe10f627ae002a",
+    "mtime": 1794574039.5852704,
+    "seen": 1794574403.4354658,
+    "ast_hash": "4b0024bea88fe3bdd637f27d30a29488",
     "semantic_hash": ""
   },
   "docs/adr/0127-la-lecture-d-un-autre-appareil-s-annonce-en-notification-et-se-reprend-en-maintenant-lecture.md": {
-    "mtime": 1794573565.4464219,
-    "seen": 1794573895.110342,
-    "ast_hash": "80aa813612c5af52adbddd341bd7e563",
+    "mtime": 1794574090.0699673,
+    "seen": 1794574403.436709,
+    "ast_hash": "e383f8eaac22fca1c577d73c16b9a2eb",
     "semantic_hash": ""
   }
 }

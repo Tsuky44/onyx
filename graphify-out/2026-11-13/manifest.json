@@ -683,9 +683,9 @@
     "semantic_hash": "814afa5737fda3c847e70aa44887b290"
   },
   "app/lib/l10n/en.dart": {
-    "mtime": 1794567920.98123,
-    "seen": 1794568421.6074579,
-    "ast_hash": "1a0cabdc84c13435465ea58b82dcd403",
+    "mtime": 1794573325.2196822,
+    "seen": 1794573895.106904,
+    "ast_hash": "02f88c83d1a4e3102b359a753a9b970c",
     "semantic_hash": ""
   },
   "app/lib/l10n/tr.dart": {
@@ -1073,9 +1073,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/home/home_screen.dart": {
-    "mtime": 1794487177.0594018,
-    "seen": 1794487845.270133,
-    "ast_hash": "442500d51f479f34687184a1a8dc6bb7",
+    "mtime": 1794573325.2180822,
+    "seen": 1794573895.1071045,
+    "ast_hash": "9763d6f0de6141d67f7122c2ae1251e3",
     "semantic_hash": ""
   },
   "app/lib/screens/library/collection_screen.dart": {
@@ -2963,9 +2963,9 @@
     "semantic_hash": ""
   },
   "app/lib/theme/app_icons.dart": {
-    "mtime": 1794567920.9775612,
-    "seen": 1794568421.608454,
-    "ast_hash": "d8930b206baa66023e779c2e042142cd",
+    "mtime": 1794573032.0848882,
+    "seen": 1794573895.1077747,
+    "ast_hash": "99702ee86d8a72a45ea24fcc4725cc30",
     "semantic_hash": ""
   },
   "app/lib/theme/app_motion.dart": {
@@ -3587,9 +3587,9 @@
     "semantic_hash": "7b92df5aab0bddc1e0ce66f209b09f24"
   },
   "app/lib/widgets/global/remote_playback_banner.dart": {
-    "mtime": 1794482460.079245,
-    "seen": 1794487845.2717927,
-    "ast_hash": "c22169226073a2311468fee264207d70",
+    "mtime": 1794573325.218535,
+    "seen": 1794573895.1081035,
+    "ast_hash": "2b185836d5d00963c60b9ee40fb24d6f",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/resume_preview/hover_preview_preference.dart": {
@@ -11945,12 +11945,6 @@
     "ast_hash": "5b08538cfec682aa3b98f8a9d35197bd",
     "semantic_hash": ""
   },
-  "app/test/remote_playback_banner_focus_test.dart": {
-    "mtime": 1794482460.0829618,
-    "seen": 1794487845.2725813,
-    "ast_hash": "7a98f84e358e6b77d8cc76523ef9fd31",
-    "semantic_hash": ""
-  },
   "app/test/repeating_animations_respect_lite_mode_test.dart": {
     "mtime": 1794482460.0829618,
     "seen": 1794487845.2725878,
@@ -11967,12 +11961,6 @@
     "mtime": 1794482460.0821753,
     "seen": 1794487845.2724094,
     "ast_hash": "68bea1a6de8a91011ce54241a0235f6c",
-    "semantic_hash": ""
-  },
-  "app/lib/widgets/global/remote_playback_tv_card.dart": {
-    "mtime": 1794482460.079245,
-    "seen": 1794487845.2717965,
-    "ast_hash": "e18c9b938457167d3b178a8fd062dd11",
     "semantic_hash": ""
   },
   "contract/mediahub/onyx_integration_link.json": {
@@ -13215,6 +13203,24 @@
     "mtime": 1794568100.6749518,
     "seen": 1794568421.612073,
     "ast_hash": "0b1a22af6e1b0cf1ab6822a00fd1d1f7",
+    "semantic_hash": ""
+  },
+  "app/lib/widgets/global/remote_playback_notice.dart": {
+    "mtime": 1794573325.2939217,
+    "seen": 1794573895.108106,
+    "ast_hash": "d640da124f9c1fd9e61b921b211bed01",
+    "semantic_hash": ""
+  },
+  "app/test/remote_playback_notice_test.dart": {
+    "mtime": 1794573528.6729329,
+    "seen": 1794573895.1084812,
+    "ast_hash": "1e08e4584dc9524286fe10f627ae002a",
+    "semantic_hash": ""
+  },
+  "docs/adr/0127-la-lecture-d-un-autre-appareil-s-annonce-en-notification-et-se-reprend-en-maintenant-lecture.md": {
+    "mtime": 1794573565.4464219,
+    "seen": 1794573895.110342,
+    "ast_hash": "80aa813612c5af52adbddd341bd7e563",
     "semantic_hash": ""
   }
 }
