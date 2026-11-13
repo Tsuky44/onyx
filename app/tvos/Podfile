@@ -37,8 +37,21 @@ target 'Runner' do
   end
 end
 
+# ITMS-91061 : Apple refuse un SDK courant (sqlite) livré sans manifeste de
+# confidentialité, et sqflite_tvos 0.0.2 n'en embarque pas. On ajoute celui de
+# sqflite_darwin (aucun suivi, aucune donnée collectée) à la racine du
+# framework. À retirer le jour où le paquet en livre un.
+PRIVACY_MANIFESTS = {
+  'sqflite_tvos' => 'privacy/sqflite_tvos/PrivacyInfo.xcprivacy',
+}.freeze
+
 post_install do |installer|
   installer.pods_project.targets.each do |target|
+    manifest = PRIVACY_MANIFESTS[target.name]
+    if manifest
+      ref = installer.pods_project.new_file(File.expand_path(manifest, File.dirname(__FILE__)))
+      target.add_resources([ref])
+    end
     target.build_configurations.each do |config|
       config.build_settings['TVOS_DEPLOYMENT_TARGET'] = '18.0'
     end
