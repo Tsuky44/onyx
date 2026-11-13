@@ -16,6 +16,7 @@ import '../../widgets/global/skeleton.dart';
 import '../shell/shell_tabs.dart';
 import '../../tv/tv_mode.dart';
 import 'widgets/catalog_header.dart';
+import 'widgets/catalog_sort_capsule.dart';
 import 'widgets/library_tv_view.dart';
 
 enum _SortOption { recent, title, progress }
