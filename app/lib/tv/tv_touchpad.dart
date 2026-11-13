@@ -106,15 +106,25 @@ abstract final class TvTouchpad {
   static final List<bool Function(TouchpadMove move)> _moveListeners =
       <bool Function(TouchpadMove move)>[];
 
-  /// Vrai tant qu'une liste de cartes avance sous le doigt ou sur sa lancée.
+  /// Vrai tant qu'une rangée de cartes avance sous le doigt ou sur sa lancée.
   /// Le défilement suit alors au plus court, comme pour une flèche maintenue.
   /// Un pas posé ([TouchpadPace.precise]) n'en est pas : la page défile à
   /// son rythme ordinaire.
+  ///
+  /// Un pas vers le haut ou le bas non plus. Il n'y en a qu'un par geste, et
+  /// un de lancée au plus : rien à rattraper. Et la page qui parcourt une
+  /// rangée entière d'affiches au rythme d'une rangée qui file saute au lieu
+  /// de défiler (retour d'essai du 2026-11-13 : « trop brut », ADR-0125).
   static bool get isGliding {
-    if (_coastTimer != null) return true;
+    final coast = _coast;
+    if (_coastTimer != null && coast != null) return _alongRow(coast.direction);
     final last = _lastStepAt;
     return last != null && _now - last < _trackingFor;
   }
+
+  static bool _alongRow(TraversalDirection direction) =>
+      direction == TraversalDirection.left ||
+      direction == TraversalDirection.right;
 
   /// Branché une fois au démarrage, sur Apple TV seulement.
   static void install() {
@@ -328,7 +338,7 @@ abstract final class TvTouchpad {
   }) {
     final focus = FocusManager.instance.primaryFocus;
     if (focus == null) return false;
-    _lastStepAt = gliding ? _now : null;
+    _lastStepAt = gliding && _alongRow(direction) ? _now : null;
     final stepper = glideStepper;
     if (coasting && stepper != null) {
       stepper(direction);

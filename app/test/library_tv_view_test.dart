@@ -24,13 +24,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/tv_nav_harness.dart';
 
-/// Une bibliothèque sur téléviseur (ADR-0123) : la fiche du titre que la
-/// télécommande désigne en tête, une rangée de six affiches dessous.
+/// Une bibliothèque sur téléviseur (ADR-0125) : la fiche du titre que la
+/// télécommande désigne dans un volet à gauche, la grille d'affiches à droite.
 ///
-/// Retour de l'utilisateur sur Apple TV : la grille de sept affiches par
-/// ligne, trois rangées pleines à l'écran, était « trop remplie, trop
-/// compacte ». Ce banc monte le vrai [LibraryScreen] sous un onglet, à la
-/// taille d'une page de téléviseur.
+/// Retours de l'utilisateur sur Apple TV : la grille de sept affiches par
+/// ligne était « trop remplie, trop compacte » ; puis, la fiche posée en tête
+/// d'écran, « on ne voit pas super bien » et le défilement était « trop
+/// brut ». Ce banc monte le vrai [LibraryScreen] sous un onglet, à la taille
+/// d'une page de téléviseur.
 
 class _Api extends ApiClient {
   _Api(this.count);
@@ -157,24 +158,31 @@ void main() {
       return nav;
     }
 
-    testWidgets('six affiches par ligne, une rangée et le haut de la suivante',
-        (tester) async {
+    testWidgets(
+        'quatre affiches par ligne à droite du volet, deux rangées et le '
+        'haut de la troisième', (tester) async {
       await open(tester, _Api(20));
 
+      final view = tester.getRect(find.byType(LibraryTvView));
       final first = _poster(tester, 'Film 1');
-      final sixth = _poster(tester, 'Film 6');
-      final seventh = _poster(tester, 'Film 7');
-      // (1280 − 2 × 48 − 5 × 24) / 6 : la largeur d'une affiche de l'accueil.
-      expect(first.width, closeTo(177.3, 0.1));
-      expect(first.height, closeTo(266, 0.1));
-      expect(first.left, 48);
-      expect(sixth.top, first.top);
-      expect(sixth.right, closeTo(1280 - 48, 0.1));
-      expect(seventh.left, first.left);
-      expect(seventh.top - first.bottom, LibraryTvView.rowGap);
-      // La rangée suivante pointe en bas de l'écran, sans y tenir.
-      expect(seventh.top, lessThan(720));
-      expect(seventh.bottom, greaterThan(720));
+      final fourth = _poster(tester, 'Film 4');
+      final fifth = _poster(tester, 'Film 5');
+      // Le volet : 48 de gouttière, 374 de texte, 48 avant la grille. Puis
+      // (1280 − 470 − 48 − 3 × 24) / 4.
+      expect(first.left, 470);
+      expect(first.width, closeTo(172.5, 0.1));
+      expect(first.height, closeTo(258.75, 0.1));
+      expect(fourth.top, first.top);
+      expect(fourth.right, closeTo(1280 - 48, 0.1));
+      expect(fifth.left, first.left);
+      expect(fifth.top - first.bottom, LibraryTvView.rowGap);
+      // La grille prend toute la hauteur : deux rangées entières, et sur
+      // les 720 px d'un écran (ce banc en prend 48 pour son onglet) la
+      // troisième pointe en bas.
+      expect(fifth.bottom, lessThan(view.bottom));
+      final thirdRow = fifth.bottom + LibraryTvView.rowGap - view.top;
+      expect(thirdRow, lessThan(720 - 24));
+      expect(thirdRow + first.height, greaterThan(720));
       // Plus de titre de page ni de cartouche sur les affiches : la fiche les
       // remplace.
       expect(_catalogHeader, findsNothing);
@@ -187,13 +195,17 @@ void main() {
     });
 
     testWidgets(
-        'la fiche présente la première affiche, puis celle que la '
+        'la fiche du volet présente la première affiche, puis celle que la '
         'télécommande désigne', (tester) async {
       final api = _Api(20);
       final nav = await open(tester, api);
 
       expect(_inSpotlight(find.text('FILMS · 20 TITRES')), findsOneWidget);
       expect(_inSpotlight(find.text('Film 1')), findsOneWidget);
+      // Le texte tient dans le volet, à gauche de la grille.
+      final title = tester.getRect(_inSpotlight(find.text('Film 1')));
+      expect(title.left, 48);
+      expect(title.right, lessThanOrEqualTo(48 + LibraryTvView.textWidth));
 
       await nav.press(TraversalDirection.down);
       expect(_focused(), 'Film 1');
@@ -230,69 +242,74 @@ void main() {
       final nav = await open(tester, api);
 
       await nav.press(TraversalDirection.down);
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < 3; i++) {
         await nav.press(TraversalDirection.right);
       }
-      expect(_focused(), 'Film 5');
+      expect(_focused(), 'Film 4');
       expect(api.detailsAsked, isEmpty);
 
       await tester.pump(LibrarySpotlight.settle);
       await tester.pump();
-      expect(api.detailsAsked, [5]);
+      expect(api.detailsAsked, [4]);
     });
 
     testWidgets('descendre pose la rangée suivante à la place de la première',
         (tester) async {
       final nav = await open(tester, _Api(40));
       final firstRow = _poster(tester, 'Film 1').top;
+      final view = tester.getRect(find.byType(LibraryTvView));
 
       await nav.press(TraversalDirection.down);
       expect(_focused(), 'Film 1');
 
-      for (final title in ['Film 7', 'Film 13', 'Film 19']) {
+      for (final title in ['Film 5', 'Film 9', 'Film 13']) {
         await nav.press(TraversalDirection.down);
         await tester.pumpAndSettle();
         expect(_focused(), title);
         final poster = _poster(tester, title);
         if (engine == TvNavEngine.legacy) {
-          // L'affiche focalisée se pose toujours à la même hauteur, et la
-          // rangée du dessus est sortie de la grille.
+          // L'affiche focalisée se pose toujours à la même hauteur : chaque
+          // pas fait défiler la grille d'une rangée, ni plus ni moins.
           expect(poster.top, closeTo(firstRow, 0.5), reason: title);
         } else {
           // dpad ne sait que ramener « au plus près » : l'affiche est entière
           // à l'écran, c'est ce qu'on lui demande.
           expect(poster.top, greaterThanOrEqualTo(firstRow - 0.5));
-          expect(poster.bottom, lessThanOrEqualTo(720));
+          expect(poster.bottom, lessThanOrEqualTo(view.bottom));
         }
       }
     });
 
-    testWidgets('la dernière rangée monte elle aussi à la place de la première',
-        (tester) async {
-      // Treize films : la troisième rangée n'en a qu'un.
+    testWidgets('la dernière rangée reste entière à l\'écran', (tester) async {
+      // Treize films : la quatrième rangée n'en a qu'un.
       final nav = await open(tester, _Api(13));
-      final firstRow = _poster(tester, 'Film 1').top;
+      final view = tester.getRect(find.byType(LibraryTvView));
 
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < 4; i++) {
         await nav.press(TraversalDirection.down);
         await tester.pumpAndSettle();
       }
       expect(_focused(), 'Film 13');
-      if (engine == TvNavEngine.legacy) {
-        expect(_poster(tester, 'Film 13').top, closeTo(firstRow, 0.5));
-      }
-      expect(_poster(tester, 'Film 13').bottom, lessThanOrEqualTo(720));
+      expect(_poster(tester, 'Film 13').bottom, lessThan(view.bottom));
+      // La rangée du dessus reste visible : la grille ne finit pas sur un
+      // écran presque vide.
+      expect(_poster(tester, 'Film 9').top, greaterThanOrEqualTo(view.top));
     });
 
-    testWidgets('le tri est une capsule au-dessus de la grille, à droite',
-        (tester) async {
+    testWidgets(
+        'le tri est une capsule en haut du volet, sur la ligne de la '
+        'première rangée', (tester) async {
       await open(tester, _Api(20));
 
       final sort = tester.getRect(find.byType(OutlinedButton));
-      final firstRow = _poster(tester, 'Film 1');
-      expect(sort.right, closeTo(1280 - 48, 0.1));
-      // Au-dessus de l'affiche soulevée (10 % de 266 px).
-      expect(sort.bottom, lessThan(firstRow.top - 26));
+      final first = _poster(tester, 'Film 1');
+      expect(sort.left, 48);
+      expect(sort.right, lessThan(first.left));
+      expect(sort.top, first.top);
+      // Au-dessus du surtitre de la fiche, sans le toucher.
+      final eyebrow =
+          tester.getRect(_inSpotlight(find.text('FILMS · 20 TITRES')));
+      expect(sort.bottom, lessThan(eyebrow.top));
       expect(
         find.descendant(
             of: find.byType(OutlinedButton), matching: find.text('Récents')),
@@ -300,17 +317,74 @@ void main() {
       );
     });
 
+    testWidgets(
+        'gauche depuis la première colonne mène au tri, droite ramène à '
+        'l\'affiche quittée', (tester) async {
+      final nav = await open(tester, _Api(20));
+      await nav.press(TraversalDirection.down);
+      await nav.press(TraversalDirection.down);
+      await tester.pumpAndSettle();
+      expect(_focused(), 'Film 5');
+
+      await nav.press(TraversalDirection.left);
+      expect(_focused(), 'Récents');
+      // La fiche présente toujours l'affiche quittée.
+      expect(_inSpotlight(find.text('Film 5')), findsOneWidget);
+
+      await nav.press(TraversalDirection.right);
+      await tester.pumpAndSettle();
+      expect(_focused(), 'Film 5');
+
+      // Bas depuis le tri rentre lui aussi dans la rangée quittée : le focus
+      // part dans le sens de la flèche.
+      await nav.press(TraversalDirection.left);
+      expect(_focused(), 'Récents');
+      await nav.press(TraversalDirection.down);
+      await tester.pumpAndSettle();
+      expect(_focused(), 'Film 5');
+    });
+
+    testWidgets('haut depuis le tri monte aux onglets', (tester) async {
+      final nav = await open(tester, _Api(20));
+      await nav.press(TraversalDirection.down);
+      await nav.press(TraversalDirection.left);
+      expect(_focused(), 'Récents');
+
+      await nav.press(TraversalDirection.up);
+      await tester.pumpAndSettle();
+      expect(_focused(), 'Films');
+      // Et Bas, depuis l'onglet, entre dans la grille, pas sur le tri.
+      await nav.press(TraversalDirection.down);
+      await tester.pumpAndSettle();
+      expect(_focusedCard(), isNotNull);
+    });
+
+    testWidgets('un geste qui court le long de la rangée s\'arrête à son bord',
+        (tester) async {
+      final nav = await open(tester, _Api(20));
+      await nav.press(TraversalDirection.down);
+      await nav.press(TraversalDirection.right);
+      await nav.press(TraversalDirection.right);
+      expect(_focused(), 'Film 3');
+
+      // Trois pas vers la gauche coup sur coup : le troisième ne finit pas
+      // sur le tri.
+      await nav.press(TraversalDirection.left);
+      await nav.press(TraversalDirection.left);
+      await nav.press(TraversalDirection.left);
+      expect(_focused(), 'Film 1');
+
+      // Le focus posé, gauche y mène.
+      await tester.pump(LibraryTvView.rest);
+      await nav.press(TraversalDirection.left);
+      expect(_focused(), 'Récents');
+    });
+
     testWidgets('à la télécommande, le tri choisi rend le focus à sa capsule',
         (tester) async {
       final nav = await open(tester, _Api(20));
       await nav.press(TraversalDirection.down);
-      for (var i = 0; i < 5; i++) {
-        await nav.press(TraversalDirection.right);
-      }
-      expect(_focused(), 'Film 6');
-
-      // La capsule est au-dessus de la dernière colonne.
-      await nav.press(TraversalDirection.up);
+      await nav.press(TraversalDirection.left);
       expect(_focused(), 'Récents');
       await nav.select();
       await tester.pumpAndSettle();
@@ -325,6 +399,11 @@ void main() {
         findsOneWidget,
       );
       expect(_focused(), 'A → Z');
+
+      // L'affiche quittée n'existe plus : droite entre par la première.
+      await nav.press(TraversalDirection.right);
+      await tester.pumpAndSettle();
+      expect(_focused(), 'Film 1');
     });
 
     testWidgets('pendant le chargement, la page a déjà sa forme',
@@ -338,10 +417,17 @@ void main() {
       expect(find.byType(LibraryTvView), findsOneWidget);
       expect(find.byType(LibrarySpotlight), findsNothing);
       expect(find.byType(MediaCard), findsNothing);
-      // Rien à trier, et le tri serait la seule cible sous l'en-tête.
+      // Rien à trier.
       expect(find.byType(OutlinedButton), findsNothing);
+      // Le nom de la bibliothèque tient la place du titre de la fiche.
+      expect(
+        find.descendant(
+            of: find.byType(LibraryTvView), matching: find.text('Films')),
+        findsOneWidget,
+      );
       final boxes = find.byType(SkeletonBox);
-      expect(boxes, findsNWidgets(12));
+      // Deux rangées entières au moins.
+      expect(boxes, findsAtLeastNWidgets(8));
       final loadingFirst = tester.getRect(boxes.first);
 
       api.gate!.complete();

@@ -1,7 +1,10 @@
 # ADR-0123 — La bibliothèque d'un téléviseur présente le titre focalisé en tête
 
-- **Statut :** accepté. Maquette choisie par l'utilisateur parmi trois (2026-11-12) ; rendu vérifié sur
-  une capture de l'app à 1280 × 720, pas encore vu sur une Apple TV.
+- **Statut :** accepté, **amendé le 2026-11-13 par
+  l'[ADR-0125](0125-la-bibliotheque-d-un-televiseur-pose-la-fiche-a-gauche-et-la-grille-a-droite.md)** :
+  après l'essai, la fiche passe dans un volet à gauche et la grille défile à droite sur toute la
+  hauteur. Les points 1, 2, 7 et 8 ci-dessous décrivent la première mise en page ; les points 3 à 6
+  tiennent.
 - **Date :** 2026-11-12
 - **Portée :** `screens/library/library_screen.dart`, `screens/library/widgets/library_tv_view.dart`
   (`LibraryTvView`), `screens/library/widgets/library_spotlight.dart` (`LibrarySpotlight`),

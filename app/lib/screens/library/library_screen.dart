@@ -124,8 +124,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
           option.key: option.value,
     };
 
-    // Sur téléviseur, la fiche du titre focalisé en tête et une rangée
-    // dessous (ADR-0123), dès le chargement. L'erreur et la bibliothèque
+    // Sur téléviseur, la fiche du titre focalisé à gauche et la grille à
+    // droite (ADR-0125), dès le chargement. L'erreur et la bibliothèque
     // vide gardent la page commune.
     if (TvScope.of(context) &&
         error == null &&

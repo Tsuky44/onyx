@@ -328,6 +328,27 @@ void main() {
       expect(focusedIndex(nodes), greaterThan(3));
     });
 
+    testWidgets(
+        'd’une rangée à l’autre, le pas n’est pas une glissade : la page '
+        'défile à son rythme ordinaire', (tester) async {
+      // Des cartes hautes, empilées : les rangées d'une grille d'affiches.
+      final nodes = await pumpRow(
+        tester,
+        scrollable: true,
+        axis: Axis.vertical,
+        height: 120,
+      );
+      expect(TvTouchpad.paceOf(nodes.first), TouchpadPace.browse);
+
+      await flick(tester, lift: true, down: true);
+      expect(focusedIndex(nodes), greaterThan(0));
+      // Ni sous le doigt, ni sur la lancée : en 90 ms, une rangée entière
+      // sautait au lieu de défiler.
+      expect(TvTouchpad.isGliding, isFalse);
+      await wait(tester, const Duration(seconds: 3));
+      expect(TvTouchpad.isGliding, isFalse);
+    });
+
     testWidgets('poser le doigt arrête la lancée', (tester) async {
       final nodes = await pumpRow(tester, scrollable: true);
 

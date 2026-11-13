@@ -35,8 +35,8 @@ class MediaCard extends StatelessWidget {
   /// See [PosterCard.autofocus].
   final bool autofocus;
 
-  /// Faux quand l'écran présente déjà le titre pointé ailleurs (la fiche en
-  /// tête d'une bibliothèque sur téléviseur) : le cartouche posé sur
+  /// Faux quand l'écran présente déjà le titre pointé ailleurs (la fiche du
+  /// volet d'une bibliothèque sur téléviseur) : le cartouche posé sur
   /// l'affiche le dirait deux fois.
   final bool showDetails;
 

@@ -65,8 +65,8 @@ class PosterCard extends StatefulWidget {
   final VoidCallback? onPrefetch;
 
   /// Où l'affiche se pose une fois ramenée à l'écran par la télécommande ;
-  /// 0,5 la centre (`TvFocusable.scrollAlignment`). Une grille qui montre une
-  /// seule rangée sous une fiche la cale en haut (ADR-0123).
+  /// 0,5 la centre (`TvFocusable.scrollAlignment`). La grille d'une
+  /// bibliothèque cale sa rangée focalisée en haut (ADR-0125).
   final double scrollAlignment;
 
   const PosterCard({

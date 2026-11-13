@@ -16,9 +16,9 @@ import '../../../widgets/global/detail_metadata.dart';
 import '../../../widgets/global/media_logo_display.dart';
 import '../../../widgets/global/poster_flight.dart';
 
-/// La fiche du titre que la télécommande désigne, en tête d'une bibliothèque
-/// sur téléviseur (ADR-0123) : son image de fond, son logo ou son titre, une
-/// ligne de métadonnées et son résumé.
+/// La fiche du titre que la télécommande désigne, dans le volet gauche d'une
+/// bibliothèque sur téléviseur (ADR-0123, ADR-0125) : son image de fond, son logo ou son
+/// titre, une ligne de métadonnées et son résumé.
 ///
 /// Ce que la bibliothèque sait déjà s'écrit tout de suite : le titre, l'année,
 /// la durée, le résumé. Le reste (image de fond, logo, genres, note) vient de
@@ -35,8 +35,7 @@ class LibrarySpotlight extends StatefulWidget {
     super.key,
     required this.media,
     required this.eyebrow,
-    required this.contentHeight,
-    required this.topInset,
+    required this.textWidth,
   });
 
   /// Le titre présenté.
@@ -45,13 +44,9 @@ class LibrarySpotlight extends StatefulWidget {
   /// Le surtitre : le nom de la bibliothèque et son nombre de titres.
   final String eyebrow;
 
-  /// La hauteur laissée au texte. L'image de fond, elle, remplit tout le
-  /// widget : elle descend plus bas, où elle se fond dans la page derrière le
-  /// haut de la grille.
-  final double contentHeight;
-
-  /// La place de la barre d'onglets, posée par-dessus.
-  final double topInset;
+  /// La largeur laissée au texte, depuis la gouttière de la page. L'image de
+  /// fond, elle, remplit tout le widget et se fond vers la grille.
+  final double textWidth;
 
   /// Le temps que le focus doit rester sur une affiche avant que sa fiche soit
   /// demandée. Un peu plus que les 120 ms du préchargement d'une carte
@@ -67,7 +62,10 @@ class LibrarySpotlight extends StatefulWidget {
   /// La place du surtitre et du titre, la même pour toutes les fiches.
   static const double headingHeight = _eyebrowHeight + titleHeight;
 
-  static const double _textWidth = 620;
+  /// Où commence le texte, en part de la hauteur de l'écran : assez bas pour
+  /// laisser l'image respirer au-dessus, assez haut pour six lignes de résumé
+  /// et le tri dessous.
+  static const double textTop = 0.30;
 
   @override
   State<LibrarySpotlight> createState() => _LibrarySpotlightState();
@@ -201,153 +199,150 @@ class _LibrarySpotlightState extends State<LibrarySpotlight> {
     );
     final padding = AppLayout.pagePadding(context);
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Un fondu d'une image à l'autre : coupée net, l'écran clignotait à
-        // chaque affiche.
-        AnimatedSwitcher(
-          duration: AppMotion.fade(context, AppMotion.emphasis),
-          switchInCurve: AppMotion.curve,
-          switchOutCurve: AppMotion.curve,
-          child: backdrop == null
-              ? const SizedBox.expand(key: ValueKey<String>('sans-image'))
-              : SizedBox.expand(
-                  key: ValueKey<String>(backdrop),
-                  child: AppNetworkImage(
-                    url: backdrop,
-                    fit: BoxFit.cover,
-                    alignment: PosterFlight.focus,
-                    filterQuality: FilterQuality.high,
-                    decodeWidth: MediaQuery.sizeOf(context).width,
-                    // Déjà décodée ([_showBackdrop]) : le fondu est celui de
-                    // l'`AnimatedSwitcher`, pas un second par-dessus.
-                    fadeInDuration: Duration.zero,
-                    placeholder: const SizedBox.expand(),
-                    errorWidget: const SizedBox.expand(),
-                  ),
-                ),
-        ),
-        // Le texte se lit à gauche, la page reprend en bas.
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                AppColors.background.withValues(alpha: 0.95),
-                AppColors.background.withValues(alpha: 0.6),
-                AppColors.background.withValues(alpha: 0),
-              ],
-              stops: const [0.0, 0.42, 0.78],
-            ),
-          ),
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0x000A0A0A),
-                Color(0x000A0A0A),
-                AppColors.background,
-              ],
-              stops: [0.0, 0.5, 1.0],
-            ),
-          ),
-        ),
-        Positioned(
-          left: padding,
-          top: widget.topInset,
-          width: LibrarySpotlight._textWidth,
-          height: widget.contentHeight - widget.topInset,
-          // Une fiche plus haute que sa place (titre sur deux lignes, résumé
-          // long, écran bas) perd sa fin plutôt que de déborder sur la grille.
-          child: ClipRect(
-            child: OverflowBox(
-              alignment: Alignment.topLeft,
-              minHeight: 0,
-              maxHeight: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Une place fixe, remplie depuis le bas : le logo qui
-                  // arrive après le titre ne décale ni les métadonnées ni le
-                  // résumé, et le surtitre reste collé au titre, qu'il tienne
-                  // sur une ligne ou sur deux.
-                  SizedBox(
-                    height: LibrarySpotlight.headingHeight,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          widget.eyebrow.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: AppType.caption,
-                            letterSpacing: 1.6,
-                            height: 1.3,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Sans fondu : sous un focus qui court, deux titres
-                        // superposés ne se lisent ni l'un ni l'autre.
-                        MediaLogoDisplay(
-                          key: ValueKey<String>('${media.id}:${logo ?? ''}'),
-                          title: media.title,
-                          logoUrl: logo,
-                          maxHeight: LibrarySpotlight.titleHeight,
-                          maxWidth: 420,
-                          textStyle: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: AppType.hero,
-                            fontWeight: FontWeight.w800,
-                            height: 1.04,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                      ],
+    return LayoutBuilder(builder: (context, constraints) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          // Un fondu d'une image à l'autre : coupée net, l'écran clignotait à
+          // chaque affiche.
+          AnimatedSwitcher(
+            duration: AppMotion.fade(context, AppMotion.emphasis),
+            switchInCurve: AppMotion.curve,
+            switchOutCurve: AppMotion.curve,
+            child: backdrop == null
+                ? const SizedBox.expand(key: ValueKey<String>('sans-image'))
+                : SizedBox.expand(
+                    key: ValueKey<String>(backdrop),
+                    child: AppNetworkImage(
+                      url: backdrop,
+                      fit: BoxFit.cover,
+                      alignment: PosterFlight.focus,
+                      filterQuality: FilterQuality.high,
+                      decodeWidth: MediaQuery.sizeOf(context).width,
+                      // Déjà décodée ([_showBackdrop]) : le fondu est celui de
+                      // l'`AnimatedSwitcher`, pas un second par-dessus.
+                      fadeInDuration: Duration.zero,
+                      placeholder: const SizedBox.expand(),
+                      errorWidget: const SizedBox.expand(),
                     ),
                   ),
-                  if (metadata.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        for (var i = 0; i < metadata.length; i++) ...[
-                          if (i > 0) const MetadataDot(),
-                          metadata[i],
-                        ],
-                      ],
-                    ),
-                  ],
-                  if (overview.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      overview,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: AppType.callout,
-                        height: 1.45,
-                      ),
-                    ),
-                  ],
+          ),
+          // L'image se fond vers la grille, à droite, et vers le bas : elle se
+          // voit en haut du volet, et le texte se lit sur un fond presque
+          // uni, même devant un ciel blanc.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  AppColors.background.withValues(alpha: 0.25),
+                  AppColors.background.withValues(alpha: 0.45),
+                  AppColors.background,
                 ],
+                stops: const [0.0, 0.5, 1.0],
               ),
             ),
           ),
-        ),
-      ],
-    );
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.background.withValues(alpha: 0.10),
+                  AppColors.background.withValues(alpha: 0.25),
+                  AppColors.background.withValues(alpha: 0.80),
+                  AppColors.background.withValues(alpha: 0.96),
+                  AppColors.background,
+                ],
+                // Le surtitre commence à [LibrarySpotlight.textTop].
+                stops: const [0.0, 0.22, 0.42, 0.60, 1.0],
+              ),
+            ),
+          ),
+          Positioned(
+            left: padding,
+            top: constraints.maxHeight * LibrarySpotlight.textTop,
+            width: widget.textWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Une place fixe, remplie depuis le bas : le logo qui arrive
+                // après le titre ne décale ni les métadonnées ni le résumé,
+                // et le surtitre reste collé au titre, qu'il tienne sur une
+                // ligne ou sur deux.
+                SizedBox(
+                  height: LibrarySpotlight.headingHeight,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        widget.eyebrow.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppType.caption,
+                          letterSpacing: 1.6,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Sans fondu : sous un focus qui court, deux titres
+                      // superposés ne se lisent ni l'un ni l'autre.
+                      MediaLogoDisplay(
+                        key: ValueKey<String>('${media.id}:${logo ?? ''}'),
+                        title: media.title,
+                        logoUrl: logo,
+                        maxHeight: LibrarySpotlight.titleHeight,
+                        maxWidth: widget.textWidth,
+                        textStyle: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: AppType.hero,
+                          fontWeight: FontWeight.w800,
+                          height: 1.04,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (metadata.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      for (var i = 0; i < metadata.length; i++) ...[
+                        if (i > 0) const MetadataDot(),
+                        metadata[i],
+                      ],
+                    ],
+                  ),
+                ],
+                if (overview.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    overview,
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: AppType.callout,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
