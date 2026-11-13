@@ -37,6 +37,9 @@ const (
 	// /api/lists existe : « à regarder plus tard » et les listes du compte,
 	// partagées ou non (ADR-0070).
 	CapabilityWatchLists = "watch_lists"
+	// PUT|DELETE /api/lists/:id/members/:user et GET /api/list-people existent :
+	// le propriétaire d'une liste invite des comptes à la remplir (ADR-0127).
+	CapabilityWatchListMembers = "watch_list_members"
 	// POST /api/settings/mediahub/test existe : le serveur vérifie lui-même
 	// qu'il joint OnyxHub (ADR-0072).
 	CapabilityMediaHubLinkTest = "mediahub_link_test"
@@ -98,6 +101,7 @@ func pingPayload() pingResponse {
 			CapabilityAnnouncements,
 			CapabilityPosterPicker,
 			CapabilityWatchLists,
+			CapabilityWatchListMembers,
 			CapabilityMediaHubLinkTest,
 			CapabilityLibraryTMDBIndex,
 			CapabilityLibraryShowEpisodes,

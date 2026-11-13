@@ -41,6 +41,10 @@ class ServerCapabilities {
   /// (ADR-0070).
   static const watchLists = 'watch_lists';
 
+  /// Le propriétaire d'une liste invite des comptes à y ajouter des titres
+  /// (ADR-0127).
+  static const watchListMembers = 'watch_list_members';
+
   /// Le serveur vérifie lui-même qu'il joint OnyxHub (ADR-0072).
   static const mediaHubLinkTest = 'mediahub_link_test';
 

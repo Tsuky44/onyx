@@ -40,6 +40,11 @@ class ServerRegistry extends ChangeNotifier {
   /// personne n'en a désigné un : le carnet reprend alors le dernier actif.
   String? _primaryId;
 
+  /// Les personnes que l'appareil ouvre d'elle-même au lancement, sans passer
+  /// par « Qui regarde ? » : au plus une par serveur. Propre à l'appareil — la
+  /// télévision du salon et le téléphone n'ont pas à s'accorder. Voir ADR-0078.
+  Set<String> _defaultUserIds = {};
+
   bool _loaded = false;
 
   /// Liens déclarés par le serveur de chaque compte, indexés par compte.
@@ -78,6 +83,32 @@ class ServerRegistry extends ChangeNotifier {
     if (id != null && accountById(id) == null) return;
     if (_primaryId == id) return;
     _primaryId = id;
+    await _persist();
+    notifyListeners();
+  }
+
+  bool isDefaultUser(String id) => _defaultUserIds.contains(id);
+
+  /// La personne que cet appareil ouvre d'office sur le serveur de [id], ou
+  /// nul quand aucune n'a été désignée.
+  ServerAccount? defaultUserOf(String id) {
+    for (final user in usersOf(id)) {
+      if (_defaultUserIds.contains(user.id)) return user;
+    }
+    return null;
+  }
+
+  /// Désigne [id] comme la personne de départ de son serveur, ou la libère
+  /// avec [value] à faux. Une seule par serveur : en désigner une autre
+  /// remplace la précédente, c'est une place et non une étiquette.
+  Future<void> setDefaultUser(String id, {required bool value}) async {
+    if (accountById(id) == null || isDefaultUser(id) == value) return;
+    if (value) {
+      _defaultUserIds.removeAll([for (final u in usersOf(id)) u.id]);
+      _defaultUserIds.add(id);
+    } else {
+      _defaultUserIds.remove(id);
+    }
     await _persist();
     notifyListeners();
   }
@@ -260,6 +291,8 @@ class ServerRegistry extends ChangeNotifier {
           .toList();
       _activeId = data['active'] as String?;
       _primaryId = data['primary'] as String?;
+      _defaultUserIds =
+          (data['default_users'] as List? ?? const []).cast<String>().toSet();
       _legacyLinks = (data['links'] as List? ?? const [])
           .map((g) => (g as List)
               .cast<String>()
@@ -281,9 +314,13 @@ class ServerRegistry extends ChangeNotifier {
       _pendingRequests = const [];
       _activeId = null;
       _primaryId = null;
+      _defaultUserIds = {};
       _legacyLinks = [];
       _serverLinks = {};
     }
+    // Une personne retirée depuis un autre lancement ne peut plus être celle du
+    // départ : le lancement chercherait un compte dont il n'a plus le jeton.
+    _defaultUserIds.removeWhere((id) => accountById(id) == null);
     // Un principal qui ne désigne plus rien — compte retiré depuis un autre
     // lancement — vaut pas de principal du tout, sinon le démarrage se bloque
     // sur un serveur qui n'existe pas.
@@ -349,6 +386,8 @@ class ServerRegistry extends ChangeNotifier {
       jsonEncode({
         'active': _activeId,
         if (_primaryId != null) 'primary': _primaryId,
+        if (_defaultUserIds.isNotEmpty)
+          'default_users': _defaultUserIds.toList(),
         if (_legacyLinks.isNotEmpty)
           'links': _legacyLinks.map((g) => g.toList()).toList(),
         'server_links': {
@@ -428,6 +467,7 @@ class ServerRegistry extends ChangeNotifier {
     if (normalized == account.url) return account;
 
     final wasPrimary = isPrimary(id);
+    final wasDefaultUser = isDefaultUser(id);
     final legacyGroups =
         _legacyLinks.where((g) => g.contains(id)).map(Set.of).toList();
     final links = serverLinksFor(id);
@@ -452,6 +492,7 @@ class ServerRegistry extends ChangeNotifier {
     }
     _activeId = moved.id;
     if (wasPrimary) _primaryId = moved.id;
+    if (wasDefaultUser) _defaultUserIds.add(moved.id);
     if (token != null) await _writeToken(moved.id, token);
     if (profile != null) await writeProfile(moved.id, profile);
     await _persist();
@@ -497,6 +538,7 @@ class ServerRegistry extends ChangeNotifier {
     // Un serveur retiré ne peut plus être celui du démarrage : le laisser
     // désigné renverrait l'app vers un compte dont elle n'a plus le jeton.
     if (_primaryId == id) _primaryId = null;
+    _defaultUserIds.remove(id);
     if (_activeId == id) {
       _activeId = _accounts.isEmpty ? null : _accounts.first.id;
     }
@@ -628,6 +670,7 @@ class ServerRegistry extends ChangeNotifier {
     _pendingRequests = const [];
     _activeId = null;
     _primaryId = null;
+    _defaultUserIds = {};
     _serverLinks = {};
     _legacyLinks = [];
     _loaded = false;

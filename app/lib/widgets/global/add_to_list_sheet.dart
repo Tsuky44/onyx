@@ -121,6 +121,7 @@ class _AddToListSheetState extends State<AddToListSheet> {
             description: created.description,
             isShared: created.isShared,
             isMine: true,
+            canEdit: true,
             owner: created.owner,
             itemCount: 1,
             posters: created.posters,
@@ -247,7 +248,11 @@ class _ListRow extends StatelessWidget {
         title: Text(list.displayName,
             maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
-          list.isShared ? tr('Partagée') : tr('Privée'),
+          !list.isMine
+              ? tr('Par {0}', [list.owner.username])
+              : list.isShared
+                  ? tr('Partagée')
+                  : tr('Privée'),
           style: const TextStyle(color: AppColors.textMuted),
         ),
         trailing: Icon(

@@ -25,6 +25,29 @@ enum WatchListMediaType {
   String get wire => name;
 }
 
+/// Un compte du serveur tel qu'une liste le montre : un invité à la remplir
+/// (ADR-0127), ou quelqu'un qu'on peut inviter.
+class WatchListMember {
+  const WatchListMember({
+    required this.id,
+    required this.username,
+    this.avatar = '',
+  });
+
+  final int id;
+  final String username;
+
+  /// L'image de profil, au format de l'ADR-0078 (vide : l'initiale).
+  final String avatar;
+
+  factory WatchListMember.fromJson(Map<String, dynamic> json) =>
+      WatchListMember(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        username: json['username'] as String? ?? '',
+        avatar: json['avatar'] as String? ?? '',
+      );
+}
+
 class WatchListOwner {
   const WatchListOwner({required this.id, required this.username});
 
@@ -50,6 +73,8 @@ class WatchList {
     required this.owner,
     required this.itemCount,
     required this.posters,
+    this.canEdit = false,
+    this.memberCount = 0,
     this.updatedAt,
     this.containsItemId,
   });
@@ -60,6 +85,13 @@ class WatchList {
   final String description;
   final bool isShared;
   final bool isMine;
+
+  /// Le compte peut y ajouter et en retirer des titres : la liste est à lui,
+  /// ou son propriétaire l'y a invité.
+  final bool canEdit;
+
+  /// Combien de comptes le propriétaire a invités à la remplir.
+  final int memberCount;
   final WatchListOwner owner;
   final int itemCount;
 
@@ -88,6 +120,8 @@ class WatchList {
         description: json['description'] as String? ?? '',
         isShared: json['is_shared'] as bool? ?? false,
         isMine: json['is_mine'] as bool? ?? false,
+        canEdit: json['can_edit'] as bool? ?? false,
+        memberCount: (json['member_count'] as num?)?.toInt() ?? 0,
         owner: WatchListOwner.fromJson(
             Map<String, dynamic>.from(json['owner'] as Map? ?? const {})),
         itemCount: (json['item_count'] as num?)?.toInt() ?? 0,
@@ -107,6 +141,8 @@ class WatchList {
         description: description,
         isShared: isShared,
         isMine: isMine,
+        canEdit: canEdit,
+        memberCount: memberCount,
         owner: owner,
         itemCount: itemCount +
             (itemId != 0 && !contains
@@ -197,12 +233,18 @@ class WatchListItem {
   }
 }
 
-/// Une liste et son contenu, du plus récent ajout au plus ancien.
+/// Une liste et son contenu, du plus récent ajout au plus ancien, avec les
+/// comptes invités à la remplir.
 class WatchListDetail {
-  const WatchListDetail({required this.list, required this.items});
+  const WatchListDetail({
+    required this.list,
+    required this.items,
+    this.members = const [],
+  });
 
   final WatchList list;
   final List<WatchListItem> items;
+  final List<WatchListMember> members;
 
   factory WatchListDetail.fromJson(Map<String, dynamic> json) =>
       WatchListDetail(
@@ -210,6 +252,10 @@ class WatchListDetail {
         items: (json['items'] as List<dynamic>? ?? const [])
             .map((e) =>
                 WatchListItem.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
+        members: (json['members'] as List<dynamic>? ?? const [])
+            .map((e) =>
+                WatchListMember.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
       );
 }

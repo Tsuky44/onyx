@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/tr.dart';
 import '../../models/watch_list.dart';
 import '../requests/request_availability.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/watch_lists_provider.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_colors.dart';
@@ -20,13 +21,15 @@ import '../../widgets/global/poster_grid_zoom_region.dart';
 import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../widgets/global/progress_pill.dart';
 import '../../widgets/global/watch_list_editor_dialog.dart';
+import '../../widgets/global/watch_list_members_sheet.dart';
 import '../../navigation/detail_flight.dart';
 import '../../widgets/global/poster_card_details.dart';
 import '../requests/request_detail_launch.dart';
 import 'widgets/watch_list_tile.dart';
 
-/// Une liste et ses titres (ADR-0070). Son propriétaire la modifie ; une liste
-/// partagée par un autre compte se lit seulement.
+/// Une liste et ses titres (ADR-0070). Son propriétaire la modifie et peut y
+/// inviter d'autres comptes ; un invité y ajoute et en retire des titres
+/// (ADR-0127) ; une liste partagée par un autre compte se lit seulement.
 class ListDetailScreen extends StatefulWidget {
   const ListDetailScreen({super.key, required this.listId, this.initial});
 
@@ -70,8 +73,7 @@ class _ListDetailScreenState extends State<ListDetailScreen> {
     final media = item.media;
     if (media != null) {
       await openMediaDetail(cardContext, media.media, item: media);
-    } else if (canRequestMedia(context) &&
-        item.tmdbId > 0) {
+    } else if (canRequestMedia(context) && item.tmdbId > 0) {
       // Ce que le serveur n'a pas s'ouvre là où on peut le demander.
       await openRequestDetail(cardContext, item.toRequestItem());
     } else {
@@ -108,6 +110,21 @@ class _ListDetailScreenState extends State<ListDetailScreen> {
       debugPrint('ListDetailScreen: update failed: $e');
       if (mounted) {
         _showError(_errorText(e, tr('La liste n’a pas pu être modifiée.')));
+      }
+    }
+  }
+
+  Future<void> _leave(WatchList list) async {
+    final myId = context.read<AuthProvider>().currentUser?.id;
+    if (myId == null) return;
+    final navigator = Navigator.of(context);
+    try {
+      await _provider.leaveList(list.id, myId);
+      navigator.pop();
+    } catch (e) {
+      debugPrint('ListDetailScreen: leave failed: $e');
+      if (mounted) {
+        _showError(_errorText(e, tr('Vous n’avez pas pu quitter la liste.')));
       }
     }
   }
@@ -175,7 +192,7 @@ class _ListDetailScreenState extends State<ListDetailScreen> {
         child: EmptyStateView(
           icon: AppIcons.addToList,
           title: tr('Cette liste est vide'),
-          message: list?.isMine ?? false
+          message: list?.canEdit ?? false
               ? tr('Ajoutez un film ou une série depuis sa fiche, avec le '
                   'signet. Les titres du catalogue des demandes aussi.')
               : tr('Son propriétaire n’y a encore rien mis.'),
@@ -201,9 +218,8 @@ class _ListDetailScreenState extends State<ListDetailScreen> {
                     item: item,
                     removing: _removing,
                     autofocus: TvMode.isTv && index == 0,
-                    onTap: (cardContext) => _removing
-                        ? _remove(item)
-                        : _open(cardContext, item),
+                    onTap: (cardContext) =>
+                        _removing ? _remove(item) : _open(cardContext, item),
                   );
                 },
                 childCount: items.length,
@@ -234,9 +250,14 @@ class _ListDetailScreenState extends State<ListDetailScreen> {
                           padding: const EdgeInsets.only(left: 8),
                           child: _Header(
                             list: list,
+                            members: detail?.members ?? const [],
+                            canInvite: provider.supportsMembers,
                             hasItems: items.isNotEmpty,
                             removing: _removing,
                             onEdit: () => _edit(list),
+                            onInvite: () =>
+                                showWatchListMembersSheet(context, list),
+                            onLeave: () => _leave(list),
                             onDelete: () => _delete(list),
                             onToggleRemoving: () =>
                                 setState(() => _removing = !_removing),
@@ -258,17 +279,27 @@ class _ListDetailScreenState extends State<ListDetailScreen> {
 class _Header extends StatelessWidget {
   const _Header({
     required this.list,
+    required this.members,
+    required this.canInvite,
     required this.hasItems,
     required this.removing,
     required this.onEdit,
+    required this.onInvite,
+    required this.onLeave,
     required this.onDelete,
     required this.onToggleRemoving,
   });
 
   final WatchList list;
+  final List<WatchListMember> members;
+
+  /// Le serveur sait inviter (`watch_list_members`).
+  final bool canInvite;
   final bool hasItems;
   final bool removing;
   final VoidCallback onEdit;
+  final VoidCallback onInvite;
+  final VoidCallback onLeave;
   final VoidCallback onDelete;
   final VoidCallback onToggleRemoving;
 
@@ -297,6 +328,14 @@ class _Header extends StatelessWidget {
             ),
           ],
         ),
+        if (members.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            tr('Remplie avec : {0}',
+                [members.map((m) => m.username).join(', ')]),
+            style: const TextStyle(color: AppColors.textMuted),
+          ),
+        ],
         if (list.description.isNotEmpty) ...[
           const SizedBox(height: 12),
           ConstrainedBox(
@@ -311,19 +350,27 @@ class _Header extends StatelessWidget {
             ),
           ),
         ],
-        if (list.isMine) ...[
+        if (list.canEdit) ...[
           const SizedBox(height: 18),
           Wrap(
             spacing: 10,
             runSpacing: 8,
             children: [
-              OutlinedButton.icon(
-                onPressed: onEdit,
-                icon: Icon(
-                    list.isWatchLater ? AppIcons.sharedList : AppIcons.edit,
-                    size: 18),
-                label: Text(list.isWatchLater ? tr('Partage') : tr('Modifier')),
-              ),
+              if (list.isMine)
+                OutlinedButton.icon(
+                  onPressed: onEdit,
+                  icon: Icon(
+                      list.isWatchLater ? AppIcons.sharedList : AppIcons.edit,
+                      size: 18),
+                  label:
+                      Text(list.isWatchLater ? tr('Partage') : tr('Modifier')),
+                ),
+              if (list.isMine && !list.isWatchLater && canInvite)
+                OutlinedButton.icon(
+                  onPressed: onInvite,
+                  icon: const Icon(AppIcons.add, size: 18),
+                  label: Text(tr('Inviter')),
+                ),
               if (hasItems || removing)
                 OutlinedButton.icon(
                   onPressed: onToggleRemoving,
@@ -332,7 +379,13 @@ class _Header extends StatelessWidget {
                   label:
                       Text(removing ? tr('Terminé') : tr('Retirer des titres')),
                 ),
-              if (!list.isWatchLater)
+              if (!list.isMine)
+                OutlinedButton.icon(
+                  onPressed: onLeave,
+                  icon: const Icon(AppIcons.close, size: 18),
+                  label: Text(tr('Quitter la liste')),
+                ),
+              if (list.isMine && !list.isWatchLater)
                 OutlinedButton.icon(
                   onPressed: onDelete,
                   style: OutlinedButton.styleFrom(

@@ -3562,4 +3562,34 @@ const Map<String, String> kEnglish = <String, String>{
       'removed from Radarr/Sonarr',
   '{0} demande(s) supprimée(s)':
       '{0} request(s) deleted',
+  'Ajouter un profil':
+      'Add a profile',
+  '{0}, en cours':
+      '{0}, current',
+  'Vous n’avez pas pu quitter la liste.':
+      'You couldn’t leave the list.',
+  'Remplie avec : {0}':
+      'Filled in with: {0}',
+  'Inviter':
+      'Invite',
+  'Quitter la liste':
+      'Leave list',
+  '{0} · par {1} · vous pouvez l’enrichir':
+      '{0} · by {1} · you can add to it',
+  'Par {0}':
+      'By {0}',
+  'Impossible de charger les comptes.':
+      'Couldn’t load the accounts.',
+  'L’invitation n’a pas pu être modifiée. Réessayez.':
+      'The invitation couldn’t be changed. Try again.',
+  'Inviter à la liste':
+      'Invite to the list',
+  'Les comptes cochés peuvent ajouter et retirer des titres dans « {0} ». Vous seul la modifiez.':
+      'Checked accounts can add and remove titles in “{0}”. Only you can edit it.',
+  'Il n’y a pas d’autre compte sur ce serveur.':
+      'There are no other accounts on this server.',
+  'Profil par défaut de cet appareil':
+      'This device’s default profile',
+  'Ouvrir {0} par défaut':
+      'Open {0} by default',
 };

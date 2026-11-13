@@ -8,25 +8,7 @@ import '../utils/app_platform.dart';
 import '../l10n/tr.dart';
 import 'auth_error_text.dart';
 
-/// Ce que donne une tentative d'ouverture de session sur le compte actif.
-///
-/// Quatre issues et pas deux, parce que l'app n'en tire pas la même
-/// conclusion : un refus renvoie à l'écran de connexion, un serveur muet peut
-/// valoir une bascule, et un serveur qui répond de travers ne prouve pas
-/// qu'il est éteint.
-enum _SessionOutcome {
-  /// Le profil est arrivé : la session est ouverte pour de bon.
-  opened,
-
-  /// 401 : la session n'existe plus de l'autre côté.
-  unauthorized,
-
-  /// Aucune réponse : le serveur est injoignable d'ici.
-  unreachable,
-
-  /// Une réponse, mais inexploitable — un 500, un corps illisible.
-  faulted,
-}
+part 'auth_session_outcome.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiClient apiClient;
@@ -107,7 +89,8 @@ class AuthProvider extends ChangeNotifier {
 
     // Plusieurs personnes sur ce serveur : c'est à elles de dire qui regarde,
     // avant qu'une session s'ouvre et charge l'accueil de quelqu'un d'autre.
-    if (usersOnActiveServer.length > 1) {
+    // Sauf personne par défaut sur l'appareil : la question est tranchée.
+    if (usersOnActiveServer.length > 1 && !await _openDefaultUser()) {
       _needsUserChoice = true;
       _isInitializing = false;
       notifyListeners();
@@ -117,6 +100,18 @@ class AuthProvider extends ChangeNotifier {
     await _openStartupSession();
     _isInitializing = false;
     notifyListeners();
+  }
+
+  /// Active la personne par défaut du serveur ; vrai si elle existe.
+  Future<bool> _openDefaultUser() async {
+    final active = activeServer!;
+    final chosen = apiClient.servers.defaultUserOf(active.id);
+    if (chosen != null &&
+        chosen.id != active.id &&
+        await apiClient.activateAccount(chosen.id)) {
+      _onServerChanged?.call();
+    }
+    return chosen != null;
   }
 
   /// Ouvre la session du compte actif au lancement, ou après « Qui regarde ? ».

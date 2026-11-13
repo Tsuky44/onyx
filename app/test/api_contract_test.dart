@@ -218,10 +218,21 @@ void main() {
     expect(later.posters, ['posters-value']);
     expect(later.updatedAt, isNotNull);
     expect(later.containsItemId, isPositive);
+    expect(later.canEdit, isTrue);
+    expect(later.memberCount, isPositive);
     expect(overview.shared.single.kind, WatchListKind.custom);
 
     final detail = WatchListDetail.fromJson(_contract('watch_list'));
     expect(detail.list.kind, WatchListKind.custom);
+    final member = detail.members.single;
+    expect(member.id, isPositive);
+    expect(member.username, 'username-value');
+    expect(member.avatar, 'avatar-value');
+    expect(
+      ServerCapabilities.tryParse(_contract('ping'))!
+          .supports(ServerCapabilities.watchListMembers),
+      isTrue,
+    );
     final item = detail.items.single;
     expect(item.id, isPositive);
     expect(item.mediaType, WatchListMediaType.show);

@@ -50,6 +50,7 @@ import 'widgets/onyx/onyx_controls_layer.dart';
 import 'widgets/onyx/onyx_settings_menu.dart';
 import 'widgets/player_episodes_panel.dart';
 import 'widgets/player_popups.dart';
+import 'widgets/player_tv_scale.dart';
 import 'widgets/player_screen_lock.dart';
 import 'widgets/player_status_panels.dart';
 import 'widgets/player_tap_zones.dart';
@@ -584,7 +585,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       visible: _hints.zoomVisible,
                     ),
                   ),
-                _buildChrome(isTv),
+                PlayerTvScale.layer(isTv: isTv, child: _buildChrome(isTv)),
                 // Regarder ensemble : les annonces (« alex a mis en pause ») et
                 // l'attente d'un participant qui charge, en haut au centre. Le
                 // bouton, lui, est dans la barre du chrome.
@@ -697,7 +698,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         MediaQuery.of(context).size.width * _videoScale,
                   ),
                 if (_episodesPanel.isOpen && _info.isEpisode)
-                  PlayerEpisodesPanel(
+                  PlayerTvScale.layer(isTv: isTv, child: PlayerEpisodesPanel(
                     showTitle: _episodesPanel.showTitle,
                     currentEpisodeId: _info.media.id,
                     seasons: _episodesPanel.seasons,
@@ -710,7 +711,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     isLoading: _episodesPanel.isLoading,
                     onClose: _closeEpisodesPanel,
                     onEpisodeSelected: _navigateToEpisode,
-                  ),
+                  )),
                 // Start-up spinner. IgnorePointer like the one below: loading is
                 // exactly when the user may want to go back, so the cover must
                 // never eat taps meant for the chrome.

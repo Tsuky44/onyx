@@ -38,7 +38,7 @@ seule fois** (`ServerRegistry.otherServers`) ; quand on y a plusieurs comptes, l
 ### Au lancement, partout, dès qu'il y a deux personnes sur ce serveur
 
 Quand le serveur de démarrage (principal ou dernier actif) tient au moins deux comptes sur
-l'appareil, `tryAutoLogin` s'arrête **avant** d'ouvrir une session et l'app affiche « Qui
+l'appareil et qu'aucun n'est désigné par défaut (voir plus bas), `tryAutoLogin` s'arrête **avant** d'ouvrir une session et l'app affiche « Qui
 regarde ? ». Ouvrir d'abord celle du dernier utilisateur puis basculer aurait chargé son accueil —
 ses reprises, ses listes — sous les yeux de quelqu'un d'autre. Le choix reprend ensuite le chemin
 ordinaire du démarrage, replis hors ligne et serveur principal compris.
@@ -49,6 +49,17 @@ n'a qu'un compte par serveur et ne voit jamais l'écran.
 
 Aucun code ne protège un profil : chacun a ouvert sa session sur l'appareil, et c'est à ce moment-là
 que le mot de passe a été demandé. Un verrou par profil serait une autre décision.
+
+### Une personne par défaut, propre à l'appareil
+
+Sur un appareil qui sert surtout à une personne — le téléphone de la famille, par exemple —,
+« Qui regarde ? » à chaque lancement est une étape de trop. Une **étoile** sur la pastille — vide
+en mode *Gérer les profils* ou au survol, pleine sur la personne désignée — la désigne : au lancement, l'app ouvre cette
+personne sans poser la question (`ServerRegistry.setDefaultUser`, clé `default_users` du carnet).
+Le choix reste sur l'appareil — la télévision et le téléphone n'ont pas à s'accorder — et il y en a
+au plus une par serveur : en désigner une autre remplace la précédente. « Changer d'utilisateur »
+du menu du compte ouvre toujours « Qui regarde ? » pour passer à quelqu'un d'autre ; seule la
+question du lancement disparaît. Sans personne par défaut, rien ne change.
 
 ### Ajouter quelqu'un
 

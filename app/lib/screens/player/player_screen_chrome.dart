@@ -463,8 +463,12 @@ extension _PlayerChrome on _PlayerScreenState {
     OnyxMenuSection section = OnyxMenuSection.root,
     required GlobalKey anchorKey,
   }) {
-    final screenSize = MediaQuery.sizeOf(context);
-    final placement = placeSettingsPopup(anchorKey, screenSize);
+    // Le menu est posé dans la couche mise à l'échelle sur téléviseur
+    // (voir [PlayerTvScale]) : on le place dans ses coordonnées.
+    final screen = MediaQuery.sizeOf(context);
+    final scale = PlayerTvScale.factorFor(screen.width, isTv: TvMode.isTv);
+    final screenSize = screen / scale;
+    final placement = placeSettingsPopup(anchorKey, screenSize, scale: scale);
     _popups.insert(
       context,
       (dismiss) => PlayerSettingsPopup(

@@ -218,6 +218,9 @@ func main() {
 	router.DELETE("/api/lists/:id", handlers.RequireAuth(handlers.DeleteWatchList))
 	router.POST("/api/lists/:id/items", handlers.RequireAuth(handlers.AddWatchListItem))
 	router.DELETE("/api/lists/:id/items/:item", handlers.RequireAuth(handlers.RemoveWatchListItem))
+	router.GET("/api/list-people", handlers.RequireAuth(handlers.ListWatchListPeople))
+	router.PUT("/api/lists/:id/members/:user", handlers.RequireAuth(handlers.AddWatchListMember))
+	router.DELETE("/api/lists/:id/members/:user", handlers.RequireAuth(handlers.RemoveWatchListMember))
 
 	// Réglages de lecture du compte (saut d'intro, langue audio), partagés par
 	// tous ses appareils. Chacun ne lit et n'écrit que les siens. Voir ADR-0043.

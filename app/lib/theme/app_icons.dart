@@ -63,6 +63,8 @@ abstract final class AppIcons {
   static const IconData watchedFilled =
       IconData(0xe184, fontFamily: _fill); // checkCircle
   static const IconData rating = IconData(0xe46a, fontFamily: _fill); // star
+  static const IconData ratingOutline =
+      IconData(0xe46a, fontFamily: _regular); // star
 
   // Navigation et chrome.
   static const IconData search =

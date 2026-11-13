@@ -1,7 +1,7 @@
 part of '../api_client.dart';
 
 /// Les listes du compte : « À regarder plus tard » et les siennes, partagées
-/// ou non (ADR-0070).
+/// ou non (ADR-0070), et les comptes invités à les remplir (ADR-0127).
 mixin _WatchListEndpoints {
   Dio get _dio;
   String get baseUrl;
@@ -22,6 +22,14 @@ mixin _WatchListEndpoints {
     }
     _serversWithWatchLists.add(server);
     return true;
+  }
+
+  /// Le serveur actif laisse-t-il inviter des comptes à remplir une liste ?
+  /// Même règle que [supportsWatchLists] : un « non » n'est pas retenu.
+  Future<bool> supportsWatchListMembers() async {
+    final ping = await _dio.get('/api/ping');
+    final info = ServerCapabilities.tryParse(ping.data);
+    return info != null && info.supports(ServerCapabilities.watchListMembers);
   }
 
   /// Les listes du compte et celles que les autres partagent. Avec
@@ -83,4 +91,29 @@ mixin _WatchListEndpoints {
   Future<void> removeFromWatchList(int listId, int itemId) async {
     await _dio.delete('/api/lists/$listId/items/$itemId');
   }
+
+  /// Les autres comptes du serveur : ceux qu'on peut inviter.
+  Future<List<WatchListMember>> getWatchListPeople() async {
+    final response = await _dio.get('/api/list-people');
+    return _readMembers(response.data);
+  }
+
+  /// Invite un compte à remplir la liste ; renvoie tous les invités.
+  Future<List<WatchListMember>> addWatchListMember(
+      int listId, int userId) async {
+    final response = await _dio.put('/api/lists/$listId/members/$userId');
+    return _readMembers(response.data);
+  }
+
+  /// Retire un invité, ou quitte la liste quand [userId] est le compte
+  /// lui-même.
+  Future<void> removeWatchListMember(int listId, int userId) async {
+    await _dio.delete('/api/lists/$listId/members/$userId');
+  }
+
+  static List<WatchListMember> _readMembers(Object? data) => (data
+              as List<dynamic>? ??
+          const [])
+      .map((e) => WatchListMember.fromJson(Map<String, dynamic>.from(e as Map)))
+      .toList();
 }

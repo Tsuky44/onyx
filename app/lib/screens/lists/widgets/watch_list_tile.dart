@@ -17,7 +17,12 @@ import '../../../widgets/global/app_network_image.dart';
 String watchListCaption(WatchList list) {
   final count =
       list.itemCount == 1 ? tr('1 titre') : tr('{0} titres', [list.itemCount]);
-  if (!list.isMine) return tr('{0} · par {1}', [count, list.owner.username]);
+  if (!list.isMine) {
+    return list.canEdit
+        ? tr('{0} · par {1} · vous pouvez l’enrichir',
+            [count, list.owner.username])
+        : tr('{0} · par {1}', [count, list.owner.username]);
+  }
   return '$count · ${list.isShared ? tr('Partagée') : tr('Privée')}';
 }
 

@@ -120,3 +120,59 @@ func TestWatchListRoutesAnswerWithTheRightStatus(t *testing.T) {
 		t.Errorf("unreadable probe: %d, want 400", rec.Code)
 	}
 }
+
+// Le propriétaire invite un compte, qui ajoute alors à une liste privée ; un
+// invité ne peut pas inviter à son tour.
+func TestInvitedAccountWritesThroughTheRoutes(t *testing.T) {
+	setupAuthDB(t)
+	alice := createTestUser(t, "alice", false, models.Permissions{})
+	bob := createTestUser(t, "bob", false, models.Permissions{})
+	carol := createTestUser(t, "carol", false, models.Permissions{})
+	list := createList(t, alice, `{"name":"Soirée ciné"}`)
+	body := `{"tmdb_id":1,"media_type":"movie","title":"X"}`
+
+	if rec := addToList(t, bob, list.ID, body); rec.Code != http.StatusNotFound {
+		t.Fatalf("before the invitation: %d, want 404", rec.Code)
+	}
+
+	invite := func(actor, target int) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		AddWatchListMember(rec, httptest.NewRequest(http.MethodPut, "/api/lists/x/members/y", nil),
+			listParams(list.ID, httprouter.Param{Key: "user", Value: strconv.Itoa(target)}), actor)
+		return rec
+	}
+	rec := invite(alice, bob)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("invite: %d %s", rec.Code, rec.Body.String())
+	}
+	var members []models.WatchListMember
+	if err := json.NewDecoder(rec.Body).Decode(&members); err != nil || len(members) != 1 || members[0].ID != bob {
+		t.Fatalf("members = %+v (%v), want bob", members, err)
+	}
+	if rec := addToList(t, bob, list.ID, body); rec.Code != http.StatusOK {
+		t.Fatalf("invited account adds: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := invite(bob, carol); rec.Code != http.StatusForbidden {
+		t.Fatalf("an invited account invites: %d, want 403", rec.Code)
+	}
+	if rec := invite(alice, 9999); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invite an unknown account: %d, want 400", rec.Code)
+	}
+
+	rec = httptest.NewRecorder()
+	RemoveWatchListMember(rec, httptest.NewRequest(http.MethodDelete, "/api/lists/x/members/y", nil),
+		listParams(list.ID, httprouter.Param{Key: "user", Value: strconv.Itoa(bob)}), bob)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("leave: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := addToList(t, bob, list.ID, body); rec.Code != http.StatusNotFound {
+		t.Fatalf("after leaving: %d, want 404", rec.Code)
+	}
+
+	rec = httptest.NewRecorder()
+	ListWatchListPeople(rec, httptest.NewRequest(http.MethodGet, "/api/list-people", nil), nil, alice)
+	var people []models.WatchListMember
+	if err := json.NewDecoder(rec.Body).Decode(&people); err != nil || len(people) != 2 {
+		t.Fatalf("people = %+v (%v), want bob and carol", people, err)
+	}
+}

@@ -56,6 +56,7 @@ func scanList(row interface{ Scan(...interface{}) error }, viewerID int) (models
 		return models.WatchList{}, err
 	}
 	l.IsMine = l.Owner.ID == viewerID
+	l.CanEdit = l.IsMine
 	l.UpdatedAt = time.UnixMilli(updated).UTC()
 	l.Posters = []string{}
 	return l, nil
@@ -78,9 +79,10 @@ func (s *Store) queryLists(viewerID int, query string, args ...interface{}) ([]m
 	return lists, rows.Err()
 }
 
-// Lists renvoie les listes du compte, « à regarder plus tard » en tête, et
-// celles que les autres comptes partagent. Avec probe, chacune des listes du
-// compte dit si elle contient déjà ce titre.
+// Lists renvoie les listes du compte, « à regarder plus tard » en tête, puis
+// celles des autres que le compte voit : les partagées avec tous, et celles où
+// il est invité, même privées (ADR-0127). Avec probe, chaque liste dit si elle
+// contient déjà ce titre.
 func (s *Store) Lists(viewerID int, probe *Probe) (models.WatchListsResponse, error) {
 	if err := s.EnsureWatchLater(viewerID); err != nil {
 		return models.WatchListsResponse{}, err
@@ -96,18 +98,21 @@ func (s *Store) Lists(viewerID int, probe *Probe) (models.WatchListsResponse, er
 	shared, err := s.queryLists(viewerID, `
 		SELECT `+listColumns+`
 		FROM watch_lists w LEFT JOIN users u ON u.id = w.owner_id
-		WHERE w.is_shared = 1 AND w.owner_id <> ?
+		WHERE w.owner_id <> ? AND (w.is_shared = 1 OR EXISTS (
+			SELECT 1 FROM watch_list_members m WHERE m.list_id = w.id AND m.user_id = ?))
 		ORDER BY w.updated_at DESC, w.id DESC
-		LIMIT ?`, viewerID, maxSharedLists)
+		LIMIT ?`, viewerID, viewerID, maxSharedLists)
 	if err != nil {
 		return models.WatchListsResponse{}, err
 	}
-	if err := s.decorate(mine, shared); err != nil {
+	if err := s.decorate(viewerID, mine, shared); err != nil {
 		return models.WatchListsResponse{}, err
 	}
 	if probe != nil {
-		if err := s.markContains(mine, *probe); err != nil {
-			return models.WatchListsResponse{}, err
+		for _, group := range [][]models.WatchList{mine, shared} {
+			if err := s.markContains(group, *probe); err != nil {
+				return models.WatchListsResponse{}, err
+			}
 		}
 	}
 	return models.WatchListsResponse{Mine: mine, Shared: shared}, nil
@@ -126,15 +131,16 @@ func (s *Store) summary(viewerID, listID int) (models.WatchList, error) {
 		return models.WatchList{}, fmt.Errorf("load watch list: %w", err)
 	}
 	lists := []models.WatchList{l}
-	if err := s.decorate(lists); err != nil {
+	if err := s.decorate(viewerID, lists); err != nil {
 		return models.WatchList{}, err
 	}
 	return lists[0], nil
 }
 
-// decorate remplit le nombre d'éléments et les affiches des listes, en deux
-// requêtes pour toutes plutôt que deux par liste.
-func (s *Store) decorate(groups ...[]models.WatchList) error {
+// decorate remplit le nombre d'éléments, les invités, le droit du compte qui
+// lit et les affiches des listes, en trois requêtes pour toutes plutôt que
+// trois par liste.
+func (s *Store) decorate(viewerID int, groups ...[]models.WatchList) error {
 	var ids []int
 	for _, group := range groups {
 		for _, l := range group {
@@ -162,6 +168,29 @@ func (s *Store) decorate(groups ...[]models.WatchList) error {
 	rows.Close()
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("count watch list items: %w", err)
+	}
+
+	members := map[int]int{}
+	invited := map[int]bool{}
+	rows, err = s.db.Query(fmt.Sprintf(`
+		SELECT list_id, COUNT(*), COALESCE(SUM(user_id = ?), 0) FROM watch_list_members
+		WHERE list_id IN (%s) GROUP BY list_id`, placeholders(len(ids))),
+		append([]interface{}{viewerID}, intArgs(ids)...)...)
+	if err != nil {
+		return fmt.Errorf("count watch list members: %w", err)
+	}
+	for rows.Next() {
+		var id, n, me int
+		if err := rows.Scan(&id, &n, &me); err != nil {
+			rows.Close()
+			return fmt.Errorf("scan watch list members: %w", err)
+		}
+		members[id] = n
+		invited[id] = me > 0
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("count watch list members: %w", err)
 	}
 
 	posters := map[int][]string{}
@@ -193,6 +222,10 @@ func (s *Store) decorate(groups ...[]models.WatchList) error {
 	for _, group := range groups {
 		for i := range group {
 			group[i].ItemCount = counts[group[i].ID]
+			group[i].MemberCount = members[group[i].ID]
+			if invited[group[i].ID] {
+				group[i].CanEdit = true
+			}
 			if p := posters[group[i].ID]; p != nil {
 				group[i].Posters = p
 			}
@@ -209,14 +242,18 @@ func (s *Store) Get(viewerID, listID int) (models.WatchListDetail, error) {
 	if err != nil {
 		return models.WatchListDetail{}, err
 	}
-	if !l.IsMine && !l.IsShared {
+	if !l.IsMine && !l.IsShared && !l.CanEdit {
 		return models.WatchListDetail{}, ErrNotFound
 	}
 	items, err := s.items(s.db, listID, 0)
 	if err != nil {
 		return models.WatchListDetail{}, err
 	}
-	return models.WatchListDetail{WatchList: l, Items: items}, nil
+	members, err := s.members(listID)
+	if err != nil {
+		return models.WatchListDetail{}, err
+	}
+	return models.WatchListDetail{WatchList: l, Items: items, Members: members}, nil
 }
 
 // items lit les éléments d'une liste, ou le seul itemID s'il est donné.

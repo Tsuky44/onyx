@@ -18,12 +18,20 @@ import '../theme/app_page_transitions.dart';
 /// affiches, textes, anneaux de focus — sans qu'aucun écran n'ait à connaître
 /// le téléviseur.
 class TvUiScale extends StatelessWidget {
-  const TvUiScale({super.key, required this.child});
+  const TvUiScale({
+    super.key,
+    required this.child,
+    this.layoutWidth = designWidth,
+  });
 
   /// La largeur logique sur laquelle la page est mise en page.
   static const double designWidth = 1280;
 
   final Widget child;
+
+  /// La largeur de mise en page de ce sous-arbre. [designWidth] pour les
+  /// pages ; le lecteur a la sienne, voir `PlayerTvScale`.
+  final double layoutWidth;
 
   /// Le facteur appliqué aux pages d'un écran de [width] pixels logiques.
   static double factorFor(double width) =>
@@ -34,10 +42,10 @@ class TvUiScale extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
-        if (!size.isFinite || size.width <= 0 || size.width == designWidth) {
+        if (!size.isFinite || size.width <= 0 || size.width == layoutWidth) {
           return child;
         }
-        final scale = size.width / designWidth;
+        final scale = size.width / layoutWidth;
         final laidOut = size / scale;
         final media = MediaQuery.of(context);
 

@@ -22,12 +22,17 @@ type WatchListOwner struct {
 // WatchList est le résumé d'une liste : ce que montrent la page des listes et
 // la feuille « Ajouter à une liste ».
 type WatchList struct {
-	ID          int            `json:"id"`
-	Kind        string         `json:"kind"`
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	IsShared    bool           `json:"is_shared"`
-	IsMine      bool           `json:"is_mine"`
+	ID          int    `json:"id"`
+	Kind        string `json:"kind"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IsShared    bool   `json:"is_shared"`
+	IsMine      bool   `json:"is_mine"`
+	// CanEdit : le compte qui lit peut y ajouter et en retirer des titres,
+	// parce qu'elle est à lui ou que son propriétaire l'y a invité (ADR-0127).
+	CanEdit bool `json:"can_edit"`
+	// MemberCount est le nombre de comptes invités à la modifier.
+	MemberCount int            `json:"member_count"`
 	Owner       WatchListOwner `json:"owner"`
 	ItemCount   int            `json:"item_count"`
 	// Posters sont les affiches des derniers ajouts, quatre au plus, pour la
@@ -55,11 +60,20 @@ type WatchListItem struct {
 	Media *HomeMediaItem `json:"media,omitempty"`
 }
 
+// WatchListMember est un compte du serveur, tel qu'une liste le montre : ceux
+// qui peuvent la modifier, et ceux qu'on peut inviter.
+type WatchListMember struct {
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
+}
+
 // WatchListDetail est une liste et son contenu, du plus récent ajout au plus
-// ancien.
+// ancien, avec les comptes invités à la modifier.
 type WatchListDetail struct {
 	WatchList
-	Items []WatchListItem `json:"items"`
+	Items   []WatchListItem   `json:"items"`
+	Members []WatchListMember `json:"members"`
 }
 
 // WatchListsResponse range les listes du compte et celles que les autres

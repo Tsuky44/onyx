@@ -16,7 +16,8 @@ import (
 )
 
 // Les listes d'un compte : « à regarder plus tard » et les siennes, partagées
-// ou non avec les autres comptes du serveur (ADR-0070). Les règles tiennent
+// ou non avec les autres comptes du serveur (ADR-0070), que le propriétaire
+// peut ouvrir en écriture à des comptes invités (ADR-0127). Les règles tiennent
 // dans le package watchlists ; ici, on décode, on traduit les erreurs et on
 // joint aux éléments les fiches du serveur, avec la progression du compte qui
 // lit.
@@ -53,14 +54,14 @@ func writeWatchListError(w http.ResponseWriter, where string, err error) {
 		writeJSONError(w, http.StatusForbidden, "Seul son propriétaire modifie cette liste")
 	case errors.Is(err, watchlists.ErrInvalid):
 		writeJSONError(w, http.StatusBadRequest, fmt.Sprintf(
-			"Nom vide ou trop long (%d caractères au plus, description %d), ou titre inconnu",
+			"Nom vide ou trop long (%d caractères au plus, description %d), titre ou compte inconnu",
 			watchlists.MaxNameRunes, watchlists.MaxDescRunes))
 	case errors.Is(err, watchlists.ErrFixed):
 		writeJSONError(w, http.StatusConflict, "La liste « À regarder plus tard » ne se supprime pas")
 	case errors.Is(err, watchlists.ErrTooMany):
 		writeJSONError(w, http.StatusConflict, fmt.Sprintf(
-			"Limite atteinte (%d listes, %d titres par liste)",
-			watchlists.MaxListsPerOwner, watchlists.MaxItemsPerList))
+			"Limite atteinte (%d listes, %d titres et %d invités par liste)",
+			watchlists.MaxListsPerOwner, watchlists.MaxItemsPerList, watchlists.MaxMembersPerList))
 	default:
 		log.Printf("%s: %v", where, err)
 		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
@@ -235,7 +236,8 @@ func DeleteWatchList(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	writeWatchListJSON(w, http.StatusOK, statusResponse{Status: "ok"})
 }
 
-// AddWatchListItem range un titre dans une liste du compte
+// AddWatchListItem range un titre dans une liste du compte, ou dans une liste
+// où il est invité
 // (POST /api/lists/:id/items). Un titre déjà présent n'est pas doublé :
 // l'élément existant revient.
 func AddWatchListItem(w http.ResponseWriter, r *http.Request, ps httprouter.Params, userID int) {
@@ -275,7 +277,8 @@ func AddWatchListItem(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	writeWatchListJSON(w, http.StatusOK, items[0])
 }
 
-// RemoveWatchListItem retire un titre d'une liste du compte
+// RemoveWatchListItem retire un titre d'une liste du compte, ou d'une liste
+// où il est invité
 // (DELETE /api/lists/:id/items/:item).
 func RemoveWatchListItem(w http.ResponseWriter, r *http.Request, ps httprouter.Params, userID int) {
 	listID, ok := listIDParam(w, ps, "id")

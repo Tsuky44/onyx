@@ -16,27 +16,38 @@ import '../../../l10n/tr.dart';
 /// chemin du tactile et de la télécommande —, le crayon est sur toutes les
 /// pastilles et un appui modifie au lieu d'ouvrir la session. À la
 /// télécommande, la touche menu y mène aussi.
+///
+/// L'étoile en bas à gauche désigne la personne que l'appareil ouvre d'office
+/// au lancement : pleine sur elle en permanence, vide sur les autres en mode
+/// gestion ou au survol. À la télécommande, la touche menu la bascule en mode
+/// gestion, puisqu'un appui sert déjà à l'image.
 class ProfileTile extends StatefulWidget {
   const ProfileTile({
     super.key,
     required this.account,
     required this.size,
     required this.current,
+    required this.isDefault,
     required this.editing,
     required this.autofocus,
     required this.enabled,
     required this.onSelect,
     required this.onEdit,
+    required this.onToggleDefault,
   });
 
   final ServerAccount account;
   final double size;
   final bool current;
+
+  /// La personne que l'appareil ouvre d'office au lancement.
+  final bool isDefault;
   final bool editing;
   final bool autofocus;
   final bool enabled;
   final VoidCallback onSelect;
   final VoidCallback onEdit;
+  final VoidCallback onToggleDefault;
 
   @override
   State<ProfileTile> createState() => _ProfileTileState();
@@ -68,7 +79,7 @@ class _ProfileTileState extends State<ProfileTile> {
           autofocus: widget.autofocus,
           enabled: widget.enabled,
           onSelect: action,
-          onContextMenu: widget.onEdit,
+          onContextMenu: editing ? widget.onToggleDefault : widget.onEdit,
           borderRadius: radius,
           child: MouseRegion(
             onEnter: (_) => setState(() => _hovered = true),
@@ -109,6 +120,25 @@ class _ProfileTileState extends State<ProfileTile> {
                     ),
                   ),
                 Positioned(
+                  left: 6,
+                  bottom: 6,
+                  child: AnimatedOpacity(
+                    opacity: showPencil || widget.isDefault ? 1 : 0,
+                    duration: AppMotion.fade(context, AppMotion.micro),
+                    curve: AppMotion.curve,
+                    child: _StarButton(
+                      filled: widget.isDefault,
+                      onPressed: (showPencil || widget.isDefault) &&
+                              widget.enabled
+                          ? widget.onToggleDefault
+                          : null,
+                      tooltip: widget.isDefault
+                          ? tr('Profil par défaut de cet appareil')
+                          : tr('Ouvrir {0} par défaut', [name]),
+                    ),
+                  ),
+                ),
+                Positioned(
                   right: 6,
                   bottom: 6,
                   child: AnimatedOpacity(
@@ -124,6 +154,43 @@ class _ProfileTileState extends State<ProfileTile> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StarButton extends StatelessWidget {
+  const _StarButton({
+    required this.filled,
+    required this.onPressed,
+    required this.tooltip,
+  });
+
+  final bool filled;
+  final VoidCallback? onPressed;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: ExcludeFocus(
+        child: Material(
+          color: AppColors.background.withValues(alpha: 0.72),
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.all(7),
+              child: Icon(
+                filled ? AppIcons.rating : AppIcons.ratingOutline,
+                size: 16,
+                color: filled ? AppColors.rating : AppColors.textPrimary,
+              ),
             ),
           ),
         ),

@@ -9,6 +9,7 @@ import '../../theme/app_type.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/global/overlay_back_button.dart';
 import '../../l10n/tr.dart';
+import 'add_user_flow.dart';
 import 'add_user_screen.dart';
 import 'avatar_picker_screen.dart';
 import 'widgets/profile_tile.dart';
@@ -73,27 +74,29 @@ class _UserChoiceScreenState extends State<UserChoiceScreen> {
     ));
   }
 
+  Future<void> _toggleDefault(ServerAccount account) {
+    final servers = context.read<AuthProvider>().apiClient.servers;
+    return servers.setDefaultUser(account.id,
+        value: !servers.isDefaultUser(account.id));
+  }
+
   /// Ajoute quelqu'un sur ce serveur, puis passe sur son compte : c'est pour
   /// lui qu'on vient d'ouvrir la session.
   Future<void> _addUser(ServerAccount server) async {
     final auth = context.read<AuthProvider>();
-    final before = auth.activeServer?.id;
-    final added = await Navigator.of(context).push<ServerAccount>(
+    final navigator = Navigator.of(context);
+    if (!widget.atStartup) {
+      if (await addUserAndSwitch(navigator, auth, server) && mounted) {
+        navigator.pop();
+      }
+      return;
+    }
+    final added = await navigator.push<ServerAccount>(
       MaterialPageRoute(builder: (_) => AddUserScreen(server: server)),
     );
     // Au lancement, une session ouverte par l'ajout a déjà remplacé cet écran.
     if (!mounted) return;
-    if (widget.atStartup) {
-      if (added != null) await auth.chooseUser(added.id);
-      return;
-    }
-    // Le téléphone ouvre la session et la rend active ; le mot de passe
-    // l'ajoute sans basculer, pour ne pas déplacer un écran qu'on regarde.
-    final switched = auth.activeServer?.id != before;
-    if (!switched && (added == null || !await auth.switchServer(added.id))) {
-      return;
-    }
-    if (mounted) Navigator.of(context).pop();
+    if (added != null) await auth.chooseUser(added.id);
   }
 
   @override
@@ -159,6 +162,7 @@ class _UserChoiceScreenState extends State<UserChoiceScreen> {
                               size: size,
                               current:
                                   !widget.atStartup && account.id == active?.id,
+                              isDefault: auth.apiClient.servers.isDefaultUser(account.id),
                               editing: _editing,
                               // Le premier au lancement, la personne en cours
                               // depuis le menu : au D-pad, on part de là.
@@ -166,6 +170,7 @@ class _UserChoiceScreenState extends State<UserChoiceScreen> {
                               enabled: !busy,
                               onSelect: () => _choose(account),
                               onEdit: () => _editAvatar(account),
+                              onToggleDefault: () => _toggleDefault(account),
                             ),
                           if (anchor != null && !_editing)
                             AddProfileTile(

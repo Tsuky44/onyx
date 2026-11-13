@@ -8,8 +8,10 @@
 // parce que la lecture cherche la fiche qui porte le même tmdb_id. Ce qui ne
 // se rattache à rien s'affiche sous l'instantané pris à l'ajout.
 //
-// Seul le propriétaire écrit. Une liste privée n'existe pas pour les autres :
-// elle répond ErrNotFound, comme une liste qui n'existe pas.
+// Le propriétaire gère la liste et peut inviter d'autres comptes à la remplir
+// (ADR-0127) ; un invité ajoute et retire des titres, rien d'autre. Une liste
+// privée n'existe pas pour les autres : elle répond ErrNotFound, comme une
+// liste qui n'existe pas, sauf à ses invités.
 //
 // Le package ne connaît pas HTTP, ni les fiches telles que l'app les lit : le
 // handler traduit les erreurs en codes d'état et joint les fiches aux
@@ -53,6 +55,9 @@ const (
 	MaxNameRunes     = 80
 	MaxDescRunes     = 500
 	maxTitleRunes    = 200
+	// MaxMembersPerList borne les invités d'une liste : qui peut écrire dans
+	// une liste doit rester une poignée de personnes.
+	MaxMembersPerList = 50
 	// maxSharedLists borne la page des listes des autres : au-delà, elle ne
 	// se lirait plus.
 	maxSharedLists = 500
@@ -245,25 +250,65 @@ func (s *Store) Delete(ownerID, listID int) error {
 }
 
 // ownedKind renvoie la sorte d'une liste du compte. Celle d'un autre est
-// ErrNotOwner si elle est partagée, ErrNotFound sinon : une liste privée ne
+// ErrNotOwner si le compte la voit, ErrNotFound sinon : une liste privée ne
 // se devine pas.
 func (s *Store) ownedKind(q querier, ownerID, listID int) (string, error) {
-	var owner int
-	var kind string
-	var shared bool
-	err := q.QueryRow(`SELECT owner_id, kind, is_shared FROM watch_lists WHERE id = ?`, listID).
-		Scan(&owner, &kind, &shared)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrNotFound
-	}
+	a, err := s.access(q, ownerID, listID)
 	if err != nil {
-		return "", fmt.Errorf("load watch list: %w", err)
+		return "", err
 	}
-	if owner != ownerID {
-		if shared {
+	if !a.owner {
+		if a.visible() {
 			return "", ErrNotOwner
 		}
 		return "", ErrNotFound
 	}
-	return kind, nil
+	return a.kind, nil
+}
+
+// editableKind renvoie la sorte d'une liste que le compte peut remplir : la
+// sienne, ou une liste où son propriétaire l'a invité (ADR-0127). Une autre
+// est ErrNotOwner si le compte la voit, ErrNotFound sinon.
+func (s *Store) editableKind(q querier, viewerID, listID int) (string, error) {
+	a, err := s.access(q, viewerID, listID)
+	if err != nil {
+		return "", err
+	}
+	if !a.owner && !a.member {
+		if a.visible() {
+			return "", ErrNotOwner
+		}
+		return "", ErrNotFound
+	}
+	return a.kind, nil
+}
+
+// listAccess dit ce qu'un compte est pour une liste.
+type listAccess struct {
+	kind   string
+	owner  bool
+	member bool
+	shared bool
+}
+
+// visible : le compte peut lire la liste. Un invité la lit même privée.
+func (a listAccess) visible() bool { return a.owner || a.member || a.shared }
+
+// access lit la liste et le rôle du compte, en une requête.
+func (s *Store) access(q querier, viewerID, listID int) (listAccess, error) {
+	var a listAccess
+	var owner int
+	err := q.QueryRow(`
+		SELECT w.owner_id, w.kind, w.is_shared,
+			EXISTS (SELECT 1 FROM watch_list_members m WHERE m.list_id = w.id AND m.user_id = ?)
+		FROM watch_lists w WHERE w.id = ?`, viewerID, listID).
+		Scan(&owner, &a.kind, &a.shared, &a.member)
+	if errors.Is(err, sql.ErrNoRows) {
+		return listAccess{}, ErrNotFound
+	}
+	if err != nil {
+		return listAccess{}, fmt.Errorf("load watch list: %w", err)
+	}
+	a.owner = owner == viewerID
+	return a, nil
 }

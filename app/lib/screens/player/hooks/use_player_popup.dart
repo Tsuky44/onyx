@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../tv/nav/tv_back.dart';
 import '../../../tv/tv_focus.dart';
 import '../../../tv/tv_mode.dart';
+import '../widgets/player_tv_scale.dart';
 
 /// Le menu ouvert par-dessus le lecteur (réglages, sous-titres, séance), et
 /// le chemin d'une télécommande pour y entrer et en sortir.
@@ -88,7 +89,11 @@ class PlayerPopupHost {
           }
           return KeyEventResult.ignored;
         },
-        child: builder(dismiss),
+        // À l'échelle du chrome qui l'a ouvert (voir [PlayerTvScale]).
+        child: PlayerTvScale.layer(
+          isTv: TvMode.isTv,
+          child: builder(dismiss),
+        ),
       ),
     );
 

@@ -6,7 +6,8 @@ import '../l10n/tr.dart';
 import '../models/watch_list.dart';
 import '../services/api_client.dart';
 
-/// Les listes du compte et celles que les autres partagent (ADR-0070).
+/// Les listes du compte et celles que les autres partagent (ADR-0070), avec
+/// les comptes invités à les remplir (ADR-0127).
 ///
 /// Le serveur tient tout : ce qui est ici n'est que le dernier état reçu,
 /// relu après chaque écriture. Une liste ouverte garde son contenu en cache
@@ -18,6 +19,7 @@ class WatchListsProvider extends ChangeNotifier {
 
   /// Null tant que le serveur n'a pas dit s'il sait tenir des listes.
   bool? _supported;
+  bool _supportsMembers = false;
   WatchListsOverview? _overview;
   bool _isLoading = false;
   String? _errorMessage;
@@ -31,6 +33,10 @@ class WatchListsProvider extends ChangeNotifier {
   /// Le serveur annonce `watch_lists` : l'onglet et le bouton « Ajouter à
   /// une liste » ne se montrent qu'à cette condition.
   bool get isSupported => _supported == true;
+
+  /// Le serveur annonce `watch_list_members` : le bouton « Inviter » ne se
+  /// montre qu'à cette condition.
+  bool get supportsMembers => _supportsMembers;
   bool get hasLoaded => _overview != null;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -65,6 +71,7 @@ class WatchListsProvider extends ChangeNotifier {
       _detailRequests[id] = _detailRequests[id]! + 1;
     }
     _supported = null;
+    _supportsMembers = false;
     _overview = null;
     _isLoading = false;
     _errorMessage = null;
@@ -97,6 +104,9 @@ class WatchListsProvider extends ChangeNotifier {
       final supported = await apiClient.supportsWatchLists();
       if (request != _overviewRequest) return;
       _supported = supported;
+      _supportsMembers =
+          supported && await apiClient.supportsWatchListMembers();
+      if (request != _overviewRequest) return;
       _overview = supported
           ? await apiClient.getWatchLists()
           : WatchListsOverview.empty;
@@ -146,11 +156,12 @@ class WatchListsProvider extends ChangeNotifier {
     }
   }
 
-  /// Les listes du compte, chacune disant si elle a déjà [title] : ce que
-  /// coche la feuille « Ajouter à une liste ».
+  /// Les listes où le compte peut ranger un titre, les siennes puis celles où
+  /// il est invité, chacune disant si elle a déjà [title] : ce que coche la
+  /// feuille « Ajouter à une liste ».
   Future<List<WatchList>> membership(ListableTitle title) async {
     final overview = await apiClient.getWatchLists(containing: title);
-    return overview.mine;
+    return [...overview.mine, ...overview.shared.where((l) => l.canEdit)];
   }
 
   Future<WatchList> createList({
@@ -174,7 +185,8 @@ class WatchListsProvider extends ChangeNotifier {
         name: name, description: description, isShared: isShared);
     final detail = _details[list.id];
     if (detail != null) {
-      _details[list.id] = WatchListDetail(list: updated, items: detail.items);
+      _details[list.id] = WatchListDetail(
+          list: updated, items: detail.items, members: detail.members);
     }
     notifyListeners();
     unawaited(load(silent: true));
@@ -206,6 +218,7 @@ class WatchListsProvider extends ChangeNotifier {
       _details[listId] = WatchListDetail(
         list: detail.list,
         items: detail.items.where((i) => i.id != itemId).toList(),
+        members: detail.members,
       );
       notifyListeners();
     }
@@ -216,6 +229,44 @@ class WatchListsProvider extends ChangeNotifier {
         unawaited(loadDetail(listId, silent: true));
       }
       unawaited(load(silent: true));
+    }
+  }
+
+  /// Les autres comptes du serveur, pour choisir qui inviter.
+  Future<List<WatchListMember>> people() => apiClient.getWatchListPeople();
+
+  /// Invite un compte à remplir la liste ; la liste ouverte montre aussitôt
+  /// les invités que le serveur renvoie.
+  Future<void> addMember(int listId, int userId) async {
+    final members = await apiClient.addWatchListMember(listId, userId);
+    _setMembers(listId, members);
+    unawaited(load(silent: true));
+  }
+
+  /// Retire un invité de la liste du compte.
+  Future<void> removeMember(int listId, int userId) async {
+    await apiClient.removeWatchListMember(listId, userId);
+    final detail = _details[listId];
+    if (detail != null) {
+      _setMembers(listId, detail.members.where((m) => m.id != userId).toList());
+    }
+    unawaited(load(silent: true));
+  }
+
+  /// Quitte une liste où le compte est invité : elle disparaît de ses
+  /// listes, et n'est plus lisible si elle est privée.
+  Future<void> leaveList(int listId, int myUserId) async {
+    await apiClient.removeWatchListMember(listId, myUserId);
+    _details.remove(listId);
+    unawaited(load(silent: true));
+  }
+
+  void _setMembers(int listId, List<WatchListMember> members) {
+    final detail = _details[listId];
+    if (detail != null) {
+      _details[listId] = WatchListDetail(
+          list: detail.list, items: detail.items, members: members);
+      notifyListeners();
     }
   }
 }

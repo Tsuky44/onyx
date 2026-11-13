@@ -7,36 +7,40 @@
       "description": "description-value",
       "is_shared": true,
       "is_mine": true,
+      "can_edit": true,
+      "member_count": 2,
       "owner": {
-        "id": 2,
+        "id": 3,
         "username": "username-value"
       },
-      "item_count": 3,
+      "item_count": 4,
       "posters": [
         "posters-value"
       ],
       "updated_at": "2026-01-02T03:04:05Z",
-      "contains_item_id": 4
+      "contains_item_id": 5
     }
   ],
   "shared": [
     {
-      "id": 5,
+      "id": 6,
       "kind": "custom",
       "name": "name-value",
       "description": "description-value",
       "is_shared": true,
       "is_mine": true,
+      "can_edit": true,
+      "member_count": 7,
       "owner": {
-        "id": 6,
+        "id": 8,
         "username": "username-value"
       },
-      "item_count": 7,
+      "item_count": 9,
       "posters": [
         "posters-value"
       ],
       "updated_at": "2026-01-02T03:04:05Z",
-      "contains_item_id": 8
+      "contains_item_id": 10
     }
   ]
 }

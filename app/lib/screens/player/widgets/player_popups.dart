@@ -13,7 +13,15 @@ typedef SettingsPopupPlacement = ({
 });
 
 /// Mesuré une fois, à l'ouverture : le menu reste où il est apparu.
-SettingsPopupPlacement placeSettingsPopup(GlobalKey anchorKey, Size screenSize) {
+///
+/// [screenSize] est la taille où le menu est mis en page, et [scale] ce qui
+/// sépare cette mise en page de l'écran (`PlayerTvScale` sur téléviseur) :
+/// le bouton, mesuré à l'écran, y est ramené.
+SettingsPopupPlacement placeSettingsPopup(
+  GlobalKey anchorKey,
+  Size screenSize, {
+  double scale = 1,
+}) {
   final renderBox = anchorKey.currentContext?.findRenderObject() as RenderBox?;
   const menuWidth = OnyxSettingsMenu.width;
   const menuMaxHeight = OnyxSettingsMenu.maxHeight;
@@ -26,7 +34,16 @@ SettingsPopupPlacement placeSettingsPopup(GlobalKey anchorKey, Size screenSize) 
       maxHeight: menuMaxHeight,
     );
   }
-  final buttonRect = renderBox.localToGlobal(Offset.zero) & renderBox.size;
+  // Le rectangle tel que dessiné : la taille aussi passe par les échelles
+  // entre le bouton et l'écran, pas seulement l'origine.
+  final drawn = MatrixUtils.transformRect(
+    renderBox.getTransformTo(null),
+    Offset.zero & renderBox.size,
+  );
+  final buttonRect = scale == 1
+      ? drawn
+      : Rect.fromLTRB(drawn.left / scale, drawn.top / scale,
+          drawn.right / scale, drawn.bottom / scale);
   final vertical = PlayerSettingsAnchor.verticalPlacement(
     buttonRect: buttonRect,
     screenSize: screenSize,

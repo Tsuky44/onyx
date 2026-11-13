@@ -850,6 +850,25 @@ var migrations = []migration{
 			);`,
 		},
 	},
+	{
+		id:   30,
+		name: "watch list members",
+		// Voir ADR-0127. Les comptes à qui le propriétaire d'une liste a donné
+		// le droit d'y ajouter et d'y retirer des titres. Une ligne par couple
+		// (liste, compte) ; supprimer la liste ou le compte efface la ligne.
+		// L'index sur user_id sert à retrouver les listes d'un compte.
+		stmts: []string{
+			`CREATE TABLE IF NOT EXISTS watch_list_members (
+				list_id INTEGER NOT NULL,
+				user_id INTEGER NOT NULL,
+				added_at INTEGER NOT NULL,
+				PRIMARY KEY (list_id, user_id),
+				FOREIGN KEY (list_id) REFERENCES watch_lists(id) ON DELETE CASCADE,
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			);`,
+			`CREATE INDEX IF NOT EXISTS idx_watch_list_members_user ON watch_list_members(user_id);`,
+		},
+	},
 }
 
 // applyMigrations brings the database up to the latest schema version.

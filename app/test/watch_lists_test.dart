@@ -10,6 +10,7 @@ import 'package:onyx/providers/watch_lists_provider.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/theme/app_icons.dart';
 import 'package:onyx/widgets/global/add_to_list_sheet.dart';
+import 'package:onyx/widgets/global/watch_list_members_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -54,7 +55,10 @@ ApiClient _server(List<String> requests, {bool lists = true}) {
       return switch ((options.method, options.uri.path)) {
         ('GET', '/api/ping') => _json({
             'status': 'ok',
-            'capabilities': [if (lists) 'watch_lists'],
+            'capabilities': [
+              if (lists) 'watch_lists',
+              if (lists) 'watch_list_members'
+            ],
           }),
         ('GET', '/api/lists') => _json({
             'mine': [
@@ -69,8 +73,28 @@ ApiClient _server(List<String> requests, {bool lists = true}) {
                 'is_shared': true,
                 'owner': {'id': 2, 'username': 'bob'},
               },
+              {
+                ..._list(4, 'custom', 'Soirée ciné',
+                    contains: probe ? 0 : null),
+                'is_mine': false,
+                'can_edit': true,
+                'owner': {'id': 2, 'username': 'bob'},
+              },
             ],
           }),
+        ('GET', '/api/lists/2') => _json({
+            ..._list(2, 'custom', 'Mes recos'),
+            'items': <Object>[],
+            'members': <Object>[],
+          }),
+        ('GET', '/api/list-people') => _json([
+            {'id': 2, 'username': 'bob', 'avatar': ''},
+            {'id': 3, 'username': 'carol', 'avatar': 'preset:fox'},
+          ]),
+        ('PUT', '/api/lists/2/members/3') => _json([
+            {'id': 3, 'username': 'carol', 'avatar': 'preset:fox'},
+          ]),
+        ('DELETE', '/api/lists/2/members/3') => _json({'status': 'ok'}),
         ('POST', '/api/lists/1/items') => () {
             inLater = 41;
             return _json({
@@ -189,8 +213,38 @@ void main() {
       await provider.load();
       expect(provider.isSupported, isTrue);
       expect(provider.overview.mine.first.isWatchLater, isTrue);
-      expect(provider.overview.shared.single.owner.username, 'bob');
+      expect(provider.overview.shared.first.owner.username, 'bob');
       expect(provider.summary(3)?.isMine, isFalse);
+    });
+
+    test('la feuille « Ajouter » propose aussi les listes où l’on est invité',
+        () async {
+      final provider = WatchListsProvider(_server([]));
+      addTearDown(provider.dispose);
+      final lists = await provider.membership(ListableTitle.catalog(_matrix));
+      expect(lists.map((l) => l.id), [1, 2, 4],
+          reason:
+              'la liste 3 est partagée en lecture seule : elle n’y est pas');
+      expect(lists.last.canEdit, isTrue);
+      expect(lists.last.isMine, isFalse);
+    });
+
+    test('inviter et retirer un compte passe par le serveur', () async {
+      final requests = <String>[];
+      final provider = WatchListsProvider(_server(requests));
+      addTearDown(provider.dispose);
+      await provider.load();
+      expect(provider.supportsMembers, isTrue);
+      expect(
+          (await provider.people()).map((p) => p.username), ['bob', 'carol']);
+      await provider.addMember(2, 3);
+      await provider.removeMember(2, 3);
+      expect(
+          requests,
+          containsAll([
+            'PUT /api/lists/2/members/3',
+            'DELETE /api/lists/2/members/3',
+          ]));
     });
 
     test('changer de serveur oublie les listes du précédent', () async {
@@ -230,5 +284,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(requests, contains('DELETE /api/lists/1/items/41'));
     expect(find.byIcon(AppIcons.check), findsNothing);
+  });
+
+  testWidgets(
+      'la feuille « Inviter » liste les autres comptes et invite au serveur',
+      (tester) async {
+    final requests = <String>[];
+    final provider = WatchListsProvider(_server(requests));
+    addTearDown(provider.dispose);
+    final list = WatchList.fromJson(_list(2, 'custom', 'Mes recos'));
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: provider,
+      child: MaterialApp(
+        home: Scaffold(body: WatchListMembersSheet(list: list)),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('bob'), findsOneWidget);
+    expect(find.text('carol'), findsOneWidget);
+    expect(find.byIcon(AppIcons.check), findsNothing);
+
+    await tester.tap(find.text('carol'));
+    await tester.pumpAndSettle();
+    expect(requests, contains('PUT /api/lists/2/members/3'));
+    expect(find.byIcon(AppIcons.check), findsOneWidget,
+        reason: 'carol est cochée avec les invités que le serveur renvoie');
   });
 }

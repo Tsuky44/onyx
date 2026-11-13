@@ -125,12 +125,13 @@ func (s *Store) markContains(lists []models.WatchList, p Probe) error {
 	return nil
 }
 
-// AddServerMedia ajoute une fiche du serveur à une liste du compte.
-func (s *Store) AddServerMedia(ownerID, listID, mediaID int) (models.WatchListItem, error) {
+// AddServerMedia ajoute une fiche du serveur à une liste que le compte peut
+// remplir.
+func (s *Store) AddServerMedia(viewerID, listID, mediaID int) (models.WatchListItem, error) {
 	if mediaID <= 0 {
 		return models.WatchListItem{}, ErrInvalid
 	}
-	return s.add(ownerID, listID, func(q querier) (identity, snapshot, error) {
+	return s.add(viewerID, listID, func(q querier) (identity, snapshot, error) {
 		id, snap, err := mediaIdentity(q, mediaID)
 		if errors.Is(err, ErrNotFound) {
 			// La liste existe ; c'est la fiche qui manque.
@@ -142,7 +143,7 @@ func (s *Store) AddServerMedia(ownerID, listID, mediaID int) (models.WatchListIt
 
 // AddCatalogTitle ajoute un titre du catalogue TMDB, que le serveur ait ou non
 // sa fiche.
-func (s *Store) AddCatalogTitle(ownerID, listID int, t CatalogTitle) (models.WatchListItem, error) {
+func (s *Store) AddCatalogTitle(viewerID, listID int, t CatalogTitle) (models.WatchListItem, error) {
 	t, err := normalizeCatalogTitle(t)
 	if err != nil {
 		return models.WatchListItem{}, err
@@ -151,21 +152,22 @@ func (s *Store) AddCatalogTitle(ownerID, listID int, t CatalogTitle) (models.Wat
 	if t.PosterPath != "" {
 		poster = tmdbPosterBase + t.PosterPath
 	}
-	return s.add(ownerID, listID, func(querier) (identity, snapshot, error) {
+	return s.add(viewerID, listID, func(querier) (identity, snapshot, error) {
 		return identity{mediaType: t.MediaType, tmdbID: t.TMDBID},
 			snapshot{title: t.Title, posterURL: poster, releaseDate: t.ReleaseDate}, nil
 	})
 }
 
-// add range un titre dans une liste du compte. Un titre déjà présent n'est
-// pas doublé : l'élément existant est renvoyé tel quel.
-func (s *Store) add(ownerID, listID int, resolve func(querier) (identity, snapshot, error)) (models.WatchListItem, error) {
+// add range un titre dans une liste que le compte peut remplir (la sienne, ou
+// une où il est invité). Un titre déjà présent n'est pas doublé : l'élément
+// existant est renvoyé tel quel.
+func (s *Store) add(viewerID, listID int, resolve func(querier) (identity, snapshot, error)) (models.WatchListItem, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return models.WatchListItem{}, fmt.Errorf("add watch list item: begin: %w", err)
 	}
 	defer tx.Rollback() //nolint:errcheck // sans effet une fois validée
-	if _, err := s.ownedKind(tx, ownerID, listID); err != nil {
+	if _, err := s.editableKind(tx, viewerID, listID); err != nil {
 		return models.WatchListItem{}, err
 	}
 	id, snap, err := resolve(tx)
@@ -245,9 +247,9 @@ func findItem(q querier, listID int, id identity) (int, error) {
 	return itemID, nil
 }
 
-// RemoveItem retire un élément d'une liste du compte.
-func (s *Store) RemoveItem(ownerID, listID, itemID int) error {
-	if _, err := s.ownedKind(s.db, ownerID, listID); err != nil {
+// RemoveItem retire un élément d'une liste que le compte peut remplir.
+func (s *Store) RemoveItem(viewerID, listID, itemID int) error {
+	if _, err := s.editableKind(s.db, viewerID, listID); err != nil {
 		return err
 	}
 	res, err := s.db.Exec(`DELETE FROM watch_list_items WHERE id = ? AND list_id = ?`, itemID, listID)

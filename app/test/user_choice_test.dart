@@ -10,6 +10,7 @@ import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/screens/auth/user_choice_screen.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/services/server_registry.dart';
+import 'package:onyx/theme/app_icons.dart';
 import 'package:onyx/tv/tv_focus.dart';
 import 'package:onyx/tv/tv_mode.dart';
 
@@ -163,6 +164,47 @@ void main() {
       expect(resets, 1, reason: 'rien de Léa ne doit rester en mémoire');
     });
 
+    test('une personne par défaut : le lancement ouvre sa session sans demander',
+        () async {
+      final api = await sharedTelevision();
+      final mathis = api.servers.accounts.first;
+      await api.servers.setDefaultUser(mathis.id, value: true);
+
+      final auth = AuthProvider(api, startupRetryPauses: const []);
+      await _settle(auth);
+
+      expect(auth.needsUserChoice, isFalse);
+      expect(auth.isAuthenticated, isTrue);
+      expect(auth.currentUser?.username, 'mathis',
+          reason: 'Léa était active, mais Mathis est celui du départ');
+    });
+
+    test('une seule personne par défaut par serveur', () async {
+      final api = await sharedTelevision();
+      final mathis = api.servers.accounts.first;
+      final lea = api.servers.accounts.last;
+
+      await api.servers.setDefaultUser(mathis.id, value: true);
+      await api.servers.setDefaultUser(lea.id, value: true);
+
+      expect(api.servers.isDefaultUser(mathis.id), isFalse);
+      expect(api.servers.defaultUserOf(mathis.id)?.id, lea.id);
+    });
+
+    test('la personne par défaut survit au redémarrage, pas à son retrait',
+        () async {
+      final api = await sharedTelevision();
+      final mathis = api.servers.accounts.first;
+      await api.servers.setDefaultUser(mathis.id, value: true);
+
+      final reopened = ServerRegistry();
+      await reopened.load();
+      expect(reopened.isDefaultUser(mathis.id), isTrue);
+
+      await reopened.forget(mathis.id);
+      expect(reopened.defaultUserOf(api.servers.accounts.last.id), isNull);
+    });
+
     test('un seul utilisateur par serveur : rien à demander', () async {
       final api = _FakeApiClient();
       await api.initialize();
@@ -238,6 +280,28 @@ void main() {
     await tester.pump();
     return auth;
   }
+
+  testWidgets(
+      'l’étoile d’une pastille en mode gestion la désigne profil par défaut',
+      (tester) async {
+    final auth = await mountPicker(tester);
+    final servers = auth.apiClient.servers;
+    final lea = servers.accounts.last;
+
+    await tester.tap(find.text('Gérer les profils'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Ouvrir lea par défaut'));
+    await tester.pumpAndSettle();
+
+    expect(servers.isDefaultUser(lea.id), isTrue);
+    expect(find.byTooltip('Profil par défaut de cet appareil'), findsOneWidget);
+    expect(find.byIcon(AppIcons.rating), findsOneWidget,
+        reason: 'une étoile pleine sur lea seulement');
+
+    await tester.tap(find.byTooltip('Profil par défaut de cet appareil'));
+    await tester.pumpAndSettle();
+    expect(servers.isDefaultUser(lea.id), isFalse);
+  });
 
   testWidgets('« Qui regarde ? » nomme chaque pastille', (tester) async {
     final handle = tester.ensureSemantics();
