@@ -3029,9 +3029,9 @@
     "semantic_hash": ""
   },
   "app/lib/tv/touchpad_motion.dart": {
-    "mtime": 1794514121.0026534,
-    "seen": 1794514595.3560798,
-    "ast_hash": "e31f35fc18d9025e953fb70977ef1781",
+    "mtime": 1794554065.3720376,
+    "seen": 1794554608.2338753,
+    "ast_hash": "e967b2fb4da88dacc14b4f703b73fee6",
     "semantic_hash": ""
   },
   "app/lib/tv/tv_deferred_keyboard.dart": {
@@ -3101,9 +3101,9 @@
     "semantic_hash": "1463896f625adedc8f1e52c6b9e31aab"
   },
   "app/lib/tv/tv_touchpad.dart": {
-    "mtime": 1794514090.580142,
-    "seen": 1794514595.3560977,
-    "ast_hash": "ca88944505f00ed3c861f04c4ee4545b",
+    "mtime": 1794554065.3730106,
+    "seen": 1794554608.2339115,
+    "ast_hash": "8bd50aaba1eb34d79a6e73512bd8a8a3",
     "semantic_hash": ""
   },
   "app/lib/tv/tv_ui_scale.dart": {
@@ -4842,9 +4842,9 @@
     "semantic_hash": "3b136b1a99f496a68cc659dcc465cece"
   },
   "app/test/touchpad_motion_test.dart": {
-    "mtime": 1794514188.3737972,
-    "seen": 1794514595.3564665,
-    "ast_hash": "b29df0d991c03fbacb2dd7af4372616a",
+    "mtime": 1794554190.2214155,
+    "seen": 1794554608.2348356,
+    "ast_hash": "0c8e326d3b90f28fd90d080e73009fa7",
     "semantic_hash": ""
   },
   "app/test/tv_back_action_test.dart": {
@@ -4908,9 +4908,9 @@
     "semantic_hash": ""
   },
   "app/test/tv_touchpad_test.dart": {
-    "mtime": 1794514229.3665724,
-    "seen": 1794514595.3564935,
-    "ast_hash": "f274065828a422568f514a2b1ceb6816",
+    "mtime": 1794554231.2464032,
+    "seen": 1794554608.2348933,
+    "ast_hash": "afd745df691c3ae9198282a112a83383",
     "semantic_hash": ""
   },
   "app/test/tv_ui_scale_test.dart": {
@@ -13098,9 +13098,9 @@
     "semantic_hash": ""
   },
   "docs/adr/0116-le-doigt-pilote-le-focus-sur-le-trackpad-de-l-apple-tv.md": {
-    "mtime": 1794514334.3227608,
-    "seen": 1794514595.357429,
-    "ast_hash": "cee05bfff46685ce92df122f6bce13c0",
+    "mtime": 1794554265.5707872,
+    "seen": 1794554608.2375107,
+    "ast_hash": "4abd7aa61cbe4ef1c4a754de5f925fbd",
     "semantic_hash": ""
   },
   "docs/adr/0117-la-barre-d-onglets-d-un-televiseur-est-une-pilule-centree.md": {
@@ -13140,9 +13140,9 @@
     "semantic_hash": ""
   },
   "docs/adr/0122-le-pave-va-posement-sur-les-commandes.md": {
-    "mtime": 1794514354.031331,
-    "seen": 1794514595.3574584,
-    "ast_hash": "f58a651b50476699719d89ee62cefe39",
+    "mtime": 1794554265.571672,
+    "seen": 1794554608.2375288,
+    "ast_hash": "0735b4050e88b3710d970c1ea5933318",
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_spotlight.dart": {
