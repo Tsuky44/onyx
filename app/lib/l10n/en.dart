@@ -3608,4 +3608,16 @@ const Map<String, String> kEnglish = <String, String>{
       'This device’s default profile',
   'Ouvrir {0} par défaut':
       'Open {0} by default',
+  'Quel serveur ?':
+      'Which server?',
+  '{0} ne répond pas.':
+      '{0} isn’t responding.',
+  'Continuer sur {0}':
+      'Continue on {0}',
+  'Serveur {0}':
+      'Server {0}',
+  '1 profil':
+      '1 profile',
+  '{0} profils':
+      '{0} profiles',
 };
