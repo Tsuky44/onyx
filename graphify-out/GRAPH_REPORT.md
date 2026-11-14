@@ -1,17 +1,17 @@
 # Graph Report - onyx  (2026-11-14)
 
 ## Corpus Check
-- 2088 files · ~1,910,406 words
+- 2088 files · ~1,910,907 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 164 file(s) not represented in the graph (top: (none) 33, .csv 24, .xml 18)
 
 ## Summary
-- 32644 nodes · 63748 edges · 960 communities (742 shown, 218 thin omitted)
+- 32649 nodes · 63756 edges · 916 communities (707 shown, 209 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 2781 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2aab750d`
+- Built from commit: `26eefb66`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -22,7 +22,7 @@
 - person_detail_screen.dart
 - library_tv_view_test.dart
 - net/http.ResponseWriter
-- Map
+- return
 - support/tv_nav_harness.dart
 - player_popups.dart
 - _
@@ -47,11 +47,11 @@
 - series_track_memory_test.dart
 - profile_avatar.dart
 - package:flutter/services.dart
-- Flutter
+- main_shell.dart
 - material_desktop.dart
 - player_episodes_tab.dart
 - server · indexer #2
-- return
+- settings_screen.dart
 - native_tv_intent.dart
 - shell_tv_header_test.dart
 - request_detail_screen.dart
@@ -64,8 +64,8 @@
 - app · lib #36
 - server · libraries
 - server_account.dart
-- support/tv_nav_harness.dart
-- bool get
+- tv_back_rules_test.dart
+- request_progress.dart
 - native_tv_source.dart
 - app · lib #39
 - app · lib #40
@@ -82,14 +82,14 @@
 - app · lib #46
 - app · lib #47
 - Feuille de route — lecture au quotidien
-- shell_tv_back.dart
+- FocusNode?
 - impeccable-paths.mjs
 - app · lib #51
 - shared_link_screen.dart
 - playback_capabilities.dart
 - app · lib #53
 - app · lib #54
-- account_menu_panel.dart
+- video_web.dart
 - live-accept.mjs
 - touchpad_motion.dart
 - app · lib #57
@@ -111,7 +111,7 @@
 - app · lib #70
 - go_pkg_strings
 - server · handlers #12
-- profiles_navigation_map_test.dart
+- libraries_test.dart
 - server · medialang
 - app · lib #72
 - app · lib #73
@@ -145,7 +145,7 @@
 - Design System Inspired by OpenCode
 - live-commit-manual-edits.mjs
 - library_tv_view_test.dart
-- shared_link_guest.dart
+- new_episode_watch.dart
 - server · handlers #15
 - concept-seed.mjs
 - angle_surface_manager.h
@@ -155,7 +155,7 @@
 - _
 - server · streaming #5
 - app · lib #103
-- static const double
+- bool get
 - app · lib #105
 - Int64
 - package:flutter/widgets.dart
@@ -163,7 +163,7 @@
 - macos/Headers/mpv/client.h
 - app · lib #109
 - Design System Inspired by Cursor
-- DateTime
+- playback_access.dart
 - hook-admin.mjs
 - package:flutter/gestures.dart
 - tv_focus.dart
@@ -187,14 +187,14 @@
 - go_pkg_net_http
 - server · streaming #6
 - server · streaming #7
-- mpv_native_surface.dart
+- StreamMedia
 - use_player_popup.dart
 - Design System Inspired by Lamborghini
-- PlanVideo
-- package:flutter/foundation.dart
+- ffmpeg_test.go
+- live-copy-edit-agent.mjs
 - onyx_player.dart
 - video_texture.dart
-- platform_video_controller.dart
+- player_controller_tracks.dart
 - auto_download.dart
 - server · handlers #21
 - Design System Inspired by Renault
@@ -212,7 +212,7 @@
 - app · lib #145
 - String
 - Design System Inspired by Framer
-- mpv_startup_trace.dart
+- static const
 - my_request.dart
 - api_types.dart
 - constants.mjs
@@ -231,8 +231,8 @@
 - app · lib #160
 - ios/Headers/mpv/client.h
 - away_from_screen.dart
-- AetherEngine
-- poster_url.dart
+- Flutter
+- request_season_list.dart
 - app · lib #164
 - app · lib #165
 - app · lib #166
@@ -242,8 +242,8 @@
 - ref_node_path
 - app · lib #170
 - poster_grid_zoom.dart
-- ../../models/models.dart
-- ffmpeg_test.go
+- library_spotlight.dart
+- PictureInPictureBridge
 - NSObject
 - detail_hero.dart
 - ADR-0009 ExoPlayer sur Android mpv ailleurs
@@ -251,25 +251,25 @@
 - server · handlers #24
 - avatar_picker_screen.dart
 - player_remote_bench.dart
-- video_state_inherited_widget.dart
-- metadata_fix_sheet.dart
+- fullscreen_inherited_widget.dart
+- package:onyx_player_apple/onyx_player_apple.dart
 - PlayerController
 - PlayerHost
 - detail_info_table.dart
 - home_provider.dart
 - Design System Inspired by Vercel
-- resume_preview_anchor.dart
+- watch_party_session_test.dart
 - static const
 - docs · adr #8
 - desktop_window.dart
 - poster_focus_ring_test.dart
 - download_manager_web.dart
 - Design System Inspired by Warp
-- otp_code_dialog.dart
-- still_watching.dart
+- tv_card_directions.dart
+- tv_modal_focus_test.dart
 - app · lib #192
 - app · lib #193
-- Logique de l'app Flutter
+- keyframes_matroska.go
 - detail_navigation_map_test.dart
 - Design System Inspired by Meta (Store)
 - season_hover_preview.dart
@@ -279,13 +279,12 @@
 - _
 - onyx_brightness_slider.dart
 - responsive.dart
-- download_keep_alive.dart
-- middle_click_autoscroll.dart
+- NativeTransportWatch
+- glass_chrome.dart
 - still_watching_settings.dart
 - Design System Inspired by NVIDIA
-- ProbeResult
-- use_playback_handoff.dart
-- inbox.mjs
+- video_state_inherited_widget.dart
+- Init flow
 - static const String
 - native_tv_presenter_test.dart
 - Design System Inspired by The Verge
@@ -301,7 +300,7 @@
 - ios/Headers/mpv/render_gl.h
 - app · lib #218
 - Any
-- 2. Tableau de parité
+- staggered_entrance.dart
 - package:flutter/material.dart
 - app · lib #222
 - auto_quality_pilot_test.dart
@@ -309,7 +308,7 @@
 - tv_dpad_focusable.dart
 - player_controller_hls.dart
 - server · middleware
-- 5. Procédures sur vraie machine
+- downloads_page.dart
 - texture_sw_copy_pixels
 - documentRefForElement
 - app · lib #225
@@ -320,14 +319,14 @@
 - app · lib #227
 - client_log.dart
 - library_admin.dart
-- resume_preview_anchor.dart
+- ../../models/models.dart
 - .setUp
 - ADR-0105 — Un `AVPlayerViewController` natif pour le lecteur de l'Apple TV
-- resume_preview_stills.dart
-- media_transfer_test.dart
+- search_route_observer.dart
+- media_transfer_io.dart
 - Design System Inspired by VoltAgent
 - server · handlers #30
-- device_library_web.dart
+- join_watch_party_dialog.dart
 - auto_download_test.dart
 - Design System Inspired by Composio
 - tv_link_scanner_screen.dart
@@ -362,11 +361,11 @@
 - Design System Inspired by Cal.com
 - Design System Inspired by Linear
 - settings_screen_test.dart
-- 0123-la-bibliotheque-d-un-televiseur-presente-le-titre-focalise-en-tete.md
-- auto_descent.dart
+- window_controls_io.dart
+- player_video_stage.dart
 - critique.md
 - ../../../utils/app_platform.dart
-- request_alert_watch.dart
+- models/request_feed.dart
 - None #13
 - Design System Inspired by Mintlify
 - None #15
@@ -385,8 +384,8 @@
 - Design System Inspired by Apple
 - None #22
 - None #23
-- User
-- PigeonStreamHandler
+- poster_grid_zoom_region.dart
+- tv_focus_guard.dart
 - Design System Inspired by Cohere
 - download_preferences.dart
 - StallGuardLoadControl
@@ -399,14 +398,14 @@
 - sampleCssBackground
 - Design System Inspired by Together AI
 - keyframes_test.go
-- ffmpeg.go
+- tv_focus_scroll.dart
 - tv_sections.dart
 - OnyxBackgroundDownloadsPlugin
 - StatusMapping
 - StatusMapping
 - Design System Inspired by IBM
 - Design System Inspired by ElevenLabs
-- stats_page.dart
+- RelinkEpisodesToShows
 - SystemSearchChannel
 - Design System Inspired by MiniMax
 - use_gesture_hints.dart
@@ -418,8 +417,8 @@
 - Design System Inspired by HashiCorp
 - analyzeSeason
 - playback.dart
-- device_video.dart
-- logging.go
+- DateTime
+- String
 - context.Context
 - ADR-0043 Les reglages de lecture suivent le compte
 - AppDelegate
@@ -448,7 +447,7 @@
 - ADR-0003 Android TV pilotage a la telecommande et appairage par QR
 - ThreadPool
 - Design System Inspired by Supabase
-- Operate mode depth (and Read notes)
+- impeccable/SKILL.md
 - Design System Inspired by Pinterest
 - downloads_test.go
 - api/otp.dart
@@ -456,7 +455,7 @@
 - steps
 - jobs
 - duration.dart
-- encoder_test.go
+- avoid_cutouts_test.dart
 - player_controller_auto.dart
 - onAnnotDown
 - media_kit_video/CHANGELOG.md
@@ -470,7 +469,7 @@
 - release.yml
 - build-tvos
 - onyx_controls_layer_test.dart
-- ADR-0039 Force du geste sur le trackpad de l'Apple TV
+- 0110-un-seul-systeme-de-focus-dpad.md
 - members_test.go
 - .bitmap
 - Design System Inspired by BMW
@@ -482,10 +481,10 @@
 - mpv_stream_cb_info
 - Design System Inspired by Figma
 - _
-- dart:async
-- int get
+- mpv_window_host_io.dart
+- FastStart
 - caches_directory_repository_io.dart
-- peerRow
+- parseClientUpdatedAt
 - static bool get
 - README.md
 - FlutterWindow
@@ -494,7 +493,7 @@
 - request_release_test.dart
 - steps
 - applyPlaybackPreferencesUpdate
-- Logique de l'app Flutter
+- Responsive Design
 - Worker
 - Worker
 - Worker
@@ -513,7 +512,7 @@
 - Design System Inspired by Revolut
 - Design System Inspired by Wise
 - backend
-- Installer Onyx sur un téléviseur LG (webOS)
+- Publier une version (GitHub Actions)
 - Relais CONNECT local (stream_proxy_io.dart, 127.0.0.1)
 - ADR-0052 Des fichiers decoupes par sujet, et une limite qui tient
 - server.yml
@@ -529,18 +528,18 @@
 - steps
 - home_response.dart
 - macos/Flutter/GeneratedPluginRegistrant.swift
-- sleep_timer.dart
+- Operate mode depth (and Read notes)
 - buildPlaybackLogsZip
 - avatars.dart
 - dependency_overrides
 - New visual work
-- episode_tile.dart
+- Shape
 - build-releases.sh
 - PROJECT_DESIGN — Onyx Quiet Premium
 - interface
 - tv_control_rows.dart
 - mpv_format
-- library_spotlight.dart
+- announcement.dart
 - flutter
 - Design System Inspired by Intercom
 - Responsive Design
@@ -549,7 +548,7 @@
 - ClientLog (client_log.dart)
 - ADR-0030 Mises a jour Windows par programme maison
 - onyx_progress_bar.dart
-- app_image_cache.dart
+- package:flutter/foundation.dart
 - build
 - tag
 - VideoOutputConfiguration
@@ -566,13 +565,13 @@
 - Any
 - music.py
 - build-windows
-- my_requests_screen.dart
+- runMigration
 - MPVHelpers
 - MPVHelpers
 - MPVHelpers
 - build-tvos-ipa.sh
 - ChangeNotifier
-- settings_search.dart
+- playback_page.dart
 - dev_dependencies
 - keyframeTimesFromIndex (lecture stss, stts, cues)
 - build-android
@@ -647,17 +646,17 @@
 - rememberSession
 - servers
 - _token
-- player_controller_native_tv.dart
+- Android platform
 - server_reachability.dart
 - project-player/server
 - app_motion.dart
 - quick reference
 - NativeOverlayView
 - api/storage_admin.dart
-- app_theme.dart
+- typeset.md
 - tv_focus_rows.dart
 - quick reference
-- tv_pane_region.dart
+- player_controller_dolby_vision.dart
 - use_episodes_panel.dart
 - animate.md
 - windows
@@ -667,17 +666,18 @@
 - Recette sur Apple TV : lecteur natif
 - ADR-0111 — L'anneau de focus est blanc, et entoure les affiches au lieu de les border
 - api/playback_preferences.dart
-- toneMapperFor
+- player_controller_language.dart
 - server_capabilities.dart
 - Generate Report
 - GetNextEpisode
-- OnyxMpvMacosPlugin
+- audio_language_gap.dart
 - Findings
-- database/sql.DB
+- InitDB
+- ping.go
 - quick reference
 - optimize.md
 - Design Reference Catalog
-- installorigin.go
+- _OnyxChromeLayout
 - Scan mode (approach C: auto-extract, then confirm descriptive language)
 - announcements.dart
 - design.md
@@ -707,34 +707,30 @@
 - Les cartes poster partagent un seul rayon et un seul traitement de survol
 - Étapes
 - models/otp.dart
-- macos_update_signature_io.dart
+- _TourButton
 - pointer_click_zone.dart
 - Les trois chromes du lecteur apparaissent et disparaissent par le même fondu
 - Les cartes répondent à l'appui, pas seulement au survol
 - releasedl_test.go
 - 🚀 Projet : Mon Serveur de Médias Personnalisé
 - .call
-- dart:ui
 - Tasteful UI
 - ActiveCues
 - Décision
 - ADR-0086 — Un mode léger pour les petits appareils, sans quitter le Direct Play
 - models/series_track_preferences.dart
 - interface_tour.dart
-- loadStorageShows
+- commonDir
 - app_type.dart
 - CLAUDE.md
 - player_screen_overlays.dart
-- ADR-0061 — Sur Windows, mpv dessine dans sa propre fenêtre, glissée sous celle de l'app
-- install_origin_formats.dart
 - Taste Exploration
 - SAFE_TAGS
 - Issue tracker: GitHub
 - Reprise des paramètres — 14 septembre 2026
-- avoid_cutouts.dart
 - Taste Critic
 - VideoOutput
-- touchpad_motion_test.dart
+- InheritedWidget
 - Onyx — client Flutter
 - ADR-0069 — Le message de l'administrateur, montré une fois à chaque compte
 - ADR-0070 — Les listes : « À regarder plus tard » et des listes à soi, partagées ou non
@@ -759,102 +755,74 @@
 - subtitle_view.dart
 - ADR-0087 — Les images TMDB se téléchargent à la taille de leur place, et la cascade d'arrivée saute en mode léger
 - ADR-0088 — Une image déjà sur disque se pose sans fondu, et les listes d'images construisent une fenêtre d'avance
-- remote_poster.dart
+- String get
 - ADR-0091 — `onyx://play` : « Lire sur Onyx » depuis MediaHub, avec reprise
 - pinch_zoom_fit.dart
 - ADR-0093 — Piste audio et premier segment sur Apple
 - ADR-0097 — Sous-titres et pistes audio sur un téléviseur LG : la liste du serveur, la langue pour désigner
 - chunk_plan.dart
 - Agent skills
-- ADR-0116 — Sur le trackpad de l'Apple TV, c'est le doigt qui pilote le focus
 - Mode: Taste First Redesign
 - pull_request_template.md
-- timeline_previews_test.dart
-- onyx_background_downloads.dart
+- Map
 - PigeonStreamHandler
 - [package:media_kit_libs_ios_video](https://github.com/media-kit/media-kit)
 - [package:media_kit_libs_macos_video](https://github.com/media-kit/media-kit)
 - [package:media_kit_libs_windows_video](https://github.com/media-kit/media-kit)
 - [package:media_kit_video](https://github.com/media-kit/media-kit)
-- macos_now_playing.dart
 - LaunchImage.imageset/README.md
 - standardmessagecodec
+- .emit
 - commitAcceptedSvelteComponentToDom
 - .claude/CLAUDE.md
 - onyxhub/README.md
 - media_kit_libs_ios_video/example/README.md
 - media_kit_libs_macos_video/example/README.md
 - media_kit_libs_windows_video/example/README.md
-- Duration get
-- seek_timeline.dart
+- home_screen.dart
 - ADR-0047 Interface en anglais par dictionnaire dont le francais est la cle
 - manifest.json
 - ADR-0100 — Les paramètres rangés selon à qui ils s'appliquent
 - ADR-0083 — Sur Android, Retour passe par le système et lui seul
 - onyx_player_apple/analysis_options.yaml
-- auto_trust.dart
+- static const int
 - tv_link.dart
 - aether_video_fit_test.dart
 - PlaybackSession
 - tmdb_discover.go
-- keyframes_mp4.go
 - Hardening Dimensions
 - ADR-0101 — Le mode léger reconnaît les ordinateurs modestes
-- Media
 - FlutterTexture
-- ADR-0128 — Une fiche de téléviseur se parcourt ligne par ligne et se pose section par section
-- impeccable/SKILL.md
-- keyframes_matroska.go
-- vtt_cues_test.dart
-- installorigin_test.go
-- player_screen_startup.dart
-- siri_remote_touches_io.dart
+- document.md
 - settings_choice_focus.dart
 - watch_lists.dart
 - remote_playback.dart
 - NowPlayingController
-- totp.go
-- vtt_cues.dart
-- focus_fill.dart
+- normalizePlaybackLogLines
 - gzipResponseWriter
-- String
 - ADR-0114 — MediaHub gère le stockage d'Onyx
-- server/README.md (back-end Go Onyx)
+- ADR-0041 Validation en deux etapes par code TOTP
 - layout.md
 - ADR-0104 — Une bibliothèque des vidéos de l'appareil, sans serveur
-- tv_touchpad_pace.dart
 - .Grab
 - _
 - 2. Color Palette & Roles
-- player_controller_startup.dart
 - device_pairing.dart
 - tmdb_requests.go
 - VideoOutput
 - request_releases.dart
-- avatar_image.dart
-- _
-- Visualize: Direction Comps & Asset Production
 - ADR-0090 — Se connecter à MediaHub avec son compte Onyx
 - ADR-0115 — Le stockage se gère aussi depuis l'administration d'Onyx
-- Ping
+- Décision
 - media_subtitle_track.dart
-- MessagesPigeonStreamHandler
 - ADR-0127 — La lecture d'un autre appareil s'annonce en notification, et se reprend en maintenant Lecture
-- TestResetWithoutTMDBUnlocksTheChosenPoster
 - FastStart
-- OnyxPlayerStatus
 - ADR-0001 Droits utilisateur et invitations
 - Design plans — Onyx
-- progressWatchers
-- VideoOutputManager
 - VideoOutputManager
 - new_episodes.dart
-- live_subtitles.go (WebVTT ecrit par le FFmpeg de la session)
 - hls_session.dart
-- Extract Flow
-- DpadTraversalPolicy
 - ADR-0056 Qualite automatique : descendre avant la coupure, remonter sur mesure
-- DpadRegionState
 - storage_query.dart
 - _BelowAnchor
 - ADR-0092 — La goutte des saisons, peinte sans filtre de fusion
@@ -862,22 +830,13 @@
 - CaptionBarPeek
 - WindowCaptionBar
 - WindowControlPills
-- _BackwardSeekIndicator
 - Décision
-- _CustomTrackShape
-- _ForwardSeekIndicator
 - artwork.dart
-- MaterialPositionIndicator
-- maxGapSeconds
-- MaterialSeekBar
-- _MaterialVideoControls
 - web_playback_web.dart
 - api/series_track_preferences.dart
-- OnyxPlaybackState
-- OnyxPlaybackStats
 - log
 - State
-- static const
+- install_origin.dart
 
 ## God Nodes (most connected - your core abstractions)
 1. `ApiClient` - 321 edges
@@ -898,8 +857,8 @@
   docs/adr/0103-image-dans-image-sur-iphone-et-ipad.md → app/android/app/src/main/kotlin/com/tsuky/onyx/MainActivity.kt
 - `Décision` --references--> `MainActivity`  [INFERRED]
   docs/adr/0104-bibliotheque-des-videos-de-l-appareil.md → app/android/app/src/main/kotlin/com/tsuky/onyx/MainActivity.kt
-- `Step 2: Act by severity` --references--> `mention()`  [INFERRED]
-  .agents/skills/impeccable/reference/doctor.md → scripts/discord/content.mjs
+- `Step 1: Load current state` --references--> `shape()`  [INFERRED]
+  .agents/skills/impeccable/reference/init.md → scripts/discord/inbox.mjs
 - `A3 — Une rangée d'actions de la fiche film déborde sur téléphone` --references--> `Wrap()`  [INFERRED]
   design-plans/audit-ux.md → server/devline/devline.go
 
@@ -917,39 +876,39 @@
 - **Telechargement en arriere-plan (ecran verrouille)** — docs_adr_0027_reserve_de_telechargements_et_reseau_facture, docs_adr_0040_telechargements_ecran_verrouille, docs_adr_0040_telechargements_ecran_verrouille_service_premier_plan_android, docs_adr_0040_telechargements_ecran_verrouille_urlsession_arriere_plan, docs_adr_0040_telechargements_ecran_verrouille_ticket_telechargement_6h [INFERRED 0.85]
 - **Appairage television par lien local et QR code** — docs_adr_0003_android_tv_et_appairage_par_qr_code_pairing_flow, docs_adr_0007_appairage_tv_par_lien_local_reverse_listener, docs_adr_0007_appairage_tv_par_lien_local_tv_own_session, docs_adr_0020_connexion_par_qr_sur_le_web_et_le_desktop_web_pairing [INFERRED 0.85]
 
-## Communities (960 total, 218 thin omitted)
+## Communities (916 total, 209 thin omitted)
 
 ### Community 0 - "package:shared_preferences/shared_preferences.dart"
-Cohesion: 0.02
-Nodes (129): SharedLinkException, SharedMediaInfo, OtpRequired, SharedLinkProgress, authErrorText, errorStr, tr, UpdateException (+121 more)
+Cohesion: 0.01
+Nodes (137): authErrorText, errorStr, tr, ConditionalGetCache, linkAccounts, linked, LinkingApi, main (+129 more)
 
 ### Community 1 - "package:flutter_test/flutter_test.dart"
 Cohesion: 0.01
-Nodes (147): RatingBadge, SeasonProgressRing, main, status, track, _allowed, main, audio (+139 more)
+Nodes (142): main, main, status, track, audio, engine, main, forcedFr (+134 more)
 
 ### Community 2 - "../../models/models.dart"
 Cohesion: 0.01
-Nodes (272): _cooldown, DetailPrefetch, warm, _warmedAt, HomeProvider, LibraryProvider, _addFolder, build (+264 more)
+Nodes (266): DeviceVideo, RequestMediaDetails, RequestMediaDetailsOffer, RequestMediaItem, _cooldown, DetailPrefetch, warm, _warmedAt (+258 more)
 
 ### Community 3 - "person_detail_screen.dart"
-Cohesion: 0.04
-Nodes (44): backdropUrl, build, _collection, _CollectionHeader, collectionId, CollectionScreen, _CollectionScreenState, createState (+36 more)
+Cohesion: 0.02
+Nodes (83): fromJson, hashCode, id, isLegacy, kind, legacy, MediaLibrary, name (+75 more)
 
 ### Community 4 - "library_tv_view_test.dart"
-Cohesion: 0.05
-Nodes (30): main, _Api, _catalogHeader, count, detailsAsked, _focused, _focusedCard, gate (+22 more)
+Cohesion: 0.03
+Nodes (52): PosterCard, _PosterCardState, SeasonProgressRing, main, _Api, _Auth, backdrop, currentUser (+44 more)
 
 ### Community 5 - "net/http.ResponseWriter"
 Cohesion: 0.02
-Nodes (293): announcementResponse, announcementUpdate, HistoryEntry, mediaHubLinkState, rowQuerier, rowScanner, sqlExecer, storageTarget (+285 more)
+Nodes (309): announcementUpdate, ContentIdentity, mediaHubLinkState, peerRow, rowQuerier, sharedMediaRequest, watchedWriter, Client() (+301 more)
 
-### Community 6 - "Map"
-Cohesion: 0.02
-Nodes (109): kEnglish, _placeholder, replaceAllMapped, template, tr, buffer, foldForSearch, _folds (+101 more)
+### Community 6 - "return"
+Cohesion: 0.01
+Nodes (131): _placeholder, replaceAllMapped, template, tr, episodeTag, null, releaseFolderHint, chromeMayAutoHide (+123 more)
 
 ### Community 7 - "support/tv_nav_harness.dart"
-Cohesion: 0.02
-Nodes (109): TourAnchors, anchors, build, done, main, onDone, open, _Shell (+101 more)
+Cohesion: 0.01
+Nodes (161): TvArrowSteps, TvControlRowRegion, TvPaneRegion, TvRailRegion, TvFocusMemory, TvFocusMemoryState, _Blank, build (+153 more)
 
 ### Community 8 - "player_popups.dart"
 Cohesion: 0.11
@@ -961,19 +920,19 @@ Nodes (104): _, answer, answerContinue, answerDismiss, answerLeave, answerPlayNe
 
 ### Community 10 - "main.go"
 Cohesion: 0.08
-Nodes (55): accessPollBody, accessRequestBody, AccessRequestTicket, announcementSeenRequest, AuthState, ChangePasswordRequest, createLinkBody, CreateMediaShareRequest (+47 more)
+Nodes (67): accessPollBody, accessRequestBody, AccessRequestTicket, announcementSeenRequest, AuthState, ChangePasswordRequest, createLinkBody, CreateMediaShareRequest (+59 more)
 
 ### Community 11 - "tv_arrow_gate.dart"
 Cohesion: 0.04
 Nodes (40): close, _closed, describe, _elapsed, isRunning, mark, _note, notePlaying (+32 more)
 
 ### Community 12 - "testing.T"
-Cohesion: 0.03
-Nodes (259): seededLibrary, claimBody, DevicePairingStart, libraryJobs, TestFanartPostersAreHTTPSWithAPreview(), TestOnlyPosterSitesCanBeStored(), Allowed(), lineCount() (+251 more)
+Cohesion: 0.02
+Nodes (274): AccessRequestVerdict, announcementResponse, claimBody, DevicePairingPoll, DevicePairingStart, DeviceSession, Invitation, libraryJobs (+266 more)
 
 ### Community 13 - "live-commit-manual-edits.mjs"
 Cohesion: 0.05
-Nodes (90): Animation, Baseline UI, Components, Design, How to use, Interaction, Layout, Performance (+82 more)
+Nodes (91): allEntryIds(), argVal(), buildRepairBatch(), candidatesForEntry(), changedFilesSinceSnapshot(), clearAppliedEntries(), collectApplyOwnedFiles(), collectRollbackFiles() (+83 more)
 
 ### Community 14 - "native_tv_presenter.dart"
 Cohesion: 0.04
@@ -984,12 +943,12 @@ Cohesion: 0.01
 Nodes (124): _apiClient, _armedShape, autoAdvance, build, _chosenDisplayMode, _chromeScale, _controlsTimer, createState (+116 more)
 
 ### Community 16 - "mediahub_releases_test.go"
-Cohesion: 0.04
-Nodes (102): ADR-0072 — La liaison avec OnyxHub se teste depuis le serveur, et le catalogue lit ses disponibilités par page, Conséquences, Contexte, Décision, ADR-0084 — La bibliothèque d'Onyx fait foi sur la disponibilité d'un titre qu'OnyxHub ignore, Conséquences, Contexte, Décision (+94 more)
+Cohesion: 0.06
+Nodes (82): mediaHubAvailability, mediaHubLinkResult, storageTarget, forgetInMediaHub(), loadStorageTarget(), loadStorageRequests(), contextBackground(), fetchMediaHubAvailabilityBatch() (+74 more)
 
 ### Community 17 - "app · lib #12"
-Cohesion: 0.02
-Nodes (130): animation, automaticallyImplySkipNextButton, automaticallyImplySkipPreviousButton, backdropColor, bottomButtonBar, bottomButtonBarMargin, brightnessGesture, _brightnessIndicator (+122 more)
+Cohesion: 0.01
+Nodes (140): animation, automaticallyImplySkipNextButton, automaticallyImplySkipPreviousButton, backdropColor, _BackwardSeekIndicator, _BackwardSeekIndicatorState, bottomButtonBar, bottomButtonBarMargin (+132 more)
 
 ### Community 18 - "app · lib #13"
 Cohesion: 0.03
@@ -997,27 +956,27 @@ Nodes (138): addManualContextText(), applyGlobalBarLabelState(), applyPlaceholde
 
 ### Community 19 - "metadata.go"
 Cohesion: 0.02
-Nodes (192): Target, Contexte, requestRelatedItem, scanStatusResponse, tmdbSearchResponse, IdentityMatch, LocalIdentityHints, tmdbCatalogResponse (+184 more)
+Nodes (172): Target, requestRelatedItem, tmdbSearchResponse, IdentityMatch, metadataTransport, titleToTranslate, tmdbAlternativeTitle, tmdbAlternativeTitlesDetails (+164 more)
 
 ### Community 20 - "app · lib #14"
-Cohesion: 0.01
-Nodes (146): announcePlaybackHere, _apiClient, _applyInheritedPreferences, _attachedSubtitleSignature, _auto, _autoCeilingCopies, _autoCeilingKey, _autoExtractStarted (+138 more)
+Cohesion: 0.02
+Nodes (110): announcePlaybackHere, _apiClient, _applyInheritedPreferences, _attachedSubtitleSignature, _auto, _autoCeilingCopies, _autoCeilingKey, _autoExtractStarted (+102 more)
 
 ### Community 21 - "main.dart"
-Cohesion: 0.02
-Nodes (78): _aboveApp, apiClient, AppScrollBehavior, authProvider, autoDownloads, build, buildScrollbar, _bundledFontLicenses (+70 more)
+Cohesion: 0.01
+Nodes (115): _aboveApp, apiClient, AppScrollBehavior, authProvider, autoDownloads, build, buildScrollbar, _bundledFontLicenses (+107 more)
 
 ### Community 22 - "main_shell.dart"
 Cohesion: 0.02
-Nodes (116): ListableTitle, WatchListsProvider, autofocus, build, canInvite, createState, _delete, _edit (+108 more)
+Nodes (117): ListableTitle, WatchListsProvider, autofocus, build, canInvite, createState, _delete, _edit (+109 more)
 
 ### Community 23 - "_"
 Cohesion: 0.03
-Nodes (63): _, _advance, _advancing, anchors, around, autofocus, blurred, bounds (+55 more)
+Nodes (61): _, _advance, _advancing, anchors, around, autofocus, blurred, bounds (+53 more)
 
 ### Community 24 - "use_player_watch_party.dart"
-Cohesion: 0.04
-Nodes (50): applyPlaying, applyRateFactor, applySeek, _binding, carryTo, controller, dispose, _disposed (+42 more)
+Cohesion: 0.06
+Nodes (33): applyPlaying, applyRateFactor, applySeek, _binding, carryTo, controller, dispose, _disposed (+25 more)
 
 ### Community 25 - "app_slider.dart"
 Cohesion: 0.05
@@ -1028,68 +987,68 @@ Cohesion: 0.03
 Nodes (167): ANIMATION_VALUE_KEYWORDS, borderColorsFromStyle(), borderWidthsFromStyle(), checkBorders(), checkClippedOverflow(), checkColors(), checkCreamPalette(), checkEdgeFlushCardsDOM() (+159 more)
 
 ### Community 27 - "tv_detail_bench.dart"
-Cohesion: 0.01
-Nodes (124): MediaDownloadButton, _Api, _Auth, currentUser, expectEveryTargetNamed, getMediaDetails, getMediaTracks, getProgress (+116 more)
+Cohesion: 0.02
+Nodes (110): MediaDownloadButton, _Api, _Auth, currentUser, expectEveryTargetNamed, getMediaDetails, getMediaTracks, getProgress (+102 more)
 
 ### Community 28 - "series_track_memory_test.dart"
 Cohesion: 0.03
-Nodes (42): gap, main, _SeriesServer, updateSeriesTrackPreferences, writes, buildController, main, buildController (+34 more)
+Nodes (47): gap, main, _SeriesServer, updateSeriesTrackPreferences, writes, buildController, main, buildController (+39 more)
 
 ### Community 29 - "profile_avatar.dart"
 Cohesion: 0.27
 Nodes (9): InitialAvatar, key, parse, PhotoAvatar, _photoPrefix, PresetAvatar, _presetPrefix, ProfileAvatar (+1 more)
 
 ### Community 30 - "package:flutter/services.dart"
-Cohesion: 0.03
-Nodes (59): delta, direction, isArrow, key, match, PlayerKeyAction, PlayerKeyBack, PlayerKeyConsumed (+51 more)
+Cohesion: 0.02
+Nodes (75): delta, direction, isArrow, key, match, PlayerKeyAction, PlayerKeyBack, PlayerKeyConsumed (+67 more)
 
-### Community 31 - "Flutter"
-Cohesion: 0.05
-Nodes (15): RunnerTests, AppDelegate, RunnerTests, Cocoa, Flutter, FlutterMacOS, MediaPlayer, MediaKitLibsIosVideoPlugin (+7 more)
+### Community 31 - "main_shell.dart"
+Cohesion: 0.02
+Nodes (83): AnnouncementPage, _AnnouncementPageState, _apply, build, _busy, _clear, createState, _current (+75 more)
 
 ### Community 32 - "material_desktop.dart"
 Cohesion: 0.02
-Nodes (102): animation, automaticallyImplySkipNextButton, automaticallyImplySkipPreviousButton, bottomButtonBar, bottomButtonBarMargin, buffer, buffering, build (+94 more)
+Nodes (103): animation, automaticallyImplySkipNextButton, automaticallyImplySkipPreviousButton, bottomButtonBar, bottomButtonBarMargin, buffer, buffering, build (+95 more)
 
 ### Community 33 - "player_episodes_tab.dart"
 Cohesion: 0.01
-Nodes (160): build, _CountdownRing, countdownSeconds, countdownTotal, createState, currentLabel, dispose, fraction (+152 more)
+Nodes (194): PlayerLiveStats, bitmaps, build, SubtitleBitmapOverlay, build, cues, defaultPadding, _referenceHeight (+186 more)
 
 ### Community 34 - "server · indexer #2"
 Cohesion: 0.04
-Nodes (113): appendAutonomyCounterDirective(), appendDetectorFallback(), appendImageGenDirective(), appendStalenessDirective(), appendSubagentAuthorizationDirective(), appendSurfaceBriefContext(), automaticHookMode(), buildMissingTargetDirective() (+105 more)
+Nodes (102): appendAutonomyCounterDirective(), appendDetectorFallback(), appendImageGenDirective(), appendStalenessDirective(), appendSubagentAuthorizationDirective(), appendSurfaceBriefContext(), automaticHookMode(), buildMissingTargetDirective() (+94 more)
 
-### Community 35 - "return"
-Cohesion: 0.03
-Nodes (59): episodeTag, null, releaseFolderHint, chromeMayAutoHide, true, apk, attribute, decode (+51 more)
+### Community 35 - "settings_screen.dart"
+Cohesion: 0.04
+Nodes (51): _AccountCard, autofocus, build, categories, category, compact, _CompactSettings, _CompactSettingsState (+43 more)
 
 ### Community 36 - "native_tv_intent.dart"
 Cohesion: 0.04
-Nodes (63): _actionIntent, answer, auto, byUser, chapterId, dot, duration, engineTrackId (+55 more)
+Nodes (64): _actionIntent, answer, auto, byUser, chapterId, dot, duration, engineTrackId (+56 more)
 
 ### Community 37 - "shell_tv_header_test.dart"
 Cohesion: 0.04
-Nodes (30): main, pumpWithReducedMotion, main, _update, main, main, main, pumpBrand (+22 more)
+Nodes (40): TvTabBarItem, _TvTabBarItemState, _as, _chalet, context, _FakeApiClient, _focused, getMe (+32 more)
 
 ### Community 38 - "request_detail_screen.dart"
 Cohesion: 0.01
-Nodes (170): RequestEpisode, RequestMediaDetails, RequestMediaDetailsOffer, RequestMediaItem, RequestSeason, _access, _ahead, apiClient (+162 more)
+Nodes (172): RequestEpisode, RequestSeason, _access, _ahead, apiClient, _checkingCompanion, _companionConfigured, _companionGeneration (+164 more)
 
 ### Community 39 - "new_episode_alerts.dart"
 Cohesion: 0.03
 Nodes (47): _announce, _announceRequests, _anyEnabled, _askedKey, askPermissionOnce, checkInForeground, enabled, _enabledKey (+39 more)
 
 ### Community 40 - "tv_link_host_io.dart"
-Cohesion: 0.06
-Nodes (30): charset, _code, _codesMatch, _completer, _generateCode, _handle, _handleDelivery, _instructionsPage (+22 more)
+Cohesion: 0.04
+Nodes (43): charset, _code, _codesMatch, _completer, _generateCode, _handle, _handleDelivery, _instructionsPage (+35 more)
 
 ### Community 41 - "app · lib #32"
 Cohesion: 0.02
 Nodes (95): activeDevices, activeUsers, address, arch, at, audioBitrateBps, audioCodec, averageBitrateBps (+87 more)
 
 ### Community 42 - "tv_key_repeat.dart"
-Cohesion: 0.05
-Nodes (34): durationFor, focusBottom, fullTravel, _isUnder, _isWithin, _rest, restOffset, reveal (+26 more)
+Cohesion: 0.04
+Nodes (35): durationFor, focusBottom, fullTravel, _isUnder, _isWithin, _rest, restOffset, reveal (+27 more)
 
 ### Community 43 - "app · lib #34"
 Cohesion: 0.01
@@ -1107,13 +1066,13 @@ Nodes (87): _backToRoot, _buildRoot, _buildSection, _canGoUp, _controller, curre
 Cohesion: 0.05
 Nodes (42): AccessRequest, AccessRequestStatus, AccessRequestTicket, AccessRequestVerdict, AccountLink, accounts, avatar, copyWith (+34 more)
 
-### Community 48 - "support/tv_nav_harness.dart"
-Cohesion: 0.01
-Nodes (120): TvArrowSteps, TvControlRowRegion, TvPaneRegion, _cards, createState, resolveEnter, TvRailRegion, _Blank (+112 more)
+### Community 48 - "tv_back_rules_test.dart"
+Cohesion: 0.04
+Nodes (49): _play, _onHeroPlay, _openMedia, _play, _openSeason, _list, build, build (+41 more)
 
-### Community 49 - "bool get"
-Cohesion: 0.01
-Nodes (138): current, download, failed, files, filesDone, fromJson, imports, isEmpty (+130 more)
+### Community 49 - "request_progress.dart"
+Cohesion: 0.08
+Nodes (23): current, download, failed, files, filesDone, fromJson, imports, isEmpty (+15 more)
 
 ### Community 50 - "native_tv_source.dart"
 Cohesion: 0.06
@@ -1129,23 +1088,19 @@ Nodes (88): add, addToList, airDate, announcement, AppIcons, autoscroll, back, b
 
 ### Community 53 - "mpv_startup_trace.dart"
 Cohesion: 0.05
-Nodes (34): find, isSupported, reaches, ServerDiscovery, AndroidVideoController, AndroidVideoController, create, setSize (+26 more)
+Nodes (40): AndroidVideoController, AndroidVideoController, create, setSize, supported, NativeVideoController, create, NativeVideoController (+32 more)
 
 ### Community 54 - "writeVideo"
 Cohesion: 0.03
-Nodes (138): 3. Rien ne survit au lien, batchResult, dirState, dueTarget, fileLook, indexedFile, libraryMonitor, metadataTransport (+130 more)
+Nodes (160): libraryRequest, scanStatusResponse, batchResult, deletableFile, dirState, dueTarget, fileLook, indexedFile (+152 more)
 
 ### Community 55 - "app · lib #43"
 Cohesion: 0.02
-Nodes (100): _AetherNativeTvScreen, _AetherSurface, _AetherSurfaceState, applyDirectPlayTuning, applyStreamingTuning, aspectRatio, audioTracks, bitmaps (+92 more)
+Nodes (91): _AetherNativeTvScreen, _AetherSurface, _AetherSurfaceState, applyDirectPlayTuning, applyStreamingTuning, aspectRatio, audioTracks, bitmaps (+83 more)
 
 ### Community 56 - "app · lib #44"
 Cohesion: 0.02
 Nodes (82): _activeMediaId, _api, _cancellations, cancelShow, _complete, _declined, _declineKey, delete (+74 more)
-
-### Community 57 - "NativePlayerPresenter"
-Cohesion: 0.05
-Nodes (4): CaptionLanguage, NativePlayerPresenter, .isPresented, NativeTransportWatch
 
 ### Community 58 - "detect-antipatterns.mjs"
 Cohesion: 0.04
@@ -1153,51 +1108,51 @@ Nodes (94): confirm(), detectCli(), dim(), fileUrlToLocalPath(), formatAdvisoryS
 
 ### Community 59 - "server · handlers #8"
 Cohesion: 0.02
-Nodes (71): _adaptCachePause, applyDirectPlayTuning, _applyNativeOutputTuning, applyStreamingTuning, audioTracks, bufferedAhead, bufferingChanges, buildSurface (+63 more)
+Nodes (106): _active, enable, _engine, log, MpvDolbyVisionOutput, surface, activeArea, _applied (+98 more)
 
 ### Community 60 - "onyx_controls_layer.dart"
 Cohesion: 0.02
-Nodes (85): bottom, _bottomBarLead, bottomLead, _brandText, brightness, buffered, build, _buildBottom (+77 more)
+Nodes (84): bottom, _bottomBarLead, bottomLead, _brandText, brightness, buffered, build, _buildBottom (+76 more)
 
 ### Community 61 - "server · handlers #9"
 Cohesion: 0.03
-Nodes (79): ahead, aheadOf, applyDirectPlayTuning, applyStreamingTuning, aspect, audioBitrate, audioCodec, audioTracks (+71 more)
+Nodes (78): ahead, aheadOf, applyDirectPlayTuning, applyStreamingTuning, aspect, audioBitrate, audioCodec, audioTracks (+70 more)
 
 ### Community 62 - "tv_touchpad.dart"
 Cohesion: 0.03
-Nodes (50): debugNativeOverride, gateRepeatInterval, install, interval, native, TvRepeatCadence, _accelerates, acceleratesFrom (+42 more)
+Nodes (63): debugNativeOverride, gateRepeatInterval, install, interval, native, TvRepeatCadence, _accelerates, acceleratesFrom (+55 more)
 
 ### Community 63 - "app · lib #46"
 Cohesion: 0.01
 Nodes (146): actionId, actions, active, audioDecoder, audioDelivery, audioTracks, averageBitrateMbps, badge (+138 more)
 
 ### Community 64 - "app · lib #47"
-Cohesion: 0.03
-Nodes (76): applyDirectPlayTuning, applyStreamingTuning, audioTracks, _buffering, bufferingChanges, build, buildSurface, _completions (+68 more)
+Cohesion: 0.02
+Nodes (79): applyDirectPlayTuning, applyStreamingTuning, audioTracks, _buffering, bufferingChanges, build, buildSurface, _completions (+71 more)
 
 ### Community 65 - "Feuille de route — lecture au quotidien"
 Cohesion: 0.03
 Nodes (58): 6A. Miniatures de seek, 6B. Audio et sous-titres, Accessibilité et entrées, But, But, Chantiers transversaux obligatoires, Compatibilité et migrations, Conception cible (+50 more)
 
-### Community 66 - "shell_tv_back.dart"
-Cohesion: 0.07
-Nodes (25): build, child, createState, dispose, _enter, focusNode, initState, _policy (+17 more)
+### Community 66 - "FocusNode?"
+Cohesion: 0.01
+Nodes (133): build, controller, createState, creatingAccount, focusNode, keyboardKey, LoginPasswordField, _LoginPasswordFieldState (+125 more)
 
 ### Community 67 - "impeccable-paths.mjs"
-Cohesion: 0.08
-Nodes (48): resolveProjectRoot(), CRITIQUE_DIR, firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveAnnotationsDir(), getLegacyLiveConfigPath() (+40 more)
+Cohesion: 0.05
+Nodes (68): resolveProjectRoot(), CRITIQUE_DIR, firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveAnnotationsDir(), getLegacyLiveConfigPath() (+60 more)
 
 ### Community 68 - "app · lib #51"
 Cohesion: 0.02
 Nodes (76): applyTuning, audioBitrate, audioCodec, audioDecoder, audioMimeTypes, audioOutputChannels, audioSourceChannels, audioTracks (+68 more)
 
 ### Community 69 - "shared_link_screen.dart"
-Cohesion: 0.03
-Nodes (74): ShareLifetime, build, controller, createState, creatingAccount, focusNode, keyboardKey, LoginPasswordField (+66 more)
+Cohesion: 0.01
+Nodes (158): ShareLifetime, askDeclineReason, build, confirmDeleteRequest, confirmed, createState, _DeclineDialog, _DeclineDialogState (+150 more)
 
 ### Community 70 - "playback_capabilities.dart"
-Cohesion: 0.03
-Nodes (74): debugMarkSupported, completeBlocksEnd, pollNow, sampleNow, resetForTest, _addresses, addressesFor, DnsWarmup (+66 more)
+Cohesion: 0.05
+Nodes (34): aether, aetherNativeTv, audioCodecs, _audioMimeNames, browser, _canonicalFromMime, container, _current (+26 more)
 
 ### Community 71 - "app · lib #53"
 Cohesion: 0.05
@@ -1207,13 +1162,13 @@ Nodes (85): applyOriginalAttrsToSvelteAnchor(), applyParamDefaults(), applyParam
 Cohesion: 0.03
 Nodes (71): AutoQualityPreference, AutoTarget, AutoVerdict, blindRatio, _calmSince, canClimb, carries, ceilingBps (+63 more)
 
-### Community 73 - "account_menu_panel.dart"
+### Community 73 - "video_web.dart"
 Cohesion: 0.04
-Nodes (48): AccountMenu, _AccountMenuState, _anchorKey, authProvider, _avatarOrInitial, build, createState, _handle (+40 more)
+Nodes (44): contextNotifier, controller, state, videoViewParametersNotifier, NoVideoControls, alignment, aspectRatio, build (+36 more)
 
 ### Community 74 - "live-accept.mjs"
 Cohesion: 0.08
-Nodes (52): IMPECCABLE_DIR, isLiveServerPidReachable(), matchesTemplateExtension(), acceptCli(), acceptReceiptPath(), argVal(), buildAcceptedWrappedSource(), buildCarbonizeReplacement() (+44 more)
+Nodes (51): extensionCache, LIVE_TEMPLATE_EXTENSIONS, matchesTemplateExtension(), mergeExtensions(), normalizeExtensionEntries(), readLiveTemplateExtensions(), resolveLiveTemplateExtensions(), safeReadJson() (+43 more)
 
 ### Community 75 - "touchpad_motion.dart"
 Cohesion: 0.03
@@ -1233,19 +1188,19 @@ Nodes (69): _accept, _acceptTimed, accountId, active, _announce, _announcedVersi
 
 ### Community 79 - "live-inject.mjs"
 Cohesion: 0.06
-Nodes (65): appendOriginToDirective(), applyNuxtLiveAdapter(), buildLiveScriptSrc(), buildNuxtPlugin(), buildTagBlock(), commentClose(), commentOpen(), CONFIG_PATH (+57 more)
+Nodes (67): appendOriginToDirective(), applyNuxtLiveAdapter(), buildLiveScriptSrc(), buildNuxtPlugin(), buildTagBlock(), commentClose(), commentOpen(), CONFIG_PATH (+59 more)
 
 ### Community 80 - "dart:io"
-Cohesion: 0.02
-Nodes (56): openExternalUrl, main, pump, _groupedGlass, _groupHosts, main, _mixedGlass, asked (+48 more)
+Cohesion: 0.01
+Nodes (102): apk, attribute, decode, event, home, _markerFile, null, path (+94 more)
 
 ### Community 81 - "app · lib #61"
 Cohesion: 0.05
 Nodes (70): assembleLiveBrowserScript(), assertLiveBrowserScriptParts(), LIVE_BROWSER_SCRIPT_PARTS, readLiveBrowserScriptParts(), resolveLiveBrowserScriptParts(), buildGenerationPreflight(), compactError(), execFileAsync (+62 more)
 
 ### Community 82 - "settings_categories.dart"
-Cohesion: 0.06
-Nodes (14): admin, anyAdmin, build, categories, hint, icon, id, label (+6 more)
+Cohesion: 0.03
+Nodes (37): admin, anyAdmin, build, categories, hint, icon, id, label (+29 more)
 
 ### Community 83 - "SystemSearchScreen"
 Cohesion: 0.07
@@ -1256,8 +1211,8 @@ Cohesion: 0.06
 Nodes (28): OnyxMenuSection, audioTracks, build, chosen, createState, currentAudioTrack, currentSubtitleTrack, down (+20 more)
 
 ### Community 85 - "poster_flight_test.dart"
-Cohesion: 0.03
-Nodes (33): main, pumpPoster, main, main, mb, resolve, main, padlock (+25 more)
+Cohesion: 0.04
+Nodes (31): main, pumpPoster, main, build, _builds, createState, initState, key (+23 more)
 
 ### Community 86 - "app · lib #65"
 Cohesion: 0.10
@@ -1272,8 +1227,8 @@ Cohesion: 0.09
 Nodes (47): applyLegacyDeferredAcceptsOnStartup(), appendCssToSvelteStyle(), appendSanitizedCssRule(), applyDeferredSvelteComponentAccepts(), bakeParamValuesInCss(), buildInsertVariantStub(), buildPropContract(), buildPropsScript() (+39 more)
 
 ### Community 89 - "tv_system_search.dart"
-Cohesion: 0.05
-Nodes (41): AutoQualityReading, PlaybackFailure, PlaybackProfile, TimelinePreviewManifest, LogEntry, DownloadNotice, PlaybackCapabilities, badge (+33 more)
+Cohesion: 0.03
+Nodes (64): OfflineDownload, AutoQualityReading, PlaybackFailure, PlaybackProfile, TimelinePreviewManifest, LogEntry, active, code (+56 more)
 
 ### Community 90 - "series_track_memory.dart"
 Cohesion: 0.07
@@ -1285,27 +1240,27 @@ Nodes (66): addClampEndpoints(), addColorObject(), addDesignColor(), addFontSize
 
 ### Community 92 - "app · lib #70"
 Cohesion: 0.08
-Nodes (59): extractPlatform(), loadContext(), applyFixes(), cli(), collect(), parseArgs(), readProjectRootPatterns(), rel() (+51 more)
+Nodes (56): applyFixes(), cli(), collect(), parseArgs(), readProjectRootPatterns(), rel(), renderText(), safeRead() (+48 more)
 
 ### Community 93 - "go_pkg_strings"
-Cohesion: 0.03
-Nodes (169): lineResponse, artifactKind, artifactsResponse, candidate, chaptersResponse, DownloadArtifact, episodeTimestampsResponse, forbiddenResponse (+161 more)
+Cohesion: 0.04
+Nodes (137): lineResponse, artifactKind, artifactsResponse, candidate, chaptersResponse, DownloadArtifact, episodeTimestampsResponse, forbiddenResponse (+129 more)
 
 ### Community 94 - "server · handlers #12"
 Cohesion: 0.03
-Nodes (64): applyMpvFastRendering, mpvFastRenderingOptions, applyDirectPlayTuning, applyStreamingTuning, _audioTrackList, _buffering, bufferingChanges, buildSurface (+56 more)
+Nodes (69): applyDirectPlayTuning, applyStreamingTuning, _audioTrackList, _buffering, bufferingChanges, buildSurface, _completions, createWebOSPlaybackSession (+61 more)
 
-### Community 95 - "profiles_navigation_map_test.dart"
-Cohesion: 0.03
-Nodes (60): body, close, _etag, _EtagServer, fetch, main, sentIfNoneMatch, _Registry (+52 more)
+### Community 95 - "libraries_test.dart"
+Cohesion: 0.04
+Nodes (41): SharedLinkException, SharedMediaInfo, OtpRequired, SharedLinkProgress, UpdateException, UpdateException, _HttpStatus, _Api (+33 more)
 
 ### Community 96 - "server · medialang"
 Cohesion: 0.03
 Nodes (69): airDate, availableEpisodes, backdropPath, backdropUrl, blocksSeasonRequest, budget, canRequest, cast (+61 more)
 
 ### Community 97 - "app · lib #72"
-Cohesion: 0.09
-Nodes (42): api(), bare(), findGuild(), token, announcement(), betaFeedback(), block(), contributing() (+34 more)
+Cohesion: 0.07
+Nodes (55): Step 2: Act by severity, 5. Record the decision, Commands, api(), bare(), findGuild(), token, announcement() (+47 more)
 
 ### Community 98 - "app · lib #73"
 Cohesion: 0.03
@@ -1321,15 +1276,15 @@ Nodes (5): OpenGL.GL, OpenGL.GL3, OpenGLHelpers, TextureGLContext, TextureHW
 
 ### Community 101 - "update_checker.dart"
 Cohesion: 0.03
-Nodes (55): AvatarPhotoCache, _capacity, photoFor, _photos, put, resetForTest, clear, details (+47 more)
+Nodes (63): clear, details, _entries, _Entry, _generation, invalidate, isFresh, load (+55 more)
 
 ### Community 102 - "_VideoOutput"
 Cohesion: 0.06
 Nodes (34): texture_gl_dispose(), texture_gl_populate_texture(), video_output_class_init(), video_output_dispose(), video_output_get_egl_context(), video_output_get_egl_display(), video_output_get_egl_surface(), video_output_get_height() (+26 more)
 
 ### Community 103 - "svelte-component.mjs"
-Cohesion: 0.09
-Nodes (44): hasGeneratedHeader(), HEADER_MARKERS, isGeneratedFile(), isGitIgnored(), extensionCache, LIVE_TEMPLATE_EXTENSIONS, mergeExtensions(), normalizeExtensionEntries() (+36 more)
+Cohesion: 0.12
+Nodes (37): hasGeneratedHeader(), HEADER_MARKERS, isGeneratedFile(), isGitIgnored(), argVal(), buildInsertWrapperLines(), computeInsertLine(), INSERT_POSITIONS (+29 more)
 
 ### Community 104 - "modern-screenshot.umd.js"
 Cohesion: 0.09
@@ -1348,8 +1303,8 @@ Cohesion: 0.05
 Nodes (43): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+35 more)
 
 ### Community 108 - "_"
-Cohesion: 0.05
-Nodes (38): close, HlsPreload, masterUrl, open, readySeconds, warm, _, center (+30 more)
+Cohesion: 0.06
+Nodes (32): _, center, clock, delay, dir, drop, _frames, grow (+24 more)
 
 ### Community 109 - "server · handlers #14"
 Cohesion: 0.03
@@ -1377,11 +1332,11 @@ Nodes (57): isGuest, token, forceMediaSubtitleExtract, getEpisodeChapters, getEp
 
 ### Community 115 - "main"
 Cohesion: 0.03
-Nodes (81): Routes et autorisation, Routes et autorisation, ADR-0073 — Ce que la bibliothèque a par TMDB, un lien qui ouvre une fiche, et « Mes demandes », Conséquences, Contexte, Décision, ADR-0082 — Les épisodes lisibles d'une série, par identifiant TMDB, Conséquences (+73 more)
+Nodes (91): Routes et autorisation, Routes et autorisation, 3. Rien ne survit au lien, ADR-0073 — Ce que la bibliothèque a par TMDB, un lien qui ouvre une fiche, et « Mes demandes », Conséquences, Contexte, Décision, ADR-0082 — Les épisodes lisibles d'une série, par identifiant TMDB (+83 more)
 
 ### Community 116 - "season_bubbles.dart"
-Cohesion: 0.03
-Nodes (68): alignment, build, child, createState, didUpdateWidget, _duration, frameFor, nextEpisodeAlignment (+60 more)
+Cohesion: 0.02
+Nodes (74): shellNavigatorKey, shellNavigatorOf, build, child, navigatorKey, onPageOpenChanged, pageOpen, ShellPageOpenListener (+66 more)
 
 ### Community 117 - "detect-antipatterns-browser.js"
 Cohesion: 0.02
@@ -1400,16 +1355,16 @@ Cohesion: 0.05
 Nodes (39): _Actions, _apply, build, configured, controller, createState, dispose, _error (+31 more)
 
 ### Community 121 - "use_auto_quality.dart"
-Cohesion: 0.06
-Nodes (31): _aim, AutoLineMeasure, buffered, _busy, _climb, _descend, _descendIfStarved, eligible (+23 more)
+Cohesion: 0.04
+Nodes (48): _aim, AutoLineMeasure, buffered, _busy, _climb, _descend, _descendIfStarved, eligible (+40 more)
 
 ### Community 122 - "NativeBitmapSubtitles"
 Cohesion: 0.09
 Nodes (7): NativeBitmapSubtitleLayout, NativeBitmapSubtitles, .gravity, NativeBitmapSubtitleView, .gravity, .video, Video
 
 ### Community 123 - "app · lib #94"
-Cohesion: 0.06
-Nodes (6): OpenGLES, FrameBufferError, status, OpenGLESHelpers, TextureGLESContext, TextureHW
+Cohesion: 0.07
+Nodes (5): FrameBufferError, status, OpenGLESHelpers, TextureGLESContext, TextureHW
 
 ### Community 124 - "ADR-0006 Chrome du lecteur pilote a la telecommande"
 Cohesion: 0.08
@@ -1424,16 +1379,16 @@ Cohesion: 0.05
 Nodes (41): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Interaction & Motion, 8. Responsive Behavior (+33 more)
 
 ### Community 127 - "live-commit-manual-edits.mjs"
-Cohesion: 0.05
-Nodes (95): args, cwd, pageUrlFilter, remaining, addOpToManualApplyChunk(), APPLY_EVENT_HARD_TIMEOUT_MS, APPLY_EVENT_SOFT_DEADLINE_MS, buildManualApplyAgentAction() (+87 more)
+Cohesion: 0.08
+Nodes (53): addOpToManualApplyChunk(), APPLY_EVENT_HARD_TIMEOUT_MS, APPLY_EVENT_SOFT_DEADLINE_MS, buildManualApplyAgentAction(), clearManualApplyTransaction(), collectManualApplyFiles(), compactManualApplyBatch(), compactManualApplyCandidates() (+45 more)
 
 ### Community 128 - "library_tv_view_test.dart"
 Cohesion: 0.01
-Nodes (138): auth, canRequestMedia, IndexerStatus, UnavailableTitlesSearch, MediaCard, api, baseUrl, _FakeApiClient (+130 more)
+Nodes (136): IndexerStatus, UnavailableTitlesSearch, MediaCard, _CatalogApi, getMovies, getShows, main, movieTitles (+128 more)
 
-### Community 129 - "shared_link_guest.dart"
-Cohesion: 0.02
-Nodes (106): auth, dispose, navigatorKey, NewEpisodeOpener, open, _opening, _pending, _tryOpen (+98 more)
+### Community 129 - "new_episode_watch.dart"
+Cohesion: 0.04
+Nodes (40): capture, MediaLink, takeRoute, auth, dispose, navigatorKey, NewEpisodeOpener, open (+32 more)
 
 ### Community 130 - "server · handlers #15"
 Cohesion: 0.08
@@ -1448,16 +1403,16 @@ Cohesion: 0.11
 Nodes (6): NTSTATUS, PNTSTATUS, Utils, fullscreen_, kFlutterViewWindowClassName, rect_before_fullscreen_
 
 ### Community 133 - "live_subtitles.dart"
-Cohesion: 0.05
-Nodes (34): 0, _accept, build, child, _complete, _cues, _dio, dispose (+26 more)
+Cohesion: 0.03
+Nodes (53): 0, _accept, build, child, _complete, _cues, _dio, dispose (+45 more)
 
 ### Community 134 - "tv_back.dart"
-Cohesion: 0.04
-Nodes (40): _back, build, child, claim, claimKey, createState, defaultWindow, didChangeDependencies (+32 more)
+Cohesion: 0.06
+Nodes (32): _back, build, child, claim, claimKey, createState, defaultWindow, didChangeDependencies (+24 more)
 
 ### Community 135 - "onyx_player_apple/Sources/onyx_player_apple/PlayerSurface.swift"
-Cohesion: 0.06
-Nodes (7): AppKit, PlayerSurface, PlayerSurfaceFactory, PlayerSurfaceView, PlayerSurface, PlayerSurfaceFactory, PlayerSurfaceView
+Cohesion: 0.05
+Nodes (8): AppKit, OnyxPlayerApplePlugin, PlayerSurface, PlayerSurfaceFactory, PlayerSurfaceView, PlayerSurface, PlayerSurfaceFactory, PlayerSurfaceView
 
 ### Community 136 - "_"
 Cohesion: 0.02
@@ -1471,24 +1426,24 @@ Nodes (47): applyDetectionConfigSource(), clampByte(), cleanIgnoreValueDisplay()
 Cohesion: 0.09
 Nodes (48): actionLabel(), applyConfigureBarChrome(), bindConfigureCountPillTooltip(), bindConfigureInlineControlHover(), bindConfigureModifierPillHover(), buildConfigureActionControl(), buildConfigureCountControl(), buildConfigureRow() (+40 more)
 
-### Community 139 - "static const double"
+### Community 139 - "bool get"
 Cohesion: 0.01
-Nodes (292): build, CatalogSortCapsule, _CatalogSortCapsuleState, createState, _focused, height, onSortChanged, _open (+284 more)
+Nodes (325): attach, didChangeViewFocus, dispose, _focused, onRegained, build, child, elevated (+317 more)
 
 ### Community 140 - "app · lib #105"
 Cohesion: 0.04
 Nodes (47): claimed, code, consumedAt, createdAt, details, duration, episodeNumber, episodes (+39 more)
 
 ### Community 141 - "Int64"
-Cohesion: 0.12
-Nodes (9): OnyxAppleNativeNextUp, .description, OnyxApplePlaybackStats, .description, OnyxApplePlayerApi, OnyxApplePlayerStatus, .description, OnyxAppleVideoSize (+1 more)
+Cohesion: 0.10
+Nodes (13): EngineLogStreamHandler, NativeEventsStreamHandler, OnyxApplePlaybackStats, .description, OnyxApplePlayerApi, OnyxApplePlayerStatus, .description, OnyxAppleVideoSize (+5 more)
 
 ### Community 142 - "package:flutter/widgets.dart"
 Cohesion: 0.04
-Nodes (46): build, MpvWindowHost, fromTimelineTop, kSubtitleGapAboveTimeline, kSubtitlePaddingBase, kTimelineTopInset, resolve, SubtitlePaddingCalculator (+38 more)
+Nodes (39): build, MpvWindowHost, fromTimelineTop, kSubtitleGapAboveTimeline, kSubtitlePaddingBase, kTimelineTopInset, resolve, SubtitlePaddingCalculator (+31 more)
 
 ### Community 143 - "PigeonError"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (10): MessagesPigeonCodec, MessagesPigeonCodecReader, MessagesPigeonCodecReaderWriter, MessagesPigeonCodecWriter, OnyxApplePlayerApiSetup, .codec, PigeonError, .localizedDescription (+2 more)
 
 ### Community 144 - "macos/Headers/mpv/client.h"
@@ -1503,29 +1458,29 @@ Nodes (42): _, _androidApk, applyAndRestart, AppUpdater, _assertSwappable, attac
 Cohesion: 0.05
 Nodes (41): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Interaction & Motion, 8. Responsive Behavior (+33 more)
 
-### Community 147 - "DateTime"
-Cohesion: 0.06
-Nodes (27): AppDownload, builtAt, file, fromJson, label, platform, size, url (+19 more)
+### Community 147 - "playback_access.dart"
+Cohesion: 0.13
+Nodes (14): close, _closed, _expiresAt, isLegacy, mediaId, origin, PlaybackAccess, protect (+6 more)
 
 ### Community 148 - "hook-admin.mjs"
-Cohesion: 0.10
-Nodes (49): ACTIONS, addIgnoreFile(), addIgnoreRule(), addIgnoreValue(), DETECTOR_CONFIG_KEYS, detectorSection(), fileHasImpeccableHookMarker(), HOOK_MANIFEST_TARGETS (+41 more)
+Cohesion: 0.12
+Nodes (43): ACTIONS, addIgnoreFile(), addIgnoreRule(), addIgnoreValue(), DETECTOR_CONFIG_KEYS, detectorSection(), fileHasImpeccableHookMarker(), HOOK_MANIFEST_TARGETS (+35 more)
 
 ### Community 149 - "package:flutter/gestures.dart"
 Cohesion: 0.04
-Nodes (28): main, host, main, horizontal, main, middleClick, page, runFor (+20 more)
+Nodes (35): main, host, main, horizontal, main, middleClick, page, runFor (+27 more)
 
 ### Community 150 - "tv_focus.dart"
-Cohesion: 0.03
-Nodes (64): PlayerPopupBackIntent, _UpOneLevelAction, TvBackKeyAction, TvBackKeyIntent, _arrowKeys, autofocus, borderRadius, _bounceRelease (+56 more)
+Cohesion: 0.04
+Nodes (52): PlayerPopupBackIntent, _UpOneLevelAction, _arrowKeys, autofocus, borderRadius, _bounceRelease, _bounceTimer, _bounceWindow (+44 more)
 
 ### Community 151 - "server · ttlcache"
 Cohesion: 0.05
 Nodes (43): addedAt, bytesReceived, bytesTotal, completedAt, copyWith, durationSeconds, episodeNumber, error (+35 more)
 
 ### Community 152 - ".cleanup"
-Cohesion: 0.04
-Nodes (104): embySyncResult, embyUserData, fakeEmby, resumeEpisodeResponse, versionQuality, awaitLanguage(), episodesOf(), seedAudioLang() (+96 more)
+Cohesion: 0.03
+Nodes (128): embyUserData, fakeEmby, fakePeer, mediaReviewResponse, resumeEpisodeResponse, seasonEpisodePayload, showLibraryItem, watchPartyActionView (+120 more)
 
 ### Community 153 - "NativeNextUp"
 Cohesion: 0.08
@@ -1540,8 +1495,8 @@ Cohesion: 0.05
 Nodes (37): mpv_render_context, mpv_render_context_flag, mpv_render_frame_info, mpv_render_frame_info_flag, MPV_RENDER_FRAME_INFO_BLOCK_VSYNC, MPV_RENDER_FRAME_INFO_PRESENT, MPV_RENDER_FRAME_INFO_REDRAW, MPV_RENDER_FRAME_INFO_REPEAT (+29 more)
 
 ### Community 156 - "shell_navigation_map_test.dart"
-Cohesion: 0.05
-Nodes (35): _api, build, card, context, createState, dispose, _down, _focused (+27 more)
+Cohesion: 0.04
+Nodes (45): _api, build, card, context, createState, dispose, _down, _focused (+37 more)
 
 ### Community 157 - "EngineLogRelay"
 Cohesion: 0.13
@@ -1568,12 +1523,12 @@ Cohesion: 0.05
 Nodes (41): 1. Accessibility (CRITICAL), 2. Touch & Interaction (CRITICAL), 3. Performance (HIGH), 4. Layout & Responsive (HIGH), 5. Typography & Color (MEDIUM), 6. Animation (MEDIUM), 7. Style Selection (MEDIUM), 8. Charts & Data (LOW) (+33 more)
 
 ### Community 163 - "timeline_previews.dart"
-Cohesion: 0.06
-Nodes (31): aspectRatio, _broken, _cache, cacheSize, count, dispose, _disposed, _failed (+23 more)
+Cohesion: 0.03
+Nodes (62): aspectRatio, _broken, _cache, cacheSize, count, dispose, _disposed, _failed (+54 more)
 
 ### Community 164 - "auto_probe_main.dart"
 Cohesion: 0.05
-Nodes (32): android, macOS, main, windows, _zeroCopyFallback, main, accountById, accounts (+24 more)
+Nodes (35): android, macOS, main, windows, _zeroCopyFallback, main, main, mb (+27 more)
 
 ### Community 165 - "NativeBitmapSubtitles"
 Cohesion: 0.09
@@ -1588,8 +1543,8 @@ Cohesion: 0.05
 Nodes (40): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+32 more)
 
 ### Community 168 - "go_pkg_net_http"
-Cohesion: 0.06
-Nodes (63): Décision, AccountLink, adminStorageItem, adminStorageList, adminStorageRequest, claimResponse, errorResponse, federationInfo (+55 more)
+Cohesion: 0.04
+Nodes (71): AccountLink, adminStorageItem, adminStorageList, adminStorageRequest, claimResponse, errorResponse, federationInfo, integrationAccount (+63 more)
 
 ### Community 169 - "server · streaming #6"
 Cohesion: 0.07
@@ -1599,37 +1554,37 @@ Nodes (25): FORBIDDEN_MANUAL_EDIT_TEXT_CHARS, INSERT_POSITIONS, isValidId(), isV
 Cohesion: 0.04
 Nodes (44): activeArea, _activeAreaFromJson, audio, bitDepth, bitrateBps, bitrateLabel, c, channels (+36 more)
 
-### Community 171 - "mpv_native_surface.dart"
-Cohesion: 0.05
-Nodes (35): _active, enable, _engine, log, MpvDolbyVisionOutput, surface, activeArea, _applied (+27 more)
+### Community 171 - "StreamMedia"
+Cohesion: 0.06
+Nodes (36): streamMetrics, TestWrapIsTransparentOutsideDevelopment(), Wrap(), newStreamMetrics(), streamDebugEnabled(), TestStreamMetricsLogsTheFirstByteOnce(), TestStreamMetricsServesRangesUnchanged(), resolveStreamEntry() (+28 more)
 
 ### Community 172 - "use_player_popup.dart"
-Cohesion: 0.17
+Cohesion: 0.18
 Nodes (8): back, dismissTop, dispose, _focusScope, insert, isOpen, PlayerPopupHost, _stillThere
 
 ### Community 173 - "Design System Inspired by Lamborghini"
 Cohesion: 0.05
 Nodes (40): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+32 more)
 
-### Community 174 - "PlanVideo"
-Cohesion: 0.07
-Nodes (43): 1. Le serveur dit au client que l'image demande un décodeur Dolby Vision, But, Phase 0 — Banc de qualité de lecture, Principes à préserver, Terminé quand, Travail, Zones principales, Chemins attendus (+35 more)
+### Community 174 - "ffmpeg_test.go"
+Cohesion: 0.02
+Nodes (245): 1. Le serveur dit au client que l'image demande un décodeur Dolby Vision, 2. Le client quitte le Direct Play quand son moteur local n'applique pas la RPU, 3. Le serveur applique la RPU avec libplacebo, 4. Sans Vulkan, l'ancienne chaîne, ADR-0060 — Dolby Vision profil 5 sans décodeur : HLS, et la RPU appliquée par libplacebo, Conséquences, Contexte, Décision (+237 more)
 
-### Community 175 - "package:flutter/foundation.dart"
-Cohesion: 0.03
-Nodes (56): AppLanguage, choose, _chosen, code, current, forDevice, _fromCode, load (+48 more)
+### Community 175 - "live-copy-edit-agent.mjs"
+Cohesion: 0.08
+Nodes (41): Animation, Baseline UI, Components, Design, How to use, Interaction, Layout, Performance (+33 more)
 
 ### Community 176 - "onyx_player.dart"
 Cohesion: 0.07
 Nodes (27): _api, applyTuning, create, deviceCapabilities, _id, _nativeStatuses, OnyxPlayer, open (+19 more)
 
 ### Community 177 - "video_texture.dart"
-Cohesion: 0.02
-Nodes (96): WindowFocusWatch, SubtitleViewConfiguration, alignment, aspectRatio, build, _contextNotifier, controller, controls (+88 more)
+Cohesion: 0.04
+Nodes (54): SubtitleViewConfiguration, alignment, aspectRatio, build, _contextNotifier, controller, controls, createState (+46 more)
 
-### Community 178 - "platform_video_controller.dart"
+### Community 178 - "player_controller_tracks.dart"
 Cohesion: 0.05
-Nodes (30): androidAttachSurfaceAfterVideoParameters, configuration, copyWith, dispose, enableHardwareAcceleration, height, hwdec, id (+22 more)
+Nodes (36): _adoptLiveSubtitles, _alangPriorities, _applyAudioSelection, _applyInternalSubtitleSelection, _applyPreferredAudioLanguage, _applySubtitleSelection, _burnIndexFor, _canonicalLangForEmbedded (+28 more)
 
 ### Community 179 - "auto_download.dart"
 Cohesion: 0.06
@@ -1644,28 +1599,28 @@ Cohesion: 0.05
 Nodes (40): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+32 more)
 
 ### Community 182 - "show_resolve.go"
-Cohesion: 0.07
-Nodes (57): movieRow, collectDuplicateShowIDs(), DedupeShowMediaList(), ResolveCanonicalMovieID(), safePickCanonicalShowID(), scanIDList(), TestResolveShowFolderPath_UsesDeepestShowFolder(), TestResolveShowTitleFromPath_NestedCategories() (+49 more)
+Cohesion: 0.16
+Nodes (24): collectDuplicateShowIDs(), DedupeShowMediaList(), ResolveCanonicalMovieID(), safePickCanonicalShowID(), scanIDList(), findOrCreateSeason(), countEpisodesUnderShow(), dedupeByNormalizedTitle() (+16 more)
 
 ### Community 183 - "Design System Inspired by Tesla"
 Cohesion: 0.05
 Nodes (40): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+32 more)
 
 ### Community 184 - "hero_slides.dart"
-Cohesion: 0.04
-Nodes (45): _, _a, _b, _c, _floor, fromBacklight, _knee, _kneeLinear (+37 more)
+Cohesion: 0.05
+Nodes (34): add, backgroundUrl, buildHeroSlides, continueItem, _dailyDiscoverySeed, date, discovery, _discoveryPool (+26 more)
 
 ### Community 185 - "progress_revision_watch.dart"
-Cohesion: 0.06
-Nodes (31): _ask, baselineTimeout, changePause, fetch, _generation, heldAtLeast, _holdTimer, idlePause (+23 more)
+Cohesion: 0.04
+Nodes (44): _actionsStream, activate, deactivate, _events, isSupported, MacosMediaAction, MacosNowPlaying, _method (+36 more)
 
 ### Community 187 - "app · lib #139"
 Cohesion: 0.05
 Nodes (20): 1.3.1, VideoOutput, configuration_, destroyed_, handle_, pixel_buffer_, pixel_buffer_textures_, registrar_ (+12 more)
 
 ### Community 188 - "5. Procédures sur vraie machine"
-Cohesion: 0.08
-Nodes (30): ADR-0110 — Un seul système de focus : dpad, Conséquences, Contexte, Décision, Phase 2 : décisions et constats, Phase 3 : décisions et constats, Phase 4 : champs texte, clavier à l'écran, web LG, Phase 5 : Retour, Menu, dialogues (+22 more)
+Cohesion: 0.05
+Nodes (53): desc(), ADR-0110 — Un seul système de focus : dpad, Conséquences, Contexte, Décision, Phase 2 : décisions et constats, Phase 3 : décisions et constats, Phase 4 : champs texte, clavier à l'écran, web LG (+45 more)
 
 ### Community 189 - "episode_navigation.dart"
 Cohesion: 0.05
@@ -1695,17 +1650,17 @@ Nodes (25): EngineLogStreamHandler, MessagesPigeonCodec, MessagesPigeonCodecRead
 Cohesion: 0.05
 Nodes (40): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+32 more)
 
-### Community 196 - "mpv_startup_trace.dart"
+### Community 196 - "static const"
 Cohesion: 0.04
-Nodes (49): attach, _attached, detach, handleKeyboardEvent, isSupported, _macosSubscription, _onMacosAction, PlayerMediaKeysBinding (+41 more)
+Nodes (50): begin, cancel, _clock, _deadline, describeLanding, _dropped, finish, isActive (+42 more)
 
 ### Community 197 - "my_request.dart"
-Cohesion: 0.04
-Nodes (50): RequestMediaType, awaitsDecision, basic, canDelete, canInteractiveSearch, canModerate, canReadAll, canRequest (+42 more)
+Cohesion: 0.05
+Nodes (36): awaitsDecision, basic, canDelete, canInteractiveSearch, canModerate, canReadAll, canRequest, expiresIn (+28 more)
 
 ### Community 198 - "api_types.dart"
 Cohesion: 0.05
-Nodes (36): failed, fanartApiKeyHint, fanartApiKeySet, fromJson, isBackfillingMetadata, isBusy, isExtractingSubtitles, isRedetectingAll (+28 more)
+Nodes (37): failed, fanartApiKeyHint, fanartApiKeySet, fromJson, isBackfillingMetadata, isBusy, isExtractingSubtitles, isRedetectingAll (+29 more)
 
 ### Community 199 - "constants.mjs"
 Cohesion: 0.10
@@ -1728,8 +1683,8 @@ Cohesion: 0.04
 Nodes (47): addedAt, bytesFreed, currentEpisode, _date, durationSeconds, episode, episodeCount, filesRemoved (+39 more)
 
 ### Community 204 - "detail_actions.dart"
-Cohesion: 0.04
-Nodes (43): autofocusPlay, build, _cap, createState, DetailActions, _DetailActionsState, detailPlayLabel, didUpdateWidget (+35 more)
+Cohesion: 0.06
+Nodes (29): autofocusPlay, build, _cap, createState, DetailActions, _DetailActionsState, detailPlayLabel, didUpdateWidget (+21 more)
 
 ### Community 205 - "api/media.dart"
 Cohesion: 0.06
@@ -1764,16 +1719,16 @@ Cohesion: 0.06
 Nodes (33): mpv_byte_array, data, size, mpv_end_file_reason, MPV_END_FILE_REASON_EOF, MPV_END_FILE_REASON_ERROR, MPV_END_FILE_REASON_QUIT, MPV_END_FILE_REASON_REDIRECT (+25 more)
 
 ### Community 214 - "away_from_screen.dart"
-Cohesion: 0.07
-Nodes (26): attach, _attached, _away, awayPositionTolerance, AwayVerdict, _changed, _comeBack, dispose (+18 more)
+Cohesion: 0.11
+Nodes (19): attach, _attached, _away, awayPositionTolerance, AwayVerdict, _changed, _comeBack, dispose (+11 more)
 
-### Community 215 - "AetherEngine"
-Cohesion: 0.09
-Nodes (14): AetherEngine, SceneDelegate, SceneDelegate, AVFoundation, AVKit, Combine, CoreGraphics, CoreMedia (+6 more)
+### Community 215 - "Flutter"
+Cohesion: 0.06
+Nodes (19): AetherEngine, SceneDelegate, RunnerTests, RunnerTests, SceneDelegate, AVFoundation, AVKit, Combine (+11 more)
 
-### Community 216 - "poster_url.dart"
-Cohesion: 0.04
-Nodes (45): allowOriginal, asked, backdropImageUrl, base, cardPosterUrl, castProfileUrl, detailBackdropUrl, detailPosterUrl (+37 more)
+### Community 216 - "request_season_list.dart"
+Cohesion: 0.06
+Nodes (32): _beamX, build, _cache, createState, _direction, dispose, _entry, _frameKey (+24 more)
 
 ### Community 217 - "app · lib #164"
 Cohesion: 0.06
@@ -1796,28 +1751,28 @@ Cohesion: 0.05
 Nodes (31): applyStaticDeclaration(), buildBorderOverrideMap(), parseShorthand(), buildStaticStyleMap(), collectStaticCssRules(), compareStaticPriority(), cssPropToCamel(), expandStaticBoxValues() (+23 more)
 
 ### Community 225 - "poster_grid_zoom.dart"
-Cohesion: 0.05
-Nodes (35): apply, _base, _baseNotifyQueued, columns, dispose, _disposed, instance, _key (+27 more)
+Cohesion: 0.09
+Nodes (21): apply, _base, _baseNotifyQueued, columns, dispose, _disposed, instance, _key (+13 more)
 
-### Community 226 - "../../models/models.dart"
-Cohesion: 0.01
-Nodes (165): _asRequestItem, firstMatch, openCatalogItem, openCollection, openPerson, _openRequestFor, _tmdbImagePath, _tmdbImagePathPattern (+157 more)
+### Community 226 - "library_spotlight.dart"
+Cohesion: 0.04
+Nodes (46): api, _backdropPatience, cached, details, _detailsForFlight, _flightRoute, measureCard, navigator (+38 more)
 
-### Community 227 - "ffmpeg_test.go"
-Cohesion: 0.12
-Nodes (48): BuildFFmpegArgs(), buildScaleFilter(), gopSize(), h264LevelFor(), presetFor(), sourceFrameRate(), argValue(), hasArg() (+40 more)
+### Community 227 - "PictureInPictureBridge"
+Cohesion: 0.10
+Nodes (4): PictureInPictureBridge, .isPaused, .isSupported, .timeRange
 
 ### Community 228 - "NSObject"
 Cohesion: 0.04
-Nodes (13): UtilsProtocol, UtilsProtocol, UtilsProtocol, PictureInPictureBridge, .isPaused, .isSupported, .timeRange, PictureInPictureDelegate (+5 more)
+Nodes (16): MediaKitLibsIosVideoPlugin, ResizableTextureProtocol, UtilsProtocol, VideoOutputManager, MediaKitVideoPlugin, UtilsProtocol, MediaKitVideoPlugin, UtilsProtocol (+8 more)
 
 ### Community 229 - "detail_hero.dart"
-Cohesion: 0.02
-Nodes (79): actions, autofocus, backdropUrl, _backGap, badges, beam, build, createState (+71 more)
+Cohesion: 0.04
+Nodes (52): actions, autofocus, backdropUrl, _backGap, badges, beam, build, createState (+44 more)
 
 ### Community 230 - "ADR-0009 ExoPlayer sur Android mpv ailleurs"
-Cohesion: 0.08
-Nodes (22): ADR-0005 Downmix stereo passe par les niveaux de melange, libavfilter minimal de libmpv Android, center 1.0 surround 0.7 lfe 0.3 niveaux de repli, ADR-0009 ExoPlayer sur Android mpv ailleurs, DialogueForwardDownmix AudioProcessor, Contrat genere par Pigeon pour le plugin onyx_player_android, SurfaceView avec composition hybride explicite, ADR-0014 Le client declare ce qu il sait lire (+14 more)
+Cohesion: 0.04
+Nodes (40): ADR-0004 Un profil de lecture par classe d appareil, Decodeur zero copie hwdec mediacodec, PlaybackProfile classe l appareil par RAM physique, Adaptation de frequence d ecran au multiple du contenu, ADR-0005 Downmix stereo passe par les niveaux de melange, libavfilter minimal de libmpv Android, center 1.0 surround 0.7 lfe 0.3 niveaux de repli, ADR-0009 ExoPlayer sur Android mpv ailleurs (+32 more)
 
 ### Community 231 - "docs · adr #7"
 Cohesion: 0.06
@@ -1828,24 +1783,24 @@ Cohesion: 0.11
 Nodes (3): TextureUpdateCallback, VideoOutput, VideoOutputManager
 
 ### Community 233 - "avatar_picker_screen.dart"
-Cohesion: 0.03
-Nodes (62): account, authErrorText, autofocus, AvatarPickerScreen, _AvatarPickerScreenState, build, _busy, _choosePhoto (+54 more)
+Cohesion: 0.02
+Nodes (75): account, authErrorText, autofocus, AvatarPickerScreen, _AvatarPickerScreenState, build, _busy, _choosePhoto (+67 more)
 
 ### Community 234 - "player_remote_bench.dart"
 Cohesion: 0.05
 Nodes (40): main, playerStack, setScreen, actions, audioTracks, browsingControls, card, chosen (+32 more)
 
-### Community 235 - "video_state_inherited_widget.dart"
-Cohesion: 0.04
-Nodes (40): contextNotifier, controller, state, videoViewParametersNotifier, NoVideoControls, build, child, createState (+32 more)
+### Community 235 - "fullscreen_inherited_widget.dart"
+Cohesion: 0.07
+Nodes (17): build, child, createState, FullscreenInheritedWidget, _FullscreenInheritedWidgetPopScope, _FullscreenInheritedWidgetPopScopeState, maybeOf, of (+9 more)
 
-### Community 236 - "metadata_fix_sheet.dart"
+### Community 236 - "package:onyx_player_apple/onyx_player_apple.dart"
 Cohesion: 0.06
-Nodes (34): api, build, _buildBody, candidate, _CandidateTile, _controller, createState, dispose (+26 more)
+Nodes (25): aetherFailureOf, _isSegmentProduction, text, bitmapRefused, engineShowsBitmap, hlsStartOffset, NativeTvFallback, nativeTvFallbackFor (+17 more)
 
 ### Community 237 - "PlayerController"
-Cohesion: 0.08
-Nodes (21): PlayerController, _absorbCut, audioLanguageGapWith, awaitAudioLanguage, continueWithoutAudioLanguage, _directPlayCannotShowDolbyVision, directPlayHasWrongColours, _dolbyVisionNeedsServer (+13 more)
+Cohesion: 0.07
+Nodes (23): PlayerController, _absorbCut, _awaitsNativeTvSession, _directPlaySource, init, _loadTracksOnce, _logDropCounters, _newCutRecovery (+15 more)
 
 ### Community 239 - "detail_info_table.dart"
 Cohesion: 0.05
@@ -1853,15 +1808,15 @@ Nodes (36): build, _buildCartel, _buildItem, _buildLegacyTable, byline, _CartelD
 
 ### Community 240 - "home_provider.dart"
 Cohesion: 0.05
-Nodes (33): apiClient, _applyIndexerStatus, _completionMessage, consumeCompletionMessage, dispose, _errorMessage, _generation, hideContinueWatchingItem (+25 more)
+Nodes (32): apiClient, _applyIndexerStatus, _completionMessage, consumeCompletionMessage, dispose, _errorMessage, _generation, hideContinueWatchingItem (+24 more)
 
 ### Community 241 - "Design System Inspired by Vercel"
 Cohesion: 0.05
 Nodes (40): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+32 more)
 
-### Community 242 - "resume_preview_anchor.dart"
-Cohesion: 0.04
-Nodes (45): _allowed, _arm, build, _buildPanel, child, _close, _closeTimer, _closing (+37 more)
+### Community 242 - "watch_party_session_test.dart"
+Cohesion: 0.07
+Nodes (26): applyPlaying, applyRateFactor, applySeek, createWatchParty, current, _FakePartyApi, isBusy, isLoading (+18 more)
 
 ### Community 243 - "static const"
 Cohesion: 0.06
@@ -1869,7 +1824,7 @@ Nodes (31): all, avatar, copyWith, createdAt, deleteMedia, expiresAt, fromJson, 
 
 ### Community 244 - "docs · adr #8"
 Cohesion: 0.06
-Nodes (28): activityEveryBeats, announceHere, cancelHeartbeat, finish, firstFlushBeat, flushEveryBeats, flushLogs, _heartbeat (+20 more)
+Nodes (30): activityEveryBeats, announceHere, cancelHeartbeat, finish, firstFlushBeat, flushEveryBeats, flushLogs, _heartbeat (+22 more)
 
 ### Community 245 - "desktop_window.dart"
 Cohesion: 0.04
@@ -1887,13 +1842,13 @@ Nodes (37): cancelShow, delete, deleteAll, deleteWatched, detailsForShow, downlo
 Cohesion: 0.05
 Nodes (40): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+32 more)
 
-### Community 249 - "otp_code_dialog.dart"
+### Community 249 - "tv_card_directions.dart"
 Cohesion: 0.07
-Nodes (27): acceptsRecoveryCode, build, _busy, _code, codes, _codeStep, createState, dispose (+19 more)
+Nodes (21): _arrows, build, card, child, dpad, _insideCard, _legacy, _onDpadKey (+13 more)
 
-### Community 250 - "still_watching.dart"
+### Community 250 - "tv_modal_focus_test.dart"
 Cohesion: 0.08
-Nodes (22): _atTypedIndex, EmbeddedSubtitlePairing, keyOf, _keys, _language, of, trackFor, _tracks (+14 more)
+Nodes (18): RatingBadge, _host, main, context, _focusedRoute, home, main, _Modal (+10 more)
 
 ### Community 251 - "app · lib #192"
 Cohesion: 0.14
@@ -1903,13 +1858,13 @@ Nodes (29): completionAckForAcceptResult(), completionTypeForAcceptResult(), PRE
 Cohesion: 0.06
 Nodes (29): backdropUrl, biography, birthday, CastMember, CatalogItem, character, CollectionDetails, CollectionInfo (+21 more)
 
-### Community 253 - "Logique de l'app Flutter"
-Cohesion: 0.08
-Nodes (20): Journal, Logique de l'app Flutter, Multi-serveur, Plateformes, Providers, Tests, Budgets, Commentaires (+12 more)
+### Community 253 - "keyframes_matroska.go"
+Cohesion: 0.06
+Nodes (67): Couches, Journal, Logique de l'app Flutter, Multi-serveur, Plateformes, Providers, Tests, Budgets (+59 more)
 
 ### Community 254 - "detail_navigation_map_test.dart"
-Cohesion: 0.03
-Nodes (45): bubble, build, context, createState, _Detail, _DetailState, dispose, _down (+37 more)
+Cohesion: 0.05
+Nodes (33): EpisodeTile, _EpisodeTileState, bubble, build, context, createState, _Detail, _DetailState (+25 more)
 
 ### Community 255 - "Design System Inspired by Meta (Store)"
 Cohesion: 0.05
@@ -1920,12 +1875,12 @@ Cohesion: 0.06
 Nodes (30): _Appear, build, child, closeDelay, _closeTimer, createState, dispose, _enter (+22 more)
 
 ### Community 257 - "device_library_io.dart"
-Cohesion: 0.06
-Nodes (34): addFolder, _appFolder, _byId, canImportFiles, canPickFolders, _defaultAppFolder, deleteVideo, dispose (+26 more)
+Cohesion: 0.03
+Nodes (55): addFolder, _appFolder, _byId, canImportFiles, canPickFolders, _defaultAppFolder, deleteVideo, dispose (+47 more)
 
 ### Community 258 - "ApiClient"
-Cohesion: 0.00
-Nodes (542): OtpPolicy, OtpStatus, ServerAccount, AuthProvider, added, addUserAndSwitch, before, AddUserScreen (+534 more)
+Cohesion: 0.01
+Nodes (499): OtpPolicy, OtpStatus, ServerAccount, AuthProvider, added, addUserAndSwitch, before, AddUserScreen (+491 more)
 
 ### Community 259 - "onyx_apple_player.dart"
 Cohesion: 0.05
@@ -1943,13 +1898,9 @@ Nodes (24): _barWidth, build, _catchWidth, createState, _dragging, _iconGap, met
 Cohesion: 0.07
 Nodes (26): AppBreakpoints, AppLayout, compact, expanded, imageCacheExtent, isCompact, isMedium, isWide (+18 more)
 
-### Community 263 - "download_keep_alive.dart"
-Cohesion: 0.08
-Nodes (23): OfflineDownload, active, code, DownloadKeepAlive, downloadNoticeFor, hashCode, _lastSent, _manager (+15 more)
-
-### Community 264 - "middle_click_autoscroll.dart"
-Cohesion: 0.03
-Nodes (53): add, frameBudget, FrameBudgetWatch, _frames, install, _slow, slowShare, warmUp (+45 more)
+### Community 264 - "glass_chrome.dart"
+Cohesion: 0.01
+Nodes (131): StatBucket, _bandsOf, DisplayCutouts, _edgeTolerance, of, rects, resolve, gapFromButton (+123 more)
 
 ### Community 265 - "still_watching_settings.dart"
 Cohesion: 0.07
@@ -1959,25 +1910,21 @@ Nodes (25): AccountPlaybackPreferences, autoSkipIntro, autoSkipRecap, defaultAud
 Cohesion: 0.05
 Nodes (40): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Responsive Behavior, 8. Responsive Behavior (Extended) (+32 more)
 
-### Community 267 - "ProbeResult"
-Cohesion: 0.07
-Nodes (34): LoadCachedProbe(), EstimateBandwidth(), outputResolution(), parseBitrate(), SelectAudioRenditions(), audioProbe(), TestBuildVarStreamMap(), TestEstimateBandwidthMatchesPresetCeiling() (+26 more)
-
-### Community 268 - "use_playback_handoff.dart"
-Cohesion: 0.09
-Nodes (17): PlaybackReporter, _awayGuard, controller, dispose, _disposed, handedOffTo, leave, _notify (+9 more)
-
-### Community 269 - "inbox.mjs"
+### Community 267 - "video_state_inherited_widget.dart"
 Cohesion: 0.10
-Nodes (22): Completion gate, Init flow, Step 1: Load current state, Step 2: Explore the project, Step 3: Interview for product truth, Step 4: Write PRODUCT.md, Step 5: Configure live mode when useful, Step 6: Wrap up or resume (+14 more)
+Nodes (18): build, child, contextNotifier, createState, dispose, disposeNotifiers, fallback, maybeOf (+10 more)
+
+### Community 269 - "Init flow"
+Cohesion: 0.20
+Nodes (10): Completion gate, Init flow, Step 1: Load current state, Step 2: Explore the project, Step 3: Interview for product truth, Step 4: Write PRODUCT.md, Step 5: Configure live mode when useful, Step 6: Wrap up or resume (+2 more)
 
 ### Community 270 - "static const String"
 Cohesion: 0.04
-Nodes (40): defaultMode, eligibleHere, initialize, isAvailable, isEligible, _key, _mode, NativeTvPlayerMode (+32 more)
+Nodes (42): AppLanguage, choose, _chosen, code, current, forDevice, _fromCode, load (+34 more)
 
 ### Community 271 - "native_tv_presenter_test.dart"
 Cohesion: 0.06
-Nodes (27): NativeTvNextEpisode, NativeTvUnavailable, main, calls, _checked, dismiss, _event, events (+19 more)
+Nodes (26): NativeTvSkipSegment, main, calls, _checked, dismiss, _event, events, failPresent (+18 more)
 
 ### Community 272 - "Design System Inspired by The Verge"
 Cohesion: 0.05
@@ -1992,16 +1939,16 @@ Cohesion: 0.12
 Nodes (23): detectCsp(), INLINE_HEADER_SIGNALS, LAYOUT_EXTS, MONOREPO_HELPER_SIGNALS, NUXT_ROUTE_RULES_SIGNALS, NUXT_SECURITY_SIGNALS, SCAN_EXTS, SKIP_DIRS (+15 more)
 
 ### Community 277 - "tv_focusable.dart"
-Cohesion: 0.04
-Nodes (47): autofocus, borderRadius, build, card, child, childFocus, createState, dispose (+39 more)
+Cohesion: 0.05
+Nodes (30): autofocus, borderRadius, build, card, child, childFocus, createState, dispose (+22 more)
 
 ### Community 278 - "texture_video_surface.dart"
 Cohesion: 0.08
 Nodes (23): _, AetherVideoFit, resolve, activeArea, aspectRatio, build, controller, createState (+15 more)
 
 ### Community 279 - "SpaceArrivalHop"
-Cohesion: 0.13
-Nodes (4): RegisterGeneratedPlugins(), FloatingWindowController, MainFlutterWindow, SpaceArrivalHop
+Cohesion: 0.06
+Nodes (10): RegisterGeneratedPlugins(), FloatingWindowController, MainFlutterWindow, SpaceArrivalHop, Cocoa, MediaPlayer, MediaKitLibsMacosVideoPlugin, MpvHostView (+2 more)
 
 ### Community 280 - "mpv_event_id"
 Cohesion: 0.09
@@ -2020,16 +1967,16 @@ Cohesion: 0.06
 Nodes (25): media_kit_video_plugin_class_init(), media_kit_video_plugin_dispose(), media_kit_video_plugin_handle_method_call(), media_kit_video_plugin_init(), media_kit_video_plugin_new(), media_kit_video_plugin_register_with_registrar(), _MediaKitVideoPlugin, channel (+17 more)
 
 ### Community 284 - "Any"
-Cohesion: 0.05
-Nodes (30): MessagesPigeonInternal, nilOrValue(), OnyxAppleExternalSubtitle, .description, OnyxAppleLoadSubtitles, .description, OnyxAppleNativeAction, .description (+22 more)
+Cohesion: 0.06
+Nodes (32): OnyxAppleNativeEvent, .description, MessagesPigeonInternal, nilOrValue(), OnyxAppleExternalSubtitle, .description, OnyxAppleLoadSubtitles, .description (+24 more)
 
-### Community 285 - "2. Tableau de parité"
+### Community 285 - "staggered_entrance.dart"
 Cohesion: 0.10
-Nodes (20): 1. Ce qu'il faut savoir avant de lire le tableau, 2.1 Transport et temps, 2.2 Identité et informations, 2.3 Menus de réglages, 2.4 Segments et épisodes, 2.5 Regarder ensemble, 2.6 Session, réseau, journaux (Dart, sans interface), 2.7 Statistiques et fonctions propres aux autres appareils (+12 more)
+Nodes (19): build, child, _clock, createState, delay, _delayed, didChangeDependencies, didUpdateWidget (+11 more)
 
 ### Community 286 - "package:flutter/material.dart"
 Cohesion: 0.01
-Nodes (434): DeviceVideo, NextSeason, UpcomingEpisode, MediaTracks, MyRequest, MyRequestStatus, ConnectedDevice, PlaybackHistoryEntry (+426 more)
+Nodes (392): NextSeason, UpcomingEpisode, MediaTracks, MyRequest, MyRequestStatus, ConnectedDevice, PlaybackHistoryEntry, account (+384 more)
 
 ### Community 287 - "app · lib #222"
 Cohesion: 0.11
@@ -2055,9 +2002,9 @@ Nodes (19): _bufferedAbsoluteSeconds, canSeekWithinSession, chooseQuality, _dest
 Cohesion: 0.07
 Nodes (26): clock, day, decimals, duration, end, extractYear, formatAirDate, formatBytes (+18 more)
 
-### Community 293 - "5. Procédures sur vraie machine"
-Cohesion: 0.09
-Nodes (23): desc(), 1. Verdict, 2. Environnement et méthode, 3.1 Cases de la phase 0 (plan §5), 3.2 Constats C1–C13 (plan §2), 3.3 Nouveaux constats, 3. Résultats, 4. Recommandation (+15 more)
+### Community 293 - "downloads_page.dart"
+Cohesion: 0.15
+Nodes (14): build, DownloadsPage, _networkLine, AutoDownloadMode, DownloadPreferences, MeteredPolicy, NetworkStatus, allowMeteredDownloadsNow (+6 more)
 
 ### Community 294 - "texture_sw_copy_pixels"
 Cohesion: 0.13
@@ -2072,8 +2019,8 @@ Cohesion: 0.10
 Nodes (19): BROWSERS, fs, path, puppeteer, BROWSERS, fs, LANDSCAPE, main() (+11 more)
 
 ### Community 297 - "use_player_stats.dart"
-Cohesion: 0.06
-Nodes (33): _audioDelivery, _averageBitrate, _bytesAtStart, dispose, _disposed, _dropped, filePath, _fps (+25 more)
+Cohesion: 0.04
+Nodes (39): _awayGuard, controller, dispose, _disposed, handedOffTo, leave, _notify, pause (+31 more)
 
 ### Community 298 - "NativeInfoPanelController"
 Cohesion: 0.07
@@ -2092,36 +2039,40 @@ Cohesion: 0.07
 Nodes (26): dependencies, flutter, description, dev_dependencies, flutter_lints, flutter_test, pigeon, environment (+18 more)
 
 ### Community 302 - "client_log.dart"
-Cohesion: 0.04
-Nodes (39): _bumpRevision, capacity, clear, ClientLog, _entries, error, export, format (+31 more)
+Cohesion: 0.06
+Nodes (26): _bumpRevision, capacity, clear, ClientLog, _entries, error, export, format (+18 more)
 
 ### Community 303 - "library_admin.dart"
 Cohesion: 0.10
 Nodes (20): _dio, forceMediaSubtitleExtract, enrichMediaMetadata, getEmbyLink, getIndexerStatus, getMediaReviewQueue, getScanStatus, getServerSettings (+12 more)
 
-### Community 304 - "resume_preview_anchor.dart"
-Cohesion: 0.02
-Nodes (82): _active, autofocus, build, _CardAction, cardWidth, ContinueWatchingCard, _ContinueWatchingCardState, createState (+74 more)
+### Community 304 - "../../models/models.dart"
+Cohesion: 0.01
+Nodes (178): _asRequestItem, firstMatch, openCatalogItem, openCollection, openPerson, _openRequestFor, _tmdbImagePath, _tmdbImagePathPattern (+170 more)
 
 ### Community 306 - "ADR-0105 — Un `AVPlayerViewController` natif pour le lecteur de l'Apple TV"
 Cohesion: 0.06
-Nodes (26): ADR-0105 — Un `AVPlayerViewController` natif pour le lecteur de l'Apple TV, Conséquences, Contexte, Décision, Parité avec l'interface Onyx (2026-11-05), ADR-0106 — Sources sans décodeur matériel sur l'écran natif d'Apple TV : HLS transcodé, Conséquences, Contexte (+18 more)
+Nodes (28): ADR-0105 — Un `AVPlayerViewController` natif pour le lecteur de l'Apple TV, Conséquences, Contexte, Décision, Parité avec l'interface Onyx (2026-11-05), ADR-0106 — Sources sans décodeur matériel sur l'écran natif d'Apple TV : HLS transcodé, Conséquences, Contexte (+20 more)
 
-### Community 307 - "resume_preview_stills.dart"
-Cohesion: 0.09
-Nodes (18): cacheKey, clearCacheForTest, dispose, _disposed, end, forItem, _images, last (+10 more)
+### Community 307 - "search_route_observer.dart"
+Cohesion: 0.11
+Nodes (17): build, child, createState, didPop, didPush, didRemove, didReplace, navigatorKey (+9 more)
 
-### Community 308 - "media_transfer_test.dart"
-Cohesion: 0.05
-Nodes (38): 0, cancel, _cancelled, describeTransferError, _dio, fetch, isCancelled, length (+30 more)
+### Community 308 - "media_transfer_io.dart"
+Cohesion: 0.10
+Nodes (21): BackgroundMediaTransfer, 0, cancel, _cancelled, describeTransferError, _dio, DioMediaTransfer, fetch (+13 more)
 
 ### Community 309 - "Design System Inspired by VoltAgent"
 Cohesion: 0.05
 Nodes (39): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+31 more)
 
-### Community 311 - "device_library_web.dart"
-Cohesion: 0.08
-Nodes (20): addFolder, appFolder, canImportFiles, canPickFolders, deleteVideo, folders, importFiles, initialize (+12 more)
+### Community 310 - "server · handlers #30"
+Cohesion: 0.16
+Nodes (5): Breakpoints: Content-Driven, Layout Adaptation Techniques, Text Overflow & Wrapping, DialogueForwardDownmix, DialogueForwardDownmixTest
+
+### Community 311 - "join_watch_party_dialog.dart"
+Cohesion: 0.11
+Nodes (16): authProvider, build, _code, createState, dispose, _error, _join, _joining (+8 more)
 
 ### Community 312 - "auto_download_test.dart"
 Cohesion: 0.08
@@ -2140,8 +2091,8 @@ Cohesion: 0.05
 Nodes (39): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+31 more)
 
 ### Community 316 - "phone_sign_in_panel_test.dart"
-Cohesion: 0.06
-Nodes (26): answers, _completer, deliver, linked, main, offer, _PairingServer, pollDevicePairing (+18 more)
+Cohesion: 0.04
+Nodes (36): _FakeApiClient, hasFocus, login, logins, main, open, pumpLogin, startDevicePairing (+28 more)
 
 ### Community 317 - "app_update_dialog.dart"
 Cohesion: 0.06
@@ -2152,20 +2103,20 @@ Cohesion: 0.08
 Nodes (25): byYou, code, device, expectedPosition, fromJson, isHost, isRunning, isWaiting (+17 more)
 
 ### Community 319 - "OnyxAppleNativeEventKind"
-Cohesion: 0.03
-Nodes (61): OnyxAppleNativeEvent, .description, OnyxAppleNativeEventKind, action, dismissed, menuSelected, panelRowSelected, panelTabSelected (+53 more)
+Cohesion: 0.04
+Nodes (62): OnyxAppleNativeEventKind, action, dismissed, menuSelected, panelRowSelected, panelTabSelected, seekRequested, subtitleSelected (+54 more)
 
 ### Community 320 - "Messages.g.kt"
-Cohesion: 0.10
-Nodes (7): FlutterError, MessagesPigeonCodec, OnyxDeviceCapabilities, OnyxVideoFit, CONTAIN, COVER, FILL_HEIGHT
+Cohesion: 0.05
+Nodes (20): FlutterError, MessagesPigeonCodec, MessagesPigeonEventChannelWrapper, MessagesPigeonStreamHandler, OnyxDeviceCapabilities, OnyxPlaybackState, BUFFERING, ENDED (+12 more)
 
 ### Community 321 - "Design System Inspired by Lovable"
 Cohesion: 0.05
 Nodes (39): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+31 more)
 
 ### Community 322 - "OnyxPlayerStatus"
-Cohesion: 0.12
-Nodes (3): MessagesPigeonUtils, OnyxLoadTuning, OnyxVideoSize
+Cohesion: 0.07
+Nodes (6): MessagesPigeonUtils, OnyxLoadTuning, OnyxPlaybackStats, OnyxPlayerStatus, OnyxTrack, OnyxVideoSize
 
 ### Community 323 - "Design System Inspired by Nike"
 Cohesion: 0.05
@@ -2184,8 +2135,8 @@ Cohesion: 0.09
 Nodes (19): asSeriesChoice, CarriedSubtitle, forced, fromKey, fromSeries, image, key, language (+11 more)
 
 ### Community 327 - "tv_poster_wall.dart"
-Cohesion: 0.04
-Nodes (45): _backdropOverhang, build, columns, countLabel, createState, didUpdateWidget, dispose, embedded (+37 more)
+Cohesion: 0.03
+Nodes (61): _backdropOverhang, build, columns, countLabel, createState, didUpdateWidget, dispose, embedded (+53 more)
 
 ### Community 328 - "Design System Inspired by Shopify"
 Cohesion: 0.05
@@ -2216,8 +2167,8 @@ Cohesion: 0.12
 Nodes (5): BM25, detect_domain(), _load_csv(), _search_csv(), search_stack()
 
 ### Community 338 - "poster_card.dart"
-Cohesion: 0.03
-Nodes (59): _active, anchor, autofocus, bottomClearance, build, _cancelPrefetch, child, compact (+51 more)
+Cohesion: 0.01
+Nodes (129): AboutGroup, build, _open, responsibility, tmdbAttribution, build, _clear, _clearing (+121 more)
 
 ### Community 339 - "Design System Inspired by Uber"
 Cohesion: 0.05
@@ -2243,13 +2194,13 @@ Nodes (39): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typograph
 Cohesion: 0.03
 Nodes (53): api, calls, failUploads, historyIds, lastFinished, main, position, _RecordingApi (+45 more)
 
-### Community 346 - "0123-la-bibliotheque-d-un-televiseur-presente-le-titre-focalise-en-tete.md"
-Cohesion: 0.07
-Nodes (23): ADR-0123 — La bibliothèque d'un téléviseur présente le titre focalisé en tête, Conséquences, Contexte, Décision, Écarté, ADR-0125 — La bibliothèque d'un téléviseur pose la fiche à gauche et la grille à droite, Conséquences, Contexte (+15 more)
+### Community 346 - "window_controls_io.dart"
+Cohesion: 0.12
+Nodes (13): build, child, close, initializeDesktopWindow, isFullScreen, isMaximized, maximize, minimize (+5 more)
 
-### Community 347 - "auto_descent.dart"
-Cohesion: 0.11
-Nodes (17): AutoDescentGate, bigStepConfirmations, confirmations, confirmed, confirmedBig, confirmedBps, confirmWindow, cooldown (+9 more)
+### Community 347 - "player_video_stage.dart"
+Cohesion: 0.14
+Nodes (12): alignment, build, child, createState, didUpdateWidget, _duration, frameFor, nextEpisodeAlignment (+4 more)
 
 ### Community 348 - "critique.md"
 Cohesion: 0.09
@@ -2257,11 +2208,11 @@ Nodes (21): Action Summary, Ask the User, Assessment A: Design Review, Assessmen
 
 ### Community 349 - "../../../utils/app_platform.dart"
 Cohesion: 0.02
-Nodes (70): _channel, DisplayFrameRate, _enabled, initialize, matchTo, _preferenceKey, release, requested (+62 more)
+Nodes (73): _channel, DisplayFrameRate, _enabled, initialize, matchTo, _preferenceKey, release, requested (+65 more)
 
-### Community 350 - "request_alert_watch.dart"
+### Community 350 - "models/request_feed.dart"
 Cohesion: 0.12
-Nodes (15): RequestFeedEntry, accountId, body, check, entry, _key, ledger, NewRequestAlert (+7 more)
+Nodes (15): RequestMediaType, cursor, fromJson, id, mediaType, posterPath, posterUrl, requestedAt (+7 more)
 
 ### Community 351 - "None #13"
 Cohesion: 0.11
@@ -2296,8 +2247,8 @@ Cohesion: 0.05
 Nodes (38): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+30 more)
 
 ### Community 359 - "MediaHubEvents"
-Cohesion: 0.08
-Nodes (30): ADR-0074 — Un import annoncé par OnyxHub s'indexe sans attendre le moniteur, Conséquences, Contexte, Décision, ADR-0102 — MediaHub lit Onyx avec la clé d'intégration, Conséquences, Contexte, Décision (+22 more)
+Cohesion: 0.05
+Nodes (50): PublicSettings, UpdateRequest, ADR-0074 — Un import annoncé par OnyxHub s'indexe sans attendre le moniteur, Conséquences, Contexte, Décision, ADR-0102 — MediaHub lit Onyx avec la clé d'intégration, Conséquences (+42 more)
 
 ### Community 360 - "activity.dart"
 Cohesion: 0.10
@@ -2309,7 +2260,7 @@ Nodes (38): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typograph
 
 ### Community 362 - "State"
 Cohesion: 0.01
-Nodes (205): _auth, build, child, _closed, ClosesOnSignIn, _ClosesOnSignInState, createState, dispose (+197 more)
+Nodes (217): _auth, build, child, _closed, ClosesOnSignIn, _ClosesOnSignInState, createState, dispose (+209 more)
 
 ### Community 363 - "player_screen_native_tv.dart"
 Cohesion: 0.11
@@ -2335,17 +2286,21 @@ Nodes (20): dependencies, flutter, description, dev_dependencies, flutter_lints,
 Cohesion: 0.10
 Nodes (20): package, pluginClass, dependencies, flutter, description, dev_dependencies, flutter_lints, environment (+12 more)
 
-### Community 369 - "User"
-Cohesion: 0.09
-Nodes (27): AccessRequestVerdict, DevicePairingPoll, DeviceSession, Invitation, LoginResponse, SSORedeemResponse, UpdateUserPermissionsRequest, changesBeyond() (+19 more)
+### Community 369 - "poster_grid_zoom_region.dart"
+Cohesion: 0.14
+Nodes (14): build, child, createState, dispose, initState, _modifierHeld, _onKey, _onPointerSignal (+6 more)
+
+### Community 370 - "tv_focus_guard.dart"
+Cohesion: 0.15
+Nodes (13): build, child, createState, dispose, focusIsParked, focusIsStranded, _handleKey, initState (+5 more)
 
 ### Community 371 - "Design System Inspired by Cohere"
 Cohesion: 0.05
 Nodes (37): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+29 more)
 
 ### Community 372 - "download_preferences.dart"
-Cohesion: 0.05
-Nodes (38): build, _deleteWatched, DownloadsPage, _networkLine, allowMeteredForSession, allowsMeteredNow, AutoDownloadMode, _clampKeepAhead (+30 more)
+Cohesion: 0.07
+Nodes (23): allowMeteredForSession, allowsMeteredNow, _clampKeepAhead, defaultKeepAhead, initialize, instance, isAutoEnabled, _keepAhead (+15 more)
 
 ### Community 374 - "NativeOverlayView"
 Cohesion: 0.12
@@ -2353,7 +2308,7 @@ Nodes (4): NativeOverlayView, .chromeVisible, .logoUrl, .toast
 
 ### Community 375 - "storage_details_screen.dart"
 Cohesion: 0.07
-Nodes (27): StorageDetails, at, build, createState, current, _delete, _deleting, _details (+19 more)
+Nodes (26): StorageDetails, StorageItem, at, build, createState, current, _delete, _deleting (+18 more)
 
 ### Community 376 - "Design System Inspired by Ollama"
 Cohesion: 0.05
@@ -2364,8 +2319,8 @@ Cohesion: 0.13
 Nodes (25): agentHasWorkInFlight(), agentStatusText(), barPaletteForTheme(), brandMarkSvg(), detectPageTheme(), ensureAgentPollTooltip(), ensureSpinKeyframes(), fetchAgentPollingStatus() (+17 more)
 
 ### Community 378 - "storage_page.dart"
-Cohesion: 0.07
-Nodes (23): StorageItem, StorageList, build, createState, days, _error, initState, item (+15 more)
+Cohesion: 0.08
+Nodes (22): StorageList, build, createState, days, _error, initState, item, last (+14 more)
 
 ### Community 379 - "Design System Inspired by Replicate"
 Cohesion: 0.05
@@ -2380,16 +2335,16 @@ Cohesion: 0.05
 Nodes (37): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+29 more)
 
 ### Community 382 - "keyframes_test.go"
-Cohesion: 0.31
-Nodes (24): box(), ebmlEl(), ebmlNum(), ebmlVIntSize(), keyframeTimes(), matroskaFile(), mp4File(), mp4Trak() (+16 more)
+Cohesion: 0.23
+Nodes (30): estimateMaxGOPSeconds(), probeMaxGOPSeconds(), keyframeTimesFromIndex(), maxGapSeconds(), box(), ebmlEl(), ebmlNum(), ebmlVIntSize() (+22 more)
 
-### Community 383 - "ffmpeg.go"
-Cohesion: 0.11
-Nodes (27): canonicalVideoCodec(), encoderProbeArgs(), encoderRuns(), hevcEncoderFor(), SelectedHEVCEncoder(), SelectedVideoEncoder(), audioAndMuxerArgs(), audioLanguage() (+19 more)
+### Community 383 - "tv_focus_scroll.dart"
+Cohesion: 0.14
+Nodes (10): durationFor, forgetSelfScrolling, isTracking, markSelfScrolling, _pastFraction, requestFocus, scrollPast, scrollsItself (+2 more)
 
 ### Community 384 - "tv_sections.dart"
 Cohesion: 0.04
-Nodes (52): LiteScope, TvNavScope, build, _census, child, createState, didChangeDependencies, dispose (+44 more)
+Nodes (40): build, _census, child, createState, didChangeDependencies, dispose, _dpad, _enterRegion (+32 more)
 
 ### Community 388 - "Design System Inspired by IBM"
 Cohesion: 0.05
@@ -2399,9 +2354,9 @@ Nodes (37): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typograph
 Cohesion: 0.05
 Nodes (36): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+28 more)
 
-### Community 390 - "stats_page.dart"
-Cohesion: 0.07
-Nodes (31): StatBucket, _BarRow, build, createState, daily, _DailyChart, _DailyChartState, _days (+23 more)
+### Community 390 - "RelinkEpisodesToShows"
+Cohesion: 0.24
+Nodes (14): TestResolveShowTitleFromPath_NestedCategories(), RelinkEpisodesToShows(), insertEpisode(), insertSeason(), insertShow(), showTitleOfEpisode(), TestRelinkEpisodesToShows_IgnoresOtherLibraries(), TestRelinkEpisodesToShows_LeavesCorrectHierarchyAlone() (+6 more)
 
 ### Community 391 - "SystemSearchChannel"
 Cohesion: 0.10
@@ -2412,16 +2367,16 @@ Cohesion: 0.05
 Nodes (36): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+28 more)
 
 ### Community 393 - "use_gesture_hints.dart"
-Cohesion: 0.12
-Nodes (15): dispose, _disposed, GestureHints, seekForward, seekMounted, seekPulse, seekSeconds, _seekTimer (+7 more)
+Cohesion: 0.07
+Nodes (23): dispose, _disposed, seekForward, seekMounted, seekPulse, seekSeconds, _seekTimer, seekVisible (+15 more)
 
 ### Community 394 - "onyx_dpad.dart"
 Cohesion: 0.07
-Nodes (27): _afterFrame, _afterResume, _back, backKeysFor, build, child, createState, debugIsAndroidOverride (+19 more)
+Nodes (25): _afterFrame, _afterResume, _back, backKeysFor, build, child, createState, debugIsAndroidOverride (+17 more)
 
 ### Community 395 - "hook-lib.mjs"
 Cohesion: 0.04
-Nodes (136): 2. Wrap the element, allow(), bumpCursorDenial(), cursorBlockMessage(), deny(), detectProposedHtml(), done(), escapeRegExp() (+128 more)
+Nodes (142): 2. Wrap the element, allow(), bumpCursorDenial(), cursorBlockMessage(), deny(), detectProposedHtml(), done(), escapeRegExp() (+134 more)
 
 ### Community 396 - "Design System Inspired by xAI"
 Cohesion: 0.05
@@ -2436,32 +2391,32 @@ Cohesion: 0.05
 Nodes (36): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+28 more)
 
 ### Community 400 - "analyzeSeason"
-Cohesion: 0.08
-Nodes (36): ADR-0081 — TheIntroDB passe en v4 et le choix des repères se resserre, Conséquences, Contexte, Décision, EpisodeMarkers, introDBMedia, IntroDBResponse, IntroDBSegment (+28 more)
+Cohesion: 0.09
+Nodes (34): ADR-0081 — TheIntroDB passe en v4 et le choix des repères se resserre, Conséquences, Contexte, Décision, EpisodeMarkers, introDBMedia, IntroDBResponse, IntroDBSegment (+26 more)
 
 ### Community 401 - "playback.dart"
 Cohesion: 0.11
 Nodes (17): baseUrl, _configLoaded, _dio, _loadConfig, _token, openPlaybackAccess, awaitHlsReady, destroyHlsSession (+9 more)
 
-### Community 402 - "device_video.dart"
-Cohesion: 0.07
-Nodes (27): basename, contains, deviceVideoIdFor, DeviceVideoProgress, deviceVideoTitle, durationSeconds, folder, fraction (+19 more)
-
-### Community 403 - "logging.go"
-Cohesion: 0.23
-Nodes (6): writeOnly, newHandler(), parseLevel(), Setup(), TestJSONFormatWritesOneObjectPerEntry(), TestLevelFiltersWhatIsWritten()
+### Community 402 - "DateTime"
+Cohesion: 0.02
+Nodes (80): basename, contains, deviceVideoIdFor, DeviceVideoProgress, deviceVideoTitle, durationSeconds, folder, fraction (+72 more)
 
 ### Community 404 - "context.Context"
-Cohesion: 0.18
-Nodes (15): embyAuthResult, embyIndex, embyLink, embyAuthenticate(), embyAuthorization(), embyLibraryQuery(), embyRequest(), isEmbyAuthError() (+7 more)
+Cohesion: 0.14
+Nodes (20): embyAuthResult, embyIndex, embyLink, embySyncResult, linkRow, embyAuthenticate(), embyAuthorization(), embyLibraryQuery() (+12 more)
 
 ### Community 405 - "ADR-0043 Les reglages de lecture suivent le compte"
-Cohesion: 0.08
-Nodes (19): ADR-0043 Les reglages de lecture suivent le compte, Mise a jour partielle des reglages (un champ a la fois), Table user_playback_preferences et GET/PUT /api/me/playback-preferences, ADR-0044 La langue audio et le sous-titre se retiennent par serie, Copie locale des choix rangee par saison, Routes /api/episodes/:id/track-preferences, ADR-0045 Vous regardez encore ?, Plage horaire optionnelle de la question (+11 more)
+Cohesion: 0.04
+Nodes (36): ADR-0043 Les reglages de lecture suivent le compte, Mise a jour partielle des reglages (un champ a la fois), Table user_playback_preferences et GET/PUT /api/me/playback-preferences, ADR-0044 La langue audio et le sous-titre se retiennent par serie, Copie locale des choix rangee par saison, Routes /api/episodes/:id/track-preferences, ADR-0045 Vous regardez encore ?, Plage horaire optionnelle de la question (+28 more)
+
+### Community 406 - "AppDelegate"
+Cohesion: 0.09
+Nodes (3): AppDelegate, AppDelegate, AppDelegate
 
 ### Community 407 - "pending_announcement_test.dart"
-Cohesion: 0.07
-Nodes (22): createdAt, fromEnvelope, fromJson, id, message, ServerAnnouncement, title, main (+14 more)
+Cohesion: 0.17
+Nodes (10): check, fails, fetches, _Harness, main, _message, pending, seen (+2 more)
 
 ### Community 408 - "hls_playlist.dart"
 Cohesion: 0.12
@@ -2508,8 +2463,8 @@ Cohesion: 0.13
 Nodes (15): 1. Read the screenshot (if present), 3. Load the action's reference, 4. Plan three variants: identity first, then mode, then axes, 5. Apply the freeform prompt (if present), 6. Deliver variants, 7. Parameters (composition-sized, 0–4 per variant), 8. Signal done, Aborting an in-flight session (+7 more)
 
 ### Community 421 - "background_media_transfer_io.dart"
-Cohesion: 0.07
-Nodes (27): _append, assembleChunks, BackgroundMediaTransfer, _Chunk, chunkBytes, chunkPrefix, chunks, _chunksOnDisk (+19 more)
+Cohesion: 0.03
+Nodes (61): _append, assembleChunks, _Chunk, chunkBytes, chunkPrefix, chunks, _chunksOnDisk, code (+53 more)
 
 ### Community 422 - "Design System Inspired by Sentry"
 Cohesion: 0.06
@@ -2520,12 +2475,12 @@ Cohesion: 0.07
 Nodes (19): ADR-0032 Durcissement de l'authentification, Limite de corps de requete 8 Mio (body_limit.go), Refus des adresses link-local, multicast et non specifiees (httpx), Seaux a jetons par adresse et par compte (ratelimit.go), Jetons de session haches SHA-256 (session_tokens.go, migration 13), ADR-0037 Liens de partage publics sans compte, Droit share_media (administration, migration 14), Lecteur Onyx en invite (SharedLinkApiClient) (+11 more)
 
 ### Community 426 - "ValueChanged"
-Cohesion: 0.01
-Nodes (141): first, homeRecentSlivers, _RecentRow, rows, slivers, build, _entry, fallbackPosterUrl (+133 more)
+Cohesion: 0.02
+Nodes (104): first, homeRecentSlivers, _RecentRow, rows, slivers, OnyxTab, answers, build (+96 more)
 
 ### Community 427 - "_"
-Cohesion: 0.04
-Nodes (37): aetherFailureOf, _isSegmentProduction, text, _, AetherTracks, audio, _containerOrder, currentAudio (+29 more)
+Cohesion: 0.07
+Nodes (20): _, AetherTracks, audio, _containerOrder, currentAudio, currentSubtitle, currentSubtitleIsBitmap, empty (+12 more)
 
 ### Community 429 - "ADR-0003 Android TV pilotage a la telecommande et appairage par QR"
 Cohesion: 0.15
@@ -2539,17 +2494,17 @@ Nodes (9): RegisterPlugins(), MediaKitLibsWindowsVideoPluginCApiRegisterWithRegi
 Cohesion: 0.06
 Nodes (35): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+27 more)
 
-### Community 432 - "Operate mode depth (and Read notes)"
-Cohesion: 0.10
-Nodes (18): Craft floor, Refuse, Verify, Constraints, Failure modes, Flow, $impeccable hooks, Intentional findings (+10 more)
+### Community 432 - "impeccable/SKILL.md"
+Cohesion: 0.07
+Nodes (25): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Craft floor, Refuse, Verify (+17 more)
 
 ### Community 433 - "Design System Inspired by Pinterest"
 Cohesion: 0.06
 Nodes (34): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+26 more)
 
 ### Community 434 - "downloads_test.go"
-Cohesion: 0.10
-Nodes (22): fakeTMDB, retryOnThrottle, ListDownloads(), downloadPath(), SetReleaseSource(), listedFiles(), TestListDownloadsOffersTheReleaseOfTheServerVersion(), TestLocalInstallerShadowsTheReleaseForItsPlatform() (+14 more)
+Cohesion: 0.15
+Nodes (20): fakeTMDB, listArtifacts(), ListDownloads(), SetReleaseSource(), listedFiles(), TestListDownloadsOffersTheReleaseOfTheServerVersion(), TestLocalInstallerShadowsTheReleaseForItsPlatform(), TestServeDownloadFetchesAReleaseInstallerOnFirstRequestOnly() (+12 more)
 
 ### Community 435 - "api/otp.dart"
 Cohesion: 0.12
@@ -2568,12 +2523,12 @@ Cohesion: 0.12
 Nodes (16): if, needs, runs-on, if, needs, runs-on, steps, jobs (+8 more)
 
 ### Community 439 - "duration.dart"
-Cohesion: 0.07
-Nodes (24): _bufferingSince, inTrouble, noteBuffering, _openedAt, RelayTrigger, stallGrace, startupGrace, endTolerance (+16 more)
+Cohesion: 0.02
+Nodes (73): build, createState, dispose, _duration, initState, _lines, _padding, player (+65 more)
 
-### Community 440 - "encoder_test.go"
-Cohesion: 0.14
-Nodes (28): detectVideoEncoder(), encoderWorks(), argsFor(), hasAnyFlag(), hasFlag(), TestCopyPathIgnoresTheEncoder(), TestEncoderAutoFallsBackWhenNothingRuns(), TestEncoderAutoTakesTheFirstThatRuns() (+20 more)
+### Community 440 - "avoid_cutouts_test.dart"
+Cohesion: 0.18
+Nodes (8): bubble, lower, main, middle, pump, pumpRows, pumpWidget, upper
 
 ### Community 441 - "player_controller_auto.dart"
 Cohesion: 0.14
@@ -2589,19 +2544,19 @@ Nodes (34): 0.0.1, 0.0.10, 0.0.11, 0.0.12, 0.0.2, 0.0.3, 0.0.4, 0.0.5 (+26 more)
 
 ### Community 444 - "live.md"
 Cohesion: 0.06
-Nodes (31): append-arrays, append-string, Cleanup, Consent prompt template, CSP detection (first-time only), Drift-heal warning, Exit, First-time setup (config missing or invalid) (+23 more)
+Nodes (32): Apply at system scale, Audit before choosing, Choose a strategy, Contrast and perception, Live-mode signature params, Verify, Visitor mode, append-arrays (+24 more)
 
 ### Community 445 - "update_checker.dart"
-Cohesion: 0.07
-Nodes (22): client, clientHeader, ClientIdentity, deviceHeader, headers, initialize, _tvosVersion, _version (+14 more)
+Cohesion: 0.05
+Nodes (31): AppDownload, builtAt, file, fromJson, label, platform, size, url (+23 more)
 
 ### Community 446 - "my_requests.dart"
 Cohesion: 0.13
 Nodes (14): baseUrl, _dio, getAllRequests, getMyRequests, getRequestAccess, getRequestProgress, moderateRequests, _MyRequestEndpoints (+6 more)
 
 ### Community 447 - "setupShareTest"
-Cohesion: 0.05
-Nodes (80): Modules *deep*, *seams*, taille des fichiers, mediaSnapshot, seasonShow, shareDisplay, sharedMediaRequest, loadMediaSnapshot(), loadMediaSnapshots(), scanMediaSnapshot() (+72 more)
+Cohesion: 0.19
+Nodes (25): mediaShareResponse(), callShared(), createShare(), insertShareEpisode(), insertShareSeason(), setupShareTest(), sharedEpisodeIDs(), TestCreateMediaShare_RefusesUnplayableMedia() (+17 more)
 
 ### Community 448 - "Design System Inspired by Spotify"
 Cohesion: 0.06
@@ -2625,11 +2580,11 @@ Nodes (15): env, if, needs, runs-on, continue-on-error, env, if, needs (+7 more)
 
 ### Community 453 - "onyx_controls_layer_test.dart"
 Cohesion: 0.02
-Nodes (72): main, pump, _Api, _episode, fail, getSeasonEpisodes, getShowSeasons, main (+64 more)
+Nodes (56): main, pump, main, main, main, pump, elevated, _focused (+48 more)
 
-### Community 454 - "ADR-0039 Force du geste sur le trackpad de l'Apple TV"
-Cohesion: 0.07
-Nodes (23): ADR-0028 Cible Apple TV (flutter-tvos et AVPlayer), AVPlayer en HLS seulement (video_player_tvos), flutter-tvos (CLI et moteur tvOS, epingle sur la ligne 3.44), PlaybackCapabilities.appleTv (fMP4, H.264, HEVC 10 bits, AAC, E-AC-3, ALAC, FLAC), ADR-0039 Force du geste sur le trackpad de l'Apple TV, TvFocusScroll (un seul defilement par pas, anime), ADR-0108 — Sur Apple TV, le pont d'accessibilité ne fait plus défiler les pages, Conséquences (+15 more)
+### Community 454 - "0110-un-seul-systeme-de-focus-dpad.md"
+Cohesion: 0.04
+Nodes (44): ADR-0039 Force du geste sur le trackpad de l'Apple TV, TvFocusScroll (un seul defilement par pas, anime), ADR-0108 — Sur Apple TV, le pont d'accessibilité ne fait plus défiler les pages, Conséquences, Contexte, Décision, ADR-0109 — Le focus TV entre une fois, là où la zone le décide, Conséquences (+36 more)
 
 ### Community 455 - "members_test.go"
 Cohesion: 0.18
@@ -2665,31 +2620,27 @@ Nodes (31): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typograph
 
 ### Community 465 - "_"
 Cohesion: 0.05
-Nodes (32): _, active, bounds, _busy, DesktopPictureInPicture, _enter, exit, _floatingWindow (+24 more)
+Nodes (36): _, active, bounds, _busy, DesktopPictureInPicture, _enter, exit, _floatingWindow (+28 more)
 
-### Community 466 - "dart:async"
-Cohesion: 0.04
-Nodes (46): _appWindow, build, createState, didChangeOnScreen, dispose, _follow, _followEvery, initState (+38 more)
-
-### Community 467 - "int get"
-Cohesion: 0.07
-Nodes (25): blamesNetwork, CachePausePolicy, calmPeriod, escalationWindow, _lastUnderrun, _level, levels, noteUnderrun (+17 more)
+### Community 466 - "mpv_window_host_io.dart"
+Cohesion: 0.10
+Nodes (19): _appWindow, build, createState, didChangeOnScreen, dispose, _follow, _followEvery, initState (+11 more)
 
 ### Community 468 - "caches_directory_repository_io.dart"
 Cohesion: 0.09
 Nodes (18): CachesDirectoryRepository, close, databaseName, delete, deleteAll, deleteDataFile, exists, getAllObjects (+10 more)
 
-### Community 469 - "peerRow"
-Cohesion: 0.11
-Nodes (27): linkRow, peerProgressBody, peerRow, PortableProgress, federationPost(), peerCall(), federationPass(), peerFailed() (+19 more)
+### Community 469 - "parseClientUpdatedAt"
+Cohesion: 0.53
+Nodes (5): parseClientUpdatedAt(), TestParseClientUpdatedAt_ClampsTheFuture(), TestParseClientUpdatedAt_EmptyIsNotAReplay(), TestParseClientUpdatedAt_GarbageIsNotAReplay(), TestParseClientUpdatedAt_KeepsThePastAndNormalisesToUTC()
 
 ### Community 470 - "static bool get"
 Cohesion: 0.02
 Nodes (75): describe, HardwareDecoding, initialize, mpvValue, noteZeroCopyFailure, overrideWith, _preference, _preferenceKey (+67 more)
 
 ### Community 471 - "README.md"
-Cohesion: 0.07
-Nodes (28): 1. Tu restes propriétaire, 2. Licence de droits d'auteur, 3. Licence de brevets, 4. Ce que tu garantis, 5. Sans garantie ni contrepartie, 6. Comment accepter, Accord de contribution Onyx (CLA), Contribuer à Onyx (+20 more)
+Cohesion: 0.04
+Nodes (45): 1. Tu restes propriétaire, 2. Licence de droits d'auteur, 3. Licence de brevets, 4. Ce que tu garantis, 5. Sans garantie ni contrepartie, 6. Comment accepter, Accord de contribution Onyx (CLA), Contribuer à Onyx (+37 more)
 
 ### Community 472 - "FlutterWindow"
 Cohesion: 0.07
@@ -2704,8 +2655,8 @@ Cohesion: 0.15
 Nodes (10): ADR-0024 Curseur maison plutot que Slider Material, AppSlider (app_slider.dart), Erreur AXTree Nodes left pending (gel de l'arbre d'accessibilite sous Windows), Slider Material, OverlayPortal (serialise un noeud semantique orphelin), ADR-0025 Cout de l'interface sous Windows, BackdropFilter (verre, releve du fond a chaque image), BackdropGroup (fond partage entre verres d'un meme ecran) (+2 more)
 
 ### Community 475 - "request_release_test.dart"
-Cohesion: 0.02
-Nodes (108): RequestAccess, _contract, file, jsonDecode, main, asked, _CatalogServer, failOnceOn (+100 more)
+Cohesion: 0.01
+Nodes (113): RequestAccess, main, _open, pumpAndSettle, pumpWidget, tap, _contract, file (+105 more)
 
 ### Community 476 - "steps"
 Cohesion: 0.15
@@ -2715,9 +2666,9 @@ Nodes (13): environment, runs-on, steps, name, url, jobs, deploy, id (+5 more)
 Cohesion: 0.21
 Nodes (13): playbackPreferencesUpdate, showTrackPreferencesUpdate, applyPlaybackPreferencesUpdate(), loadPlaybackPreferences(), normalizeAudioLang(), validateStillWatching(), applyShowTrackPreferencesUpdate(), normalizeSubtitleChoice() (+5 more)
 
-### Community 478 - "Logique de l'app Flutter"
-Cohesion: 0.08
-Nodes (21): Couches, Journal, Logique de l'app Flutter, Multi-serveur, Plateformes, Providers, Tests, Budgets (+13 more)
+### Community 478 - "Responsive Design"
+Cohesion: 0.22
+Nodes (9): Detect Input Method, Not Just Screen Size, Layout Adaptation Patterns, Mobile-First: Write It Right, Picture Element for Art Direction, Responsive Design, Responsive Images: Get It Right, Safe Areas: Handle the Notch, srcset with Width Descriptors (+1 more)
 
 ### Community 483 - "tour_anchor.dart"
 Cohesion: 0.11
@@ -2740,16 +2691,16 @@ Cohesion: 0.17
 Nodes (11): build, container_name, environment, ports, restart, volumes, context, dockerfile (+3 more)
 
 ### Community 488 - "ADR-0010 Telechargements hors ligne"
-Cohesion: 0.09
-Nodes (18): ADR-0004 Un profil de lecture par classe d appareil, Decodeur zero copie hwdec mediacodec, PlaybackProfile classe l appareil par RAM physique, Adaptation de frequence d ecran au multiple du contenu, ADR-0010 Telechargements hors ligne, Instantane du playeur du compte par serveur chromes.json, client_updated_at garde ON CONFLICT sur progressions, Manifeste JSON atomique des telechargements (+10 more)
+Cohesion: 0.11
+Nodes (14): ADR-0010 Telechargements hors ligne, Instantane du playeur du compte par serveur chromes.json, client_updated_at garde ON CONFLICT sur progressions, Manifeste JSON atomique des telechargements, Fiche de serie rapatriee une fois par serie, ADR-0027 Reserve de telechargements et reseau facture, GET /api/episodes/:id/next (suite de la file, cote serveur), ADR-0040 Telechargements ecran verrouille (+6 more)
 
 ### Community 489 - "Réponses"
 Cohesion: 0.17
 Nodes (11): APIs tvOS du plan, Autres constats, Méthode, Q1. Le moteur joue-t-il sans `AetherPlayerView` attachée ?, Q2. `engine.currentAVPlayer` change-t-il à chaque rechargement ?, Q3. Après Menu, le focus revient-il à Flutter ?, Q4. HDR et Dolby Vision (Match Content) passent-ils ?, Q5. Les sous-titres WebVTT du serveur apparaissent-ils dans le menu natif ? (+3 more)
 
 ### Community 490 - "newTestStore"
-Cohesion: 0.14
-Nodes (22): NormalizeViewerName(), insertMedia(), progressRows(), shareIDOf(), TestNormalizeViewerName_IgnoresCaseAndExtraSpaces(), TestProgress_DeletingTheLinkDeletesItsProgress(), TestProgress_FinishedMediaLosesItsPositionAndLastIsTheMostRecent(), TestProgress_IsKeptPerViewerNameWhateverTheCase() (+14 more)
+Cohesion: 0.08
+Nodes (31): NormalizeViewerName(), insertMedia(), progressRows(), shareIDOf(), TestNormalizeViewerName_IgnoresCaseAndExtraSpaces(), TestProgress_DeletingTheLinkDeletesItsProgress(), TestProgress_FinishedMediaLosesItsPositionAndLastIsTheMostRecent(), TestProgress_IsKeptPerViewerNameWhateverTheCase() (+23 more)
 
 ### Community 491 - "mpv_end_file_reason"
 Cohesion: 0.17
@@ -2771,9 +2722,9 @@ Nodes (27): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typograph
 Cohesion: 0.18
 Nodes (10): container_name, environment, image, platform, ports, restart, volumes, services (+2 more)
 
-### Community 497 - "Installer Onyx sur un téléviseur LG (webOS)"
-Cohesion: 0.06
-Nodes (32): 1. Le paquet webOS est un lanceur, l'app est celle que sert le serveur, 2. L'app reconnaît webOS à son agent utilisateur, 3. Direct Play par un `<video>` qui reçoit le fichier, 4. Ce que le téléviseur déclare, 5. Télécommande et connexion, ADR-0076 — Les téléviseurs LG ouvrent l'app web du serveur, et la lisent en Direct Play, Conséquences, Contexte (+24 more)
+### Community 497 - "Publier une version (GitHub Actions)"
+Cohesion: 0.12
+Nodes (15): Contrat, Migration, Tickets temporaires de lecture, Validation locale, Validation restante, avec accord préalable, Apple TV seul, sans toucher au serveur, Déclencher, ghcr.io (+7 more)
 
 ### Community 498 - "Relais CONNECT local (stream_proxy_io.dart, 127.0.0.1)"
 Cohesion: 0.20
@@ -2804,8 +2755,8 @@ Cohesion: 0.29
 Nodes (8): appendStyleToLiveUiRoot(), appendToLiveUiRoot(), escapeCssIdent(), getLiveUiElementById(), LIVE_CHROME_MOUNT_CONTRACT, LIVE_UI_COMPONENT_IDS, LIVE_UI_SURFACES, resolveLiveUiRoot()
 
 ### Community 508 - "ADR-0028 Cible Apple TV (flutter-tvos et AVPlayer)"
-Cohesion: 0.07
-Nodes (22): ADR-0011 Une cible iOS sur mpv distribuee hors magasin, HTTP en clair autorise NSAllowsArbitraryLoads, AVAudioSession playback configuree dans AppDelegate, ADR-0012 L image dans l image sur Android seulement, Fenetre armee via onUserLeaveHint et setAutoEnterEnabled, ADR-0035 AVPlayer en recopie sur iPhone et Mac (remplace), ApplePlaybackSession (choix AVPlayer ou mpv a l'ouverture), AvPlayerRemux.refusal (ce qu'AVPlayer ne prend pas en recopie) (+14 more)
+Cohesion: 0.05
+Nodes (32): ADR-0011 Une cible iOS sur mpv distribuee hors magasin, HTTP en clair autorise NSAllowsArbitraryLoads, AVAudioSession playback configuree dans AppDelegate, ADR-0012 L image dans l image sur Android seulement, Fenetre armee via onUserLeaveHint et setAutoEnterEnabled, ADR-0028 Cible Apple TV (flutter-tvos et AVPlayer), AVPlayer en HLS seulement (video_player_tvos), flutter-tvos (CLI et moteur tvOS, epingle sur la ligne 3.44) (+24 more)
 
 ### Community 509 - "web_quality.dart"
 Cohesion: 0.20
@@ -2823,13 +2774,13 @@ Nodes (14): continueWatching, discoveryMovies, discoveryShows, fromJson, HomeLib
 Cohesion: 0.08
 Nodes (23): app_links, RegisterGeneratedPlugins(), connectivity_plus, connectivity_plus_tvos, file_picker_darwin, flutter_local_notifications, flutter_secure_storage_darwin, flutter_secure_storage_tvos (+15 more)
 
-### Community 513 - "sleep_timer.dart"
-Cohesion: 0.08
-Nodes (24): cancel, choices, _chosen, _clear, _due, _endsAt, episodeChoices, episodeFinished (+16 more)
+### Community 513 - "Operate mode depth (and Read notes)"
+Cohesion: 0.22
+Nodes (9): Color, Components, Layout, Motion, Operate mode depth (and Read notes), Product constraints, Product permissions, The product slop test (+1 more)
 
 ### Community 514 - "buildPlaybackLogsZip"
-Cohesion: 0.24
-Nodes (10): exportedLog, buildPlaybackLogsZip(), describeExportStats(), exportFileName(), formatPlaybackLogText(), looksSoftwareDecoded(), parseExportBound(), slugForFileName() (+2 more)
+Cohesion: 0.17
+Nodes (12): exportedLog, showWatchStats, loadShowWatchStats(), buildPlaybackLogsZip(), describeExportStats(), exportFileName(), formatPlaybackLogText(), looksSoftwareDecoded() (+4 more)
 
 ### Community 515 - "avatars.dart"
 Cohesion: 0.22
@@ -2843,9 +2794,9 @@ Nodes (9): dependency_overrides, media_kit_libs_ios_video, media_kit_libs_macos_
 Cohesion: 0.20
 Nodes (10): 1. Decide what is already true, 2. Ask what will change the work, 3. Choose the right amount of invention, 4. Commit the world, 6. Build with full commitment, 7. Inspect and finish, Create a whole surface inside an established world, Create or replace the visual world (+2 more)
 
-### Community 518 - "episode_tile.dart"
-Cohesion: 0.08
-Nodes (22): _actionsNode, _active, allowDownload, build, createState, dispose, episode, episodeNumber (+14 more)
+### Community 518 - "Shape"
+Cohesion: 0.22
+Nodes (8): Cadence, Confirm and stop, Phase 1: Discovery interview, Phase 2: Resolve the design direction, Phase 3: Write the brief, Round 1: purpose, people, and outcome, Round 2: material, behavior, and boundaries, Shape
 
 ### Community 519 - "build-releases.sh"
 Cohesion: 0.50
@@ -2860,16 +2811,16 @@ Cohesion: 0.25
 Nodes (7): interface, default_prompt, display_name, short_description, policy, allow_implicit_invocation, products
 
 ### Community 522 - "tv_control_rows.dart"
-Cohesion: 0.09
-Nodes (21): build, _candidates, child, createState, didChangeDependencies, dispose, _entryFor, inDirection (+13 more)
+Cohesion: 0.04
+Nodes (44): build, _candidates, child, createState, didChangeDependencies, dispose, _entryFor, inDirection (+36 more)
 
 ### Community 523 - "mpv_format"
 Cohesion: 0.13
 Nodes (15): mpv_event_property, data, format, name, mpv_format, MPV_FORMAT_BYTE_ARRAY, MPV_FORMAT_DOUBLE, MPV_FORMAT_FLAG (+7 more)
 
-### Community 524 - "library_spotlight.dart"
-Cohesion: 0.08
-Nodes (24): _backdrop, build, createState, _details, _detailsOf, didChangeDependencies, didUpdateWidget, dispose (+16 more)
+### Community 524 - "announcement.dart"
+Cohesion: 0.25
+Nodes (7): createdAt, fromEnvelope, fromJson, id, message, ServerAnnouncement, title
 
 ### Community 525 - "flutter"
 Cohesion: 0.25
@@ -2880,12 +2831,12 @@ Cohesion: 0.08
 Nodes (24): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+16 more)
 
 ### Community 527 - "Responsive Design"
-Cohesion: 0.07
-Nodes (26): Assess Adaptation Challenge, Breakpoints: Content-Driven, Content Adaptation, Desktop Adaptation (Mobile → Desktop), Detect Input Method, Not Just Screen Size, Email Adaptation (Web → Email), Implement Adaptations, Layout Adaptation Patterns (+18 more)
+Cohesion: 0.13
+Nodes (14): Assess Adaptation Challenge, Content Adaptation, Desktop Adaptation (Mobile → Desktop), Email Adaptation (Web → Email), Implement Adaptations, Mobile Adaptation (Desktop → Mobile), Navigation Adaptation, Plan Adaptation Strategy (+6 more)
 
 ### Community 528 - "native_video_framing.dart"
-Cohesion: 0.08
-Nodes (20): activeArea, aspectRatio, build, child, crops, _cropTolerance, fit, framedSize (+12 more)
+Cohesion: 0.13
+Nodes (12): activeArea, aspectRatio, build, child, crops, _cropTolerance, fit, framedSize (+4 more)
 
 ### Community 529 - "Design System Inspired by Miro"
 Cohesion: 0.08
@@ -2901,11 +2852,11 @@ Nodes (7): ADR-0030 Mises a jour Windows par programme maison, Installeur Inno S
 
 ### Community 532 - "onyx_progress_bar.dart"
 Cohesion: 0.02
-Nodes (88): build, buttonKey, createState, dispose, focusNode, glass, _glassIcon, glassSize (+80 more)
+Nodes (105): build, buttonKey, createState, dispose, focusNode, glass, _glassIcon, glassSize (+97 more)
 
-### Community 533 - "app_image_cache.dart"
-Cohesion: 0.08
-Nodes (18): AppImageCache, cacheKey, _config, configure, emptyCache, getFileStream, imageCacheManager, _IndexedCacheManager (+10 more)
+### Community 533 - "package:flutter/foundation.dart"
+Cohesion: 0.02
+Nodes (71): debugMarkSupported, completeBlocksEnd, pollNow, sampleNow, allowAutoAdvance, _handleKey, _handlePointer, instance (+63 more)
 
 ### Community 534 - "build"
 Cohesion: 0.25
@@ -2945,19 +2896,19 @@ Nodes (22): Assess Onboarding Needs, Context Over Ceremony, Contextual Help, Des
 
 ### Community 547 - "time.Duration"
 Cohesion: 0.04
-Nodes (35): Trust, line, writer, fakePeer, rateLimiter, tokenBucket, Challenge, Challenges (+27 more)
+Nodes (31): Trust, line, writer, progressWatchers, rateLimiter, tokenBucket, Challenge, Challenges (+23 more)
 
 ### Community 548 - "Any"
-Cohesion: 0.06
-Nodes (32): MessagesPigeonInternal, nilOrValue(), OnyxAppleExternalSubtitle, .description, OnyxAppleLoadSubtitles, .description, OnyxAppleNativeAction, .description (+24 more)
+Cohesion: 0.05
+Nodes (34): MessagesPigeonInternal, nilOrValue(), OnyxAppleExternalSubtitle, .description, OnyxAppleLoadSubtitles, .description, OnyxAppleNativeAction, .description (+26 more)
 
 ### Community 550 - "build-windows"
 Cohesion: 0.29
 Nodes (7): defaults, if, needs, runs-on, run, build-windows, shell
 
-### Community 551 - "my_requests_screen.dart"
-Cohesion: 0.09
-Nodes (19): _access, _actionsFor, build, _canOpenHub, createState, _errorText, initState, _load (+11 more)
+### Community 551 - "runMigration"
+Cohesion: 0.29
+Nodes (7): migration, legacyDir(), seedLibrariesFromLegacyDirs(), firstLine(), isAlreadyAppliedColumn(), runMigration(), hashStoredSessionTokens()
 
 ### Community 555 - "build-tvos-ipa.sh"
 Cohesion: 0.43
@@ -2965,11 +2916,11 @@ Nodes (6): fail(), LANG, log(), ok(), PATH, build-tvos-ipa.sh script
 
 ### Community 556 - "ChangeNotifier"
 Cohesion: 0.10
-Nodes (17): EpisodeNavigationController, EpisodesPanelController, close, _episodes, isOpen, _open, PlayerTabsController, show (+9 more)
+Nodes (17): EpisodeNavigationController, EpisodesPanelController, GestureHints, close, _episodes, isOpen, _open, PlayerTabsController (+9 more)
 
-### Community 557 - "settings_search.dart"
-Cohesion: 0.02
-Nodes (80): fromJson, hashCode, id, isLegacy, kind, legacy, MediaLibrary, name (+72 more)
+### Community 557 - "playback_page.dart"
+Cohesion: 0.07
+Nodes (20): HardwareDecodingPreference, _atTypedIndex, EmbeddedSubtitlePairing, keyOf, _keys, _language, of, trackFor (+12 more)
 
 ### Community 558 - "dev_dependencies"
 Cohesion: 0.33
@@ -3004,8 +2955,8 @@ Cohesion: 0.20
 Nodes (13): mpv_stream_cb_cancel_fn, mpv_stream_cb_close_fn, mpv_stream_cb_info, cancel_fn, close_fn, cookie, read_fn, seek_fn (+5 more)
 
 ### Community 566 - "lite_mode.dart"
-Cohesion: 0.03
-Nodes (59): allowHdrComputePeak, backBufferMs, constrained, _current, demuxerBackBytes, demuxerMaxBytes, desktop, fastRendering (+51 more)
+Cohesion: 0.04
+Nodes (39): allowHdrComputePeak, backBufferMs, constrained, _current, demuxerBackBytes, demuxerMaxBytes, desktop, fastRendering (+31 more)
 
 ### Community 567 - "build-ios-ipa.sh"
 Cohesion: 0.53
@@ -3032,8 +2983,8 @@ Cohesion: 0.09
 Nodes (20): checkSize, checkSlot, current, detailSize, headerHeight, headerSize, labelSize, maxHeight (+12 more)
 
 ### Community 574 - "tv_focus_memory.dart"
-Cohesion: 0.10
-Nodes (20): build, child, createState, didChangeDependencies, dispose, _enterAtTop, entersAtStart, entersAtTop (+12 more)
+Cohesion: 0.05
+Nodes (37): claim, TvEntryFocus, autofocus, borderRadius, build, createState, didUpdateWidget, dispose (+29 more)
 
 ### Community 575 - "_TextureGL"
 Cohesion: 0.11
@@ -3056,8 +3007,8 @@ Cohesion: 0.09
 Nodes (21): App name, Brève description (80 car. max), Crédits des médias (à garder dans la description ou la fiche), Description complète (4 000 car. max), Fiche Google Play — Onyx, Full description, La vidéo sur YouTube, Le reste de la fiche (autres pages de Play Console) (+13 more)
 
 ### Community 580 - "TranscodeSession"
-Cohesion: 0.02
-Nodes (95): streamMetrics, GuardWriter, Ticket, TestWrapIsTransparentOutsideDevelopment(), Wrap(), TestDownloadPurposeIssuesLongTicket(), TestTicketIssuanceAndProtectedRange(), InitStream() (+87 more)
+Cohesion: 0.03
+Nodes (56): GuardWriter, Ticket, TestDownloadPurposeIssuesLongTicket(), Digest(), Store, NewStore(), Protect(), TestDownloadTicketOutlivesPlaybackTTLAndRenewsToItsOwnLifetime() (+48 more)
 
 ### Community 581 - "Design System Inspired by Airtable"
 Cohesion: 0.09
@@ -3080,8 +3031,8 @@ Cohesion: 0.83
 Nodes (3): rasterise(), resize(), generate-icons.sh script
 
 ### Community 591 - "remote_playback_notice.dart"
-Cohesion: 0.02
-Nodes (81): autoSkipIn, build, capsule, createState, didUpdateWidget, dispose, _fill, focusRow (+73 more)
+Cohesion: 0.05
+Nodes (36): build, compact, _compactKeySize, compactMaxWidth, createState, _focused, _hint, hold (+28 more)
 
 ### Community 593 - "ios/create_framework_symlinks.sh"
 Cohesion: 0.83
@@ -3096,24 +3047,24 @@ Cohesion: 0.10
 Nodes (20): Animate complex properties, Assess What "Extraordinary" Means Here, For data-heavy interfaces, For functional UI, For performance-critical UI, For visual/marketing surfaces, Implement with Discipline, Interact with the device (+12 more)
 
 ### Community 597 - "String get"
-Cohesion: 0.02
-Nodes (75): clear, _expanded, isActive, isExpanded, _query, setExpanded, setQuery, _AppleTvSandbox (+67 more)
+Cohesion: 0.03
+Nodes (71): _AppleTvSandbox, caches, getApplicationCachePath, getApplicationSupportPath, main, PathProviderPlatform, root, entry (+63 more)
 
 ### Community 599 - "stage-downloads.sh script"
 Cohesion: 0.83
 Nodes (3): stage-downloads.sh script, find_artifact(), stage()
 
 ### Community 605 - ".reconcile"
-Cohesion: 0.19
-Nodes (18): contentKey, embyItem, embyItemsPage, embyVerdict, localSide, progressState, parseEmbyDate(), providerTMDB() (+10 more)
+Cohesion: 0.16
+Nodes (21): contentKey, embyItem, embyItemsPage, embyVerdict, localSide, peerProgressBody, PortableProgress, progressState (+13 more)
 
 ### Community 641 - "Design System Inspired by Webflow"
 Cohesion: 0.11
 Nodes (18): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout, 6. Depth: 5-layer cascading shadow system, 7. Do's and Don'ts, 8. Responsive: 479px, 768px, 992px (+10 more)
 
-### Community 696 - "player_controller_native_tv.dart"
-Cohesion: 0.33
-Nodes (5): _awaitsNativeTvSession, _loadTracksOnce, PlayerControllerNativeTv, _startHlsFirst, _startNativeTvTranscode
+### Community 696 - "Android platform"
+Cohesion: 0.29
+Nodes (7): Android platform, Color & theming, Components & motion, Layout & structure, The Android slop test, Touch targets, Typography
 
 ### Community 699 - "server_reachability.dart"
 Cohesion: 0.10
@@ -3135,9 +3086,9 @@ Nodes (4): NativeOverlayView, .chromeVisible, .logoUrl, .toast
 Cohesion: 0.33
 Nodes (5): _dio, deleteAdminStorage, getAdminStorage, getAdminStorageDetails, _StorageAdminEndpoints
 
-### Community 715 - "app_theme.dart"
-Cohesion: 0.10
-Nodes (13): AppTheme, _buildDark, _capsuleOnTv, chipSide, _dark, focusRinged, _focusSide, fontFamily (+5 more)
+### Community 715 - "typeset.md"
+Cohesion: 0.29
+Nodes (6): Apply, Live-mode signature params, Set the system, Two isolated assessments, Verify, Visitor mode
 
 ### Community 716 - "tv_focus_rows.dart"
 Cohesion: 0.10
@@ -3147,9 +3098,9 @@ Nodes (21): build, child, createState, didChangeDependencies, dispose, _entryFor
 Cohesion: 0.12
 Nodes (16): 1. accessible names (critical), 2. keyboard access (critical), 3. focus and dialogs (critical), 4. semantics (high), 5. forms and errors (high), 6. announcements (medium-high), 7. contrast and states (medium), 8. media and motion (low-medium) (+8 more)
 
-### Community 718 - "tv_pane_region.dart"
-Cohesion: 0.11
-Nodes (18): _ahead, build, child, createState, dispose, firstOf, inDirection, initState (+10 more)
+### Community 718 - "player_controller_dolby_vision.dart"
+Cohesion: 0.33
+Nodes (5): _directPlayCannotShowDolbyVision, directPlayHasWrongColours, _dolbyVisionNeedsServer, PlayerControllerDolbyVision, _transcodeForDolbyVision
 
 ### Community 719 - "use_episodes_panel.dart"
 Cohesion: 0.11
@@ -3172,7 +3123,7 @@ Cohesion: 0.07
 Nodes (8): SystemSearchBadge, SystemSearchEmptyView, SystemSearchFont, SystemSearchHeaderView, SystemSearchImages, SystemSearchPosterCell, SystemSearchWatchedMark, CoreText
 
 ### Community 724 - "_"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (19): _, code, currentEpisodeId, episodes, error, loading, members, NativeTvEpisodes (+11 more)
 
 ### Community 725 - "Recette sur Apple TV : lecteur natif"
@@ -3180,16 +3131,16 @@ Cohesion: 0.13
 Nodes (14): Actions contextuelles, Audio, HDR et Dolby Vision (protocole de la Q4 du spike), Lecture, Menu et focus, Panneau d'infos, Recette sur Apple TV : lecteur natif, Regarder ensemble à deux appareils (+6 more)
 
 ### Community 726 - "ADR-0111 — L'anneau de focus est blanc, et entoure les affiches au lieu de les border"
-Cohesion: 0.11
-Nodes (16): ADR-0111 — L'anneau de focus est blanc, et entoure les affiches au lieu de les border, Conséquences, Contexte, Décision, ADR-0112 — Sur téléviseur, la commande focalisée se remplit de blanc, Conséquences, Contexte, Décision (+8 more)
+Cohesion: 0.05
+Nodes (32): ADR-0111 — L'anneau de focus est blanc, et entoure les affiches au lieu de les border, Conséquences, Contexte, Décision, ADR-0112 — Sur téléviseur, la commande focalisée se remplit de blanc, Conséquences, Contexte, Décision (+24 more)
 
 ### Community 727 - "api/playback_preferences.dart"
 Cohesion: 0.40
 Nodes (4): _dio, getPlaybackPreferences, _PlaybackPreferencesEndpoints, updatePlaybackPreferences
 
-### Community 728 - "toneMapperFor"
-Cohesion: 0.14
-Nodes (20): 2. Le client quitte le Direct Play quand son moteur local n'applique pas la RPU, 3. Le serveur applique la RPU avec libplacebo, 4. Sans Vulkan, l'ancienne chaîne, ADR-0060 — Dolby Vision profil 5 sans décodeur : HLS, et la RPU appliquée par libplacebo, Conséquences, Contexte, Décision, ffmpegHasFilter() (+12 more)
+### Community 728 - "player_controller_language.dart"
+Cohesion: 0.33
+Nodes (5): audioLanguageGapWith, awaitAudioLanguage, continueWithoutAudioLanguage, launchLanguageGap, PlayerControllerLanguage
 
 ### Community 729 - "server_capabilities.dart"
 Cohesion: 0.11
@@ -3201,19 +3152,23 @@ Nodes (14): 1. Accessibility (A11y), 2. Performance, 3. Theming, 4. Responsive D
 
 ### Community 731 - "GetNextEpisode"
 Cohesion: 0.04
-Nodes (82): mediaLanguage, nextEpisodeResponse, nextSeasonPayload, seasonEpisodePayload, seasonWatchStats, showSeasonPayload, TMDBEpisodeSummary, TMDBSeasonSummary (+74 more)
+Nodes (72): ADR-0072 — La liaison avec OnyxHub se teste depuis le serveur, et le catalogue lit ses disponibilités par page, Conséquences, Contexte, Décision, ADR-0084 — La bibliothèque d'Onyx fait foi sur la disponibilité d'un titre qu'OnyxHub ignore, Conséquences, Contexte, Décision (+64 more)
 
-### Community 732 - "OnyxMpvMacosPlugin"
-Cohesion: 0.13
-Nodes (3): MpvHostView, MpvHostViewFactory, OnyxMpvMacosPlugin
+### Community 732 - "audio_language_gap.dart"
+Cohesion: 0.33
+Nodes (5): AudioLanguageGap, between, missing, offered, wanted
 
 ### Community 733 - "Findings"
 Cohesion: 0.13
 Nodes (15): 10 — `AppLayout.minTouchTarget` est défini et n'est consommé nulle part, 1 — Le chrome par défaut du lecteur met 340 ms à apparaître et 0 ms à disparaître, 2 — Trois chromes de lecteur, trois grammaires d'apparition différentes, 3 — Deux scrubbers sur trois affichent la position du décodeur, pas celle du doigt, 4 — Aucune rétroaction au pointer-down : les cartes ne réagissent qu'au survol, 5 — Aucune continuité spatiale entre une affiche et sa fiche, et la grammaire de navigation change selon l'OS, 6 — Le carrousel d'accueil bouge tout seul, ne peut pas être arrêté au doigt, et ignore « Réduire les animations », 7 — Cinq recettes de verre non hiérarchisées, et la plus grande surface est la plus légère (+7 more)
 
-### Community 734 - "database/sql.DB"
-Cohesion: 0.10
-Nodes (30): migration, Verdict, backupBeforeMigrating(), backupStamp(), mainDatabaseFile(), pruneMigrationBackups(), TestAPendingMigrationOnALiveDatabaseTriggersABackup(), TestBackupBeforeMigratingKeepsAReadableCopy() (+22 more)
+### Community 734 - "InitDB"
+Cohesion: 0.06
+Nodes (50): seededLibrary, Verdict, insertMedia(), openTestDB(), posterOf(), TestAChosenShowPosterIsLockedAndFollowedByItsEpisodes(), TestChooseRefusesUnknownHostsAndEpisodes(), TestFanartPostersAreHTTPSWithAPreview() (+42 more)
+
+### Community 735 - "ping.go"
+Cohesion: 0.50
+Nodes (3): pingResponse, TestPingAnnouncesLibraries(), pingPayload()
 
 ### Community 736 - "quick reference"
 Cohesion: 0.14
@@ -3226,10 +3181,6 @@ Nodes (13): Animation Performance, Assess Performance Issues, Core Web Vitals Op
 ### Community 738 - "Design Reference Catalog"
 Cohesion: 0.14
 Nodes (14): ai_llm_platforms, automotive, backend, database _ devops, design _ creative tools, Design Reference Catalog, developer tools _ ides, e-commerce _ retail, fintech _ crypto (+6 more)
-
-### Community 739 - "installorigin.go"
-Cohesion: 0.19
-Nodes (12): Couches, Modules *deep*, *seams*, taille des fichiers, Phase 7 : le lecteur, part, view, zipEnd, bundlePrefix(), marker() (+4 more)
 
 ### Community 740 - "Scan mode (approach C: auto-extract, then confirm descriptive language)"
 Cohesion: 0.15
@@ -3284,16 +3235,16 @@ Cohesion: 0.18
 Nodes (10): Actions and navigation, Audit the language, Errors and permissions, Forms, Help and instructional text, Loading, empty, and success states, Rewrite by function, Set the message hierarchy (+2 more)
 
 ### Community 753 - "time.Time"
-Cohesion: 0.03
-Nodes (98): Clients sortants, tâches de fond, processus, Découpage par package, Requête et réponse, Serveur Go, SQLite, Tests, Clients sortants, tâches de fond, processus, Découpage par package (+90 more)
+Cohesion: 0.01
+Nodes (197): Couches, Journal, Logique de l'app Flutter, Multi-serveur, Plateformes, Providers, Tests, Clients sortants, tâches de fond, processus (+189 more)
 
 ### Community 754 - "Nielsen's 10 Heuristics"
 Cohesion: 0.09
 Nodes (23): 10. Help and Documentation, 1. Impatient Power User: "Alex", 1. Visibility of System Status, 2. Confused First-Timer: "Jordan", 2. Match Between System and Real World, 3. Accessibility-Dependent User: "Sam", 3. User Control and Freedom, 4. Consistency and Standards (+15 more)
 
 ### Community 755 - "_"
-Cohesion: 0.09
-Nodes (24): AudioLanguageGap, between, missing, offered, wanted, _, atLaunch, canPlayNext (+16 more)
+Cohesion: 0.12
+Nodes (19): _, atLaunch, canPlayNext, deviceName, episode, gap, _language, NativeTvLanguageQuestion (+11 more)
 
 ### Community 756 - "api/request_feed.dart"
 Cohesion: 0.40
@@ -3316,12 +3267,12 @@ Cohesion: 0.18
 Nodes (6): Behavior, Load, Mode: Design Critique Only, Direction Format, Process, Variation First Workflow
 
 ### Community 761 - "main.dart"
-Cohesion: 0.01
-Nodes (149): _retryIfPrimaryIsBack, _body, build, createState, deletable, DownloadSeasonHeader, DownloadShowHeader, _DownloadShowHeaderState (+141 more)
+Cohesion: 0.02
+Nodes (112): _body, build, createState, deletable, DownloadSeasonHeader, DownloadShowHeader, _DownloadShowHeaderState, entries (+104 more)
 
 ### Community 762 - "ADR-0044 La langue audio et le sous-titre se retiennent par serie"
-Cohesion: 0.09
-Nodes (17): ADR-0057 Attendre sa langue : une serie suit les episodes de la langue ecoutee, Table media_audio_langs (une ligne par media et langue), Reprendre la lecture suit la langue attendue (await_audio_lang), ADR-0059 Notifications de nouveaux episodes : l'appareil interroge ses serveurs, NewEpisodeLedger : memoire des episodes deja annonces, NewEpisodeOpener : la notification ouvre la serie sur son serveur, Taches de fond WorkManager et BGAppRefreshTask qui reveillent le Dart, 1. Le serveur relaie un flux, réservé à `manage_settings` (+9 more)
+Cohesion: 0.13
+Nodes (13): ADR-0059 Notifications de nouveaux episodes : l'appareil interroge ses serveurs, NewEpisodeLedger : memoire des episodes deja annonces, NewEpisodeOpener : la notification ouvre la serie sur son serveur, Taches de fond WorkManager et BGAppRefreshTask qui reveillent le Dart, 1. Le serveur relaie un flux, réservé à `manage_settings`, 2. L'app garde un curseur par compte, 3. Une seule tâche de fond, au quart d'heure, 4. Un seul fichier connaît `flutter_local_notifications` (+5 more)
 
 ### Community 764 - "Une seule marque, conforme aux tokens, et un chrome d'Accueil qui réutilise les owners du shell"
 Cohesion: 0.18
@@ -3343,10 +3294,6 @@ Nodes (10): 1. Relever ce qui attend, 2. Décider, message par message, 3. Analy
 Cohesion: 0.09
 Nodes (21): challenge, enabled, fromJson, _label, OtpChallenge, OtpLoginResult, OtpSetup, parse (+13 more)
 
-### Community 769 - "macos_update_signature_io.dart"
-Cohesion: 0.09
-Nodes (15): bundleDigest, _compareBytes, convert, digest, key, lines, message, result (+7 more)
-
 ### Community 770 - "pointer_click_zone.dart"
 Cohesion: 0.12
 Nodes (17): build, createState, dispose, _down, _downAt, dragSlop, _held, _lastClickAt (+9 more)
@@ -3360,20 +3307,16 @@ Cohesion: 0.20
 Nodes (10): Changes, Contexte pour l'exécutant, Design decision, Design documentation, Evidence chain, Les cartes répondent à l'appui, pas seulement au survol, Reuse, Scope (+2 more)
 
 ### Community 773 - "releasedl_test.go"
-Cohesion: 0.20
-Nodes (18): Asset, fakeGitHub, names(), newFakeGitHub(), newSource(), payload(), TestDevelopmentBuildFallsBackToTheLatestRelease(), TestDisabledSourceOffersNothing() (+10 more)
+Cohesion: 0.19
+Nodes (19): writeOnly, Asset, fakeGitHub, names(), newFakeGitHub(), newSource(), payload(), TestDevelopmentBuildFallsBackToTheLatestRelease() (+11 more)
 
 ### Community 774 - "🚀 Projet : Mon Serveur de Médias Personnalisé"
 Cohesion: 0.20
 Nodes (9): ⚡ Conseils d'Optimisation du Direct Play (Zéro Perte de Qualité), 📌 Introduction et Vision du Projet, 🛠 La Stack Technique & Dépendances, Partie Application (Front-End), Partie Serveur (Back-End), PHASE 1 : Le Serveur (Back-End en Go), PHASE 2 : L'Application (Front-End en Flutter), 📋 Plan d'Action Étape par Étape (+1 more)
 
 ### Community 775 - ".call"
-Cohesion: 0.17
+Cohesion: 0.16
 Nodes (6): Dialect, dialectEntry, TestDecideEmby(), Client, remember(), Removal
-
-### Community 776 - "dart:ui"
-Cohesion: 0.11
-Nodes (9): main, screen, cutout, main, screen, _event, main, _event (+1 more)
 
 ### Community 777 - "Tasteful UI"
 Cohesion: 0.22
@@ -3395,9 +3338,9 @@ Nodes (16): audioLang, awaitAudioLang, forced, fromJson, image, isEmpty, key, la
 Cohesion: 0.12
 Nodes (13): anchor, body, InterfaceTourReplay, InterfaceTourStep, interfaceTourSteps, isTv, of, request (+5 more)
 
-### Community 783 - "loadStorageShows"
-Cohesion: 0.15
-Nodes (17): mediaHubStorageDetails, mediaHubStorageSeason, mediaHubStorageViewer, mediaHubViewerEpisode, mediaHubViewerSeason, storageEpisode, storagePlay, addEpisodesToShows() (+9 more)
+### Community 783 - "commonDir"
+Cohesion: 0.33
+Nodes (6): mediaHubStorageDetails, mediaHubStorageSeason, commonDir(), loadStorageSeasons(), seasonPaths(), TestStorageCommonDirIsTheFolderSharedByEveryFile()
 
 ### Community 784 - "app_type.dart"
 Cohesion: 0.11
@@ -3408,16 +3351,8 @@ Cohesion: 0.25
 Nodes (7): Agent skills, Communication : travail silencieux, récap final, Domain docs, graphify, Issue tracker, Standards de code, Économie de tokens
 
 ### Community 786 - "player_screen_overlays.dart"
-Cohesion: 0.12
-Nodes (15): PlayerScreen, _PlayerScreenState, _buildOverChrome, _closeTabs, _handleEpisodeNavChanged, _handleTabsOpenChanged, _nextEpisodePageVisible, _pageOverImage (+7 more)
-
-### Community 787 - "ADR-0061 — Sur Windows, mpv dessine dans sa propre fenêtre, glissée sous celle de l'app"
-Cohesion: 0.29
-Nodes (7): ADR-0061 — Sur Windows, mpv dessine dans sa propre fenêtre, glissée sous celle de l'app, Ajout — mpv déplace aussi sa fenêtre, Conséquences, Contexte, Décision, Pourquoi le profil 5 seulement, Pourquoi le suivi est natif
-
-### Community 788 - "install_origin_formats.dart"
-Cohesion: 0.12
-Nodes (16): apkOriginBlockId, apkSigningBlockFooterLength, _apkSigningBlockMagic, apkSigningBlockSize, apkSigningBlockValue, at, data, fields (+8 more)
+Cohesion: 0.08
+Nodes (23): PlayerScreen, _PlayerScreenState, _armStartupWatchdog, _buildOverChrome, _closeTabs, _handleEpisodeNavChanged, _handleTabsOpenChanged, _init (+15 more)
 
 ### Community 789 - "Taste Exploration"
 Cohesion: 0.29
@@ -3435,17 +3370,13 @@ Nodes (6): Conventions, Issue tracker: GitHub, Pull requests as a triage surface
 Cohesion: 0.29
 Nodes (6): Activité, historique, statistiques, appareils, Catégories, Présentation à conserver, Reprise des paramètres — 14 septembre 2026, Vérification, État
 
-### Community 793 - "avoid_cutouts.dart"
-Cohesion: 0.12
-Nodes (12): AvoidCutouts, createRenderObject, cutouts, _inset, _insetFor, _measure, paint, performLayout (+4 more)
-
 ### Community 794 - "Taste Critic"
 Cohesion: 0.33
 Nodes (5): Compare Variants, Critique Questions, Red Flags, Scoring, Taste Critic
 
-### Community 796 - "touchpad_motion_test.dart"
-Cohesion: 0.12
-Nodes (14): _always, at, coast, coastOf, delays, drift, frames, main (+6 more)
+### Community 796 - "InheritedWidget"
+Cohesion: 0.04
+Nodes (41): LiteScope, TvNavScope, _TvControlRowsScope, _TvSectionScope, _TvSectionsScope, configureSiriRemoteRepeat, current, listenToSiriRemote (+33 more)
 
 ### Community 797 - "Onyx — client Flutter"
 Cohesion: 0.33
@@ -3539,9 +3470,9 @@ Nodes (4): ADR-0087 — Les images TMDB se téléchargent à la taille de leur p
 Cohesion: 0.40
 Nodes (4): ADR-0088 — Une image déjà sur disque se pose sans fondu, et les listes d'images construisent une fenêtre d'avance, Conséquences, Contexte, Décision
 
-### Community 822 - "remote_poster.dart"
-Cohesion: 0.12
-Nodes (16): current, fanartEnabled, fromJson, height, images, language, locked, rating (+8 more)
+### Community 822 - "String get"
+Cohesion: 0.05
+Nodes (37): current, fanartEnabled, fromJson, height, images, language, locked, rating (+29 more)
 
 ### Community 823 - "ADR-0091 — `onyx://play` : « Lire sur Onyx » depuis MediaHub, avec reprise"
 Cohesion: 0.40
@@ -3567,10 +3498,6 @@ Nodes (15): bytesOnDisk, ChunkPlan, ChunkRange, chunkRanges, end, hashCode, leng
 Cohesion: 0.50
 Nodes (3): Agent skills, Domain docs, Issue tracker
 
-### Community 829 - "ADR-0116 — Sur le trackpad de l'Apple TV, c'est le doigt qui pilote le focus"
-Cohesion: 0.13
-Nodes (13): ADR-0116 — Sur le trackpad de l'Apple TV, c'est le doigt qui pilote le focus, Conséquences, Contexte, Décision, Réglage après le premier essai (2026-11-12), Réglage après le troisième essai (2026-11-13), Écarté, ADR-0122 — Le pavé de la Siri Remote va posément sur les commandes (+5 more)
-
 ### Community 830 - "Mode: Taste First Redesign"
 Cohesion: 0.50
 Nodes (3): Behavior, Load, Mode: Taste First Redesign
@@ -3579,33 +3506,21 @@ Nodes (3): Behavior, Load, Mode: Taste First Redesign
 Cohesion: 0.50
 Nodes (3): Accord de contribution, Comment tester, Quoi et pourquoi
 
-### Community 832 - "timeline_previews_test.dart"
-Cohesion: 0.15
-Nodes (7): bytes, filePath, load, NotificationPoster, main, _manifest, _png
-
-### Community 833 - "onyx_background_downloads.dart"
-Cohesion: 0.14
-Nodes (13): _FakeSession, BackgroundDownloadSession, BackgroundDownloadSnapshot, cancel, _channel, DownloadForegroundService, enqueue, failures (+5 more)
+### Community 833 - "Map"
+Cohesion: 0.03
+Nodes (64): kEnglish, _Api, _episode, fail, getSeasonEpisodes, getShowSeasons, main, panel (+56 more)
 
 ### Community 834 - "PigeonStreamHandler"
-Cohesion: 0.10
-Nodes (8): EngineLogStreamHandler, NativeEventsStreamHandler, PictureInPictureChangedStreamHandler, PigeonEventChannelWrapper, PigeonEventSink, PigeonStreamHandler, StatusChangedStreamHandler, SubtitlesChangedStreamHandler
-
-### Community 840 - "macos_now_playing.dart"
-Cohesion: 0.15
-Nodes (11): _actionsStream, activate, deactivate, _events, isSupported, MacosMediaAction, MacosNowPlaying, _method (+3 more)
+Cohesion: 0.08
+Nodes (4): PigeonEventSink, PigeonStreamHandler, PigeonEventSink, PigeonStreamHandler
 
 ### Community 844 - "commitAcceptedSvelteComponentToDom"
 Cohesion: 0.39
 Nodes (8): acceptedDomAlreadyClean(), commitAcceptedSvelteComponentToDom(), ensureAcceptedDomClean(), findAcceptedRuntimeWrappers(), maybeCompleteAcceptedSession(), reloadAfterMissingAcceptedDom(), restoreAcceptedDomFromSnapshot(), scheduleAcceptCleanup()
 
-### Community 850 - "Duration get"
-Cohesion: 0.15
-Nodes (9): build, child, designWidth, factorFor, layoutWidth, _onyx, reverseTransitionDuration, transitionDuration (+1 more)
-
-### Community 851 - "seek_timeline.dart"
-Cohesion: 0.12
-Nodes (16): _cachePaused, _cachePauses, _cachePauseSince, describe, _jumped, _landing, _last, notePausedForCache (+8 more)
+### Community 850 - "home_screen.dart"
+Cohesion: 0.02
+Nodes (102): HomeProvider, _addFolder, build, _confirmDelete, _confirmRemoveFolder, createState, didChangeAppLifecycleState, dispose (+94 more)
 
 ### Community 853 - "ADR-0047 Interface en anglais par dictionnaire dont le francais est la cle"
 Cohesion: 0.07
@@ -3627,9 +3542,9 @@ Nodes (4): ADR-0083 — Sur Android, Retour passe par le système et lui seul, C
 Cohesion: 0.50
 Nodes (3): analyzer, exclude, include
 
-### Community 858 - "auto_trust.dart"
-Cohesion: 0.17
-Nodes (11): AutoTrust, _carriedAt, directShortfall, noteCarried, reset, slopeCounts, _stalls, stallTolerated (+3 more)
+### Community 858 - "static const int"
+Cohesion: 0.04
+Nodes (46): AutoTrust, _carriedAt, directShortfall, noteCarried, reset, slopeCounts, _stalls, stallTolerated (+38 more)
 
 ### Community 859 - "tv_link.dart"
 Cohesion: 0.17
@@ -3647,10 +3562,6 @@ Nodes (13): AetherPlaybackSession, ExoPlaybackSession, MpvPlaybackSession, Playb
 Cohesion: 0.33
 Nodes (9): discoverFilters, defaultDiscoverFilters(), discoverURL(), expandGenresForMovie(), expandGenresForTV(), fetchTMDBDiscoverMixed(), parseDiscoverFilters(), parseIntList() (+1 more)
 
-### Community 870 - "keyframes_mp4.go"
-Cohesion: 0.45
-Nodes (14): mp4Boxes(), mp4Child(), mp4Descend(), mp4FindMoov(), mp4IsVideoTrack(), mp4KeyframeTimes(), mp4ReadSTSS(), mp4ReadSTTS() (+6 more)
-
 ### Community 871 - "Hardening Dimensions"
 Cohesion: 0.18
 Nodes (10): Accessibility Resilience, Assess Hardening Needs, Edge Cases & Boundary Conditions, Error Handling, Hardening Dimensions, Input Validation & Sanitization, Internationalization (i18n), Performance Resilience (+2 more)
@@ -3659,41 +3570,13 @@ Nodes (10): Accessibility Resilience, Assess Hardening Needs, Edge Cases & Bound
 Cohesion: 0.33
 Nodes (5): ADR-0101 — Le mode léger reconnaît les ordinateurs modestes, Conséquences, Contexte, Décision, À vérifier
 
-### Community 873 - "Media"
-Cohesion: 0.05
-Nodes (67): ADR-0098 — Recherche interactive des demandes : choisir soi-même la release, Conséquences, Contexte, Décision, ContentIdentity, libraryRequest, mediaReviewResponse, showLibraryItem (+59 more)
-
 ### Community 876 - "FlutterTexture"
-Cohesion: 0.07
-Nodes (6): ResizableTextureProtocol, SafeResizableTexture, ResizableTextureProtocol, SafeResizableTexture, ResizableTextureProtocol, SafeResizableTexture
+Cohesion: 0.08
+Nodes (5): SafeResizableTexture, ResizableTextureProtocol, SafeResizableTexture, ResizableTextureProtocol, SafeResizableTexture
 
-### Community 877 - "ADR-0128 — Une fiche de téléviseur se parcourt ligne par ligne et se pose section par section"
-Cohesion: 0.15
-Nodes (13): 1. Haut et Bas suivent les lignes, 2. Chaque ligne a une place, la même d'où qu'on vienne, 3. L'allure suit la distance, 4. Le pavé de l'Apple TV s'arrête à chaque étape, 5. L'action principale reprend le focus quand elle arrive tard, 6. Les flèches de la distribution quittent l'écran du téléviseur, ADR-0128 — Une fiche de téléviseur se parcourt ligne par ligne et se pose section par section, Ce que cela contredit (+5 more)
-
-### Community 878 - "impeccable/SKILL.md"
-Cohesion: 0.05
-Nodes (35): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Apply at system scale, Audit before choosing, Choose a strategy (+27 more)
-
-### Community 879 - "keyframes_matroska.go"
-Cohesion: 0.43
-Nodes (13): bufferElement(), ebmlChildren(), ebmlElementAt(), ebmlUint(), ebmlVInt(), matroskaCueTimes(), matroskaKeyframeTimes(), matroskaSeek() (+5 more)
-
-### Community 880 - "vtt_cues_test.dart"
-Cohesion: 0.18
-Nodes (6): cues, lignes, main, server, voix, _vtt
-
-### Community 881 - "installorigin_test.go"
-Cohesion: 0.40
-Nodes (9): pairOf(), signedAPK(), signingBlockPairs(), stampAll(), TestStampAPKAddsThePairAndKeepsTheRest(), TestStampedViewServesArbitraryRanges(), TestStampIPAAddsTheMarkerInsideTheBundle(), TestStampLeavesWhatItCannotAnnotateUntouched() (+1 more)
-
-### Community 882 - "player_screen_startup.dart"
-Cohesion: 0.20
-Nodes (9): _armStartupWatchdog, _init, _loadMediaLogo, _loadResumePosition, _retryPlayback, _seedOfflineDetails, _startPlayback, _startupDeadline (+1 more)
-
-### Community 883 - "siri_remote_touches_io.dart"
-Cohesion: 0.20
-Nodes (6): configureSiriRemoteRepeat, current, listenToSiriRemote, remote, configureSiriRemoteRepeat, listenToSiriRemote
+### Community 878 - "document.md"
+Cohesion: 0.10
+Nodes (16): Craft (deprecated alias), Pitfalls, Seed mode, Step 1: Route through new-work's workshop, Step 2: Write seed DESIGN.md, Step 3: Confirm, Style guidelines, The frontmatter: token schema (+8 more)
 
 ### Community 884 - "settings_choice_focus.dart"
 Cohesion: 0.18
@@ -3707,41 +3590,29 @@ Nodes (17): baseUrl, _dio, addToWatchList, addWatchListMember, createWatchList, 
 Cohesion: 0.17
 Nodes (9): deviceName, fromJson, media, playback, PlaybackHandoff, RemotePlayback, session, tryParse (+1 more)
 
-### Community 888 - "totp.go"
-Cohesion: 0.05
-Nodes (47): PublicSettings, UpdateRequest, LoginStep, ApplyUpdate(), getStored(), isPlaceholderTMDBKey(), maskSecret(), OTPPolicy() (+39 more)
-
-### Community 889 - "vtt_cues.dart"
-Cohesion: 0.09
-Nodes (19): _cues, empty, end, hours, isEmpty, lines, linesAt, millis (+11 more)
-
-### Community 890 - "focus_fill.dart"
-Cohesion: 0.22
-Nodes (6): applies, fill, FocusFill, glass, ink, wrap
+### Community 888 - "normalizePlaybackLogLines"
+Cohesion: 0.20
+Nodes (10): normalizePlaybackLogLines(), isValidUTF8(), logLines(), TestNormalizePlaybackLogsCutsOnCharacterBoundaries(), TestNormalizePlaybackLogsDropsBlankLines(), TestNormalizePlaybackLogsHoldsTheByteCeiling(), TestNormalizePlaybackLogsKeepsTheEnd(), TestNormalizePlaybackLogsNormalisesUnknownLevels() (+2 more)
 
 ### Community 893 - "ADR-0114 — MediaHub gère le stockage d'Onyx"
 Cohesion: 0.40
 Nodes (4): ADR-0114 — MediaHub gère le stockage d'Onyx, Conséquences, Contexte, Décision
 
-### Community 894 - "server/README.md (back-end Go Onyx)"
-Cohesion: 0.06
-Nodes (26): ADR-0018 Surveillance de la mediatheque scans cibles, Moniteur de dossiers inotify et verification periodique, Scan cible ne traite que les fichiers changes, ADR-0041 Validation en deux etapes par code TOTP, Dix codes de secours a usage unique (empreinte SHA-256), Code TOTP RFC 6238 (SHA-1, 6 chiffres, 30 s), ADR-0050 Garde-fous du serveur : cle TMDB, taches de fond, caches, base, PUID/PGID : conteneur sans privileges a la demande (+18 more)
+### Community 894 - "ADR-0041 Validation en deux etapes par code TOTP"
+Cohesion: 0.33
+Nodes (4): ADR-0041 Validation en deux etapes par code TOTP, Dix codes de secours a usage unique (empreinte SHA-256), Code TOTP RFC 6238 (SHA-1, 6 chiffres, 30 s), Connexion en deux etapes par code (ADR-0041)
 
 ### Community 896 - "layout.md"
-Cohesion: 0.04
-Nodes (49): Adaptation Strategies, Assess Adaptation Challenge, Implement & Verify, Orientation & foldables, Phone → Tablet (iPad / large screens), Platform → platform (iOS ↔ Android), Web → native (porting a website or web app), Android platform (+41 more)
+Cohesion: 0.05
+Nodes (41): Adaptation Strategies, Assess Adaptation Challenge, Implement & Verify, Orientation & foldables, Phone → Tablet (iPad / large screens), Platform → platform (iOS ↔ Android), Web → native (porting a website or web app), 1. Accessibility (VoiceOver / TalkBack) (+33 more)
 
 ### Community 897 - "ADR-0104 — Une bibliothèque des vidéos de l'appareil, sans serveur"
 Cohesion: 0.40
 Nodes (4): ADR-0104 — Une bibliothèque des vidéos de l'appareil, sans serveur, Conséquences, Contexte, Décision
 
-### Community 898 - "tv_touchpad_pace.dart"
-Cohesion: 0.22
-Nodes (8): TouchpadPace, maybeOf, pace, precise, TvTouchpadPace, TvTouchpadStop, updateShouldNotify, zone
-
 ### Community 899 - ".Grab"
-Cohesion: 0.28
-Nodes (4): GrabbedRelease, GrabRequest, ReleaseTarget, isRouteMissing()
+Cohesion: 0.15
+Nodes (9): ADR-0098 — Recherche interactive des demandes : choisir soi-même la release, Conséquences, Contexte, Décision, GrabbedRelease, GrabRequest, releaseTargetFromQuery(), ReleaseTarget (+1 more)
 
 ### Community 900 - "_"
 Cohesion: 0.15
@@ -3751,33 +3622,17 @@ Nodes (13): _, applyAndRestart, AppUpdater, createWorkDir, discard, discardWorkD
 Cohesion: 0.25
 Nodes (8): 2. Color Palette & Roles, Accent Colors, Brand & Dark, Interactive, Neutral Scale, Primary, Shadow Colors, Surface & Borders
 
-### Community 902 - "player_controller_startup.dart"
-Cohesion: 0.25
-Nodes (7): _directPlaySource, init, PlayerControllerStartup, _releaseEarlyAccess, _resumeToleranceSeconds, startPlayback, _waitUntilSeekable
-
 ### Community 903 - "device_pairing.dart"
 Cohesion: 0.12
 Nodes (15): deviceCode, deviceName, DevicePairing, DevicePairingRequest, DevicePairingState, DevicePairingStatus, DeviceSession, expiresIn (+7 more)
 
 ### Community 904 - "tmdb_requests.go"
-Cohesion: 0.13
-Nodes (56): adminStorageDeleteResponse, onyxHubImportRequest, tmdbCatalogResponse, tmdbCatalogRow, deletableFile, episodeToTranslate, nfoRoot, nfoUnique (+48 more)
+Cohesion: 0.07
+Nodes (110): adminStorageDeleteResponse, onyxHubImportRequest, tmdbCatalogResponse, tmdbCatalogRow, episodeToTranslate, LocalIdentityHints, movieRow, nfoRoot (+102 more)
 
 ### Community 906 - "request_releases.dart"
 Cohesion: 0.40
 Nodes (4): _dio, getRequestReleases, grabRequestRelease, _RequestReleaseEndpoints
-
-### Community 907 - "avatar_image.dart"
-Cohesion: 0.29
-Nodes (5): avatarPhotoSide, codec, frame, image, squareAvatarPng
-
-### Community 913 - "_"
-Cohesion: 0.29
-Nodes (7): _, cornerRect, DesktopPipPlacement, margin, maxHeight, maxWidth, sanitizeAspect
-
-### Community 914 - "Visualize: Direction Comps & Asset Production"
-Cohesion: 0.33
-Nodes (5): Generate three compositional options, Inventory implementation fidelity, One approval point, Produce only the assets the build needs, Visualize: Direction Comps & Asset Production
 
 ### Community 915 - "ADR-0090 — Se connecter à MediaHub avec son compte Onyx"
 Cohesion: 0.40
@@ -3787,33 +3642,21 @@ Nodes (4): ADR-0090 — Se connecter à MediaHub avec son compte Onyx, Conséque
 Cohesion: 0.33
 Nodes (5): ADR-0115 — Le stockage se gère aussi depuis l'administration d'Onyx, Conséquences, Contexte, Décision, CheckDeletable()
 
-### Community 917 - "Ping"
-Cohesion: 0.40
-Nodes (4): Abilities, Access, PingUser, Ping
+### Community 917 - "Décision"
+Cohesion: 0.15
+Nodes (9): ADR-0089 — MediaHub, compagnon de demandes d'Onyx par son API v1, Conséquences, Contexte, Décision, Abilities, Access, PingUser, StatusError (+1 more)
 
 ### Community 918 - "media_subtitle_track.dart"
 Cohesion: 0.15
 Nodes (12): displayName, forced, fromJson, image, isDefault, lang, language, MediaSubtitleTrack (+4 more)
 
-### Community 919 - "MessagesPigeonStreamHandler"
-Cohesion: 0.15
-Nodes (4): MessagesPigeonEventChannelWrapper, MessagesPigeonStreamHandler, PigeonEventSink, StatusChangedStreamHandler
-
 ### Community 920 - "ADR-0127 — La lecture d'un autre appareil s'annonce en notification, et se reprend en maintenant Lecture"
 Cohesion: 0.33
 Nodes (5): ADR-0127 — La lecture d'un autre appareil s'annonce en notification, et se reprend en maintenant Lecture, Conséquences, Contexte, Décision, Écarté
 
-### Community 921 - "TestResetWithoutTMDBUnlocksTheChosenPoster"
-Cohesion: 0.60
-Nodes (6): insertMedia(), openTestDB(), posterOf(), TestAChosenShowPosterIsLockedAndFollowedByItsEpisodes(), TestChooseRefusesUnknownHostsAndEpisodes(), TestResetWithoutTMDBUnlocksTheChosenPoster()
-
-### Community 923 - "OnyxPlayerStatus"
-Cohesion: 0.12
-Nodes (6): OnyxPlayerErrorKind, SOURCE, UNKNOWN, UNSUPPORTED, OnyxPlayerStatus, OnyxTrack
-
 ### Community 924 - "ADR-0001 Droits utilisateur et invitations"
-Cohesion: 0.05
-Nodes (31): ADR-0001 Droits utilisateur et invitations, Cycle de vie d un lien d invitation, Six permissions booleennes sur users, ADR-0002 Identification des medias et deduplication non destructive, pickReleaseYear choisit l annee de sortie, RelinkEpisodesToShows repare les bibliotheques, Session hors ligne sur profil mis en cache, ADR-0013 Plusieurs serveurs et demande d acces (+23 more)
+Cohesion: 0.04
+Nodes (40): ADR-0001 Droits utilisateur et invitations, Cycle de vie d un lien d invitation, Six permissions booleennes sur users, ADR-0002 Identification des medias et deduplication non destructive, pickReleaseYear choisit l annee de sortie, RelinkEpisodesToShows repare les bibliotheques, Session hors ligne sur profil mis en cache, ADR-0013 Plusieurs serveurs et demande d acces (+32 more)
 
 ### Community 925 - "Design plans — Onyx"
 Cohesion: 0.40
@@ -3823,29 +3666,13 @@ Nodes (5): Audits, Design plans — Onyx, Findings sans plan, Vague 1 — tokens
 Cohesion: 0.50
 Nodes (3): _accountClient, continueWatchingOf, _NewEpisodeEndpoints
 
-### Community 930 - "live_subtitles.go (WebVTT ecrit par le FFmpeg de la session)"
-Cohesion: 0.25
-Nodes (7): ADR-0031 Sous-titres texte ecrits par la session HLS, Extraction prealable des sous-titres (mecanisme remplace), -flush_packets 1 (fichier lisible au fil de l'eau), live_subtitles.go (WebVTT ecrit par le FFmpeg de la session), LiveSubtitleLayer (peinture Flutter des sous-titres live), ShiftVTT (decalage des VTT, n'a plus lieu d'etre), VttCues (decoupe du WebVTT pour la peinture)
-
 ### Community 931 - "hls_session.dart"
 Cohesion: 0.10
 Nodes (20): audioMap, burnedSubtitle, expectUri, firstHlsVariantUri, fromJson, HlsSession, isDirectStream, LiveSubtitleSource (+12 more)
 
-### Community 932 - "Extract Flow"
-Cohesion: 0.25
-Nodes (7): Extract Flow, Step 1: Discover the Design System, Step 2: Identify Patterns, Step 3: Plan Extraction, Step 4: Extract & Enrich, Step 5: Migrate, Step 6: Document
-
-### Community 934 - "DpadTraversalPolicy"
-Cohesion: 0.50
-Nodes (3): _RowPolicy, TvPanePolicy, TvSectionsPolicy
-
 ### Community 935 - "ADR-0056 Qualite automatique : descendre avant la coupure, remonter sur mesure"
 Cohesion: 0.05
 Nodes (31): ADR-0022 Menu de qualite comme echelle de debits, defaultCopyBitrateCeiling (plafond 12 Mbit/s, chemin HLS seulement), qualityForSourceHeight (seuil du palier natif), qualityLadder (paliers resolution et debit), ADR-0023 Encodeur materiel optionnel, Choix de l'encodeur H.264 (VIDEO_ENCODER, encoder.go), h264_nvenc (NVIDIA), h264_qsv (Intel QuickSync) (+23 more)
-
-### Community 936 - "DpadRegionState"
-Cohesion: 0.50
-Nodes (3): TvControlRowState, _TvPaneRegionState, _TvRailRegionState
 
 ### Community 937 - "storage_query.dart"
 Cohesion: 0.15
@@ -3856,56 +3683,48 @@ Cohesion: 0.33
 Nodes (5): ADR-0092 — La goutte des saisons, peinte sans filtre de fusion, Conséquences, Contexte, Décision, Path()
 
 ### Community 945 - "Décision"
-Cohesion: 0.25
-Nodes (7): ADR-0068 — Affiche choisie parmi TMDB et Fanart.tv, Ce qui est enregistré, Conséquences, Décision, Qui, Sources, Écarté
+Cohesion: 0.20
+Nodes (9): ADR-0068 — Affiche choisie parmi TMDB et Fanart.tv, Ce qui est enregistré, Conséquences, Contexte, Décision, Qui, Sources, Écarté (+1 more)
 
 ### Community 948 - "artwork.dart"
 Cohesion: 0.33
 Nodes (5): _dio, _ArtworkEndpoints, getRemotePosters, resetMediaPoster, setMediaPoster
 
-### Community 950 - "maxGapSeconds"
-Cohesion: 0.53
-Nodes (6): estimateMaxGOPSeconds(), probeMaxGOPSeconds(), keyframeTimesFromIndex(), maxGapSeconds(), TestMatchesFFprobeOnRealFiles(), TestMaxGapNeedsTwoKeyframes()
-
 ### Community 953 - "web_playback_web.dart"
 Cohesion: 0.03
-Nodes (62): adoptHlsSession, attachRecovery, _bridgeInstalled, _bridgeSource, clearSubtitles, CONFIG, destroyAll, _diagnostics (+54 more)
+Nodes (69): adoptHlsSession, attachRecovery, _bridgeInstalled, _bridgeSource, clearSubtitles, CONFIG, destroyAll, _diagnostics (+61 more)
 
 ### Community 959 - "api/series_track_preferences.dart"
 Cohesion: 0.40
 Nodes (4): _dio, getSeriesTrackPreferences, _SeriesTrackPreferencesEndpoints, updateSeriesTrackPreferences
 
-### Community 964 - "OnyxPlaybackState"
-Cohesion: 0.33
-Nodes (5): OnyxPlaybackState, BUFFERING, ENDED, IDLE, READY
-
 ### Community 970 - "State"
 Cohesion: 0.50
 Nodes (4): State, RUNNING, STARTING, STOPPED
 
-### Community 976 - "static const"
-Cohesion: 0.02
-Nodes (92): _HolePainter, _, legacyQualities, PlayerMenuChoices, qualityTiers, rateLabel, trimRate, _RingPainter (+84 more)
+### Community 976 - "install_origin.dart"
+Cohesion: 0.22
+Nodes (6): _downloadsRoute, InstallOrigin, overrideMarkerForTest, resetForTest, serverUrl, serverUrlFromMarker
 
 ## Knowledge Gaps
-- **12953 isolated node(s):** `UserNotifications`, `useDesktopCaptionBar`, `useHiddenNativeTitleBar`, `macOSWindowControlsTopInset`, `tvShellHeaderTopGap` (+12948 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 19122 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **218 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **12958 isolated node(s):** `UserNotifications`, `useDesktopCaptionBar`, `useHiddenNativeTitleBar`, `macOSWindowControlsTopInset`, `tvShellHeaderTopGap` (+12953 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 19127 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **209 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `MainActivity` connect `MainActivity` to `MainActivity.kt`, `ADR-0104 — Une bibliothèque des vidéos de l'appareil, sans serveur`, `ADR-0028 Cible Apple TV (flutter-tvos et AVPlayer)`?**
-  _High betweenness centrality (0.178) - this node is a cross-community bridge._
+  _High betweenness centrality (0.173) - this node is a cross-community bridge._
 - **What connects `UserNotifications`, `useDesktopCaptionBar`, `useHiddenNativeTitleBar` to the rest of the system?**
-  _12953 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _12958 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `package:shared_preferences/shared_preferences.dart` be split into smaller, more focused modules?**
-  _Cohesion score 0.015171713324446136 - nodes in this community are weakly interconnected._
-- **Why does `ADR-0038 AetherEngine sur iPhone, Mac et Apple TV` connect `ADR-0028 Cible Apple TV (flutter-tvos et AVPlayer)` to `ADR-0105 — Un `AVPlayerViewController` natif pour le lecteur de l'Apple TV`, `ADR-0039 Force du geste sur le trackpad de l'Apple TV`, `ADR-0009 ExoPlayer sur Android mpv ailleurs`?**
-  _High betweenness centrality (0.171) - this node is a cross-community bridge._
+  _Cohesion score 0.01422151731430082 - nodes in this community are weakly interconnected._
+- **Why does `ADR-0038 AetherEngine sur iPhone, Mac et Apple TV` connect `ADR-0028 Cible Apple TV (flutter-tvos et AVPlayer)` to `ADR-0009 ExoPlayer sur Android mpv ailleurs`?**
+  _High betweenness centrality (0.165) - this node is a cross-community bridge._
 - **Should `package:flutter_test/flutter_test.dart` be split into smaller, more focused modules?**
-  _Cohesion score 0.008710455383742375 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.008937256809338521 - nodes in this community are weakly interconnected._
 - **Why does `Décision` connect `ADR-0028 Cible Apple TV (flutter-tvos et AVPlayer)` to `MainActivity`?**
-  _High betweenness centrality (0.171) - this node is a cross-community bridge._
+  _High betweenness centrality (0.165) - this node is a cross-community bridge._
 - **Should `../../models/models.dart` be split into smaller, more focused modules?**
-  _Cohesion score 0.00759403059398391 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.00759147646806969 - nodes in this community are weakly interconnected._
