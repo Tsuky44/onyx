@@ -41,6 +41,9 @@ abstract final class AppType {
   /// Titres de page compacts.
   static const double title1 = 24;
 
+  /// Titre d'un écran de choix centré (« Quel serveur ? »).
+  static const double choiceTitle = 26;
+
   /// Titres de fiche.
   static const double display = 28;
 
@@ -68,6 +71,7 @@ abstract final class AppType {
     title3,
     title2,
     title1,
+    choiceTitle,
     display,
     largeTitle,
     hero,
