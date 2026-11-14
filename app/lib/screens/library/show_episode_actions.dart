@@ -9,6 +9,7 @@ import '../../providers/library_provider.dart';
 import '../player/player_screen.dart';
 import '../../widgets/global/onyx_dialog.dart';
 import '../../theme/app_icons.dart';
+import 'version_picker.dart';
 
 /// Ce qu'on fait d'un épisode depuis la fiche d'une série ou la page d'une
 /// saison : le lancer, le cocher vu. Les deux pages font le même geste, avec
@@ -58,21 +59,10 @@ Future<MediaVersion?> _pickVersion(
         title: tr('Choisir une version'),
         icon: AppIcons.play,
         width: 480,
-        content: DropdownButtonFormField<int>(
-          initialValue: selected.item.media.id,
-          isExpanded: true,
-          decoration: InputDecoration(labelText: tr('Version')),
-          items: versions
-              .map(
-                (v) => DropdownMenuItem(
-                  value: v.item.media.id,
-                  child: Text(v.label, overflow: TextOverflow.ellipsis),
-                ),
-              )
-              .toList(),
-          onChanged: (id) => update(() {
-            selected = versions.firstWhere((v) => v.item.media.id == id);
-          }),
+        content: VersionPicker(
+          versions: versions,
+          selectedId: selected.item.media.id,
+          onSelected: (v) => update(() => selected = v),
         ),
         actions: [
           OnyxDialogAction(

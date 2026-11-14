@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:onyx/models/models.dart';
+import 'package:onyx/theme/app_icons.dart';
+import 'package:onyx/widgets/global/onyx_menu_panel.dart';
 import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/watch_lists_provider.dart';
 import 'package:onyx/screens/library/movie_detail_screen.dart';
@@ -87,8 +89,17 @@ void main() {
         .item;
     expect(selected().media.id, 2);
     expect(selected().introEnd, 12);
-    await tester.tap(find.byType(DropdownButtonFormField<int>));
+    // La capsule porte la version en cours ; le menu liste les deux, la
+    // version en cours cochée.
+    expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+    await tester.tap(find.text('4K'));
     await tester.pumpAndSettle();
+    // Chaque ligne réserve la coche ; seule celle de la version en cours est
+    // opaque.
+    final checks = tester.widgetList<Icon>(find.descendant(
+        of: find.byType(OnyxMenuPanel<int>),
+        matching: find.byIcon(AppIcons.check)));
+    expect(checks.where((i) => i.color!.a > 0), hasLength(1));
     await tester.tap(find.text('1080p').last);
     await tester.pumpAndSettle();
     expect(selected().media.id, 1);
