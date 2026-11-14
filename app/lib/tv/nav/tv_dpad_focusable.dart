@@ -5,6 +5,7 @@ import '../../theme/app_motion.dart';
 import '../../theme/lite_mode.dart';
 import '../tv_focus_ring.dart';
 import '../tv_mode.dart';
+import '../tv_page.dart';
 import 'tv_card_directions.dart';
 import 'tv_contained_steps.dart';
 import 'tv_nav_theme.dart';
@@ -171,6 +172,16 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
     }
   }
 
+  /// Après l'image qui pose le focus, comme le défilement de dpad : la
+  /// ligne d'arrivée peut encore se mettre en page.
+  void _revealIn(TvPage page) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _node.hasFocus) {
+        page.reveal(_node, alignment: widget.scrollAlignment);
+      }
+    });
+  }
+
   void _registerMenu(FocusNode? previous) {
     if (previous != null && !identical(previous, _node)) {
       TvDpadFocusable._contextMenus[previous] = null;
@@ -182,9 +193,19 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
   @override
   Widget build(BuildContext context) {
     final isTv = TvScope.of(context);
+    // Dans une page qui tient son parcours (une fiche, [TvPage]), Haut et
+    // Bas lui reviennent avant que la zone de la carte ne réponde : dpad
+    // cherche d'abord dans la zone, et un éventail de cartes penchées y
+    // trouvait toujours une voisine « plus bas ».
+    final page = isTv ? TvPageScope.maybeOf(context) : null;
+    final own =
+        widget.onDirection ?? (widget.childFocus ? _containedStep : null);
     final onDirection = !isTv
         ? null
-        : widget.onDirection ?? (widget.childFocus ? _containedStep : null);
+        : page == null
+            ? own
+            : (TraversalDirection direction) =>
+                (own?.call(direction) ?? false) || page.step(_node, direction);
     final focusable = DpadFocusable(
       focusNode: _node,
       // Sur téléviseur seulement : prendre le focus sur un téléphone ouvre
@@ -194,7 +215,14 @@ class _TvDpadFocusableState extends State<TvDpadFocusable> {
       entry: widget.entry || widget.wide,
       onSelect: widget.onSelect,
       onLongSelect: isTv && widget.enabled ? widget.onContextMenu : null,
-      onFocusChange: widget.onFocusChange,
+      onFocusChange: page == null
+          ? widget.onFocusChange
+          : (focused) {
+              widget.onFocusChange?.call(focused);
+              if (focused) _revealIn(page);
+            },
+      // La page pose son propre défilement : celui de dpad s'y ajouterait.
+      autoScroll: page == null,
       scrollAlignment: TvNavTheme.alignmentFor(widget.scrollAlignment),
       tapToSelect: false,
       excludeChildFocus: !widget.childFocus && !widget.editable,

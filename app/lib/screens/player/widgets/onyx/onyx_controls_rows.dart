@@ -13,12 +13,13 @@ extension _OnyxControlsRows on OnyxControlsLayer {
   ///
   /// Rien au milieu de l'image ni de bouton Retour : OK met en pause, gauche
   /// et droite déplacent sur la barre, Retour quitte. En haut à gauche le logo
-  /// du titre ; en bas, le titre et des boutons ronds, la barre de lecture et
-  /// ses temps, puis les onglets.
+  /// du titre ; en bas, le titre et un bouton rond par réglage, la barre de
+  /// lecture et ses temps, puis les onglets et leur volet (ADR-0130).
   ///
-  /// Trois rangées, parcourues en ligne droite ([TvRegion.controlRows]) : les
-  /// boutons ronds, la barre, les onglets. La télécommande arrive sur la
-  /// barre : c'est elle qui répond à OK, à gauche et à droite.
+  /// Des rangées parcourues en ligne droite ([TvRegion.controlRows]) : les
+  /// boutons ronds, la barre, les onglets, puis celles du volet ouvert. La
+  /// télécommande arrive sur la barre : c'est elle qui répond à OK, à gauche
+  /// et à droite.
   Widget _buildTvChrome(OnyxChromeMetrics m) {
     return TvRegion.controlRows(
       onNavigate: onRemoteNavigate,
@@ -89,65 +90,71 @@ extension _OnyxControlsRows on OnyxControlsLayer {
   }
 
   Widget _buildTvBottom(OnyxChromeMetrics m) {
-    final hasTabs = OnyxTvTabs.hasAny(
-      overview: overview,
-      onOpenEpisodes: onOpenEpisodes,
-      onOpenWatchParty: onOpenWatchParty,
-    );
     return OnyxScrim(
       gradient: OnyxChromeTheme.bottomScrim,
       child: Padding(
         // Assez de dégradé au-dessus du titre pour qu'il se lise sur une
         // image claire, sans repousser « Passer l'intro » au milieu de
         // l'écran.
-        padding: EdgeInsets.fromLTRB(m.gutter, 84, m.gutter, m.bottomInset),
+        padding: const EdgeInsets.only(top: 84),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(child: _buildTvTitleBlock(m)),
-                const SizedBox(width: 24),
-                TvRegion.controls(child: _buildTvActions(m)),
-              ],
-            ),
-            const SizedBox(height: 10),
-            TvRegion.controls(
-              preferredFocus: progressFocusNode,
-              child: KeyedSubtree(
-                key: timelineAnchorKey,
-                child: OnyxProgressBar(
-                  progress: _progressFraction,
-                  buffered: buffered,
-                  duration: duration,
-                  chapterMarks: chapterMarks,
-                  metrics: m,
-                  onSeek: onSeekFraction,
-                  onScrubbingChanged: onScrubbingChanged,
-                  focusable: true,
-                  onStepBack: onScrubStepBack ?? onRewind,
-                  onStepForward: onScrubStepForward ?? onForward,
-                  onSelect: onPlayPause,
-                  focusNode: progressFocusNode,
-                  previews: previews,
-                  previewAtProgress: remoteSeekPending,
-                  marker: true,
-                ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: m.gutter),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(child: _buildTvTitleBlock(m)),
+                      const SizedBox(width: 24),
+                      TvRegion.controls(child: _buildTvActions(m)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  TvRegion.controls(
+                    preferredFocus: progressFocusNode,
+                    child: KeyedSubtree(
+                      key: timelineAnchorKey,
+                      child: OnyxProgressBar(
+                        progress: _progressFraction,
+                        buffered: buffered,
+                        duration: duration,
+                        chapterMarks: chapterMarks,
+                        metrics: m,
+                        onSeek: onSeekFraction,
+                        onScrubbingChanged: onScrubbingChanged,
+                        focusable: true,
+                        onStepBack: onScrubStepBack ?? onRewind,
+                        onStepForward: onScrubStepForward ?? onForward,
+                        onSelect: onPlayPause,
+                        focusNode: progressFocusNode,
+                        previews: previews,
+                        previewAtProgress: remoteSeekPending,
+                        marker: true,
+                      ),
+                    ),
+                  ),
+                  _buildTvTimes(m),
+                ],
               ),
             ),
-            _buildTvTimes(m),
-            if (hasTabs) ...[
-              const SizedBox(height: 8),
+            // Le volet des onglets va d'un bord à l'autre de l'écran : il
+            // pose lui-même ses marges.
+            if (tabs.isEmpty)
+              SizedBox(height: m.bottomInset)
+            else
               OnyxTvTabs(
+                metrics: m,
                 visible: visible,
-                overview: overview,
-                onOpenEpisodes: onOpenEpisodes,
-                onOpenWatchParty: onOpenWatchParty,
-                watchPartyActive: watchPartyActive,
+                tabs: tabs,
+                open: openTab,
+                onChanged: (tab) => onTabChanged?.call(tab),
               ),
-            ],
           ],
         ),
       ),
@@ -190,67 +197,73 @@ extension _OnyxControlsRows on OnyxControlsLayer {
     );
   }
 
-  /// Les boutons ronds, à droite du titre : les pistes, les réglages, et
-  /// l'épisode voisin quand il y en a un.
+  /// Les boutons ronds, à droite du titre : un par réglage, chacun avec son
+  /// menu, entre l'épisode précédent et le suivant quand il y en a
+  /// (ADR-0130). L'ADR-0124 rangeait la qualité, la vitesse, le format
+  /// d'image et la minuterie derrière un seul bouton « Réglages » : un index
+  /// à traverser pour chaque changement.
   Widget _buildTvActions(OnyxChromeMetrics m) {
-    final gap = SizedBox(width: m.clusterGap);
+    Widget plain(
+      String id,
+      IconData icon,
+      String label,
+      VoidCallback onPressed,
+    ) =>
+        OnyxIconButton(
+          key: ValueKey('onyx-$id'),
+          icon: icon,
+          tooltip: label,
+          metrics: m,
+          isTv: true,
+          glass: true,
+          onPressed: onPressed,
+        );
+    // Le bouton est son propre repère : le menu se pose au-dessus de lui.
+    Widget menu(OnyxMenuSection section, IconData icon, String label) =>
+        Builder(
+          key: ValueKey('onyx-${section.name}'),
+          builder: (anchor) => OnyxIconButton(
+            icon: icon,
+            tooltip: label,
+            metrics: m,
+            isTv: true,
+            glass: true,
+            lit: openMenu == section,
+            onPressed: () => onOpenMenu?.call(section, anchor),
+          ),
+        );
+    final buttons = <Widget>[
+      if (onSkipPrevious != null)
+        plain(
+          'previous',
+          Icons.skip_previous_rounded,
+          tr('Épisode précédent'),
+          onSkipPrevious!,
+        ),
+      menu(OnyxMenuSection.subtitles, Icons.subtitles_rounded,
+          tr('Sous-titres')),
+      menu(OnyxMenuSection.audio, Icons.graphic_eq_rounded, tr('Pistes audio')),
+      menu(OnyxMenuSection.quality, Icons.high_quality_rounded, tr('Qualité')),
+      menu(OnyxMenuSection.speed, Icons.speed_rounded,
+          tr('Vitesse de lecture')),
+      menu(OnyxMenuSection.display, Icons.aspect_ratio_rounded,
+          tr('Format d’image')),
+      menu(OnyxMenuSection.sleep, Icons.bedtime_rounded,
+          tr('Minuterie de veille')),
+      if (onSkipNext != null)
+        plain(
+          'next',
+          Icons.skip_next_rounded,
+          tr('Épisode suivant'),
+          onSkipNext!,
+        ),
+    ];
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (onSkipPrevious != null) ...[
-          OnyxIconButton(
-            key: const ValueKey('onyx-previous'),
-            icon: Icons.skip_previous_rounded,
-            tooltip: tr('Épisode précédent'),
-            metrics: m,
-            isTv: true,
-            glass: true,
-            onPressed: onSkipPrevious!,
-          ),
-          gap,
-        ],
-        OnyxIconButton(
-          key: const ValueKey('onyx-subtitles'),
-          buttonKey: subtitlesButtonKey,
-          icon: Icons.subtitles_rounded,
-          tooltip: tr('Sous-titres'),
-          metrics: m,
-          isTv: true,
-          glass: true,
-          onPressed: onToggleSubtitles,
-        ),
-        gap,
-        OnyxIconButton(
-          key: const ValueKey('onyx-audio'),
-          icon: Icons.graphic_eq_rounded,
-          tooltip: tr('Pistes audio'),
-          metrics: m,
-          isTv: true,
-          glass: true,
-          onPressed: onOpenAudio,
-        ),
-        gap,
-        OnyxIconButton(
-          key: const ValueKey('onyx-settings'),
-          buttonKey: settingsButtonKey,
-          icon: Icons.more_horiz_rounded,
-          tooltip: tr('Réglages'),
-          metrics: m,
-          isTv: true,
-          glass: true,
-          onPressed: onOpenSettings,
-        ),
-        if (onSkipNext != null) ...[
-          gap,
-          OnyxIconButton(
-            key: const ValueKey('onyx-next'),
-            icon: Icons.skip_next_rounded,
-            tooltip: tr('Épisode suivant'),
-            metrics: m,
-            isTv: true,
-            glass: true,
-            onPressed: onSkipNext!,
-          ),
+        for (var i = 0; i < buttons.length; i++) ...[
+          if (i > 0) SizedBox(width: m.clusterGap),
+          buttons[i],
         ],
       ],
     );
@@ -288,6 +301,18 @@ extension _OnyxControlsRows on OnyxControlsLayer {
             metrics: m,
             isTv: isTv,
             onPressed: onOpenEpisodes!,
+          ),
+          SizedBox(width: m.clusterGap),
+        ] else if (onOpenInfo != null) ...[
+          // Un film n'a pas d'épisodes, mais il a un résumé, des chapitres et
+          // des statistiques : le même emplacement ouvre le même volet.
+          OnyxIconButton(
+            key: const ValueKey('onyx-info'),
+            icon: Icons.info_outline_rounded,
+            tooltip: tr('Infos'),
+            metrics: m,
+            isTv: isTv,
+            onPressed: onOpenInfo!,
           ),
           SizedBox(width: m.clusterGap),
         ],

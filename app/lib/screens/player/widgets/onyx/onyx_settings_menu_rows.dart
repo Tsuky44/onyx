@@ -12,20 +12,25 @@ part of 'onyx_settings_menu.dart';
 /// where nothing lights up is a menu a remote cannot be driven through, and it
 /// reads from the sofa as an app that has stopped answering.
 ///
-/// So the focus is drawn here instead, over the row: the accent ring
-/// [TvFocusable] paints everywhere else in the app, plus a fill that carries
-/// from three metres away. The pointer gets its own, quieter tint — it had
+/// So the focus is drawn here instead, over the row. Sur un téléviseur, c'est
+/// la pastille blanche à l'encre noire de toute commande focalisée
+/// ([FocusFill], ADR-0112), qui dépasse un peu du rang comme dans les menus
+/// de l'Apple TV (ADR-0130). The pointer gets its own, quieter tint — it had
 /// lost its hover state to the same burial.
 class _OnyxMenuTile extends StatefulWidget {
-  final Widget child;
+  /// La ligne, avec [lit] vrai quand elle est la pastille blanche : son
+  /// contenu passe alors à l'encre.
+  final Widget Function(BuildContext context, bool lit) builder;
   final VoidCallback onTap;
+  final double minHeight;
 
   /// Supplied for the one row the remote is sent to on arrival.
   final FocusNode? focusNode;
 
   const _OnyxMenuTile({
-    required this.child,
+    required this.builder,
     required this.onTap,
+    required this.minHeight,
     this.focusNode,
   });
 
@@ -55,10 +60,15 @@ class _OnyxMenuTileState extends State<_OnyxMenuTile> {
 
   @override
   Widget build(BuildContext context) {
+    final style = OnyxMenuStyle.current;
+    final tv = TvMode.isTv;
+    final radius = BorderRadius.circular(style.rowRadius);
     return TvFocusable(
       focusNode: _node,
       onSelect: widget.onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: radius,
+      // La pastille dit le focus d'une télécommande ; un clavier garde l'anneau.
+      showRing: !tv,
       // Rows touch each other: growing one would climb over its neighbour.
       focusScale: 1.0,
       // A long list — twelve chapters — reads better with the outlined row
@@ -79,16 +89,39 @@ class _OnyxMenuTileState extends State<_OnyxMenuTile> {
             listenable: _node,
             builder: (context, _) {
               final focused = _node.hasFocus;
-              return DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(6),
-                  color: focused
-                      ? _focusFill
-                      : _hovered
-                          ? _hoverFill
-                          : Colors.transparent,
+              final lit = tv && focused;
+              // La pastille gagne en largeur ce qu'elle rend en retrait : le
+              // texte ne bouge pas quand le focus arrive.
+              final margin = lit ? 0.0 : style.overhang;
+              return AnimatedContainer(
+                duration: AppMotion.move(context, AppMotion.focus),
+                curve: AppMotion.curve,
+                margin: EdgeInsets.symmetric(horizontal: margin, vertical: 1),
+                padding: EdgeInsets.symmetric(
+                  horizontal: style.rowInset + style.overhang - margin,
                 ),
-                child: widget.child,
+                constraints: BoxConstraints(minHeight: widget.minHeight),
+                alignment: Alignment.centerLeft,
+                decoration: BoxDecoration(
+                  borderRadius: radius,
+                  color: lit
+                      ? FocusFill.fill
+                      : focused
+                          ? OnyxChromeTheme.glassControl
+                          : _hovered
+                              ? OnyxChromeTheme.glassCard
+                              : Colors.transparent,
+                  boxShadow: lit
+                      ? const [
+                          BoxShadow(
+                            color: OnyxChromeTheme.glassShadow,
+                            blurRadius: 24,
+                            offset: Offset(0, 10),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: widget.builder(context, lit),
               );
             },
           ),
@@ -97,12 +130,6 @@ class _OnyxMenuTileState extends State<_OnyxMenuTile> {
     );
   }
 }
-
-/// Reads from three metres away, on a surface that is already almost black.
-final Color _focusFill = Colors.white.withValues(alpha: 0.14);
-
-/// The pointer gets the quieter half of the same treatment.
-final Color _hoverFill = Colors.white.withValues(alpha: 0.07);
 
 /// Index row: what the setting is on, without opening it.
 class _OnyxMenuRow extends StatelessWidget {
@@ -120,48 +147,47 @@ class _OnyxMenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final style = OnyxMenuStyle.current;
     return _OnyxMenuTile(
       onTap: onTap,
       focusNode: focusNode,
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
+      minHeight: style.rowHeight,
+      builder: (context, lit) {
+        final ink = lit ? FocusFill.ink : OnyxChromeTheme.title;
+        final quiet = lit ? _quietInk : OnyxChromeTheme.meta;
+        return Row(
           children: [
             Text(
               label,
-              style: const TextStyle(
-                color: OnyxChromeTheme.title,
-                fontSize: AppType.body,
+              style: TextStyle(
+                color: ink,
+                fontSize: style.labelSize,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const Spacer(),
-            Flexible(
+            const SizedBox(width: 12),
+            // La valeur prend ce qui reste et se cale à droite : les chevrons
+            // tombent sur une même verticale, quelle que soit sa longueur.
+            Expanded(
               child: Text(
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,
-                style: const TextStyle(
-                  color: OnyxChromeTheme.meta,
-                  fontSize: AppType.subhead,
-                  fontWeight: FontWeight.w400,
-                ),
+                style: TextStyle(color: quiet, fontSize: style.valueSize),
               ),
             ),
             const SizedBox(width: 6),
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
-              color: OnyxChromeTheme.meta,
-            ),
+            Icon(Icons.chevron_right_rounded, size: 18, color: quiet),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
+
+/// L'encre discrète d'une ligne focalisée : sa seconde ligne, sa valeur.
+final Color _quietInk = FocusFill.ink.withValues(alpha: 0.62);
 
 /// Choice row: a check occupies the left slot whether or not it is set, so the
 /// labels stay on one vertical line.
@@ -199,19 +225,28 @@ class _OnyxMenuOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final style = OnyxMenuStyle.current;
+    final hasDetail = subtitle != null && subtitle!.isNotEmpty;
     return _OnyxMenuTile(
       onTap: onTap,
       focusNode: focusNode,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 44),
-        padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
-        child: Row(
+      minHeight: hasDetail ? style.tallRowHeight : style.rowHeight,
+      builder: (context, lit) {
+        final ink = lit ? FocusFill.ink : OnyxChromeTheme.title;
+        final quiet = lit ? _quietInk : OnyxChromeTheme.time;
+        return Row(
           children: [
             SizedBox(
-              width: 26,
+              width: style.checkSlot,
               child: selected
-                  ? const Icon(Icons.check_rounded,
-                      size: 17, color: OnyxChromeTheme.title)
+                  ? Align(
+                      alignment: Alignment.centerLeft,
+                      child: Icon(
+                        Icons.check_rounded,
+                        size: style.checkSize,
+                        color: ink,
+                      ),
+                    )
                   : null,
             ),
             Expanded(
@@ -227,29 +262,31 @@ class _OnyxMenuOption extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: OnyxChromeTheme.title,
-                            fontSize: AppType.body,
+                            color: ink,
+                            fontSize: style.labelSize,
                             fontWeight:
-                                selected ? FontWeight.w600 : FontWeight.w400,
+                                selected ? FontWeight.w700 : FontWeight.w500,
                           ),
                         ),
                       ),
                       if (badge != null) ...[
                         const SizedBox(width: 6),
-                        _OnyxMenuBadge(text: badge!),
+                        _OnyxMenuBadge(text: badge!, color: quiet),
                       ],
                     ],
                   ),
-                  if (subtitle != null && subtitle!.isNotEmpty)
+                  if (hasDetail)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         subtitle!,
-                        maxLines: 1,
+                        // Deux lignes : la description d'un format d'image
+                        // est plus longue que le panneau n'est large.
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: OnyxChromeTheme.meta,
-                          fontSize: AppType.footnote,
+                        style: TextStyle(
+                          color: quiet,
+                          fontSize: style.detailSize,
                         ),
                       ),
                     ),
@@ -260,20 +297,50 @@ class _OnyxMenuOption extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 value!,
-                style: const TextStyle(
-                  color: OnyxChromeTheme.meta,
-                  fontSize: AppType.footnote,
-                  fontFeatures: [FontFeature.tabularFigures()],
+                style: TextStyle(
+                  color: quiet,
+                  fontSize: style.valueSize,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ],
           ],
+        );
+      },
+    );
+  }
+}
+
+/// L'en-tête du menu d'un seul réglage : son nom, rien à activer.
+class _OnyxMenuHeader extends StatelessWidget {
+  final String title;
+
+  const _OnyxMenuHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final style = OnyxMenuStyle.current;
+    return Container(
+      height: style.headerHeight,
+      alignment: Alignment.centerLeft,
+      padding: EdgeInsets.symmetric(
+        horizontal: style.padding + style.rowInset,
+      ),
+      child: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: OnyxChromeTheme.time,
+          fontSize: style.headerSize,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 }
 
+/// L'en-tête d'une section ouverte depuis l'index : il y ramène.
 class _OnyxMenuBackHeader extends StatelessWidget {
   final String title;
   final VoidCallback onBack;
@@ -282,40 +349,59 @@ class _OnyxMenuBackHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _OnyxMenuTile(
-      onTap: onBack,
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.only(left: 8, right: 16),
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Color(0x1AFFFFFF)),
-          ),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.chevron_left_rounded,
-                size: 22, color: OnyxChromeTheme.title),
-            const SizedBox(width: 4),
-            Text(
-              title,
-              style: const TextStyle(
-                color: OnyxChromeTheme.title,
-                fontSize: AppType.body,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+    final style = OnyxMenuStyle.current;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: style.padding - style.overhang,
       ),
+      child: _OnyxMenuTile(
+        onTap: onBack,
+        minHeight: style.rowHeight,
+        builder: (context, lit) {
+          final ink = lit ? FocusFill.ink : OnyxChromeTheme.title;
+          return Row(
+            children: [
+              Icon(Icons.chevron_left_rounded, size: 22, color: ink),
+              const SizedBox(width: 4),
+              Text(
+                title,
+                style: TextStyle(
+                  color: ink,
+                  fontSize: style.labelSize,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Le filet entre deux groupes de choix.
+class _OnyxMenuDivider extends StatelessWidget {
+  const _OnyxMenuDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final style = OnyxMenuStyle.current;
+    return Container(
+      height: 1,
+      margin: EdgeInsets.symmetric(
+        horizontal: style.overhang + style.rowInset,
+        vertical: 6,
+      ),
+      color: OnyxChromeTheme.glassBorder,
     );
   }
 }
 
 class _OnyxMenuBadge extends StatelessWidget {
   final String text;
+  final Color color;
 
-  const _OnyxMenuBadge({required this.text});
+  const _OnyxMenuBadge({required this.text, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -323,12 +409,11 @@ class _OnyxMenuBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
         text,
-        style: const TextStyle(
-            color: OnyxChromeTheme.meta, fontSize: AppType.micro),
+        style: TextStyle(color: color, fontSize: AppType.micro),
       ),
     );
   }
@@ -339,12 +424,18 @@ class _OnyxMenuEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final style = OnyxMenuStyle.current;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        vertical: 16,
+        horizontal: style.padding + style.rowInset,
+      ),
       child: Text(
         tr('Aucune piste disponible'),
-        style:
-            TextStyle(color: OnyxChromeTheme.meta, fontSize: AppType.subhead),
+        style: TextStyle(
+          color: OnyxChromeTheme.meta,
+          fontSize: style.detailSize,
+        ),
       ),
     );
   }

@@ -32,6 +32,31 @@ abstract final class OnyxChromeTheme {
 
   static const Color tooltipSurface = Color(0xF21C1C1C);
 
+  // --- Verre ----------------------------------------------------------------
+  // Les panneaux posés sur le film à la demande (`OnyxGlassPanel`, ADR-0130).
+
+  /// Le fond d'un panneau quand ce qui est dessous est flouté.
+  static const Color glassSurface = Color(0xB828282C); // 72 %
+
+  /// Le même sans flou (mode léger, téléviseurs LG) : assez dense pour porter
+  /// le texte sur une image claire.
+  static const Color glassSurfaceDense = Color(0xF21E1E22); // 95 %
+  static const Color glassBorder = Color(0x29FFFFFF); // blanc 16 %
+  static const Color glassHairline = Color(0x14FFFFFF); // blanc 8 %
+  static const Color glassShadow = Color(0x8C000000); // noir 55 %
+
+  /// Une commande de verre au repos : bouton rond, capsule, carte.
+  static const Color glassControl = Color(0x2EFFFFFF); // blanc 18 %
+
+  /// La même sous le pointeur, ou marquée comme le choix en cours.
+  static const Color glassControlActive = Color(0x47FFFFFF); // blanc 28 %
+
+  /// Une carte de volet au repos, plus discrète qu'une commande.
+  static const Color glassCard = Color(0x14FFFFFF); // blanc 8 %
+
+  /// Le voile posé sur l'image derrière une fenêtre de question.
+  static const Color questionVeil = Color(0x99000000); // noir 60 %
+
   /// Top and bottom scrims. Flat gradients, no blur anywhere in this chrome.
   static const LinearGradient topScrim = LinearGradient(
     begin: Alignment.topCenter,
@@ -161,6 +186,10 @@ class OnyxChromeMetrics {
   /// pick would hand them the desktop sizes, drawn for a monitor at arm's
   /// length.
   ///
+  /// Dessinées pour une mise en page de 1280 de large (`PlayerTvScale`,
+  /// ADR-0130) : la marge de 53 y vaut les 80 points de la zone sûre d'une
+  /// Apple TV, et la vignette un quart de l'écran.
+  ///
   /// The insets keep every control inside the title-safe area: a good share of
   /// televisions still crop a few percent off each edge.
   const OnyxChromeMetrics.tv()
@@ -181,7 +210,7 @@ class OnyxChromeMetrics {
         bottomInset = 30,
         topInset = 40,
         skipIntroTextSize = 16,
-        previewWidth = 400;
+        previewWidth = 320;
 
   const OnyxChromeMetrics._({
     required this.gutter,

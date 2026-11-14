@@ -6,22 +6,25 @@ import 'package:onyx/screens/player/hooks/use_player_popup.dart';
 import 'package:onyx/screens/player/playback/playback_session.dart';
 import 'package:onyx/screens/player/player_key_routing.dart';
 import 'package:onyx/screens/player/video_display_mode.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_capsule_button.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_controls_layer.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_settings_menu.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_tabs.dart';
 import 'package:onyx/screens/player/widgets/player_popups.dart';
 import 'package:onyx/tv/nav/onyx_dpad.dart' show TvNavScope;
 import 'package:onyx/tv/nav/tv_back.dart';
 
 /// Un lecteur de banc : le Chrome Onyx télé, `routePlayerKey`, le
 /// `PlayerPopupHost` et le menu de réglages, câblés comme `PlayerScreen` les
-/// câble, sans moteur vidéo.
+/// câble, sans moteur vidéo. Les boutons ronds ouvrent chacun le menu de son
+/// réglage, et les onglets leur volet (ADR-0130).
 ///
 /// `PlayerScreen` ne se monte pas dans un test (il lui faut un moteur, une
 /// session, un serveur). Ce banc reprend ce qui décide de la télécommande,
 /// branche pour branche, de `player_screen_remote.dart` : qui détient le
 /// focus (le lecteur, ou une commande dans son sous-arbre), le chrome levé
-/// avec une commande entourée (ADR-0008), la pile du Retour (menu, chrome,
-/// lecteur) et le retour du focus à la fermeture d'un menu. Les widgets, eux,
+/// avec une commande entourée (ADR-0008), la pile du Retour (menu, volet des
+/// onglets, chrome, lecteur) et le retour du focus à la fermeture d'un menu. Les widgets, eux,
 /// sont les vrais. Une divergence entre ce banc et le lecteur se corrige des
 /// deux côtés ; l'écran entier se vérifie au simulateur (ADR-0110, phase 7).
 class PlayerRemoteBench extends StatefulWidget {
@@ -35,7 +38,7 @@ class PlayerRemoteBench extends StatefulWidget {
   /// La pastille « Passer l'intro » est à l'écran.
   final bool skipIntro;
 
-  /// Un épisode : précédent, suivant et la liste des épisodes.
+  /// Un épisode : précédent, suivant et l'onglet des épisodes.
   final bool series;
 
   /// Ce que `routePlayerKey` a décidé, touche par touche.
@@ -59,6 +62,10 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
   /// Le lecteur a été quitté.
   bool left = false;
 
+  /// `_tabs.open` et `_openMenu` du lecteur.
+  OnyxTab? openTab;
+  OnyxMenuSection? openMenu;
+
   late final PlayerPopupHost popups = PlayerPopupHost(
     isActive: () => mounted && !_disposing,
     onDismissed: _handlePopupDismissed,
@@ -81,6 +88,7 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
 
   /// `_handlePopupDismissed` du lecteur.
   void _handlePopupDismissed(FocusNode? origin) {
+    if (openMenu != null) setState(() => openMenu = null);
     if (origin != null && TvNavScope.isActive(context)) {
       origin.requestFocus();
       _showChrome();
@@ -147,6 +155,10 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
       case PlayerKeyBack():
         if (!TvBack.claimKey(context)) break;
         if (popups.back()) break;
+        if (openTab != null) {
+          _closeTabs();
+          break;
+        }
         if (browsing) {
           _leaveControlBar();
           break;
@@ -166,6 +178,10 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
   /// `_handleBack` du lecteur : le Retour du système.
   void _handleBack() {
     if (popups.back()) return;
+    if (openTab != null) {
+      _closeTabs();
+      return;
+    }
     if (browsingControls) {
       _leaveControlBar();
       return;
@@ -173,14 +189,26 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
     _leave();
   }
 
-  void _openSettings() {
+  /// `_closeTabs` du lecteur : la télécommande revient sur la barre, puis le
+  /// volet se ferme.
+  void _closeTabs() {
+    if (progress.context != null) progress.requestFocus();
+    setState(() => openTab = null);
+  }
+
+  /// `_showOnyxSettingsMenu` du lecteur, pour le bouton rond d'un réglage.
+  void _openMenu(OnyxMenuSection section, BuildContext anchor) {
+    final screenSize = MediaQuery.sizeOf(context);
+    final placement = placeSettingsPopup(anchor, screenSize);
     popups.insert(
       context,
-      (dismiss) => PlayerCenteredPopup(
+      (dismiss) => PlayerSettingsPopup(
+        placement: placement,
+        screenSize: screenSize,
         onDismiss: dismiss,
         child: MediaQuery(
           // La police de test est à chasse fixe et bien plus large que la
-          // vraie : sans ça les libellés débordent des 292 px du panneau.
+          // vraie : sans ça les libellés débordent du panneau.
           data: MediaQuery.of(context)
               .copyWith(textScaler: const TextScaler.linear(0.4)),
           child: OnyxSettingsMenu(
@@ -190,12 +218,28 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
             playbackRate: 1.0,
             playbackRates: const [0.5, 1.0, 1.5, 2.0],
             onRateChanged: (_) {},
+            initialSection: section,
+            standalone: true,
             onClose: dismiss,
           ),
         ),
       ),
     );
+    setState(() => openMenu = section);
   }
+
+  /// Un onglet du banc : un bouton dans son volet, pour que la télécommande
+  /// ait où entrer.
+  OnyxTabEntry _tab(OnyxTab tab, String label) => OnyxTabEntry(
+        tab: tab,
+        label: label,
+        builder: (_) => Align(
+          alignment: Alignment.topLeft,
+          child: OnyxControlsRow(
+            child: OnyxCapsuleButton(label: 'Dans $label', onPressed: () {}),
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -231,11 +275,19 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
             onToggleSubtitles: () {},
             onOpenAudio: () {},
             onCycleSpeed: () {},
-            onOpenSettings: _openSettings,
+            onOpenSettings: () {},
             onToggleFullscreen: () {},
+            onOpenMenu: _openMenu,
+            openMenu: openMenu,
+            tabs: [
+              _tab(OnyxTab.info, 'Infos'),
+              if (widget.series) _tab(OnyxTab.episodes, 'Épisodes'),
+              _tab(OnyxTab.stats, 'Stats'),
+            ],
+            openTab: openTab,
+            onTabChanged: (tab) => setState(() => openTab = tab),
             onSkipNext: widget.series ? () {} : null,
             onSkipPrevious: widget.series ? () {} : null,
-            onOpenEpisodes: widget.series ? () {} : null,
             onSkipIntro: widget.skipIntro ? () {} : null,
             playPauseFocusNode: playPause,
             progressFocusNode: progress,

@@ -1416,6 +1416,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Play / pause',
   'Lecture auto.':
       'Autoplay',
+  'Lecture automatique en pause':
+      'Autoplay paused',
+  'Lecture dans {0} s':
+      'Playing in {0} s',
   'Lecture en cours sur un autre appareil':
       'Playing on another device',
   'Lecture en cours sur {0}':
@@ -1808,6 +1812,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Opening the code…',
   'Ouvrez Onyx sur le téléviseur, l’ordinateur ou le navigateur à connecter, et cadrez le code QR affiché.':
       'Open Onyx on the TV, computer or browser to connect, and frame the QR code shown.',
+  'Ouvrez un titre pour le demander':
+      'Open a title to request it',
   'Ouvrez la bande-annonce : {0}':
       'Open the trailer: {0}',
   'Ouvrez l’application Onyx sur votre téléphone.':
@@ -2086,6 +2092,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Revenue',
   'Revoir le lien':
       'Show the link again',
+  'Rien dans la bibliothèque':
+      'Nothing in the library',
   'Rien ne descend sans que vous le demandiez.':
       'Nothing is downloaded unless you ask for it.',
   'Rien n’a été gardé de ce serveur : reconnectez-vous.':
@@ -2188,6 +2196,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Season watched',
   'Saison {0}':
       'Season {0}',
+  'Saison {0}, épisode {1}':
+      'Season {0}, episode {1}',
   'Saisons':
       'Seasons',
   'Sans limite':
@@ -2280,6 +2290,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Subtitles…',
   'Statistiques':
       'Statistics',
+  'Stats':
+      'Stats',
   'Statut':
       'Status',
   'Stockage':

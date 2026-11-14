@@ -105,9 +105,6 @@ const Map<String, Map<String, int>> _legacy = {
   'lib/screens/player/widgets/onyx/onyx_settings_menu.dart': {
     'onKeyEvent': 1,
   },
-  'lib/screens/player/widgets/player_episodes_panel.dart': {
-    'ensureVisible': 1,
-  },
   'lib/screens/settings/legal_document_screen.dart': {
     'onKeyEvent': 1,
   },

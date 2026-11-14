@@ -379,6 +379,20 @@ class TouchpadMotion {
     _pendingY = 0;
   }
 
+  /// Le doigt, resté posé, repart après une pause : c'est un nouveau geste,
+  /// sans qu'il ait quitté la surface. Le trajet repart de zéro, et son
+  /// premier pas retrouve le seuil court d'un début de geste.
+  void rearm() {
+    _pendingX = 0;
+    _pendingY = 0;
+    _stepsThisGesture = 0;
+    _reach = 0;
+    if (_samples.isNotEmpty) {
+      _startX = _samples.last.x;
+      _startY = _samples.last.y;
+    }
+  }
+
   /// Vrai quand le doigt glisse en ce moment sur la surface.
   bool swipingAt(Duration now) => !_clicking && _velocityAt(now) != null;
 

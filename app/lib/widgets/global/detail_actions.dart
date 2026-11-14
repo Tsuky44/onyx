@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme.dart';
+import '../../tv/nav/tv_entry_focus.dart';
 import '../../tv/tv_focus_caption.dart';
 import '../../utils/responsive.dart';
 import '../../theme/app_icons.dart';
@@ -45,7 +46,7 @@ String detailPlayLabel({
 /// largeur, seul sur sa ligne, et les actions secondaires passent en icônes
 /// sur la ligne d'après. Au-delà, tout tient dans un [Wrap] : entre 600 et
 /// 900 px l'affiche occupe déjà la gauche de l'en-tête.
-class DetailActions extends StatelessWidget {
+class DetailActions extends StatefulWidget {
   final String playLabel;
 
   /// Null quand il n'y a rien à lire : le bouton n'est alors pas affiché.
@@ -91,7 +92,48 @@ class DetailActions extends StatelessWidget {
   );
 
   @override
+  State<DetailActions> createState() => _DetailActionsState();
+}
+
+class _DetailActionsState extends State<DetailActions> {
+  /// Le nœud de la pastille de lecture : la télécommande y revient quand la
+  /// pastille arrive après l'ouverture de la fiche ([TvEntryFocus]).
+  final FocusNode _play = FocusNode(debugLabel: 'detail-play');
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autofocusPlay && widget.onPlay != null) {
+      TvEntryFocus.claim(_play);
+    }
+  }
+
+  /// Sur une série, l'épisode à lire n'est connu qu'après le réseau : la
+  /// pastille naît dans une fiche qui a déjà son focus, sur le bouton retour.
+  @override
+  void didUpdateWidget(DetailActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.autofocusPlay &&
+        widget.onPlay != null &&
+        oldWidget.onPlay == null) {
+      TvEntryFocus.claim(_play);
+    }
+  }
+
+  @override
+  void dispose() {
+    _play.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final widget = this.widget;
+    final playLabel = widget.playLabel;
+    final onPlay = widget.onPlay;
+    final progress = widget.progress;
+    final progressLabel = widget.progressLabel;
+    final secondary = widget.secondary;
     final compact = AppLayout.isCompact(context);
     final play = onPlay == null
         ? null
@@ -99,14 +141,15 @@ class DetailActions extends StatelessWidget {
             label: playLabel,
             icon: AppIcons.play,
             style: HeroPillStyle.glass,
-            autofocus: autofocusPlay,
+            autofocus: widget.autofocusPlay,
+            focusNode: _play,
             onPressed: onPlay,
           );
     final progressLine = progress == null
         ? null
-        : _ProgressLine(value: progress!, label: progressLabel);
+        : _ProgressLine(value: progress, label: progressLabel);
     final style = IconButtonThemeData(
-        style: heroRoundButtonStyle(context, secondaryStyle));
+        style: heroRoundButtonStyle(context, DetailActions.secondaryStyle));
 
     if (compact) {
       return Column(

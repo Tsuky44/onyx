@@ -37,3 +37,36 @@ class TvTouchpadPace extends InheritedWidget {
   @override
   bool updateShouldNotify(TvTouchpadPace oldWidget) => oldWidget.pace != pace;
 }
+
+/// Une étape du pavé de la Siri Remote : un glissé vertical n'en franchit
+/// qu'une (ADR-0128).
+///
+/// Sur une fiche, chaque section (l'en-tête, les saisons, la distribution)
+/// est une étape. D'un seul glissé, « Lecture » menait à la distribution puis
+/// plus bas encore, et la page traversait deux écrans. Le pas qui change
+/// d'étape est le dernier de son geste ; dans une même étape, seules des
+/// cartes se suivent en continu (une liste d'épisodes), les commandes vont
+/// cran par cran. Voir `TvTouchpad`.
+///
+/// Sans effet hors Apple TV, et sur les flèches du pavé directionnel : une
+/// flèche vaut toujours un pas.
+class TvTouchpadStop extends InheritedWidget {
+  const TvTouchpadStop({
+    super.key,
+    required this.zone,
+    required super.child,
+  });
+
+  /// Ce qui distingue cette étape des autres : deux cibles sont dans la même
+  /// étape quand leurs zones sont le même objet.
+  final Object zone;
+
+  /// L'étape au-dessus de [context], ou nul hors de toute étape. Lue au
+  /// moment d'un geste : aucune dépendance n'est inscrite.
+  static Object? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<TvTouchpadStop>()?.zone;
+
+  @override
+  bool updateShouldNotify(TvTouchpadStop oldWidget) =>
+      !identical(oldWidget.zone, zone);
+}

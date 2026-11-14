@@ -37,25 +37,33 @@ import 'hooks/use_player_controller.dart';
 import 'hooks/use_episode_navigation.dart';
 import 'hooks/use_player_media_keys.dart';
 import 'hooks/use_player_popup.dart';
+import 'hooks/use_player_stats.dart';
+import 'hooks/use_player_tabs.dart';
 import 'hooks/use_player_watch_party.dart';
 import 'hooks/use_window_focus.dart';
 import 'widgets/desktop_pip_overlay.dart';
 import 'widgets/seek_feedback_overlay.dart';
 import 'widgets/video_zoom_hint.dart';
-import 'widgets/next_episode_overlay.dart';
+import 'widgets/next_episode_page.dart';
 import 'widgets/next_season_overlay.dart';
 import 'widgets/language_gap_overlay.dart';
 import 'widgets/upcoming_episode_overlay.dart';
 import 'widgets/onyx/onyx_controls_layer.dart';
 import 'widgets/onyx/onyx_settings_menu.dart';
-import 'widgets/player_episodes_panel.dart';
+import 'widgets/onyx/onyx_tabs.dart';
 import 'widgets/player_popups.dart';
+import 'widgets/player_tab_sheet.dart';
 import 'widgets/player_tv_scale.dart';
 import 'widgets/player_screen_lock.dart';
 import 'widgets/player_status_panels.dart';
 import 'widgets/player_tap_zones.dart';
 import 'widgets/player_video_stage.dart';
 import 'widgets/still_watching_prompt.dart';
+import 'widgets/tabs/player_chapters_tab.dart';
+import 'widgets/tabs/player_episodes_tab.dart';
+import 'widgets/tabs/player_info_tab.dart';
+import 'widgets/tabs/player_stats_tab.dart';
+import 'widgets/tabs/player_watch_party_tab.dart';
 import 'widgets/watch_party_overlay.dart';
 import 'playback/live_subtitles.dart';
 import 'playback/native_tv_presenter.dart';
@@ -72,6 +80,7 @@ import 'subtitle_padding.dart';
 import 'player_playback_preferences.dart';
 import 'player_shortcuts.dart';
 import '../../desktop_window.dart';
+import '../../utils/format.dart';
 import '../../utils/watched_verdict.dart';
 import '../../l10n/tr.dart';
 
@@ -81,6 +90,7 @@ import '../../l10n/tr.dart';
 part 'player_screen_chrome.dart';
 part 'player_screen_flow.dart';
 part 'player_screen_native_tv.dart';
+part 'player_screen_overlays.dart';
 part 'player_screen_remote.dart';
 part 'player_screen_startup.dart';
 
@@ -116,6 +126,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
       PlayerMediaInfo(widget.media as Object, seasonNumber: widget.seasonNumber);
   EpisodeNavigationController? _episodeNav;
   late final EpisodesPanelController _episodesPanel;
+
+  /// Les onglets du lecteur et leurs mesures en direct (ADR-0130).
+  late final PlayerTabsController _tabs;
+  late final PlayerLiveStats _stats;
+
+  /// Le menu ouvert par un bouton rond d'un téléviseur : son bouton reste
+  /// allumé tant qu'il l'est.
+  OnyxMenuSection? _openMenu;
+  bool _nextEpisodePageWasVisible = false;
   late final PlaybackHandoffWatch _handoff;
   late final PlayerWatchParty _party;
   /// L'écran natif d'Apple TV, ou null là où l'interface Onyx reste seule.
@@ -387,6 +406,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
       currentShowId: _info.showId,
       currentEpisodeId: _info.media.id,
     )..addListener(_rebuild);
+    _tabs = PlayerTabsController(
+      episodes: _episodesPanel,
+      showTitle: () => _info.showTitle,
+      onOpenChanged: _handleTabsOpenChanged,
+    )..addListener(_rebuild);
+    _stats = PlayerLiveStats.of(
+      _playerController,
+      filePath: _info.media.filePath,
+    );
     _mediaKeys = PlayerMediaKeysBinding(
       onPlayPause: _togglePlayPause,
       onRewind: () => _seekRelative(-10),
@@ -434,6 +462,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _relayTimer?.cancel();
     _handoff.dispose();
     _hints.dispose();
+    _tabs.dispose();
+    _stats.dispose();
     _episodesPanel.dispose();
     _remoteSeek.dispose();
     if (!_progressFlushed && _apiClient != null) {
@@ -470,8 +500,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final isTv = TvScope.of(context);
-    final party = _party.party;
-    final nav = _episodeNav;
     _scheduleNativeTvSync();
     return Focus(
       focusNode: _keyboardFocusNode,
@@ -494,6 +522,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               children: [
                 PlayerVideoStage(
                   scale: _videoScale,
+                  alignment: _videoAlignment,
                   // Le widget de rendu appartient au moteur : mpv
                   // dessine dans une texture, ExoPlayer dans une
                   // SurfaceView composée par le plan vidéo de l'écran.
@@ -586,132 +615,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     ),
                   ),
                 PlayerTvScale.layer(isTv: isTv, child: _buildChrome(isTv)),
-                // Regarder ensemble : les annonces (« alex a mis en pause ») et
-                // l'attente d'un participant qui charge, en haut au centre. Le
-                // bouton, lui, est dans la barre du chrome.
-                if (party != null || _party.noticeVisible)
-                  Positioned(
-                    top: macOSWindowControlsTopInset + 20,
-                    left: 0,
-                    right: 0,
-                    child: SafeArea(
-                      bottom: false,
-                      child: Center(
-                        child: WatchPartyToast(
-                          message: party?.waitingMessage ?? _party.notice,
-                          visible: party?.waitingMessage != null ||
-                              _party.noticeVisible,
-                        ),
-                      ),
-                    ),
-                  ),
-                // Overlays must be AFTER the chrome in Stack to render on top.
-                // Requires an actual next episode: at the end of a season the
-                // pill would otherwise sit there doing nothing when tapped.
-                if (nav != null &&
-                    nav.showNextEpisodeOutro &&
-                    nav.nextEpisode != null &&
-                    !_endCardVisible)
-                  NextEpisodeOverlay(
-                    nextEpisode: nav.nextEpisode,
-                    // Pas de compte à rebours vers un épisode que la
-                    // minuterie de veille ne laissera pas démarrer.
-                    autoPlayActive: nav.outroAutoPlayActive &&
-                        !SleepTimer.instance.stopsAfterThisEpisode,
-                    frozen: nav.outroAutoPlayFrozen,
-                    countdownSeconds: nav.outroCountdownSeconds,
-                    onPlayNext: _goToNextEpisode,
-                    onCancel: () => nav.cancelAutoPlay(),
-                  ),
-                // Tapping the shrunk video is a second way to say "no thanks":
-                // it dismisses the page and gives the picture and the controls
-                // back. Placed before the back button so that button, which
-                // sits inside this same strip, still gets the tap.
-                if (_endCardVisible)
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    width: MediaQuery.of(context).size.width * _videoScale,
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _dismissEndCard,
-                      ),
-                    ),
-                  ),
-                // The only chrome that survives an end card: without it the
-                // page would be a dead end, since every other way out is
-                // hidden.
-                if (_endCardVisible)
-                  Positioned(
-                    top: macOSWindowControlsTopInset + 12,
-                    left: 20,
-                    child: PlayerBackButton(onTap: _leavePlayer),
-                  ),
-                // Une seule page à la fois : la question de la langue se pose
-                // au moment d'enchaîner, donc à la place de celle qui l'a
-                // lancée.
-                if (nav != null && nav.showLaunchLanguageCard)
-                  LanguageGapOverlay(
-                    gap: nav.launchLanguageGap!,
-                    episode: _info.item,
-                    atLaunch: true,
-                    onContinue: _continueAtLaunch,
-                    onWait: () => unawaited(_waitAtLaunch()),
-                    onDismiss: _dismissEndCard,
-                    videoInset:
-                        MediaQuery.of(context).size.width * _videoScale,
-                  )
-                else if (nav != null && nav.showLanguageGapCard)
-                  LanguageGapOverlay(
-                    gap: nav.languageGap!,
-                    episode: nav.nextEpisode,
-                    onContinue: _continueInOfferedLanguage,
-                    onWait: _waitForAudioLanguage,
-                    onDismiss: _dismissEndCard,
-                    videoInset:
-                        MediaQuery.of(context).size.width * _videoScale,
-                  )
-                else if (nav != null && nav.showUpcomingEpisodeCard)
-                  UpcomingEpisodeOverlay(
-                    episode: nav.upcomingEpisode!,
-                    onDismiss: () => nav.dismissUpcomingEpisodeCard(),
-                    onPlayNext:
-                        nav.nextEpisode != null ? _goToNextEpisode : null,
-                    videoInset:
-                        MediaQuery.of(context).size.width * _videoScale,
-                  ),
-                if (nav != null &&
-                    nav.showNextSeasonCard &&
-                    !nav.showLanguageGapCard &&
-                    !nav.showLaunchLanguageCard)
-                  NextSeasonOverlay(
-                    season: nav.nextSeason!,
-                    submitting: _requestingNextSeason,
-                    onRequest: _requestNextSeason,
-                    onDismiss: () => nav.dismissNextSeasonCard(),
-                    onPlayNext:
-                        nav.isSeasonLookahead ? _goToNextEpisode : null,
-                    videoInset:
-                        MediaQuery.of(context).size.width * _videoScale,
-                  ),
-                if (_episodesPanel.isOpen && _info.isEpisode)
-                  PlayerTvScale.layer(isTv: isTv, child: PlayerEpisodesPanel(
-                    showTitle: _episodesPanel.showTitle,
-                    currentEpisodeId: _info.media.id,
-                    seasons: _episodesPanel.seasons,
-                    selectedSeasonId: _episodesPanel.selectedSeasonId ??
-                        _info.seasonId ??
-                        0,
-                    onSeasonChanged: (seasonId) =>
-                        unawaited(_episodesPanel.selectSeason(seasonId)),
-                    episodes: _episodesPanel.episodes,
-                    isLoading: _episodesPanel.isLoading,
-                    onClose: _closeEpisodesPanel,
-                    onEpisodeSelected: _navigateToEpisode,
-                  )),
+                ..._buildOverChrome(isTv),
                 // Start-up spinner. IgnorePointer like the one below: loading is
                 // exactly when the user may want to go back, so the cover must
                 // never eat taps meant for the chrome.
@@ -729,23 +633,31 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     )
                   else
                     const PlayerLoadingSpinner(),
+                // Les fenêtres de question sont à l'échelle du lecteur, comme
+                // le chrome : voir [PlayerTvScale].
                 if (_handoff.handedOffTo != null)
-                  Positioned.fill(
-                    child: PlayingElsewhere(
-                      deviceName: _handoff.handedOffTo!,
-                      busy: _handoff.resumingHere,
-                      onResume: _handoff.resumeHere,
-                      onBack: _leavePlayer,
+                  PlayerTvScale.layer(
+                    isTv: isTv,
+                    child: Positioned.fill(
+                      child: PlayingElsewhere(
+                        deviceName: _handoff.handedOffTo!,
+                        busy: _handoff.resumingHere,
+                        onResume: _handoff.resumeHere,
+                        onBack: _leavePlayer,
+                      ),
                     ),
                   ),
                 if (_playerController.isSwitchingQuality ||
                     (_playerController.isBuffering && _isInitialized))
                   const PlayerLoadingSpinner(),
                 if (_stillWatchingAsked)
-                  Positioned.fill(
-                    child: StillWatchingPrompt(
-                      onContinue: _confirmStillWatching,
-                      onLeave: _leavePlayer,
+                  PlayerTvScale.layer(
+                    isTv: isTv,
+                    child: Positioned.fill(
+                      child: StillWatchingPrompt(
+                        onContinue: _confirmStillWatching,
+                        onLeave: _leavePlayer,
+                      ),
                     ),
                   ),
                 // En dernier, donc au-dessus de tout : rien de ce qui précède

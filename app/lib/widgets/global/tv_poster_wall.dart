@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/media_request.dart';
 import '../../models/models.dart';
+import '../../screens/requests/widgets/request_media_card.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_type.dart';
 import '../../utils/responsive.dart';
@@ -13,11 +15,20 @@ typedef PosterWallEntry = ({Media media, HomeMediaItem? movie});
 
 /// Un rayon du mur : ses affiches, sous un titre s'il y en a plusieurs.
 class PosterWallSection {
-  const PosterWallSection({this.title, required this.entries});
+  const PosterWallSection({this.title, required this.entries})
+      : unavailable = const [];
+
+  /// Un rayon de titres que le serveur n'a pas : leurs affiches sont voilées
+  /// et portent la pastille « Indispo » (ADR-0129).
+  const PosterWallSection.unavailable({this.title, required this.unavailable})
+      : entries = const [];
 
   /// Nul pour un mur d'un seul tenant (une bibliothèque).
   final String? title;
   final List<PosterWallEntry> entries;
+  final List<RequestMediaItem> unavailable;
+
+  int get length => entries.length + unavailable.length;
 }
 
 /// Le mur d'affiches d'un téléviseur : la grille qui défile à droite d'un
@@ -76,6 +87,19 @@ class TvPosterWall extends StatelessWidget {
   /// passait sur le titre.
   static const double sectionHeader = 58;
 
+  /// L'affiche d'un rayon : un titre de la bibliothèque, ou un titre que le
+  /// serveur n'a pas, qui ouvre sa fiche de demande.
+  Widget _card(PosterWallSection section, int index, double alignment) {
+    if (index < section.entries.length) {
+      return _poster(section.entries[index], alignment);
+    }
+    return RequestMediaCard(
+      item: section.unavailable[index - section.entries.length],
+      marksUnavailable: true,
+      scrollAlignment: alignment,
+    );
+  }
+
   Widget _poster(PosterWallEntry entry, double alignment) {
     final movie = entry.movie;
     final card = MediaCard(
@@ -104,7 +128,7 @@ class TvPosterWall extends StatelessWidget {
     final gap = AppLayout.mediaRowGap(context);
     final shown = [
       for (final section in sections)
-        if (section.entries.isNotEmpty) section,
+        if (section.length > 0) section,
     ];
 
     return LayoutBuilder(builder: (context, constraints) {
@@ -176,9 +200,8 @@ class TvPosterWall extends StatelessWidget {
                 sliver: SliverGrid(
                   gridDelegate: delegate,
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) =>
-                        _poster(section.entries[index], alignment),
-                    childCount: section.entries.length,
+                    (context, index) => _card(section, index, alignment),
+                    childCount: section.length,
                   ),
                 ),
               ),

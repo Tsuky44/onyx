@@ -268,6 +268,22 @@ class LibraryProvider extends ChangeNotifier {
     return [for (final entry in ranked) entry.media];
   }
 
+  /// Le film ou la série de la bibliothèque qui porte cet identifiant TMDB,
+  /// s'il y est : de quoi reconnaître un titre du catalogue de demandes.
+  Media? mediaForTmdb(MediaType type, int tmdbId) {
+    if (tmdbId <= 0) return null;
+    if (type == MediaType.movie) {
+      for (final item in _movies) {
+        if (item.media.tmdbId == tmdbId) return item.media;
+      }
+      return null;
+    }
+    for (final show in _shows) {
+      if (show.tmdbId == tmdbId) return show;
+    }
+    return null;
+  }
+
   HomeMediaItem? movieItemFor(int mediaId) {
     for (final item in _movies) {
       if (item.media.id == mediaId) return item;

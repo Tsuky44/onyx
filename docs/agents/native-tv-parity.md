@@ -55,9 +55,10 @@ ce soit.
    (`player_controller_hls.dart`), et sa timeline repart de 0. Une reprise à 40 min affiche donc 0:00 sur la durée
    restante, et la recherche avant ce point est impossible. Tant que le serveur ne sert pas une timeline complète, il
    faut un repli vers Onyx dès que l'offset est non nul. Ce point est à valider avec le chantier transcodage.
-6. **Onyx n'affiche aucune statistique à l'écran.** `PlaybackStatsCollector` mesure pendant la lecture, mais le résumé
-   ne part qu'avec le journal (Réglages › Journaux de lecture). Un onglet Stats natif serait donc un ajout, pas une
-   parité. Il est prévu parce qu'il est demandé.
+6. **Onyx n'affichait aucune statistique à l'écran** quand ce plan a été écrit. `PlaybackStatsCollector` mesure pendant
+   la lecture, mais le résumé ne part qu'avec le journal (Réglages › Journaux de lecture). L'onglet Stats natif a donc
+   été un ajout, pas une parité ; depuis l'ADR-0130 le chrome Onyx a le sien (`hooks/use_player_stats.dart`), aux mêmes
+   lignes.
 7. **`apply()` réaffecte tout à chaque spec** (menus, actions, métadonnées). Avec des mises à jour plus fréquentes
    (toast, compte à rebours, panneaux), réaffecter `transportBarCustomMenuItems` pourrait fermer un menu ouvert (à
    confirmer à l'appareil). Le lot Swift doit donc appliquer par morceaux et ne toucher que ce qui a changé.
@@ -103,7 +104,7 @@ Légende de l'état :
 |---|---|---|---|---|
 | Titre, surtitre (`S1:E3 - …`, année) | `onyx_controls_layer.dart` (`_buildBrand`), `player_media_info.dart` | déjà fait | `externalMetadata` (titre, `iTunesMetadataTrackSubTitle`) | |
 | Logo du titre | `onyx_controls_layer.dart` (`logoUrl`) | impossible | — | AVKit n'affiche qu'un texte de titre. |
-| Synopsis, affiche dans le panneau Infos | — (pas dans le chrome Onyx) | déjà fait | `externalMetadata` (description, artwork) | |
+| Synopsis, affiche dans le panneau Infos | `widgets/tabs/player_info_tab.dart` (ADR-0130) | déjà fait | `externalMetadata` (description, artwork) | |
 
 ### 2.3 Menus de réglages
 
@@ -118,7 +119,7 @@ Légende de l'état :
 | Affichage : Original, Remplir la hauteur, Remplir | `onyx_settings_menu.dart` (`_buildDisplay`), `video_display_mode.dart` | fait | `transportBarCustomMenuItems` (menu `fit`) + `videoGravity` | Il manque la description de chaque mode (`mode.description` → `detail`). `AVPlayerViewController.videoGravity` n'était pas réglé (`engine.videoGravity` ne touche que les calques du moteur) : corrigé avec l'ADR-0107. |
 | Zoom au pincement, indice de zoom | `pinch_zoom_fit.dart`, `widgets/video_zoom_hint.dart` | sans objet | — | Réservé aux appareils tenus en main (`_handheld`). Ce n'est donc pas une perte sur Apple TV, contrairement à ce que dit l'ADR. |
 | Minuterie de veille (durées, « À la fin de l'épisode », « Après N épisodes », « reste … ») | `playback/sleep_timer.dart`, `onyx_settings_menu.dart` (`_buildSleep`) | fait | `transportBarCustomMenuItems` (menu `sleep`) | Le contrat actuel suffit, plus `detail` pour « reste 12 min ». L'échéance met en pause côté Dart, ce qui marche déjà en natif. |
-| Chapitres (liste, saut) | `onyx_settings_menu.dart` (`_buildChapters`), `hooks/use_episode_navigation.dart` (`chapters`) | fait | `AVPlayerItem.navigationMarkerGroups`, à reposer sur chaque item | `navigationMarkerGroups` reposés sur chaque item. Le menu de repli `chapters` est décodé côté Dart mais pas envoyé : à n'ajouter que si AVKit n'affiche pas le panneau hors HLS. |
+| Chapitres (liste, saut) | `widgets/tabs/player_chapters_tab.dart`, `onyx_settings_menu_sections.dart` (`_buildChapters`), `hooks/use_episode_navigation.dart` (`chapters`) | fait | `AVPlayerItem.navigationMarkerGroups`, à reposer sur chaque item | `navigationMarkerGroups` reposés sur chaque item. Le menu de repli `chapters` est décodé côté Dart mais pas envoyé : à n'ajouter que si AVKit n'affiche pas le panneau hors HLS. |
 | Délai audio ou sous-titres | — | sans objet | — | N'existe pas dans Onyx. |
 | Style des sous-titres | — | déjà fait | comportement natif (réglages d'accessibilité tvOS) | Onyx n'a pas de réglage de style. AVKit applique celui du système. |
 
@@ -132,7 +133,7 @@ Légende de l'état :
 | Épisode suivant au générique, compte à rebours, « Annuler » | `widgets/next_episode_overlay.dart`, `hooks/use_episode_navigation.dart` (`_startOutroAutoPlay`, `cancelAutoPlay`) | fait | `AVContentProposal` + sous-classe d'`AVContentProposalViewController` | `NativeNextUpProposalController`, compte à rebours en anneau (pas de libellé traduit dans le contrat). « Plus tard » gèle le compte à rebours et retire la proposition pour cet épisode. |
 | Pas de compte à rebours si la minuterie s'arrête après cet épisode | `player_screen.dart` (`SleepTimer.instance.stopsAfterThisEpisode`) | fait | `nextUp.countdownSeconds` nul | Décidé côté Dart. |
 | Épisode précédent, épisode suivant (boutons de transport) | `onyx_controls_layer.dart` (`onSkipPrevious`, `onSkipNext`), `hooks/use_episodes_panel.dart` (épisode précédent) | fait | `infoViewActions` (deux au plus, d'après l'en-tête) | Remplace « Lire depuis le début », qui contournerait Dart. Une liste vide le retire aussi. |
-| Panneau des épisodes (saisons, liste, ouvrir un épisode) | `widgets/player_episodes_panel.dart`, `hooks/use_episodes_panel.dart` | fait | `customInfoViewControllers`, onglet « Épisodes » | Chargé dès la première présentation : aucun événement ne dit quand AVKit affiche l'onglet. |
+| Panneau des épisodes (saisons, liste, ouvrir un épisode) | `widgets/tabs/player_episodes_tab.dart`, `hooks/use_episodes_panel.dart` | fait | `customInfoViewControllers`, onglet « Épisodes » | Chargé dès la première présentation : aucun événement ne dit quand AVKit affiche l'onglet. |
 | Carte « saison suivante » (la demander) | `widgets/next_season_overlay.dart` | fait | question native (`UIAlertController` présenté sur l'`AVPlayerViewController`) | Question native ; « Demander » envoie la demande, range la question et l'annonce. |
 | Carte « épisode pas encore sorti » | `widgets/upcoming_episode_overlay.dart` | fait | question native | |
 | Question de langue (épisode suivant ou lancement sans la langue suivie) | `widgets/language_gap_overlay.dart`, `playback/audio_language_gap.dart` | fait | question native | |
@@ -157,7 +158,7 @@ Légende de l'état :
 
 | Fonction | Code Onyx | État natif | Moyen prévu | Remarque |
 |---|---|---|---|---|
-| Panneau : démarrer une séance, code, participants, hôte, quitter | `widgets/watch_party_overlay.dart` (`WatchPartyPanel`), `hooks/use_player_watch_party.dart` (`start`, `leave`) | fait | `customInfoViewControllers`, onglet « Regarder ensemble » | Panneau générique : texte, code, lignes des participants, actions. « Copier » est sans objet sur TV. |
+| Panneau : démarrer une séance, code, participants, hôte, quitter | `widgets/tabs/player_watch_party_tab.dart`, `hooks/use_player_watch_party.dart` (`start`, `leave`) | fait | `customInfoViewControllers`, onglet « Regarder ensemble » | Panneau générique : texte, code, lignes des participants, actions. « Copier » est sans objet sur TV. |
 | Annonces (« alex a mis en pause »), attente d'un participant | `widgets/watch_party_overlay.dart` (`WatchPartyToast`), `use_player_watch_party.dart` (`notice`, `waitingMessage`) | fait | `contentOverlayView` (`spec.toast`) | Non interactif, au-dessus de l'image et sous les contrôles. |
 | La séance pilote le lecteur (lecture, pause, recherche, vitesse) | `services/watch_party.dart`, `use_player_watch_party.dart` (`applyPlaying`, `applySeek`, `applyRateFactor`) | déjà fait | — (passe par le moteur) | AVKit reflète l'`AVPlayer`. |
 | Les gestes locaux sont annoncés à la séance | `player_screen_flow.dart` (`_seekTo`, `_togglePlayPause`) | fait | événements `transport`, `userSeeked`, `seekRequested` → mêmes chemins | Priorité 1 (§1.1). |
@@ -181,7 +182,7 @@ Légende de l'état :
 
 | Fonction | Code Onyx | État natif | Moyen prévu | Remarque |
 |---|---|---|---|---|
-| Statistiques à l'écran | — (absent d'Onyx) | fait (ajout) | `customInfoViewControllers`, onglet « Stats » | Swift lit le moteur chaque seconde tant que l'onglet est visible, avec la fonction qui sert `stats()`. Dart ne fournit que les libellés. |
+| Statistiques à l'écran | `widgets/tabs/player_stats_tab.dart`, `hooks/use_player_stats.dart` (ADR-0130) | fait (ajout) | `customInfoViewControllers`, onglet « Stats » | Swift lit le moteur chaque seconde tant que l'onglet est visible, avec la fonction qui sert `stats()`. Dart ne fournit que les libellés. |
 | Image dans l'image | `PictureInPictureBridge.swift` (iPhone, iPad) | fait | `allowsPictureInPicturePlayback = false` | Voir §1.3. |
 | Volume, muet, luminosité, plein écran, verrouillage, PiP d'ordinateur, double tap | `onyx_brightness_slider.dart`, `player_screen_lock.dart`, `desktop_pip_overlay.dart`, `player_tap_zones.dart` | sans objet | — | Déjà absents du chrome TV. |
 

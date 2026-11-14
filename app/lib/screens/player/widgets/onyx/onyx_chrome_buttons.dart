@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../l10n/tr.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/focus_fill.dart';
-import '../../../../theme/app_type.dart';
 import '../../../../tv/tv_focus.dart';
 import '../../../../widgets/global/app_slider.dart';
 import '../../../../widgets/global/optimistic_volume.dart';
@@ -45,6 +44,10 @@ class OnyxIconButton extends StatefulWidget {
   /// d'un téléviseur ([FocusFill], ADR-0112).
   final bool glass;
 
+  /// Le menu que ce bouton ouvre est à l'écran : il reste allumé tant que le
+  /// menu tient la télécommande, pour dire d'où il vient (ADR-0130).
+  final bool lit;
+
   const OnyxIconButton({
     super.key,
     required this.icon,
@@ -57,6 +60,7 @@ class OnyxIconButton extends StatefulWidget {
     this.isTv = false,
     this.prominent = false,
     this.glass = false,
+    this.lit = false,
   });
 
   /// Le diamètre d'un bouton de verre, et la taille de son icône.
@@ -126,7 +130,7 @@ class _OnyxIconButtonState extends State<OnyxIconButton> {
               builder: (context, _) {
                 final focused = _node.hasFocus;
                 final active = _hovered || focused;
-                final filled = widget.isTv && focused;
+                final filled = widget.isTv && (focused || widget.lit);
                 final Color? disc = filled
                     ? (glass ? FocusFill.fill : AppColors.accent)
                     : widget.prominent || glass
@@ -290,85 +294,4 @@ List<Widget> onyxWindowButtons({
       onPressed: onToggleFullscreen,
     ),
   ];
-}
-
-/// Un onglet sous la barre de lecture d'un téléviseur (ADR-0124) : « Infos »,
-/// « Épisodes », « Regarder ensemble ». Du texte au repos, une capsule blanche
-/// à l'encre noire sous la télécommande ; [active] le garde clair quand ce
-/// qu'il ouvre est à l'écran.
-class OnyxChromeTab extends StatefulWidget {
-  const OnyxChromeTab({
-    super.key,
-    required this.label,
-    required this.onPressed,
-    this.active = false,
-  });
-
-  final String label;
-  final VoidCallback onPressed;
-  final bool active;
-
-  static const double height = 36;
-
-  @override
-  State<OnyxChromeTab> createState() => _OnyxChromeTabState();
-}
-
-class _OnyxChromeTabState extends State<OnyxChromeTab> {
-  final FocusNode _node = FocusNode(debugLabel: 'onyx-tab');
-
-  @override
-  void dispose() {
-    _node.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const radius = BorderRadius.all(Radius.circular(OnyxChromeTab.height / 2));
-    return TvFocusable(
-      focusNode: _node,
-      onSelect: widget.onPressed,
-      borderRadius: radius,
-      // La capsule dit le focus : pas d'anneau en plus.
-      showRing: false,
-      focusScale: 1.04,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onPressed,
-        child: ListenableBuilder(
-          listenable: _node,
-          builder: (context, _) {
-            final focused = _node.hasFocus;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 140),
-              curve: Curves.easeOut,
-              height: OnyxChromeTab.height,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: focused ? FocusFill.fill : Colors.transparent,
-                borderRadius: radius,
-              ),
-              child: Text(
-                widget.label,
-                maxLines: 1,
-                style: TextStyle(
-                  color: focused
-                      ? FocusFill.ink
-                      : widget.active
-                          ? OnyxChromeTheme.title
-                          : OnyxChromeTheme.meta,
-                  fontSize: AppType.headline,
-                  fontWeight: focused || widget.active
-                      ? FontWeight.w700
-                      : FontWeight.w600,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
 }

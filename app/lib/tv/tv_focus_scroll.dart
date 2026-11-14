@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../theme/app_motion.dart';
 import 'tv_key_repeat.dart';
 import 'tv_mode.dart';
+import 'tv_page.dart';
 import 'tv_touchpad.dart';
 
 /// Le défilement qui ramène à l'écran ce que la télécommande vient d'atteindre.
@@ -16,6 +17,9 @@ import 'tv_touchpad.dart';
 /// Désormais un seul défilement par pas, et toujours animé : celui de
 /// [TvFocusable] quand la cible en est un (il sait où la placer), celui-ci
 /// sinon. Hors téléviseur, le comportement de Flutter est inchangé.
+///
+/// Une page peut décider elle-même où elle se pose ([TvPage], les fiches) :
+/// les deux lui laissent alors la main.
 abstract final class TvFocusScroll {
   /// Compté plutôt que booléen : un même nœud passe parfois d'une rangée à
   /// l'autre (le menu des réglages du lecteur), et la nouvelle le déclare
@@ -40,10 +44,13 @@ abstract final class TvFocusScroll {
   /// avant le pas suivant.
   static Duration durationFor(BuildContext context) => AppMotion.move(
         context,
-        TvKeyRepeat.isRepeating || TvTouchpad.isGliding
-            ? AppMotion.track
-            : AppMotion.standard,
+        isTracking ? AppMotion.track : AppMotion.standard,
       );
+
+  /// Vrai quand les pas se suivent sans attendre : flèche maintenue, rangée
+  /// qui file sous le doigt. Le défilement prend alors sa durée la plus
+  /// courte, quelle que soit la distance.
+  static bool get isTracking => TvKeyRepeat.isRepeating || TvTouchpad.isGliding;
 
   /// Le [TraversalRequestFocusCallback] de l'app : la politique de parcours
   /// l'appelle à chaque déplacement aux flèches.
@@ -67,6 +74,16 @@ abstract final class TvFocusScroll {
     node.requestFocus();
     final context = node.context;
     if (context == null || scrollsItself(node)) return;
+    final page = TvPageScope.maybeOf(context);
+    if (page != null) {
+      // Après l'image qui pose le focus, comme [TvFocusable] : la ligne
+      // d'arrivée peut encore se mettre en page.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (node.hasFocus) page.reveal(node);
+      });
+      WidgetsBinding.instance.ensureVisualUpdate();
+      return;
+    }
     final policy = alignmentPolicy ?? ScrollPositionAlignmentPolicy.explicit;
     void reveal(ScrollPositionAlignmentPolicy policy) =>
         Scrollable.ensureVisible(

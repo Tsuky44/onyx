@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../tv/tv_focus.dart';
+import '../../tv/tv_mode.dart';
 import '../../tv/nav/tv_region.dart';
 import '../../utils/poster_url.dart';
 import '../../utils/responsive.dart';
@@ -143,7 +144,10 @@ class _CastSectionState extends State<CastSection> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (actorsCount > 1) ...[
+                      // Sur un téléviseur, gauche et droite passent déjà
+                      // d'une carte à l'autre : ces flèches seraient deux
+                      // crans de plus entre « Lecture » et l'éventail.
+                      if (actorsCount > 1 && !TvScope.of(context)) ...[
                         _ArrowButton(
                           icon: AppIcons.back,
                           tooltip: tr('Acteur précédent'),

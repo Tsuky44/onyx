@@ -112,9 +112,7 @@ extension _PlayerStartup on _PlayerScreenState {
         );
       }
 
-      _episodeNavListener = () {
-        _safeSetState(() {});
-      };
+      _episodeNavListener = _handleEpisodeNavChanged;
       _episodeNav = EpisodeNavigationController(
         apiClient: apiClient,
         episodeId: actualMedia.id,

@@ -2,22 +2,24 @@ import 'package:flutter/widgets.dart';
 
 import '../../../tv/tv_ui_scale.dart';
 
-/// Ce que le lecteur d'un téléviseur dessine au-dessus de l'image, aux
-/// proportions de l'Apple TV.
+/// Ce que le lecteur d'un téléviseur dessine au-dessus de l'image, à l'échelle
+/// du reste de l'app.
 ///
 /// Le lecteur échappe à [TvUiScale] : la vidéo d'ExoPlayer est une
-/// SurfaceView que Flutter ne sait pas réduire. Ses tailles télé sont donc des
-/// pixels logiques fixes ([OnyxChromeMetrics.tv], la largeur des menus, la
-/// hauteur du panneau des épisodes), réglées sur l'Apple TV qui annonce
-/// 1920 points (ADR-0124). Un téléviseur Android en annonce 960 : le titre,
-/// les boutons de verre, la barre, les onglets et les menus y prenaient deux
-/// fois plus de place. Chaque couche posée sur l'image est donc mise en page
-/// sur [designWidth] puis ramenée à l'écran ; la vidéo reste hors de
-/// l'échelle. Sur Apple TV et sur le web des téléviseurs LG (1920 de large),
-/// rien ne change.
+/// SurfaceView que Flutter ne sait pas réduire. Chaque couche posée sur
+/// l'image est donc mise en page sur [designWidth] puis ramenée à l'écran ; la
+/// vidéo reste hors de l'échelle.
+///
+/// [designWidth] est celle des pages ([TvUiScale.designWidth], 1280) depuis
+/// l'ADR-0130. Les tailles télé du chrome ([OnyxChromeMetrics.tv] : marge de
+/// 53, soit les 80 points de la zone sûre d'Apple sur 1920) ont été dessinées
+/// pour cette largeur ; mis en page sur les 1920 points que l'Apple TV
+/// annonce, le chrome paraissait un tiers plus petit que la maquette validée
+/// et que le reste de l'app, vu du canapé. Un téléviseur Android (960) et le
+/// web des téléviseurs LG (1920) tombent sur les mêmes proportions.
 abstract final class PlayerTvScale {
-  /// La largeur que l'Apple TV annonce, sur laquelle le lecteur a été réglé.
-  static const double designWidth = 1920;
+  /// La largeur de mise en page du lecteur : celle des pages d'un téléviseur.
+  static const double designWidth = TvUiScale.designWidth;
 
   /// Le facteur entre ce qui est mis en page et ce qui est dessiné, sur un
   /// écran de [width] pixels logiques. 1 hors téléviseur.

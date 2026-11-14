@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/player/player_key_routing.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_menu_section.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_tabs.dart';
 import 'package:onyx/tv/nav/tv_nav_engine.dart';
 import 'package:onyx/tv/tv_touchpad.dart';
 import 'package:onyx/tv/touchpad_motion.dart';
@@ -84,26 +86,30 @@ void main() {
       expect(focused(tester), 'barre');
     }
 
-    /// Les boutons ronds, de gauche à droite (le banc joue une série).
+    /// Les boutons ronds, de gauche à droite (le banc joue une série) : un
+    /// par réglage, entre les deux épisodes voisins (ADR-0130).
     const buttons = [
       'Épisode précédent',
       'Sous-titres',
       'Pistes audio',
-      'Réglages',
+      'Qualité',
+      'Vitesse de lecture',
+      'Format d’image',
+      'Minuterie de veille',
       'Épisode suivant',
     ];
 
-    /// De la barre au bouton Réglages, le quatrième de sa rangée.
-    Future<void> toSettings(WidgetTester tester) async {
+    /// De la barre au bouton des pistes audio, le troisième de sa rangée.
+    Future<void> toAudio(WidgetTester tester) async {
       await nav.press(up);
-      for (var i = 0; i < 6; i++) {
+      for (var i = 0; i < buttons.length; i++) {
         await nav.press(left);
       }
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < 2; i++) {
         await nav.press(right);
       }
       await tester.pumpAndSettle();
-      expect(focused(tester), 'Réglages');
+      expect(focused(tester), 'Pistes audio');
     }
 
     Future<void> press(WidgetTester tester, TraversalDirection direction,
@@ -122,17 +128,21 @@ void main() {
         expect(buttons, contains(focused(tester)));
         await press(tester, down);
         expect(focused(tester), 'barre');
+        // Le premier onglet, et son volet s'ouvre.
         await press(tester, down);
-        expect(focused(tester), 'Épisodes');
+        expect(focused(tester), 'Infos');
+        expect(player(tester).openTab, OnyxTab.info);
         await press(tester, up);
         expect(focused(tester), 'barre');
+        expect(player(tester).openTab, isNull,
+            reason: 'quitter les onglets ferme le volet');
       });
 
       testWidgets('les boutons ronds se parcourent, leurs bords sont des murs',
           (tester) async {
         await open(tester);
         await press(tester, up);
-        await press(tester, left, times: 6);
+        await press(tester, left, times: buttons.length);
         expect(focused(tester), buttons.first);
         await press(tester, up);
         expect(focused(tester), buttons.first,
@@ -149,12 +159,12 @@ void main() {
           (tester) async {
         await open(tester);
         await press(tester, up);
-        await press(tester, left, times: 6);
+        await press(tester, left, times: buttons.length);
         await press(tester, down);
         expect(focused(tester), 'barre');
 
         await press(tester, up);
-        await press(tester, right, times: 6);
+        await press(tester, right, times: buttons.length);
         expect(focused(tester), buttons.last);
         await press(tester, down);
         expect(focused(tester), 'barre');
@@ -169,15 +179,27 @@ void main() {
         expect(focused(tester), 'barre');
       });
 
-      testWidgets('sous les onglets, Bas est un mur', (tester) async {
+      testWidgets(
+          'les onglets se parcourent, Bas entre dans le volet, et sous le '
+          'volet Bas est un mur', (tester) async {
         await open(tester);
         await press(tester, down);
-        expect(focused(tester), 'Épisodes');
-        await press(tester, down);
-        expect(focused(tester), 'Épisodes');
-        await press(tester, left);
+        expect(focused(tester), 'Infos');
         await press(tester, right);
         expect(focused(tester), 'Épisodes');
+        expect(player(tester).openTab, OnyxTab.episodes);
+        await press(tester, right, times: 3);
+        expect(focused(tester), 'Stats');
+
+        await press(tester, down);
+        expect(focused(tester), 'Dans Stats');
+        await press(tester, down);
+        expect(focused(tester), 'Dans Stats');
+        expect(player(tester).openTab, OnyxTab.stats);
+
+        // Remonter rend l'onglet du volet, pas le plus proche.
+        await press(tester, up);
+        expect(focused(tester), 'Stats');
       });
 
       testWidgets(
@@ -277,17 +299,17 @@ void main() {
       });
 
       testWidgets(
-          'un Retour défait une couche : section, menu, chrome, lecteur',
+          'un Retour défait une couche : menu, volet, chrome, lecteur',
           (tester) async {
         await open(tester);
-        await toSettings(tester);
+        await toAudio(tester);
 
-        await nav.select();
-        await tester.pumpAndSettle();
-        expect(find.text('Vitesse de lecture'), findsOneWidget);
+        // Le menu de ce seul réglage, sur la piste jouée, et son bouton reste
+        // allumé.
         await nav.select();
         await tester.pumpAndSettle();
         expect(focused(tester), 'English');
+        expect(player(tester).openMenu, OnyxMenuSection.audio);
 
         Future<void> back() async {
           await nav.back();
@@ -298,17 +320,24 @@ void main() {
         }
 
         await back();
-        expect(find.text('Vitesse de lecture'), findsOneWidget,
-            reason: 'la section remonte à l’index, le menu reste');
-        expect(focused(tester), 'Audio');
-
-        await back();
-        expect(find.text('Vitesse de lecture'), findsNothing);
+        expect(find.text('English'), findsNothing,
+            reason: 'pas d’index où remonter : le menu se ferme');
+        expect(player(tester).openMenu, isNull);
         expect(player(tester).chromeVisible, isTrue);
         // dpad rend la télécommande au bouton qui a ouvert le menu ;
         // l'ancien système la pose sur la barre de lecture.
-        expect(
-            focused(tester), engine == TvNavEngine.dpad ? 'Réglages' : 'barre');
+        expect(focused(tester),
+            engine == TvNavEngine.dpad ? 'Pistes audio' : 'barre');
+
+        // Le volet des onglets est une couche : Retour le ferme et rend la
+        // barre, chrome toujours affiché.
+        if (engine == TvNavEngine.dpad) await press(tester, down);
+        await press(tester, down);
+        expect(player(tester).openTab, OnyxTab.info);
+        await back();
+        expect(player(tester).openTab, isNull);
+        expect(player(tester).chromeVisible, isTrue);
+        expect(focused(tester), 'barre');
 
         await back();
         expect(player(tester).chromeVisible, isFalse);
@@ -322,12 +351,12 @@ void main() {
 
       testWidgets('le menu piège les flèches', (tester) async {
         await open(tester);
-        await toSettings(tester);
+        await toAudio(tester);
         await nav.select();
         await tester.pumpAndSettle();
         for (final direction in [up, up, up, right, right, down]) {
           await press(tester, direction);
-          expect(find.text('Vitesse de lecture'), findsOneWidget);
+          expect(find.text('English'), findsOneWidget);
           expect(player(tester).popups.isOpen, isTrue);
           expect(player(tester).player.hasPrimaryFocus, isFalse);
           expect(player(tester).browsingControls, isFalse,

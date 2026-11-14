@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../models/media_request.dart';
 import '../../models/models.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/search_provider.dart';
+import '../../services/api_client.dart';
+import '../../services/unavailable_titles_search.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../tv/tv_deferred_keyboard.dart';
@@ -19,8 +22,14 @@ import '../../widgets/global/search_results_route.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
+import '../requests/request_availability.dart';
+import '../requests/widgets/request_media_card.dart';
+import '../search/search_shelves.dart';
 
 /// Full-page grid of catalog results, updated live in real time as the user types.
+///
+/// Sous les titres de la bibliothèque, ceux que le serveur n'a pas : affiches
+/// voilées sous leur propre titre, qui ouvrent la fiche de demande (ADR-0129).
 class SearchResultsScreen extends StatefulWidget {
   final String query;
   final bool autofocusField;
@@ -61,11 +70,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   /// La dernière recherche affichée, voir [_shownQuery].
   String _lastQuery = '';
 
+  /// Ce que le catalogue de demandes connaît pour la recherche affichée.
+  late final UnavailableTitlesSearch _catalog =
+      UnavailableTitlesSearch(context.read<ApiClient>());
+
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.query);
     _controller.addListener(_onQueryChanged);
+    _catalog.addListener(_onCatalogAnswered);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<LibraryProvider>().ensureCatalogLoaded();
@@ -84,9 +98,26 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     setState(() {});
   }
 
+  void _onCatalogAnswered() => setState(() {});
+
+  /// Vrai tant que la page est au premier plan.
+  bool _current = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Au retour d'une fiche de demande, le statut d'un titre a pu changer :
+    // « Indispo » devient « Demandé ».
+    final current = ModalRoute.of(context)?.isCurrent ?? true;
+    if (current && !_current) _catalog.refresh();
+    _current = current;
+  }
+
   @override
   void dispose() {
     _controller.removeListener(_onQueryChanged);
+    _catalog.removeListener(_onCatalogAnswered);
+    _catalog.dispose();
     _controller.dispose();
     _fieldNode.dispose();
     super.dispose();
@@ -127,7 +158,17 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final horizontalPadding = width >= 900 ? 48.0 : 16.0;
     final query = _shownQuery(context);
-    final results = query.isEmpty ? const <Media>[] : lp.searchCatalog(query);
+    // La recherche vient du champ de la page ou de la barre de navigation :
+    // c'est ici, où elles se rejoignent, que le catalogue l'apprend. L'appel
+    // ne prévient personne sur le coup, la construction peut le faire.
+    _catalog.search(query, enabled: canRequestMedia(context, listen: true));
+    final shelves = SearchShelves.of(
+      lp,
+      query,
+      catalog: _catalog.resultsFor(query),
+    );
+    final results = shelves.library;
+    final unavailable = shelves.unavailable;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -180,7 +221,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     tr('Recherchez et demandez de nouveaux films et séries'),
               ),
             )
-          : results.isEmpty
+          : shelves.isEmpty
               ? SearchResultsEntrance(
                   child: EmptyStateView(
                     icon: AppIcons.search,
@@ -221,10 +262,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          tr('{0} résultat{1}', [
-                                            results.length,
-                                            results.length > 1 ? 's' : ''
-                                          ]),
+                                          results.isEmpty
+                                              ? tr('Rien dans la bibliothèque')
+                                              : tr('{0} résultat{1}', [
+                                                  results.length,
+                                                  results.length > 1 ? 's' : ''
+                                                ]),
                                           style: const TextStyle(
                                               color: AppColors.textMuted,
                                               fontSize: AppType.subhead),
@@ -240,8 +283,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                           ),
                         ),
                         SliverPadding(
-                          padding: EdgeInsets.fromLTRB(
-                              horizontalPadding, 20, horizontalPadding, 48),
+                          // Sans titre de la bibliothèque, la grille vide ne
+                          // garde pas de hauteur au-dessus du rayon des
+                          // absents. Ses marges de côté restent : les deux
+                          // grilles partagent le zoom de la page, qui part de
+                          // leur largeur (`PosterGridZoom.apply`).
+                          padding: results.isEmpty
+                              ? EdgeInsets.symmetric(
+                                  horizontal: horizontalPadding)
+                              : EdgeInsets.fromLTRB(horizontalPadding, 20,
+                                  horizontalPadding, unavailable.isEmpty ? 48 : 8),
                           sliver: SliverLayoutBuilder(
                             builder: (context, constraints) {
                               final grid = AppLayout.posterGridDelegate(
@@ -296,10 +347,69 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                             },
                           ),
                         ),
+                        if (unavailable.isNotEmpty)
+                          ..._unavailableShelf(unavailable, horizontalPadding),
                       ],
                     ),
                   ),
                 ),
     );
+  }
+
+  /// Le rayon des titres que le serveur n'a pas, sous ceux de la
+  /// bibliothèque : son titre, puis ses affiches voilées.
+  List<Widget> _unavailableShelf(
+    List<RequestMediaItem> unavailable,
+    double horizontalPadding,
+  ) {
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding:
+              EdgeInsets.fromLTRB(horizontalPadding, 24, horizontalPadding, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                tr('Pas sur le serveur'),
+                style: const TextStyle(
+                  fontSize: AppType.headline,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                tr('Ouvrez un titre pour le demander'),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: AppType.subhead,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      SliverPadding(
+        padding:
+            EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 48),
+        sliver: SliverLayoutBuilder(
+          builder: (context, constraints) => SliverGrid(
+            gridDelegate: AppLayout.posterGridDelegate(
+              context,
+              constraints.crossAxisExtent,
+              compact: AppLayout.isCompact(context),
+              withMeta: false,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => RequestMediaCard(
+                item: unavailable[index],
+                marksUnavailable: true,
+              ),
+              childCount: unavailable.length,
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 }

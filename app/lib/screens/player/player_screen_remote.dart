@@ -57,6 +57,8 @@ extension _PlayerRemote on _PlayerScreenState {
   /// chrome, le pointeur au lecteur. [origin] : voir
   /// [PlayerPopupHost.onDismissed].
   void _handlePopupDismissed(FocusNode? origin) {
+    // Le bouton rond du menu qui se ferme s'éteint.
+    if (_openMenu != null) _safeSetState(() => _openMenu = null);
     // The remote came from the control bar and has to go back to it, or the
     // next key press has nowhere to land.
     if (TvMode.isTv) {
@@ -108,7 +110,7 @@ extension _PlayerRemote on _PlayerScreenState {
     if (_nativeTvShown) return false;
     // Un glissé vertical appelle les commandes, par les pas du trackpad.
     if (move.dx.abs() < move.dy.abs()) return false;
-    if (_popups.isOpen || _episodesPanel.isOpen || _endCardVisible) return false;
+    if (_popups.isOpen || _pageOverImage) return false;
     final seeks = !_remoteBrowsingControls || _progressFocusNode.hasPrimaryFocus;
     if (!seeks) return false;
     _remoteEntry = _RemoteEntry.scrubber;
@@ -143,15 +145,16 @@ extension _PlayerRemote on _PlayerScreenState {
   void _ensureRemoteInChrome() {
     if (!TvMode.isTv) return;
     if (_isDisposing || _isLeaving || !_showControls) return;
-    // A popup, the episode browser or an end card owns the focus while it is
-    // up, and taking it back would trap the remote behind them.
-    if (_popups.isOpen || _episodesPanel.isOpen || _endCardVisible) return;
+    // A popup or a page over the picture owns the focus while it is up, and
+    // taking it back would trap the remote behind them. Le volet des onglets,
+    // lui, fait partie du chrome d'un téléviseur : il ne retient rien.
+    if (_popups.isOpen || _pageOverImage) return;
 
     // After the frame: a hidden chrome excludes its own controls from focus,
     // so until it is painted there is nothing for the focus to land on.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _isDisposing || _isLeaving) return;
-      if (!_showControls || _popups.isOpen || _episodesPanel.isOpen) return;
+      if (!_showControls || _popups.isOpen || _pageOverImage) return;
       // Already standing on a control — including one the user walked to.
       // Re-requesting would drag them back to the scrubber on every seek.
       if (_remoteBrowsingControls) return;
@@ -233,11 +236,17 @@ extension _PlayerRemote on _PlayerScreenState {
         // (l'Apple TV peut envoyer les deux) : avalée, sans quoi un appui
         // défait deux couches. Voir [TvBack.claimKey].
         if (!TvBack.claimKey(context)) break;
-        // Innermost first: a menu opened from the chrome, then the episode
-        // panel, then the control bar, and only then the player itself.
+        // Innermost first: a menu opened from the chrome, then the tab
+        // panel, then the next-episode page, then the control bar, and only
+        // then the player itself.
         if (_popups.back()) break;
-        if (_episodesPanel.isOpen) {
-          _closeEpisodesPanel();
+        if (_tabs.isOpen) {
+          _closeTabs();
+          break;
+        }
+        // Retour devant l'épisode suivant, c'est « plus tard ».
+        if (_nextEpisodePageVisible) {
+          _episodeNav?.deferNextEpisode();
           break;
         }
         if (browsingControls) {
@@ -267,8 +276,12 @@ extension _PlayerRemote on _PlayerScreenState {
     // unwind the same stack the key path does, innermost first, or it
     // walks out of the film with a menu still open on top of it.
     if (_popups.back()) return;
-    if (_episodesPanel.isOpen) {
-      _closeEpisodesPanel();
+    if (_tabs.isOpen) {
+      _closeTabs();
+      return;
+    }
+    if (_nextEpisodePageVisible) {
+      _episodeNav?.deferNextEpisode();
       return;
     }
     // On the control bar Back means "put that away", not "leave".

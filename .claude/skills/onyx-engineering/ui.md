@@ -8,6 +8,9 @@ La direction s'appelle **Quiet Premium** : une scène charbon OLED, un accent bl
 - `PRODUCT.md` porte les principes produit et l'accessibilité.
 - `design.md` est l'ancien brief « Cinematic Glass ». Il sert de référence, et `PROJECT_DESIGN.md` l'emporte en cas de désaccord.
 - Le lecteur n'a qu'un chrome, le Chrome Onyx (`screens/player/widgets/onyx/`, ADR-0048).
+- Ce que le lecteur pose sur le film à la demande est du verre (ADR-0130) : un menu, une fenêtre de question, le volet des onglets passent par `OnyxGlassPanel`, leurs boutons par `OnyxCapsuleButton`, une question par `PlayerQuestionWindow`. Le fond se lit sans flou (mode léger, téléviseurs LG) ; le chrome au repos n'en a pas. Les couleurs du verre sont dans `OnyxChromeTheme`.
+- Les menus du lecteur ont un seul dessin en deux tailles (`OnyxMenuStyle`) : sur téléviseur un menu par réglage (`OnyxSettingsMenu.standalone`), ailleurs l'index de la roue crantée. Un réglage de plus est une `OnyxMenuSection`, pas un nouveau menu.
+- Les onglets du lecteur (Infos, Épisodes, Chapitres, Regarder ensemble, Stats) ont une liste (`_tabEntries`, dans `player_screen_overlays.dart`) et deux présentations : le volet sous la barre d'un téléviseur (`OnyxTvTabs`) et la feuille du bas des autres écrans (`PlayerTabSheet`). Un contenu d'onglet est un widget de `screens/player/widgets/tabs/`, écrit pour les deux : ses rangées passent par `OnyxControlsRow`.
 - Pour le savoir-faire UI approfondi (critique, polish, audit, animation, accessibilité), lis `.agents/skills/impeccable/SKILL.md` et `.agents/skills/tasteful-ui/SKILL.md` par leur chemin. Les liens de `.claude/skills/` vers ces dossiers sont cassés sous Windows.
 
 ## Tokens
@@ -29,6 +32,7 @@ La direction s'appelle **Quiet Premium** : une scène charbon OLED, un accent bl
 | Page de réglages | `SettingsPage`, `SettingsGroup`, `SettingsTile`… (`settings/widgets/settings_ui.dart`) | Une mise en page et une densité cohérentes. |
 | Mise en page, grilles | `Responsive` (`utils/responsive.dart`) | Points de rupture, marges, colonnes d'affiches et taille tactile minimale. |
 | Verre, chrome | `glass_chrome.dart` | Un seul rendu de verre. |
+| Titre que le serveur n'a pas | affiche voilée (`PosterCard.dimmed`) et `UnavailableBadge` ; dans une recherche, le rangement de `SearchShelves` | Un seul signe pour « pas là » partout : titres similaires, listes, recherche (ADR-0129). |
 
 Avant de créer un composant, cherche dans `widgets/global/` et dans les `widgets/` de l'écran voisin. Un composant utilisé par un deuxième écran monte dans `widgets/global/`.
 
@@ -40,7 +44,9 @@ Chaque écran atteignable sur TV se pilote entièrement au D-pad.
 - Le focus est toujours visible (ADR-0008), il est mémorisé par ligne au retour sur l'écran (`tv_focus_memory.dart`, `tv_focus_rows.dart`), et le premier élément utile le reçoit à l'ouverture.
 - L'échelle vient de `tv_ui_scale.dart`, et la répétition des touches de `tv_key_repeat.dart`.
 - Un seul défilement par pas de focus, celui de `TvFocusScroll` (ou de `TvFocusable`) : n'appelle pas `Scrollable.ensureVisible` à côté. Sur Apple TV, la force d'un glissé passe par `TvTouchpad.boostFor` (ADR-0039).
-- Le lecteur à la télécommande suit ADR-0006.
+- Une fiche (film, série, saison, demande) est un `TvRegion.sections` autour de la page et un `TvRegion.section` par bloc (ADR-0128) : Haut et Bas y suivent les lignes sans en sauter, chaque ligne pose la page à une seule place (`TvSectionsScroll`) et le pavé de l'Apple TV s'y arrête à chaque section. Une cible posée hors de toute section n'est plus atteinte par Haut et Bas. L'action principale porte `autofocus` : c'est l'entrée de sa ligne, et `TvEntryFocus.claim` lui rend le focus quand elle arrive après l'ouverture.
+- Sur l'Apple TV, la recherche est l'écran du système, natif (ADR-0129) : `TvSystemSearchScreen` ne dessine rien et dit à l'hôte quoi montrer par `TvSystemSearch`. Ce qui s'affiche dans une recherche se change donc à trois endroits : `SearchShelves` pour le contenu, `TvSearchScreen` et `SearchResultsScreen` pour Flutter, `tvos/Runner/SystemSearch*.swift` pour l'Apple TV.
+- Le lecteur à la télécommande suit ADR-0006. Tout ce qu'il pose sur l'image d'un téléviseur passe par `PlayerTvScale.layer` (mis en page sur 1280, comme les pages) : une couche oubliée se dessine à la taille brute de l'écran, minuscule sur une Apple TV et double sur un téléviseur Android.
 - Refonte en cours vers un seul système de focus, dpad (ADR-0110, `docs/refonte-navigation-dpad.md`) : n'ajoute ni `FocusTraversalGroup`, ni politique de parcours, ni `Shortcuts`, ni `onKeyEvent`, ni gestionnaire global de touches, ni widget de l'ancien système (`TvFocusMemory`, `TvFocusPanes`…). Les écrans n'emploient que `TvFocusable` (action en `onSelect`) et `TvRegion` ; dpad ne s'importe que dans `lib/tv/`. Gardé par `test/no_parallel_focus_system_test.dart`.
 - Un écran TV nouveau ou modifié reçoit un test de focus sur le modèle de `tv_focus_test.dart` ou `onyx_settings_menu_tv_test.dart`.
 

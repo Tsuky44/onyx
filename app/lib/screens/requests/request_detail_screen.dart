@@ -21,8 +21,8 @@ import '../../widgets/global/detail_metadata.dart';
 import '../../widgets/global/detail_summary_section.dart';
 import '../../widgets/global/empty_state.dart';
 import '../../widgets/global/poster_rail.dart';
-import '../../utils/long_date.dart';
 import '../../utils/responsive.dart';
+import 'widgets/request_detail_actions.dart';
 import 'widgets/request_detail_hero.dart';
 import 'widgets/request_info_table.dart';
 import 'widgets/request_media_card.dart';
@@ -30,12 +30,9 @@ import 'widgets/request_progress_panel.dart';
 import 'widgets/request_season_picker_sheet.dart';
 import 'widgets/request_season_list.dart';
 import 'widgets/request_status_badge.dart';
-import '../../theme/app_icons.dart';
 import '../../l10n/tr.dart';
-import '../../widgets/global/detail_actions.dart';
 import '../../widgets/global/media_countdown.dart';
 import '../../models/watch_list.dart';
-import '../../widgets/global/add_to_list_button.dart';
 
 class RequestDetailScreen extends StatefulWidget {
   final RequestMediaItem item;
@@ -175,6 +172,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   /// demande aussi en la dépliant ([RequestSeasonList]).
   Future<void> _request(RequestMediaDetails details,
       {bool complete = false}) async {
+    if (_submitting) return;
     List<int>? seasons;
     if (complete) {
       seasons = await RequestSeasonPickerSheet.show(context, details);
@@ -224,6 +222,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   /// partie), la fiche de lecture s'ouvre et lance la lecture, comme le lien
   /// « Lire sur Onyx » de MediaHub (ADR-0091).
   Future<void> _play(RequestMediaDetails details) async {
+    if (_launching) return;
     final api = context.read<ApiClient>();
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -341,7 +340,16 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
                   seasons: details.numberOfSeasons ?? 0,
                   genres: details.genres,
                 ),
-                actions: _actions(details),
+                actions: RequestDetailActions(
+                  details: details,
+                  listTitle: ListableTitle.catalog(widget.item),
+                  submitting: _submitting,
+                  launching: _launching,
+                  onRequest: () => _request(details),
+                  onComplete: () => _request(details, complete: true),
+                  onPlay: () => _play(details),
+                  onTrailer: () => _openTrailer(details.trailerKey!),
+                ),
                 trailing: MediaCountdown.fromDetails(
                   isTv: isTv,
                   nextEpisode: nextEp,
@@ -449,96 +457,5 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       status: details.status,
       awaitingRelease: details.isAwaitingRelease(),
     );
-  }
-
-  /// La rangée d'actions : le statut ou « Demander », la bande-annonce et les
-  /// listes.
-  Widget _actions(RequestMediaDetails details) {
-    final compact = AppLayout.isCompact(context);
-    return Wrap(
-      spacing: compact ? 8 : 14,
-      runSpacing: compact ? 8 : 12,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        ..._requestActions(details),
-        if (details.trailerKey != null && details.trailerKey!.isNotEmpty)
-          HeroPill(
-            label: tr('Bande-annonce'),
-            icon: AppIcons.playCircle,
-            style: HeroPillStyle.trailer,
-            iconOnlyWhenCompact: true,
-            onPressed: () => _openTrailer(details.trailerKey!),
-          ),
-        // Un titre que le serveur n'a pas peut déjà aller dans « À
-        // regarder plus tard » (ADR-0070).
-        IconButtonTheme(
-          data: IconButtonThemeData(
-              style:
-                  heroRoundButtonStyle(context, DetailActions.secondaryStyle)),
-          child: AddToListButton(title: ListableTitle.catalog(widget.item)),
-        ),
-      ],
-    );
-  }
-
-  /// Les pastilles de statut d'OnyxHub (`RequestStatusButton`).
-  List<Widget> _requestActions(RequestMediaDetails details) {
-    final status = details.status;
-    final offer = details.offer;
-
-    // Disponible, même en partie : le bouton lance le média. Le statut se
-    // lit dans le surtitre au-dessus du titre (RequestAvailabilityBadge).
-    Widget playButton() => HeroPill(
-          label: tr('Lire'),
-          icon: AppIcons.play,
-          style: HeroPillStyle.glass,
-          loading: _launching,
-          onPressed: _launching ? null : () => _play(details),
-        );
-
-    Widget requestButton(String label, {bool complete = false}) => HeroPill(
-          label: _submitting ? tr('Envoi de la demande') : label,
-          icon: AppIcons.download,
-          style: HeroPillStyle.glass,
-          loading: _submitting,
-          onPressed:
-              _submitting ? null : () => _request(details, complete: complete),
-        );
-
-    final complete = offer == RequestOffer.complete
-        ? requestButton(tr('Compléter'), complete: true)
-        : null;
-
-    if (status == RequestMediaStatus.partial ||
-        status == RequestMediaStatus.available) {
-      return [playButton(), if (complete != null) complete];
-    }
-
-    if (status == RequestMediaStatus.pending ||
-        status == RequestMediaStatus.processing) {
-      final awaiting = details.isAwaitingRelease();
-      final release = DateTime.tryParse(details.releaseDate ?? '');
-      return [
-        awaiting
-            ? HeroPill(
-                label: release == null
-                    ? tr('En attente de sortie')
-                    : tr('Sortie le {0}', [formatLongDate(release)]),
-                icon: AppIcons.calendar,
-                style: HeroPillStyle.status,
-              )
-            : HeroPill(
-                label: tr('En cours de traitement'),
-                style: HeroPillStyle.status,
-                track: true,
-              ),
-        if (complete != null) complete,
-      ];
-    }
-
-    // Une série à moitié demandée sans statut global : elle se complète.
-    if (complete != null) return [complete];
-    if (offer != RequestOffer.request) return const [];
-    return [requestButton(tr('Demander'))];
   }
 }
