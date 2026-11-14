@@ -7,6 +7,7 @@ import '../../theme/app_type.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/poster_grid_zoom.dart';
 import '../../utils/responsive.dart';
+import 'onyx_menu.dart';
 
 /// Le bouton « Affichage » : un menu déroulant à quatre modes (4, 6, 8 ou 10
 /// affiches par ligne), le pendant, à la souris et au doigt, du Ctrl + molette
@@ -36,18 +37,16 @@ class PosterGridDisplayMenu extends StatelessWidget {
     if (!availableIn(context)) return const SizedBox.shrink();
     final zoom = PosterGridZoomScope.watch(context);
     final selected = zoom.selected;
-    return PopupMenuButton<int>(
+    return OnyxMenuButton<int>(
       tooltip: tr('Affichage'),
-      position: PopupMenuPosition.under,
-      offset: const Offset(0, 6),
-      padding: EdgeInsets.zero,
-      initialValue: selected,
       onSelected: zoom.select,
-      itemBuilder: (_) => [
+      items: [
         for (final columns in PosterGridZoom.presets)
-          PopupMenuItem<int>(
+          OnyxMenuItem<int>(
             value: columns,
-            child: _ModeRow(columns: columns, selected: columns == selected),
+            icon: _iconFor(columns),
+            label: tr('{0} par ligne', [columns]),
+            checked: columns == selected,
           ),
       ],
       child: _Trigger(compact: compact),
@@ -97,44 +96,6 @@ class _Trigger extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _ModeRow extends StatelessWidget {
-  const _ModeRow({required this.columns, required this.selected});
-
-  final int columns;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          PosterGridDisplayMenu._iconFor(columns),
-          size: 18,
-          color: selected ? AppColors.accent : AppColors.textSecondary,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            tr('{0} par ligne', [columns]),
-            style: TextStyle(
-              color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        // La place du repère est réservée même quand il est absent : le texte
-        // des quatre lignes reste aligné.
-        Icon(
-          AppIcons.check,
-          size: 16,
-          color: selected ? AppColors.accent : Colors.transparent,
-        ),
-      ],
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/library/widgets/catalog_header.dart';
+import 'package:onyx/widgets/global/onyx_menu.dart';
 
 void main() {
   testWidgets('le bouton Affichage reste collé au bord droit, le tri avant lui',
@@ -25,7 +26,7 @@ void main() {
 
       // Le tri est le premier menu de la ligne, le bouton d'affichage le
       // dernier : celui-ci ferme la ligne, à droite.
-      final menus = find.byType(PopupMenuButton<int>);
+      final menus = find.byType(OnyxMenuButton<int>);
       final sort = menus.first;
       final display = menus.last;
       final headerRight = tester.getTopRight(find.byType(CatalogHeader<int>));

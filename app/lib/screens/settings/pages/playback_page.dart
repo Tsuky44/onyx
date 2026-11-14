@@ -12,6 +12,7 @@ import '../widgets/settings_scope.dart';
 import '../widgets/settings_ui.dart';
 import 'playback_still_watching_group.dart';
 import '../../../l10n/tr.dart';
+import '../../../widgets/global/onyx_menu.dart';
 
 class PlaybackPage extends StatefulWidget {
   const PlaybackPage({super.key});
@@ -87,28 +88,15 @@ class _PlaybackPageState extends State<PlaybackPage> {
               showChevron: false,
               trailing: !_loaded
                   ? null
-                  : PopupMenuButton<String?>(
+                  : OnyxMenuButton<String?>(
                       tooltip: tr('Langue audio par défaut'),
-                      color: AppColors.surfaceElevated,
-                      initialValue: _audioLang,
                       onSelected: _setAudioLang,
-                      itemBuilder: (_) => [
+                      items: [
                         for (final option in options)
-                          PopupMenuItem<String?>(
+                          OnyxMenuItem<String?>(
                             value: option.code,
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 22,
-                                  child: option.code == _audioLang
-                                      ? const Icon(Icons.check_rounded,
-                                          size: 18, color: AppColors.primary)
-                                      : null,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(tr(option.label)),
-                              ],
-                            ),
+                            label: tr(option.label),
+                            checked: option.code == _audioLang,
                           ),
                       ],
                       child: SettingsDropdownLabel(current),
