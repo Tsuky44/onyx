@@ -17,11 +17,7 @@ class LinkedServersPage extends StatelessWidget {
               'progression des comptes que leurs utilisateurs ont liés. À '
               'accepter une fois par serveur, de chaque côté.'),
       children: [
-        SettingsGroup(
-          title: tr('Serveurs'),
-          padded: true,
-          children: [LinkedServersSection()],
-        ),
+        const LinkedServersSection(),
       ],
     );
   }

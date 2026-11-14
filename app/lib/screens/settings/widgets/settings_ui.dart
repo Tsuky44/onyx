@@ -31,7 +31,12 @@ class SettingsGroup extends StatelessWidget {
     this.trailing,
     required this.children,
     this.padded = false,
+    this.dividerIndent = 64,
   });
+
+  /// Le retrait du filet entre deux lignes : 64 sous une icône de tête, 0 pour
+  /// des lignes sans.
+  final double dividerIndent;
 
   final String? title;
   final String? footer;
@@ -50,7 +55,7 @@ class SettingsGroup extends StatelessWidget {
           Divider(
             height: 1,
             thickness: 1,
-            indent: 64,
+            indent: dividerIndent,
             color: Colors.white.withValues(alpha: 0.06),
           ),
         );
@@ -522,10 +527,15 @@ class SettingsBanner extends StatelessWidget {
 /// Un avatar à l'initiale, teinté d'après le nom pour que deux comptes ne se
 /// confondent pas dans une liste.
 class UserAvatar extends StatelessWidget {
-  const UserAvatar(this.name, {super.key, this.size = 36});
+  const UserAvatar(this.name,
+      {super.key, this.size = 36, this.rounded = false});
 
   final String name;
   final double size;
+
+  /// Un carré aux coins arrondis plutôt qu'un disque : l'avatar des listes de
+  /// comptes d'administration.
+  final bool rounded;
 
   static const _palette = [
     AppColors.accent,
@@ -547,7 +557,8 @@ class UserAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        shape: rounded ? BoxShape.rectangle : BoxShape.circle,
+        borderRadius: rounded ? BorderRadius.circular(size * 0.3) : null,
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
