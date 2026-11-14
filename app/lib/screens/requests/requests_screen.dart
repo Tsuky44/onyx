@@ -18,6 +18,7 @@ import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../widgets/global/staggered_entrance.dart';
 import '../../services/api_client.dart';
 import 'my_requests_screen.dart';
+import 'widgets/request_filter_bar.dart';
 import 'widgets/request_filters_sheet.dart';
 import 'widgets/request_media_card.dart';
 import 'widgets/request_type_switch.dart';
@@ -29,6 +30,10 @@ class RequestsScreen extends StatefulWidget {
   final bool embedded;
 
   const RequestsScreen({super.key, this.embedded = false});
+
+  /// Le délai entre la dernière coche d'une capsule et le rechargement : on
+  /// coche trois genres d'affilée sans relancer trois requêtes.
+  static const filtersDebounce = Duration(milliseconds: 350);
 
   @override
   State<RequestsScreen> createState() => _RequestsScreenState();
@@ -42,6 +47,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   String _draftType = 'all';
   RequestCatalogFilters _draftFilters = RequestCatalogFilters.defaults;
   Timer? _searchDebounce;
+  Timer? _filtersDebounce;
 
   /// Le serveur relaie les demandes du compte chez OnyxHub (ADR-0073).
   bool _hasMyRequests = false;
@@ -106,6 +112,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
       _provider.onPagePrefetched = null;
     }
     _searchDebounce?.cancel();
+    _filtersDebounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -159,6 +166,17 @@ class _RequestsScreenState extends State<RequestsScreen> {
       filters: _draftFilters,
     );
     if (mounted) setState(() {});
+  }
+
+  /// Une capsule a changé : la rangée suit tout de suite, la grille au
+  /// terme de [RequestsScreen.filtersDebounce], par le même chargement que
+  /// l'ancien « Voir les résultats ».
+  void _onFiltersChanged(RequestCatalogFilters filters) {
+    setState(() => _draftFilters = filters);
+    _filtersDebounce?.cancel();
+    _filtersDebounce = Timer(RequestsScreen.filtersDebounce, () {
+      if (mounted) _reloadCatalog();
+    });
   }
 
   void _openAdvancedFilters() {
@@ -317,14 +335,6 @@ class _RequestsScreenState extends State<RequestsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: TvMode.isTv
-          ? null
-          : FloatingActionButton(
-              onPressed: _openAdvancedFilters,
-              backgroundColor: AppColors.primary,
-              tooltip: tr('Filtres avancés'),
-              child: const Icon(AppIcons.filters),
-            ),
       body: PosterGridZoomRegion(
         child: CustomScrollView(
           scrollCacheExtent: AppLayout.imageCacheExtent(context),
@@ -370,7 +380,14 @@ class _RequestsScreenState extends State<RequestsScreen> {
                         style: TextStyle(color: AppColors.textSecondary)),
                     const SizedBox(height: 20),
                     _buildSearchAndTypeRow(),
-                    if (!provider.filters.isDefault) ...[
+                    if (!TvMode.isTv) ...[
+                      const SizedBox(height: 16),
+                      RequestFilterBar(
+                        filters: _draftFilters,
+                        mediaType: _draftType,
+                        onChanged: _onFiltersChanged,
+                      ),
+                    ] else if (!provider.filters.isDefault) ...[
                       const SizedBox(height: 8),
                       Wrap(
                         alignment: WrapAlignment.center,

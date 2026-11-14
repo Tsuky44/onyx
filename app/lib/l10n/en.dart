@@ -178,12 +178,18 @@ const Map<String, String> kEnglish = <String, String>{
       'Arabic',
   'Attendre le Wi-Fi':
       'Wait for Wi-Fi',
+  'Aucun genre.':
+      'No genres.',
   'Chacun la rejoint':
       'Everyone joins',
+  'Choisir une date':
+      'Pick a date',
   'Comment ça marche':
       'How it works',
   'Depuis ce panneau, pendant la lecture.':
       'From this panel, during playback.',
+  'Dès {0}':
+      'From {0}',
   'Démarrez la séance':
       'Start the session',
   'Effacer la recherche':
@@ -684,8 +690,16 @@ const Map<String, String> kEnglish = <String, String>{
       'Request',
   'Cochez les saisons à ajouter.':
       'Tick the seasons to add.',
+  'Genres · {0}':
+      'Genres · {0}',
   'Il s’affiche ici une fois la séance ouverte.':
       'It appears here once the session is open.',
+  'Impossible de charger les genres.':
+      'Could not load genres.',
+  'Impossible de charger les services.':
+      'Could not load services.',
+  'Jusqu’à {0}':
+      'Up to {0}',
   'Lecture, pauses et déplacements sont partagés entre tous, chacun sur son appareil.':
       'Playback, pauses and seeks are shared by everyone, each on their own device.',
   'Menu du compte › Rejoindre une séance.':
@@ -694,10 +708,20 @@ const Map<String, String> kEnglish = <String, String>{
       'Share the code',
   'Regardez à plusieurs':
       'Watch with others',
+  'Retirer le filtre':
+      'Remove filter',
+  'Région : {0}':
+      'Region: {0}',
+  'Streaming · {0}':
+      'Streaming · {0}',
   'Tout cocher':
       'Select all',
   'Tout décocher':
       'Clear all',
+  'Tout effacer':
+      'Clear all',
+  'Trier : {0}':
+      'Sort: {0}',
   '{0} épisodes sur {1} déjà là':
       '{0} of {1} episodes already here',
   'Demander ({0})':
@@ -2858,6 +2882,8 @@ const Map<String, String> kEnglish = <String, String>{
       '“{0}” is not in your library',
   'Ce titre n’est pas dans ta bibliothèque':
       'This title is not in your library',
+  'À':
+      'To',
   'À découvrir':
       'Discover',
   'À faire si le mot de passe Emby a changé ou si la session a été révoquée.':

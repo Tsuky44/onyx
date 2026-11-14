@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../tv/tv_deferred_keyboard.dart';
 import 'package:provider/provider.dart';
 
 import '../../../models/request_catalog_filters.dart';
@@ -9,6 +8,7 @@ import '../../../widgets/global/app_network_image.dart';
 import '../../../theme/app_icons.dart';
 import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
+import 'request_filter_fields.dart';
 
 /// MediaHub-style advanced filters modal (FilterModal + MediaFilters).
 class RequestFiltersSheet extends StatefulWidget {
@@ -272,7 +272,7 @@ class _RequestFiltersSheetState extends State<RequestFiltersSheet> {
                 setState(() => _draft = _draft.copyWith(startDate: v));
               }),
               const SizedBox(height: 12),
-              _dateField('À', _endDateController, (v) {
+              _dateField(tr('À'), _endDateController, (v) {
                 setState(() => _draft = _draft.copyWith(endDate: v));
               }),
             ],
@@ -305,37 +305,21 @@ class _RequestFiltersSheetState extends State<RequestFiltersSheet> {
           child: Row(
             children: [
               Expanded(
-                child: TvDeferredKeyboard(
-                  builder: (context, focusNode, canRequestFocus) => TextField(
-                    focusNode: focusNode,
-                    canRequestFocus: canRequestFocus,
-                    controller: _minDurationController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: tr('Min'),
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (v) => setState(
-                      () => _draft = _draft.copyWith(minDuration: v.trim()),
-                    ),
+                child: RequestDurationField(
+                  label: tr('Min'),
+                  controller: _minDurationController,
+                  onChanged: (v) => setState(
+                    () => _draft = _draft.copyWith(minDuration: v),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: TvDeferredKeyboard(
-                  builder: (context, focusNode, canRequestFocus) => TextField(
-                    focusNode: focusNode,
-                    canRequestFocus: canRequestFocus,
-                    controller: _maxDurationController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: tr('Max'),
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (v) => setState(
-                      () => _draft = _draft.copyWith(maxDuration: v.trim()),
-                    ),
+                child: RequestDurationField(
+                  label: tr('Max'),
+                  controller: _maxDurationController,
+                  onChanged: (v) => setState(
+                    () => _draft = _draft.copyWith(maxDuration: v),
                   ),
                 ),
               ),
@@ -582,40 +566,10 @@ class _RequestFiltersSheetState extends State<RequestFiltersSheet> {
     String label,
     TextEditingController controller,
     ValueChanged<String> onChanged,
-  ) {
-    return TvDeferredKeyboard(
-      builder: (context, focusNode, canRequestFocus) => TextField(
-        focusNode: focusNode,
-        canRequestFocus: canRequestFocus,
+  ) =>
+      RequestDateField(
+        label: label,
         controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: tr('YYYY-MM-DD'),
-          border: const OutlineInputBorder(),
-          suffixIcon: IconButton(
-            icon: const Icon(AppIcons.calendar, size: 18),
-            onPressed: () async {
-              final value = controller.text;
-              final initial =
-                  value.isNotEmpty ? DateTime.tryParse(value) : DateTime.now();
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: initial ?? DateTime.now(),
-                firstDate: DateTime(1900),
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) {
-                final formatted = '${picked.year.toString().padLeft(4, '0')}-'
-                    '${picked.month.toString().padLeft(2, '0')}-'
-                    '${picked.day.toString().padLeft(2, '0')}';
-                controller.text = formatted;
-                onChanged(formatted);
-              }
-            },
-          ),
-        ),
         onChanged: onChanged,
-      ),
-    );
-  }
+      );
 }
