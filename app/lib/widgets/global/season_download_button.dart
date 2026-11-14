@@ -10,6 +10,7 @@ import 'metered_download_dialog.dart';
 import 'season_download_plan.dart';
 import '../../theme/app_icons.dart';
 import '../../l10n/tr.dart';
+import 'onyx_dialog.dart';
 
 /// « Garder toute la saison sur l'appareil », en un geste.
 ///
@@ -47,8 +48,12 @@ class SeasonDownloadButton extends StatelessWidget {
     final nextBatch = plan.nextBatch;
     final VoidCallback? addNext = nextBatch == null
         ? null
-        : () => _downloadSeason(context, manager, nextBatch,
-            unwatchedOnly: plan.nextBatchIsUnwatched);
+        : () => _downloadSeason(
+            context,
+            manager,
+            nextBatch,
+            unwatchedOnly: plan.nextBatchIsUnwatched,
+          );
 
     // Tout est là : le bouton devient la sortie — c'est le seul endroit d'où
     // une saison entière se libère d'un coup.
@@ -77,8 +82,9 @@ class SeasonDownloadButton extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             label: Text('${plan.done}/${plan.requested}'),
-            style:
-                TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
           ),
           // Une saison lancée par erreur, ou sur le mauvais réseau, se
           // défaisait épisode par épisode depuis l'écran des téléchargements.
@@ -100,8 +106,9 @@ class SeasonDownloadButton extends StatelessWidget {
     if (plan.nextBatchIsUnwatched) {
       label = compact
           ? tr('Non vus ({0})', [plan.unwatchedMissing])
-          : tr('Télécharger les non vus · {0}',
-              [_labelFor(plan.unwatchedMissing)]);
+          : tr('Télécharger les non vus · {0}', [
+              _labelFor(plan.unwatchedMissing),
+            ]);
     } else if (plan.done > 0) {
       label = compact
           ? tr('Compléter ({0})', [plan.missing])
@@ -155,39 +162,31 @@ class SeasonDownloadButton extends StatelessWidget {
     DownloadManager manager,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Annuler les téléchargements ?')),
-        content: Text(
-          tr(
-              'Les épisodes de {0} pas encore sur l’appareil sont retirés de '
-              'la file. Ceux déjà téléchargés restent.',
-              [showTitle]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(tr('Continuer')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text(tr('Tout annuler')),
-          ),
-        ],
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: tr('Annuler les téléchargements ?'),
+      message: tr(
+        'Les épisodes de {0} pas encore sur l’appareil sont retirés de '
+        'la file. Ceux déjà téléchargés restent.',
+        [showTitle],
       ),
+      confirmLabel: tr('Tout annuler'),
+      cancelLabel: tr('Continuer'),
+      destructive: true,
+      icon: AppIcons.close,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     final cancelled = await manager.cancelShow(showId);
     if (cancelled == 0) return;
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          tr('{0} téléchargement{1} annulé{2}',
-              [cancelled, cancelled > 1 ? 's' : '', cancelled > 1 ? 's' : '']),
+          tr('{0} téléchargement{1} annulé{2}', [
+            cancelled,
+            cancelled > 1 ? 's' : '',
+            cancelled > 1 ? 's' : '',
+          ]),
         ),
       ),
     );
@@ -197,15 +196,14 @@ class SeasonDownloadButton extends StatelessWidget {
     BuildContext context,
     DownloadManager manager,
     List<HomeMediaItem> downloadable,
-  ) =>
-      confirmDeleteDownloads(
-        context,
-        what: seasonNumber == null
-            ? tr('la saison')
-            : tr('la saison {0}', [seasonNumber]),
-        entries: [
-          for (final episode in downloadable)
-            if (manager.entryFor(episode.media.id) case final entry?) entry,
-        ],
-      );
+  ) => confirmDeleteDownloads(
+    context,
+    what: seasonNumber == null
+        ? tr('la saison')
+        : tr('la saison {0}', [seasonNumber]),
+    entries: [
+      for (final episode in downloadable)
+        if (manager.entryFor(episode.media.id) case final entry?) entry,
+    ],
+  );
 }

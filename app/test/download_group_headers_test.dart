@@ -4,6 +4,7 @@ import 'package:onyx/models/models.dart';
 import 'package:onyx/models/offline_download.dart';
 import 'package:onyx/screens/downloads/download_group_headers.dart';
 import 'package:onyx/services/download_manager.dart';
+import 'package:onyx/widgets/global/onyx_dialog.dart';
 import 'package:provider/provider.dart';
 
 /// Supprimer une saison ou une série d'un geste, depuis l'écran des
@@ -46,7 +47,7 @@ void main() {
 
     await tester.tap(find.text('Annuler'));
     await tester.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(OnyxDialog), findsNothing);
   });
 
   testWidgets('les épisodes spéciaux ne s’appellent pas « saison 0 »',

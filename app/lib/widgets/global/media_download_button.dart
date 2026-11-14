@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import 'metered_download_dialog.dart';
 import '../../theme/app_icons.dart';
 import '../../l10n/tr.dart';
+import 'onyx_dialog.dart';
 
 /// Le bouton « garder sur l'appareil », partout où un média se télécharge.
 ///
@@ -91,8 +92,11 @@ class MediaDownloadButton extends StatelessWidget {
                 backgroundColor: AppColors.border,
                 valueColor: const AlwaysStoppedAnimation(AppColors.textPrimary),
               ),
-              Icon(AppIcons.stop,
-                  size: size * 0.5, color: AppColors.textSecondary),
+              Icon(
+                AppIcons.stop,
+                size: size * 0.5,
+                color: AppColors.textSecondary,
+              ),
             ],
           ),
         );
@@ -163,34 +167,22 @@ Future<bool> confirmDeleteDownload(
   OfflineDownload entry,
 ) async {
   final unsynced = entry.needsSync;
-  final result = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: AppColors.surface,
-      title: Text(tr('Supprimer le téléchargement ?')),
-      content: Text(
-        unsynced
-            ? tr(
-                '« {0} » libérera de la place sur cet appareil. Son '
-                'avancement sera envoyé au serveur dès que possible.',
-                [entry.title])
-            : tr(
-                '« {0} » libérera de la place sur cet appareil. Le média '
-                'reste disponible sur le serveur.',
-                [entry.title]),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(tr('Annuler')),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          style: TextButton.styleFrom(foregroundColor: AppColors.error),
-          child: Text(tr('Supprimer')),
-        ),
-      ],
-    ),
+  return showOnyxConfirm(
+    context,
+    title: tr('Supprimer le téléchargement ?'),
+    message: unsynced
+        ? tr(
+            '« {0} » libérera de la place sur cet appareil. Son '
+            'avancement sera envoyé au serveur dès que possible.',
+            [entry.title],
+          )
+        : tr(
+            '« {0} » libérera de la place sur cet appareil. Le média '
+            'reste disponible sur le serveur.',
+            [entry.title],
+          ),
+    confirmLabel: tr('Supprimer'),
+    destructive: true,
+    icon: AppIcons.delete,
   );
-  return result ?? false;
 }

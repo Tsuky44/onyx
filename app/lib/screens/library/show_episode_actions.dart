@@ -7,6 +7,8 @@ import '../../navigation/search_route_observer.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
 import '../player/player_screen.dart';
+import '../../widgets/global/onyx_dialog.dart';
+import '../../theme/app_icons.dart';
 
 /// Ce qu'on fait d'un épisode depuis la fiche d'une série ou la page d'une
 /// saison : le lancer, le cocher vu. Les deux pages font le même geste, avec
@@ -38,13 +40,8 @@ Future<void> playShowEpisode(
   }
   Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute(
-      settings: const RouteSettings(
-        name: SearchRouteObserver.playerRouteName,
-      ),
-      builder: (_) => PlayerScreen(
-        media: episode,
-        seasonNumber: seasonNumber,
-      ),
+      settings: const RouteSettings(name: SearchRouteObserver.playerRouteName),
+      builder: (_) => PlayerScreen(media: episode, seasonNumber: seasonNumber),
     ),
   );
 }
@@ -54,35 +51,39 @@ Future<MediaVersion?> _pickVersion(
   List<MediaVersion> versions,
 ) {
   var selected = versions.first;
-  return showDialog<MediaVersion>(
+  return showOnyxDialog<MediaVersion>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, update) => AlertDialog(
-        title: Text(tr('Choisir une version')),
-        content: SizedBox(
-          width: 480,
-          child: DropdownButtonFormField<int>(
-            initialValue: selected.item.media.id,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: tr('Version')),
-            items: versions
-                .map((v) => DropdownMenuItem(
-                      value: v.item.media.id,
-                      child: Text(v.label, overflow: TextOverflow.ellipsis),
-                    ))
-                .toList(),
-            onChanged: (id) => update(() {
-              selected = versions.firstWhere((v) => v.item.media.id == id);
-            }),
-          ),
+      builder: (context, update) => OnyxDialog(
+        title: tr('Choisir une version'),
+        icon: AppIcons.play,
+        width: 480,
+        content: DropdownButtonFormField<int>(
+          initialValue: selected.item.media.id,
+          isExpanded: true,
+          decoration: InputDecoration(labelText: tr('Version')),
+          items: versions
+              .map(
+                (v) => DropdownMenuItem(
+                  value: v.item.media.id,
+                  child: Text(v.label, overflow: TextOverflow.ellipsis),
+                ),
+              )
+              .toList(),
+          onChanged: (id) => update(() {
+            selected = versions.firstWhere((v) => v.item.media.id == id);
+          }),
         ),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(tr('Annuler'))),
-          FilledButton(
-              onPressed: () => Navigator.pop(context, selected),
-              child: Text(tr('Lecture'))),
+          OnyxDialogAction(
+            label: tr('Annuler'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          OnyxDialogAction(
+            label: tr('Lecture'),
+            primary: true,
+            onPressed: () => Navigator.pop(context, selected),
+          ),
         ],
       ),
     ),
@@ -127,18 +128,26 @@ Future<bool> setSeasonEpisodesWatched(
   final home = Provider.of<HomeProvider>(context, listen: false);
   final messenger = ScaffoldMessenger.of(context);
   try {
-    final changed = await library.setMediasWatched(
-      [for (final episode in episodes) episode.media.id],
-      watched,
-    );
+    final changed = await library.setMediasWatched([
+      for (final episode in episodes) episode.media.id,
+    ], watched);
     await home.loadHome(silent: true);
     await library.loadShows(silent: true);
     final plural = changed > 1 ? 's' : '';
-    messenger.showSnackBar(SnackBar(
-      content: Text(watched
-          ? tr('{0} épisode{1} marqué{2} vu{3}', [changed, plural, plural, plural])
-          : tr('Saison marquée non vue')),
-    ));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          watched
+              ? tr('{0} épisode{1} marqué{2} vu{3}', [
+                  changed,
+                  plural,
+                  plural,
+                  plural,
+                ])
+              : tr('Saison marquée non vue'),
+        ),
+      ),
+    );
     return true;
   } catch (_) {
     messenger.showSnackBar(

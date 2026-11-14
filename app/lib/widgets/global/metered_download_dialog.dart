@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import '../../services/download_manager.dart';
 import '../../services/download_preferences.dart';
 import '../../services/network_status.dart';
-import '../../theme/app_colors.dart';
 import '../../l10n/tr.dart';
+import 'onyx_dialog.dart';
+import '../../theme/app_icons.dart';
 
 /// Ce qui a été répondu à « ce réseau se paie à l'octet ».
 enum _MeteredChoice { now, later, cancel }
@@ -27,6 +28,7 @@ enum _MeteredChoice { now, later, cancel }
 /// « maintenant » ne grave rien, et repasser en 4G demain reposera la question.
 Future<bool> confirmDownloadOnThisNetwork(
   BuildContext context, {
+
   /// Ce qu'on s'apprête à rapatrier, écrit pour être lu dans une phrase :
   /// « cet épisode », « les 12 épisodes de la saison 2 ».
   required String what,
@@ -43,42 +45,43 @@ Future<bool> confirmDownloadOnThisNetwork(
   // le bandeau de l'écran des téléchargements dit ce qu'il attend.
   if (preferences.meteredPolicy == MeteredPolicy.never) return true;
 
-  final choice = await showDialog<_MeteredChoice>(
+  final choice = await showOnyxDialog<_MeteredChoice>(
     context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: AppColors.surface,
-      title: Text(tr('Télécharger sur ce réseau ?')),
-      content: Text(
-        network.kind == NetworkKind.mobile
-            ? tr(
-                'Vous êtes en données mobiles. Télécharger {0} peut '
-                'consommer plusieurs gigaoctets de votre forfait — un '
-                'épisode est rapatrié dans sa qualité d’origine, sans '
-                'compression.\n\nEn Wi-Fi, le téléchargement repartira tout '
-                'seul.',
-                [what])
-            : tr(
-                'Ce réseau est signalé comme limité — un partage de '
-                'connexion, par exemple. Télécharger {0} peut consommer '
-                'plusieurs gigaoctets du forfait qui le fournit : un épisode '
-                'est rapatrié dans sa qualité d’origine, sans '
-                'compression.\n\nSur un réseau non limité, le téléchargement '
-                'repartira tout seul.',
-                [what]),
-      ),
+    builder: (context) => OnyxDialog(
+      title: tr('Télécharger sur ce réseau ?'),
+      icon: AppIcons.wifiOff,
+      message: network.kind == NetworkKind.mobile
+          ? tr(
+              'Vous êtes en données mobiles. Télécharger {0} peut '
+              'consommer plusieurs gigaoctets de votre forfait — un '
+              'épisode est rapatrié dans sa qualité d’origine, sans '
+              'compression.\n\nEn Wi-Fi, le téléchargement repartira tout '
+              'seul.',
+              [what],
+            )
+          : tr(
+              'Ce réseau est signalé comme limité — un partage de '
+              'connexion, par exemple. Télécharger {0} peut consommer '
+              'plusieurs gigaoctets du forfait qui le fournit : un épisode '
+              'est rapatrié dans sa qualité d’origine, sans '
+              'compression.\n\nSur un réseau non limité, le téléchargement '
+              'repartira tout seul.',
+              [what],
+            ),
+      // Trois issues : le choix prudent en blanc, en tête de la pile.
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_MeteredChoice.cancel),
-          child: Text(tr('Annuler')),
-        ),
-        TextButton(
+        OnyxDialogAction(
+          label: tr('Attendre le Wi-Fi'),
+          primary: true,
           onPressed: () => Navigator.of(context).pop(_MeteredChoice.later),
-          child: Text(tr('Attendre le Wi-Fi')),
         ),
-        TextButton(
+        OnyxDialogAction(
+          label: tr('Télécharger quand même'),
           onPressed: () => Navigator.of(context).pop(_MeteredChoice.now),
-          style: TextButton.styleFrom(foregroundColor: AppColors.warning),
-          child: Text(tr('Télécharger quand même')),
+        ),
+        OnyxDialogAction(
+          label: tr('Annuler'),
+          onPressed: () => Navigator.of(context).pop(_MeteredChoice.cancel),
         ),
       ],
     ),
