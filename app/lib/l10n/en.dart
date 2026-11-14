@@ -3634,4 +3634,55 @@ const Map<String, String> kEnglish = <String, String>{
       'Accounts · {0}',
   'Actions pour {0}':
       'Actions for {0}',
+  // Menu « Plus » de la fiche (ADR-0132).
+  'Ma liste':
+      'My list',
+  'Corriger la fiche…':
+      'Fix metadata…',
+  'Changer l’affiche…':
+      'Change poster…',
+  'Partager la série':
+      'Share series',
+  'Partager':
+      'Share',
+  'Marquer comme non vu':
+      'Mark as unwatched',
+  'Marquer la saison comme vue':
+      'Mark season as watched',
+  'Marquer la saison {0} comme vue':
+      'Mark season {0} as watched',
+  'Marquer la saison comme non vue':
+      'Mark season as unwatched',
+  'Marquer la saison {0} comme non vue':
+      'Mark season {0} as unwatched',
+  'Retirer la saison de l’appareil':
+      'Remove season from this device',
+  'Retirer la saison {0} de l’appareil':
+      'Remove season {0} from this device',
+  'Téléchargée · {0}':
+      'Downloaded · {0}',
+  '{0}/{1} épisodes téléchargés':
+      '{0}/{1} episodes downloaded',
+  'Télécharger les non vus de la saison':
+      'Download unwatched episodes of the season',
+  'Télécharger les non vus de la saison {0}':
+      'Download unwatched episodes of season {0}',
+  'Compléter la saison':
+      'Finish downloading the season',
+  'Compléter la saison {0}':
+      'Finish downloading season {0}',
+  'Télécharger la saison {0}':
+      'Download season {0}',
+  '{0} % téléchargés':
+      '{0}% downloaded',
+  'Télécharger le film':
+      'Download movie',
+  'Télécharger l’épisode':
+      'Download episode',
+  'Réessayer le téléchargement':
+      'Retry download',
+  'Mettre en pause le téléchargement':
+      'Pause download',
+  'Supprimer le téléchargement':
+      'Delete download',
 };

@@ -31,22 +31,31 @@ class OnyxMenuMetrics {
   /// Le filet qui sépare les lignes destructives, marges comprises.
   static const double hairline = 9;
 
+  /// Le titre d'un groupe ([OnyxMenuItem.section]), marges comprises.
+  static const double sectionTitle = 26;
+
   double rowHeight(OnyxMenuItem<Object?> item) =>
       (compact ? 44 : 40) + (item.subtitle == null ? 0 : 14);
 
   /// Un filet avant la première ligne destructive qui suit une ligne
-  /// ordinaire.
+  /// ordinaire, et avant chaque groupe qui n'ouvre pas le menu.
   static bool hairlineBefore(List<OnyxMenuItem<Object?>> items, int index) =>
-      index > 0 && items[index].destructive && !items[index - 1].destructive;
+      index > 0 &&
+      (items[index].section != null ||
+          (items[index].destructive && !items[index - 1].destructive));
+
+  /// Ce qui précède la ligne [index] : son filet et le titre de son groupe.
+  static double leadOf(List<OnyxMenuItem<Object?>> items, int index) =>
+      (hairlineBefore(items, index) ? hairline : 0) +
+      (items[index].section != null ? sectionTitle : 0);
 
   /// Le haut de la ligne [index] dans le contenu défilant, padding compris.
   double offsetOf(List<OnyxMenuItem<Object?>> items, int index) {
     var y = padding;
     for (var i = 0; i < index; i++) {
-      if (hairlineBefore(items, i)) y += hairline;
-      y += rowHeight(items[i]);
+      y += leadOf(items, i) + rowHeight(items[i]);
     }
-    if (index < items.length && hairlineBefore(items, index)) y += hairline;
+    if (index < items.length) y += leadOf(items, index);
     return y;
   }
 
@@ -137,6 +146,8 @@ class _OnyxMenuPanelState<T> extends State<OnyxMenuPanel<T>> {
                 for (var i = 0; i < items.length; i++) ...[
                   if (OnyxMenuMetrics.hairlineBefore(items, i))
                     const OnyxMenuHairline(),
+                  if (items[i].section case final section?)
+                    _SectionTitle(section),
                   OnyxMenuRow(
                     item: items[i],
                     height: widget.metrics.rowHeight(items[i]),
@@ -161,6 +172,36 @@ class OnyxMenuHairline extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Container(height: 1, color: AppColors.glassBorder),
+      );
+}
+
+/// Le titre d'un groupe, en petites capitales grises : il se lit, il ne se
+/// choisit pas, et le focus le saute.
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: OnyxMenuMetrics.sectionTitle,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+          child: Semantics(
+            header: true,
+            child: Text(
+              label.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: AppType.caption,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+        ),
       );
 }
 

@@ -100,7 +100,8 @@ void main() {
       expect(tester.takeException(), isNull,
           reason: 'la rangée d’actions ne doit pas déborder');
       expect(find.text('Reprendre'), findsOneWidget);
-      expect(find.byTooltip('Corriger la fiche'), findsOneWidget);
+      // Hors TV, le reste des actions est rangé dans « Plus » (ADR-0132).
+      expect(find.text('Plus'), findsOneWidget);
     });
 
     testWidgets('« Reprendre » dit combien il reste, pas un pourcentage',
@@ -128,7 +129,7 @@ void main() {
       await pumpMovie(tester, size: const Size(700, 1000), position: 2700);
 
       expect(tester.takeException(), isNull);
-      expect(find.byTooltip('Marquer vu'), findsOneWidget);
+      expect(find.text('Plus'), findsOneWidget);
     });
   });
 

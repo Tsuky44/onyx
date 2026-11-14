@@ -14,7 +14,8 @@ export 'onyx_menu_route.dart' show showOnyxMenu;
 /// [checked], le menu est un menu de choix : chaque ligne réserve la place de
 /// la coche à droite, et une longue liste s'ouvre défilée sur la ligne cochée.
 /// Les lignes [destructive] se rangent en fin de menu, sous un filet que le
-/// panneau pose lui-même.
+/// panneau pose lui-même. Une ligne qui porte une [section] ouvre un groupe :
+/// un filet (sauf en tête de menu) puis ce titre en petites capitales.
 @immutable
 class OnyxMenuItem<T> {
   const OnyxMenuItem({
@@ -26,6 +27,7 @@ class OnyxMenuItem<T> {
     this.checked = false,
     this.destructive = false,
     this.enabled = true,
+    this.section,
   }) : assert(icon == null || leading == null,
             'Une ligne a une icône ou un widget de tête, pas les deux.');
 
@@ -39,6 +41,9 @@ class OnyxMenuItem<T> {
   final bool checked;
   final bool destructive;
   final bool enabled;
+
+  /// Le titre du groupe que cette ligne ouvre (« Administration »).
+  final String? section;
 }
 
 /// Un menu surgissant dans la matière du menu du compte (ADR-0126) : un

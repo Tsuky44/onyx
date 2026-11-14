@@ -31,6 +31,11 @@ class MediaDownloadButton extends StatelessWidget {
   /// Version réduite pour une ligne de liste.
   final bool compact;
 
+  /// L'état seul : rien tant que rien n'est lancé. Sur la fiche d'un film hors
+  /// TV, le geste de départ vit dans le menu « Plus » (ADR-0132) ; l'anneau
+  /// d'avancement, lui, reste dans la rangée tant qu'il a quelque chose à dire.
+  final bool statusOnly;
+
   const MediaDownloadButton({
     super.key,
     required this.item,
@@ -39,6 +44,7 @@ class MediaDownloadButton extends StatelessWidget {
     this.seasonNumber,
     this.showPosterUrl,
     this.compact = false,
+    this.statusOnly = false,
   });
 
   bool get _isDownloadable =>
@@ -54,11 +60,20 @@ class MediaDownloadButton extends StatelessWidget {
     }
 
     final entry = manager.entryFor(item.media.id);
+    if (statusOnly && entry == null) return const SizedBox.shrink();
     final size = compact ? 20.0 : 22.0;
 
     return IconButton(
       tooltip: _tooltip(entry),
-      onPressed: () => _onPressed(context, manager, entry),
+      onPressed: () => runMediaDownloadAction(
+        context,
+        manager,
+        item,
+        showTitle: showTitle,
+        showId: showId,
+        seasonNumber: seasonNumber,
+        showPosterUrl: showPosterUrl,
+      ),
       iconSize: size,
       visualDensity: compact ? VisualDensity.compact : null,
       icon: _icon(entry, size),
@@ -119,42 +134,50 @@ class MediaDownloadButton extends StatelessWidget {
         return tr('Téléchargement en cours');
     }
   }
+}
 
-  Future<void> _onPressed(
-    BuildContext context,
-    DownloadManager manager,
-    OfflineDownload? entry,
-  ) async {
-    switch (entry?.status) {
-      case null:
-      case DownloadStatus.failed:
-        // Sur un forfait, un épisode se compte en gigaoctets : la question est
-        // posée avant la mise en file, jamais après.
-        final proceed = await confirmDownloadOnThisNetwork(
-          context,
-          what: item.media.type == MediaType.movie
-              ? tr('ce film')
-              : tr('cet épisode'),
-        );
-        if (!proceed) return;
-        await manager.download(
-          item,
-          showTitle: showTitle,
-          showId: showId,
-          seasonNumber: seasonNumber,
-          showPosterUrl: showPosterUrl,
-        );
-      case DownloadStatus.queued:
-      case DownloadStatus.downloading:
-        await manager.pause(item.media.id);
-      case DownloadStatus.paused:
-        await manager.resume(item.media.id);
-      case DownloadStatus.completed:
-        // Effacer un fichier de plusieurs gigaoctets sur un appui qui visait
-        // peut-être la ligne d'à côté : la confirmation n'est pas négociable.
-        final confirmed = await confirmDeleteDownload(context, entry!);
-        if (confirmed) await manager.delete(item.media.id);
-    }
+/// Le geste du bouton de téléchargement selon l'état de [item] : lancer,
+/// mettre en pause, reprendre ou supprimer. Partagé avec le menu « Plus » de
+/// la fiche d'un film, qui appelle le même cycle (ADR-0132).
+Future<void> runMediaDownloadAction(
+  BuildContext context,
+  DownloadManager manager,
+  HomeMediaItem item, {
+  String? showTitle,
+  int? showId,
+  int? seasonNumber,
+  String? showPosterUrl,
+}) async {
+  final entry = manager.entryFor(item.media.id);
+  switch (entry?.status) {
+    case null:
+    case DownloadStatus.failed:
+      // Sur un forfait, un épisode se compte en gigaoctets : la question est
+      // posée avant la mise en file, jamais après.
+      final proceed = await confirmDownloadOnThisNetwork(
+        context,
+        what: item.media.type == MediaType.movie
+            ? tr('ce film')
+            : tr('cet épisode'),
+      );
+      if (!proceed) return;
+      await manager.download(
+        item,
+        showTitle: showTitle,
+        showId: showId,
+        seasonNumber: seasonNumber,
+        showPosterUrl: showPosterUrl,
+      );
+    case DownloadStatus.queued:
+    case DownloadStatus.downloading:
+      await manager.pause(item.media.id);
+    case DownloadStatus.paused:
+      await manager.resume(item.media.id);
+    case DownloadStatus.completed:
+      // Effacer un fichier de plusieurs gigaoctets sur un appui qui visait
+      // peut-être la ligne d'à côté : la confirmation n'est pas négociable.
+      final confirmed = await confirmDeleteDownload(context, entry!);
+      if (confirmed) await manager.delete(item.media.id);
   }
 }
 
