@@ -6,11 +6,12 @@ import '../../models/server_account.dart';
 import '../../services/api_client.dart';
 import '../../services/media_details_cache.dart';
 import '../../services/media_tracks_cache.dart';
-import '../../theme/app_colors.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import 'shared_link_app.dart';
 import 'shared_link_screen.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/global/onyx_dialog.dart';
+import '../../theme/app_icons.dart';
 
 /// Un lien de partage tel que l'app installée le lit : le serveur qui l'a
 /// créé, et son code (ADR-0037 §9).
@@ -49,16 +50,18 @@ class SharedLinkAddress {
 /// Demande un lien de partage et l'ouvre en invité, sans compte ni serveur
 /// enregistré (ADR-0037 §9).
 Future<void> showOpenSharedLinkDialog(BuildContext context) async {
-  final address = await showDialog<SharedLinkAddress>(
+  final address = await showOnyxDialog<SharedLinkAddress>(
     context: context,
     builder: (_) => const _OpenSharedLinkDialog(),
   );
   if (address == null || !context.mounted) return;
-  await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
-    builder: (_) => SharedLinkGuestScope(
-      api: SharedLinkApiClient(address.code, origin: address.origin),
+  await Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute<void>(
+      builder: (_) => SharedLinkGuestScope(
+        api: SharedLinkApiClient(address.code, origin: address.origin),
+      ),
     ),
-  ));
+  );
 }
 
 class _OpenSharedLinkDialog extends StatefulWidget {
@@ -102,7 +105,11 @@ class _OpenSharedLinkDialogState extends State<_OpenSharedLinkDialog> {
   void _open() {
     final address = SharedLinkAddress.tryParse(_link.text);
     if (address == null) {
-      setState(() => _error = tr('Collez le lien entier, tel que vous l’avez reçu : https://…/share#…'));
+      setState(
+        () => _error = tr(
+          'Collez le lien entier, tel que vous l’avez reçu : https://…/share#…',
+        ),
+      );
       return;
     }
     Navigator.of(context).pop(address);
@@ -110,48 +117,37 @@ class _OpenSharedLinkDialogState extends State<_OpenSharedLinkDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      title: Text(tr('Ouvrir un lien de partage')),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              tr('Collez le lien qu’on vous a envoyé. Il se regarde ici, '
-                  'sans compte.'),
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 16),
-            TvDeferredKeyboard(
-              builder: (context, focusNode, canRequestFocus) => TextField(
-                controller: _link,
-                focusNode: focusNode,
-                canRequestFocus: canRequestFocus,
-                autofocus: true,
-                autocorrect: false,
-                enableSuggestions: false,
-                keyboardType: TextInputType.url,
-                decoration: InputDecoration(
-                  labelText: tr('Lien'),
-                  hintText: 'https://…/share#…',
-                  errorText: _error,
-                  errorMaxLines: 3,
-                ),
-                onSubmitted: (_) => _open(),
-              ),
-            ),
-          ],
+    return OnyxDialog(
+      title: tr('Ouvrir un lien de partage'),
+      icon: AppIcons.link,
+      message: tr(
+        'Collez le lien qu’on vous a envoyé. Il se regarde ici, '
+        'sans compte.',
+      ),
+      content: TvDeferredKeyboard(
+        builder: (context, focusNode, canRequestFocus) => TextField(
+          controller: _link,
+          focusNode: focusNode,
+          canRequestFocus: canRequestFocus,
+          autofocus: true,
+          autocorrect: false,
+          enableSuggestions: false,
+          keyboardType: TextInputType.url,
+          decoration: InputDecoration(
+            labelText: tr('Lien'),
+            hintText: 'https://…/share#…',
+            errorText: _error,
+            errorMaxLines: 3,
+          ),
+          onSubmitted: (_) => _open(),
         ),
       ),
       actions: [
-        TextButton(
+        OnyxDialogAction(
+          label: tr('Annuler'),
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(tr('Annuler')),
         ),
-        FilledButton(onPressed: _open, child: Text(tr('Ouvrir'))),
+        OnyxDialogAction(label: tr('Ouvrir'), primary: true, onPressed: _open),
       ],
     );
   }

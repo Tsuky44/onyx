@@ -9,6 +9,8 @@ import '../../../l10n/tr.dart';
 import '../../../tv/tv_mode.dart';
 import 'settings_choice_focus.dart';
 import 'settings_tile.dart';
+import '../../../widgets/global/onyx_dialog.dart';
+import '../../../theme/app_icons.dart';
 
 export 'settings_tile.dart';
 
@@ -44,12 +46,14 @@ class SettingsGroup extends StatelessWidget {
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       if (i > 0 && !padded) {
-        rows.add(Divider(
-          height: 1,
-          thickness: 1,
-          indent: 64,
-          color: Colors.white.withValues(alpha: 0.06),
-        ));
+        rows.add(
+          Divider(
+            height: 1,
+            thickness: 1,
+            indent: 64,
+            color: Colors.white.withValues(alpha: 0.06),
+          ),
+        );
       }
       rows.add(children[i]);
     }
@@ -199,10 +203,7 @@ class SettingsChoiceTile<T> extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (icon != null) ...[
-            SettingsIcon(icon!),
-            const SizedBox(width: 14),
-          ],
+          if (icon != null) ...[SettingsIcon(icon!), const SizedBox(width: 14)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,8 +243,11 @@ class SettingsChoiceTile<T> extends StatelessWidget {
                               ? AppColors.textPrimary
                               : AppColors.textSecondary,
                         ),
-                        side: AppTheme.chipSide(BorderSide(
-                            color: Colors.white.withValues(alpha: 0.1))),
+                        side: AppTheme.chipSide(
+                          BorderSide(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
                         onSelected: (_) => onChanged(option),
                       ),
                   ],
@@ -253,7 +257,9 @@ class SettingsChoiceTile<T> extends StatelessWidget {
                   Text(
                     footnote!,
                     style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: AppType.footnote),
+                      color: AppColors.textMuted,
+                      fontSize: AppType.footnote,
+                    ),
                   ),
                 ],
               ],
@@ -305,11 +311,11 @@ class SettingsPill extends StatelessWidget {
 }
 
 Color playMethodColor(PlayMethod method) => switch (method) {
-      PlayMethod.direct => AppColors.success,
-      PlayMethod.directStream => AppColors.primary,
-      PlayMethod.transcode => AppColors.warning,
-      PlayMethod.local => AppColors.textSecondary,
-    };
+  PlayMethod.direct => AppColors.success,
+  PlayMethod.directStream => AppColors.primary,
+  PlayMethod.transcode => AppColors.warning,
+  PlayMethod.local => AppColors.textSecondary,
+};
 
 /// Un chiffre clé : « 42 h — Temps de visionnage ».
 class StatTile extends StatelessWidget {
@@ -379,8 +385,10 @@ class StatTile extends StatelessWidget {
               hint!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style:
-                  const TextStyle(color: AppColors.textMuted, fontSize: AppType.footnote),
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: AppType.footnote,
+              ),
             ),
           ],
         ],
@@ -399,18 +407,21 @@ class StatGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 26),
-      child: LayoutBuilder(builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 640 ? 4 : 2;
-        const gap = 12.0;
-        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final child in children) SizedBox(width: width, child: child),
-          ],
-        );
-      }),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = constraints.maxWidth >= 640 ? 4 : 2;
+          const gap = 12.0;
+          final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final child in children)
+                SizedBox(width: width, child: child),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -429,13 +440,19 @@ class SettingsEmptyNote extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon ?? Icons.inbox_outlined,
-              size: 18, color: AppColors.textMuted),
+          Icon(
+            icon ?? Icons.inbox_outlined,
+            size: 18,
+            color: AppColors.textMuted,
+          ),
           const SizedBox(width: 10),
           Flexible(
             child: Text(
               message,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: AppType.subhead),
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: AppType.subhead,
+              ),
             ),
           ),
         ],
@@ -449,15 +466,15 @@ class SettingsLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 28),
-        child: Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
+    padding: EdgeInsets.symmetric(vertical: 28),
+    child: Center(
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    ),
+  );
 }
 
 enum BannerTone { error, success, info }
@@ -490,7 +507,10 @@ class SettingsBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(fontSize: AppType.subhead, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: AppType.subhead,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -520,8 +540,8 @@ class UserAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final tint = name.isEmpty
         ? AppColors.textMuted
-        : _palette[
-            name.codeUnits.fold<int>(0, (a, b) => a + b) % _palette.length];
+        : _palette[name.codeUnits.fold<int>(0, (a, b) => a + b) %
+              _palette.length];
     return Container(
       width: size,
       height: size,
@@ -546,12 +566,17 @@ class UserAvatar extends StatelessWidget {
   }
 }
 
-void showSettingsSnack(BuildContext context, String message,
-    {bool error = false}) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(message),
-    backgroundColor: error ? AppColors.error : null,
-  ));
+void showSettingsSnack(
+  BuildContext context,
+  String message, {
+  bool error = false,
+}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: error ? AppColors.error : null,
+    ),
+  );
 }
 
 /// Le message du serveur quand il en donne un, sinon [fallback].
@@ -560,7 +585,9 @@ String settingsErrorText(Object error, String fallback) {
     final data = error.response?.data;
     if (data is Map && data['error'] != null) return data['error'].toString();
     if (error.response?.statusCode == 404) {
-      return tr('Ce serveur est trop ancien pour cette fonction. Mettez-le à jour.');
+      return tr(
+        'Ce serveur est trop ancien pour cette fonction. Mettez-le à jour.',
+      );
     }
   }
   return fallback;
@@ -573,28 +600,14 @@ Future<bool> confirmSettingsAction(
   required String confirmLabel,
   bool destructive = true,
 }) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      backgroundColor: AppColors.surface,
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: Text(tr('Annuler')),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-          style: destructive
-              ? TextButton.styleFrom(foregroundColor: AppColors.error)
-              : null,
-          child: Text(confirmLabel),
-        ),
-      ],
-    ),
+  return showOnyxConfirm(
+    context,
+    title: title,
+    message: message,
+    confirmLabel: confirmLabel,
+    destructive: destructive,
+    icon: destructive ? AppIcons.delete : AppIcons.info,
   );
-  return confirmed == true;
 }
 
 /// « à l'instant », « il y a 5 min », « hier à 21:04 », « 12/09 à 18:30 ».
@@ -608,7 +621,9 @@ String relativeTime(DateTime moment, {DateTime? now}) {
   final today = DateTime(reference.year, reference.month, reference.day);
   final day = DateTime(moment.year, moment.month, moment.day);
   if (day == today) return tr('aujourd’hui à {0}', [clock(moment)]);
-  if (today.difference(day).inDays == 1) return tr('hier à {0}', [clock(moment)]);
+  if (today.difference(day).inDays == 1) {
+    return tr('hier à {0}', [clock(moment)]);
+  }
   if (today.difference(day).inDays < 7) {
     return tr('il y a {0} jours', [today.difference(day).inDays]);
   }
@@ -622,7 +637,7 @@ const _weekdays = [
   'jeudi',
   'vendredi',
   'samedi',
-  'dimanche'
+  'dimanche',
 ];
 const _months = [
   'janvier',
@@ -636,7 +651,7 @@ const _months = [
   'septembre',
   'octobre',
   'novembre',
-  'décembre'
+  'décembre',
 ];
 
 /// « lundi 14 septembre ». L'app n'initialise pas les locales d'intl, et un

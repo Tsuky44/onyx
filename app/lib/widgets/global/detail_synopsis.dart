@@ -4,6 +4,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_type.dart';
 import '../../tv/tv_focus.dart';
 import '../../l10n/tr.dart';
+import 'onyx_dialog.dart';
 
 /// Le synopsis de l'en-tête d'une fiche, coupé à [maxLines].
 ///
@@ -91,28 +92,25 @@ Future<void> showSynopsisDialog(
   required String title,
   required String overview,
 }) {
-  return showDialog<void>(
+  return showOnyxDialog<void>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      scrollable: true,
-      content: SizedBox(
-        width: 560,
-        child: Text(
-          overview,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: AppType.callout,
-            height: 1.6,
-          ),
+    builder: (context) => OnyxDialog(
+      title: title,
+      width: 560,
+      content: Text(
+        overview,
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: AppType.callout,
+          height: 1.6,
         ),
       ),
       actions: [
-        TextButton(
+        OnyxDialogAction(
+          label: tr('Fermer'),
           // La télécommande arrive sur le seul geste possible.
           autofocus: true,
           onPressed: () => Navigator.pop(context),
-          child: Text(tr('Fermer')),
         ),
       ],
     ),

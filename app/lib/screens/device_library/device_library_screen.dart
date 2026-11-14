@@ -14,12 +14,12 @@ import '../../utils/responsive.dart';
 import '../../widgets/global/empty_state.dart';
 import '../player/player_screen.dart';
 import 'device_video_row.dart';
+import '../../widgets/global/onyx_dialog.dart';
 
 /// Ouvre la bibliothèque de l'appareil, depuis n'importe quel écran.
 void openDeviceLibrary(BuildContext context) {
-  Navigator.of(context).push(MaterialPageRoute(
-    builder: (_) => const DeviceLibraryScreen(),
-  ));
+  Navigator.of(context)
+      .push(MaterialPageRoute(builder: (_) => const DeviceLibraryScreen()));
 }
 
 /// Les vidéos personnelles de l'appareil : les dossiers suivis et ce qu'ils
@@ -67,10 +67,12 @@ class _DeviceLibraryScreenState extends State<DeviceLibraryScreen>
 
   void _toast(String message, {bool error = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: error ? AppColors.error : null,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: error ? AppColors.error : null,
+      ),
+    );
   }
 
   Future<void> _addFolder() async {
@@ -85,8 +87,10 @@ class _DeviceLibraryScreenState extends State<DeviceLibraryScreen>
     }
     if (path == null) return;
     if (!await _library.addFolder(path)) {
-      _toast(tr('Ce dossier n’est pas lisible : autorisez l’accès aux vidéos.'),
-          error: true);
+      _toast(
+        tr('Ce dossier n’est pas lisible : autorisez l’accès aux vidéos.'),
+        error: true,
+      );
     }
   }
 
@@ -109,58 +113,46 @@ class _DeviceLibraryScreenState extends State<DeviceLibraryScreen>
     ];
     if (paths.isEmpty) return;
     final count = await _library.importFiles(paths);
-    if (count == 0) _toast(tr('Aucune vidéo n’a pu être importée.'), error: true);
+    if (count == 0) {
+      _toast(tr('Aucune vidéo n’a pu être importée.'), error: true);
+    }
   }
 
   Future<void> _confirmRemoveFolder(String folder) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(tr('Ne plus suivre ce dossier ?')),
-        content: Text(tr('Les fichiers restent où ils sont ; seules leurs '
-            'vidéos disparaissent de cette liste.')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(tr('Ne plus suivre')),
-          ),
-        ],
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: tr('Ne plus suivre ce dossier ?'),
+      message: tr(
+        'Les fichiers restent où ils sont ; seules leurs '
+        'vidéos disparaissent de cette liste.',
       ),
+      confirmLabel: tr('Ne plus suivre'),
+      icon: AppIcons.folder,
     );
-    if (confirmed == true) await _library.removeFolder(folder);
+    if (confirmed) await _library.removeFolder(folder);
   }
 
   Future<void> _confirmDelete(DeviceVideo video) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(tr('Supprimer cette vidéo ?')),
-        content: Text(tr('« {0} » sera effacée de l’appareil.', [video.title])),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text(tr('Supprimer')),
-          ),
-        ],
-      ),
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: tr('Supprimer cette vidéo ?'),
+      message: tr('« {0} » sera effacée de l’appareil.', [video.title]),
+      confirmLabel: tr('Supprimer'),
+      destructive: true,
+      icon: AppIcons.delete,
     );
-    if (confirmed == true) await _library.deleteVideo(video);
+    if (confirmed) await _library.deleteVideo(video);
   }
 
   void _play(DeviceVideo video) {
-    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-      settings: const RouteSettings(name: SearchRouteObserver.playerRouteName),
-      builder: (_) => PlayerScreen(media: video.toHomeMediaItem()),
-    ));
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(
+          name: SearchRouteObserver.playerRouteName,
+        ),
+        builder: (_) => PlayerScreen(media: video.toHomeMediaItem()),
+      ),
+    );
   }
 
   @override
@@ -211,8 +203,10 @@ class _DeviceLibraryScreenState extends State<DeviceLibraryScreen>
           ? EmptyStateView(
               icon: AppIcons.folder,
               title: tr('Indisponible ici'),
-              message: tr('Cet appareil n’a pas de dossier de vidéos à '
-                  'parcourir.'),
+              message: tr(
+                'Cet appareil n’a pas de dossier de vidéos à '
+                'parcourir.',
+              ),
             )
           : CustomScrollView(
               scrollCacheExtent: AppLayout.imageCacheExtent(context),
@@ -233,7 +227,10 @@ class _DeviceLibraryScreenState extends State<DeviceLibraryScreen>
                           for (final folder in library.folders)
                             InputChip(
                               avatar: const Icon(AppIcons.folder, size: 16),
-                              label: Text(folder, overflow: TextOverflow.ellipsis),
+                              label: Text(
+                                folder,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               onDeleted: () => _confirmRemoveFolder(folder),
                               deleteButtonTooltipMessage: tr('Ne plus suivre'),
                             ),
@@ -250,12 +247,16 @@ class _DeviceLibraryScreenState extends State<DeviceLibraryScreen>
                             icon: AppIcons.movie,
                             title: tr('Aucune vidéo'),
                             message: library.canImportFiles
-                                ? tr('Importez des vidéos depuis l’app Fichiers, '
+                                ? tr(
+                                    'Importez des vidéos depuis l’app Fichiers, '
                                     'ou déposez-les dans le dossier Onyx depuis '
-                                    'le Finder ou l’app Fichiers.')
-                                : tr('Ajoutez un dossier de l’appareil : ses '
+                                    'le Finder ou l’app Fichiers.',
+                                  )
+                                : tr(
+                                    'Ajoutez un dossier de l’appareil : ses '
                                     'vidéos apparaîtront ici et se liront sans '
-                                    'serveur.'),
+                                    'serveur.',
+                                  ),
                             actionLabel: library.canImportFiles
                                 ? tr('Importer des vidéos')
                                 : tr('Ajouter un dossier'),
@@ -271,7 +272,8 @@ class _DeviceLibraryScreenState extends State<DeviceLibraryScreen>
                     itemBuilder: (context, index) {
                       final video = videos[index];
                       final previous = index > 0 ? videos[index - 1] : null;
-                      final startsGroup = previous == null ||
+                      final startsGroup =
+                          previous == null ||
                           previous.folder != video.folder ||
                           previous.subfolder != video.subfolder;
                       return Column(

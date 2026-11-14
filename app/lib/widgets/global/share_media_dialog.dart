@@ -9,6 +9,7 @@ import '../../screens/settings/widgets/settings_ui.dart' show settingsErrorText;
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
+import 'onyx_dialog.dart';
 
 /// Crée un lien public vers un film, un épisode, une saison ou une série, puis
 /// montre ce lien.
@@ -23,7 +24,7 @@ Future<void> showShareMediaDialog(
   required String title,
   bool collection = false,
 }) {
-  return showDialog<void>(
+  return showOnyxDialog<void>(
     context: context,
     builder: (_) => ShareMediaDialog(
       api: api,
@@ -95,8 +96,10 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
       if (!mounted) return;
       setState(() {
         _creating = false;
-        _error =
-            settingsErrorText(e, tr('Impossible de créer le lien. Réessayez.'));
+        _error = settingsErrorText(
+          e,
+          tr('Impossible de créer le lien. Réessayez.'),
+        );
       });
     }
   }
@@ -111,22 +114,19 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
   @override
   Widget build(BuildContext context) {
     final created = _created;
-    return AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      title: Text(created == null ? tr('Partager par lien') : tr('Lien créé')),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: SingleChildScrollView(
-          child: created == null ? _buildForm() : _buildResult(created),
-        ),
-      ),
+    return OnyxDialog(
+      title: created == null ? tr('Partager par lien') : tr('Lien créé'),
+      icon: AppIcons.link,
+      content: created == null ? _buildForm() : _buildResult(created),
       actions: created == null
           ? [
-              TextButton(
+              OnyxDialogAction(
+                label: tr('Annuler'),
                 onPressed: _creating ? null : () => Navigator.of(context).pop(),
-                child: Text(tr('Annuler')),
               ),
-              FilledButton(
+              OnyxDialogAction(
+                label: tr('Créer le lien'),
+                primary: true,
                 onPressed: _creating ? null : _create,
                 child: _creating
                     ? const SizedBox(
@@ -134,19 +134,33 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(tr('Créer le lien')),
+                    : null,
               ),
             ]
           : [
-              TextButton(
+              OnyxDialogAction(
+                label: tr('Terminé'),
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(tr('Terminé')),
               ),
-              FilledButton.icon(
+              OnyxDialogAction(
+                label: _copied ? tr('Copié') : tr('Copier le lien'),
+                primary: true,
                 autofocus: true,
                 onPressed: _copy,
-                icon: Icon(_copied ? AppIcons.check : AppIcons.copy, size: 18),
-                label: Text(_copied ? tr('Copié') : tr('Copier le lien')),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_copied ? AppIcons.check : AppIcons.copy, size: 18),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        _copied ? tr('Copié') : tr('Copier le lien'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
     );
@@ -163,11 +177,13 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
                   'Toute personne qui a le lien peut regarder les épisodes '
                   'de « {0} » dans son navigateur ou dans l’app Onyx, sans '
                   'compte, jusqu’à l’expiration du lien.',
-                  [widget.title])
+                  [widget.title],
+                )
               : tr(
                   'Toute personne qui a le lien peut regarder « {0} » dans '
                   'son navigateur ou dans l’app Onyx, sans compte.',
-                  [widget.title]),
+                  [widget.title],
+                ),
           style: const TextStyle(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 12),
@@ -179,12 +195,18 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
             title: Text(tr('Détruire après lecture')),
             subtitle: Text(
               _singleUse
-                  ? tr('Le lien ne s’ouvre que sur un appareil, et disparaît '
-                      'une fois le média vu.')
-                  : tr('Le lien reste utilisable, par plusieurs personnes, '
-                      'jusqu’à son expiration.'),
+                  ? tr(
+                      'Le lien ne s’ouvre que sur un appareil, et disparaît '
+                      'une fois le média vu.',
+                    )
+                  : tr(
+                      'Le lien reste utilisable, par plusieurs personnes, '
+                      'jusqu’à son expiration.',
+                    ),
               style: const TextStyle(
-                  color: AppColors.textMuted, fontSize: AppType.subhead),
+                color: AppColors.textMuted,
+                fontSize: AppType.subhead,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -259,32 +281,44 @@ class _ShareMediaDialogState extends State<ShareMediaDialog> {
           child: SelectableText(
             _link,
             style: const TextStyle(
-                fontSize: AppType.subhead, color: AppColors.textPrimary),
+              fontSize: AppType.subhead,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
         const SizedBox(height: 12),
         Text(
           details.join(' · '),
           style: const TextStyle(
-              color: AppColors.textSecondary, fontSize: AppType.subhead),
+            color: AppColors.textSecondary,
+            fontSize: AppType.subhead,
+          ),
         ),
         const SizedBox(height: 12),
         Text(
-          tr('Copiez-le maintenant : il ne sera plus affiché. Vous pourrez '
-              'le suivre ou le supprimer dans Paramètres › Liens de partage. '
-              'Dans l’app Onyx, il se colle sur l’écran de connexion, sous « '
-              'Ouvrir un lien de partage ».'),
-          style:
-              TextStyle(color: AppColors.textMuted, fontSize: AppType.subhead),
+          tr(
+            'Copiez-le maintenant : il ne sera plus affiché. Vous pourrez '
+            'le suivre ou le supprimer dans Paramètres › Liens de partage. '
+            'Dans l’app Onyx, il se colle sur l’écran de connexion, sous « '
+            'Ouvrir un lien de partage ».',
+          ),
+          style: TextStyle(
+            color: AppColors.textMuted,
+            fontSize: AppType.subhead,
+          ),
         ),
         if (localOnly) ...[
           const SizedBox(height: 12),
           Text(
-            tr('Cette adresse n’est joignable que depuis votre réseau '
-                'local. Pour un envoi à l’extérieur, connectez l’app au '
-                'serveur par son adresse publique avant de créer le lien.'),
-            style:
-                TextStyle(color: AppColors.warning, fontSize: AppType.subhead),
+            tr(
+              'Cette adresse n’est joignable que depuis votre réseau '
+              'local. Pour un envoi à l’extérieur, connectez l’app au '
+              'serveur par son adresse publique avant de créer le lien.',
+            ),
+            style: TextStyle(
+              color: AppColors.warning,
+              fontSize: AppType.subhead,
+            ),
           ),
         ],
       ],
