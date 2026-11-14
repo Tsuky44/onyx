@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../widgets/settings_dropdown_label.dart';
 import '../widgets/settings_ui.dart';
 import '../../../l10n/tr.dart';
+import '../../../widgets/global/onyx_menu.dart';
 
 /// Le groupe « Vous regardez encore ? » de la page Lecture (ADR-0045).
 ///
@@ -138,17 +139,16 @@ class _HourMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<int>(
+    return OnyxMenuButton<int>(
       tooltip: tooltip,
-      color: AppColors.surfaceElevated,
-      initialValue: minute,
       onSelected: onSelected,
-      itemBuilder: (_) => [
+      items: [
         for (var hour = 0; hour < 24; hour++)
           if (hour * 60 != excluded)
-            PopupMenuItem<int>(
+            OnyxMenuItem<int>(
               value: hour * 60,
-              child: Text(_formatMinuteOfDay(hour * 60)),
+              label: _formatMinuteOfDay(hour * 60),
+              checked: hour * 60 == minute,
             ),
       ],
       child: SettingsDropdownLabel(_formatMinuteOfDay(minute)),
