@@ -683,9 +683,9 @@
     "semantic_hash": "814afa5737fda3c847e70aa44887b290"
   },
   "app/lib/l10n/en.dart": {
-    "mtime": 1794596032.8527975,
-    "seen": 1794612571.1698542,
-    "ast_hash": "6587f91a72862cb6efdc154808e6a286",
+    "mtime": 1794617825.1804838,
+    "seen": 1794618685.8918877,
+    "ast_hash": "8f57eb964f54de5e0d4133aa7ab59f85",
     "semantic_hash": ""
   },
   "app/lib/l10n/tr.dart": {
@@ -965,10 +965,10 @@
     "semantic_hash": "84d8c1dfa8874e0e6bf2d087d01a2e13"
   },
   "app/lib/providers/library_provider.dart": {
-    "mtime": 1794596032.8573709,
-    "seen": 1794612571.1699266,
-    "ast_hash": "02c2cfb680467d74a5d31fcda7359152",
-    "semantic_hash": "02c2cfb680467d74a5d31fcda7359152"
+    "mtime": 1794617083.754754,
+    "seen": 1794618685.8919604,
+    "ast_hash": "ce0d0bb2e3f5876f2de50bcd6162fe0f",
+    "semantic_hash": ""
   },
   "app/lib/providers/media_requests_provider.dart": {
     "mtime": 1794596032.8573709,
@@ -1109,9 +1109,9 @@
     "semantic_hash": "6f072e52dbb31f50a5a35ae569c0f1c6"
   },
   "app/lib/screens/library/search_results_screen.dart": {
-    "mtime": 1794596032.8600702,
-    "seen": 1794612571.1699681,
-    "ast_hash": "e9c8e74d58d57e23ac10bcfddf36bb4c",
+    "mtime": 1794618187.2930348,
+    "seen": 1794618685.8919995,
+    "ast_hash": "119e174a06ee0ab3e2b7572296902744",
     "semantic_hash": ""
   },
   "app/lib/screens/library/season_detail_screen.dart": {
@@ -1901,9 +1901,9 @@
     "semantic_hash": "67707dc04391936e669e77f7654cabf1"
   },
   "app/lib/screens/requests/request_detail_launch.dart": {
-    "mtime": 1794596032.8735487,
-    "seen": 1794612571.1702533,
-    "ast_hash": "27aea40a012db38cc7b5dad197b1cf74",
+    "mtime": 1794617257.1895509,
+    "seen": 1794618685.8922207,
+    "ast_hash": "077abb3eb9f46ddca0f5414bb52987e1",
     "semantic_hash": ""
   },
   "app/lib/screens/requests/request_detail_screen.dart": {
@@ -1943,9 +1943,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/request_media_card.dart": {
-    "mtime": 1794596032.8739538,
-    "seen": 1794612571.1702638,
-    "ast_hash": "cdcd308a1cd382ad82c122d7cf09b940",
+    "mtime": 1794617083.7549772,
+    "seen": 1794618685.892231,
+    "ast_hash": "4a16c4af65290c104cb76840bb6b9586",
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/request_moderation_dialogs.dart": {
@@ -3371,9 +3371,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/glass_catalog_search.dart": {
-    "mtime": 1794596032.8941283,
-    "seen": 1794612571.170764,
-    "ast_hash": "d51ae78f6be90690961fd346ba0a303d",
+    "mtime": 1794617304.5300364,
+    "seen": 1794618685.8927436,
+    "ast_hash": "e6df0787094476d7d0830d23a7875603",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/glass_chrome.dart": {
@@ -3449,9 +3449,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/media_detail_widgets.dart": {
-    "mtime": 1794596032.896474,
-    "seen": 1794612571.1707942,
-    "ast_hash": "f7a63306b19b61172cfaa3a022cc5ecd",
+    "mtime": 1794616931.3020322,
+    "seen": 1794618685.8927631,
+    "ast_hash": "722d8c40e1c72f8bd51f349c4dcd2367",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/media_download_button.dart": {
@@ -5010,9 +5010,9 @@
     "semantic_hash": "a22d2e758cd9d0b8e2e7fa701e17db7f"
   },
   "app/tvos/Runner/AppDelegate.swift": {
-    "mtime": 1794596032.9236498,
-    "seen": 1794612571.1712859,
-    "ast_hash": "bc83f91ef739e6610c749924177a3930",
+    "mtime": 1794617763.5138912,
+    "seen": 1794618685.8932812,
+    "ast_hash": "b3a685399f4930b3f4da0be345ff8f26",
     "semantic_hash": ""
   },
   "app/tvos/Runner/Assets.xcassets/AccentColor.colorset/Contents.json": {
@@ -9964,9 +9964,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/onyx-engineering/app.md": {
-    "mtime": 1794596032.8317578,
-    "seen": 1794612571.1726086,
-    "ast_hash": "122b062adf06440c6f390acd706e36ad",
+    "mtime": 1794618321.5693512,
+    "seen": 1794618685.8945568,
+    "ast_hash": "594b1749ee0d045dba262706cb88383e",
     "semantic_hash": ""
   },
   ".claude/skills/onyx-engineering/server.md": {
@@ -9976,9 +9976,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/onyx-engineering/ui.md": {
-    "mtime": 1794611715.637433,
-    "seen": 1794612571.1726115,
-    "ast_hash": "44278459d63770f63364e76123a607d1",
+    "mtime": 1794618321.5688784,
+    "seen": 1794618685.8945606,
+    "ast_hash": "8c6f15b60bf1beed9c1a9aef67dc2a47",
     "semantic_hash": ""
   },
   ".github/pull_request_template.md": {
@@ -13354,9 +13354,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/search/tv_search_screen.dart": {
-    "mtime": 1794596032.8739538,
-    "seen": 1794612571.1702812,
-    "ast_hash": "bce7032cfe1f23bf7fc29967c158ccce",
+    "mtime": 1794617825.1534698,
+    "seen": 1794618685.8922505,
+    "ast_hash": "027f8874a8729480cf23d6f784cae327",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/remote_playback_notice.dart": {
@@ -13366,9 +13366,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/tv_poster_wall.dart": {
-    "mtime": 1794596032.8997383,
-    "seen": 1794612571.170868,
-    "ast_hash": "da353fdbbb1a6edde3a1894efa42da6b",
+    "mtime": 1794616987.6010923,
+    "seen": 1794618685.8928418,
+    "ast_hash": "97c5fcccac488135121e93dcfc4ade79",
     "semantic_hash": ""
   },
   "app/test/remote_playback_notice_test.dart": {
@@ -13384,9 +13384,9 @@
     "semantic_hash": ""
   },
   "docs/adr/0126-la-recherche-d-un-televiseur-ouvre-le-clavier-du-systeme-et-range-ses-resultats-par-rayons.md": {
-    "mtime": 1794596032.9402473,
-    "seen": 1794612571.1729121,
-    "ast_hash": "0b1a22af6e1b0cf1ab6822a00fd1d1f7",
+    "mtime": 1794618305.2283285,
+    "seen": 1794618685.8948576,
+    "ast_hash": "70b8d3ef00be7192eb078b6112ebbeaf",
     "semantic_hash": ""
   },
   "docs/adr/0127-la-lecture-d-un-autre-appareil-s-annonce-en-notification-et-se-reprend-en-maintenant-lecture.md": {
@@ -13471,6 +13471,96 @@
     "mtime": 1794612170.9010522,
     "seen": 1794612571.1729195,
     "ast_hash": "0d243fc4d0f98cc648fca526505d7780",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/search/search_shelves.dart": {
+    "mtime": 1794617257.190348,
+    "seen": 1794618685.8922486,
+    "ast_hash": "bca313b6f68295e15500027d88a739ca",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/search/tv_system_search_screen.dart": {
+    "mtime": 1794617825.1538231,
+    "seen": 1794618685.892252,
+    "ast_hash": "649b532bd553d336548a8464495a9444",
+    "semantic_hash": ""
+  },
+  "app/lib/services/tv_system_search.dart": {
+    "mtime": 1794617191.9751465,
+    "seen": 1794618685.8925836,
+    "ast_hash": "262e04b85cf85cf05954950eb7334119",
+    "semantic_hash": ""
+  },
+  "app/lib/services/unavailable_titles_search.dart": {
+    "mtime": 1794617257.1900344,
+    "seen": 1794618685.8925855,
+    "ast_hash": "9b9e6832111f7dd025669c7df6c01a27",
+    "semantic_hash": ""
+  },
+  "app/lib/widgets/global/unavailable_badge.dart": {
+    "mtime": 1794616926.0391307,
+    "seen": 1794618685.8928454,
+    "ast_hash": "d788bf588e19f9b3e55059e93f85d2d3",
+    "semantic_hash": ""
+  },
+  "app/test/search_shelves_test.dart": {
+    "mtime": 1794617877.2365968,
+    "seen": 1794618685.8931375,
+    "ast_hash": "03f92546e9282bafc80125d2913c56a0",
+    "semantic_hash": ""
+  },
+  "app/test/search_unavailable_shelf_test.dart": {
+    "mtime": 1794618113.509682,
+    "seen": 1794618685.893139,
+    "ast_hash": "316b28acfb85a26dd7a4f2ea81984447",
+    "semantic_hash": ""
+  },
+  "app/test/support/search_catalog_fakes.dart": {
+    "mtime": 1794618006.4922485,
+    "seen": 1794618685.893191,
+    "ast_hash": "0dd627589c5ccf13194e1b70bb6f7c10",
+    "semantic_hash": ""
+  },
+  "app/test/tv_system_search_host_test.dart": {
+    "mtime": 1794618224.5064692,
+    "seen": 1794618685.8932464,
+    "ast_hash": "b90455ef291ef72436b7ba811b10e0e1",
+    "semantic_hash": ""
+  },
+  "app/test/tv_system_search_screen_test.dart": {
+    "mtime": 1794618053.0067763,
+    "seen": 1794618685.8932476,
+    "ast_hash": "a204b3bd6301546fb4a32f53c36bc0a0",
+    "semantic_hash": ""
+  },
+  "app/test/unavailable_titles_search_test.dart": {
+    "mtime": 1794617877.2351706,
+    "seen": 1794618685.8932526,
+    "ast_hash": "78c5ca7d9f17594b9edadaad97bab918",
+    "semantic_hash": ""
+  },
+  "app/tvos/Runner/SystemSearch.swift": {
+    "mtime": 1794617527.1271665,
+    "seen": 1794618685.8933165,
+    "ast_hash": "5f5f4519b7014b256017b62e7f71421f",
+    "semantic_hash": ""
+  },
+  "app/tvos/Runner/SystemSearchPosterCell.swift": {
+    "mtime": 1794617736.0191789,
+    "seen": 1794618685.893318,
+    "ast_hash": "7f9ffe674639bb526a011f689637fb17",
+    "semantic_hash": ""
+  },
+  "app/tvos/Runner/SystemSearchScreen.swift": {
+    "mtime": 1794618515.530147,
+    "seen": 1794618685.8933191,
+    "ast_hash": "bf5203b6de2062b73952a56b2d0ba714",
+    "semantic_hash": ""
+  },
+  "docs/adr/0129-sur-l-apple-tv-la-recherche-est-l-ecran-du-systeme-et-montre-les-titres-absents.md": {
+    "mtime": 1794618630.4820778,
+    "seen": 1794618685.8948667,
+    "ast_hash": "d3cfc178035576de1eb780dc82726a2a",
     "semantic_hash": ""
   }
 }
