@@ -64,24 +64,20 @@ extension _PlayerOverlays on _PlayerScreenState {
           label:
               party != null ? tr('Séance en cours') : tr('Regarder ensemble'),
           marked: party != null,
-          builder: (_) => party == null
-              ? PlayerWatchPartyTab(
-                  code: null,
-                  members: const [],
-                  onStart: _party.start,
-                  onLeave: () {},
-                )
-              // Les participants vont et viennent sans que le lecteur change.
-              : ListenableBuilder(
-                  listenable: party,
-                  builder: (_, __) => PlayerWatchPartyTab(
-                    code: party.code,
-                    members: party.members,
-                    onStart: _party.start,
-                    onLeave: () =>
-                        _party.leave(notice: tr('Vous avez quitté la séance')),
-                  ),
-                ),
+          // Les participants vont et viennent sans que le lecteur change :
+          // l'onglet suit la séance elle-même. Le même widget hors séance et
+          // en séance, pour que son bouton garde la télécommande quand l'une
+          // devient l'autre.
+          builder: (_) => ListenableBuilder(
+            listenable: party ?? kAlwaysCompleteAnimation,
+            builder: (_, __) => PlayerWatchPartyTab(
+              code: party?.code,
+              members: party?.members ?? const [],
+              onStart: _party.start,
+              onLeave: () =>
+                  _party.leave(notice: tr('Vous avez quitté la séance')),
+            ),
+          ),
         ),
       OnyxTabEntry(
         tab: OnyxTab.stats,

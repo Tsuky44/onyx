@@ -41,6 +41,29 @@ class _PlayerWatchPartyTabState extends State<PlayerWatchPartyTab> {
   String? _error;
   bool _copied = false;
 
+  /// Le bouton de l'onglet : « Démarrer une séance », puis « Quitter la
+  /// séance ». Un seul nœud pour les deux : quand l'un remplace l'autre sous
+  /// la télécommande, elle reste sur le bouton de l'onglet au lieu de se
+  /// retrouver nulle part.
+  final FocusNode _action = FocusNode(debugLabel: 'player-party-action');
+
+  @override
+  void didUpdateWidget(PlayerWatchPartyTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final changed = (oldWidget.code == null) != (widget.code == null);
+    // Lu ici, avant que l'ancien bouton ne soit démonté.
+    if (!changed || !TvMode.isTv || !_action.hasFocus) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _action.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _action.dispose();
+    super.dispose();
+  }
+
   Future<void> _start() async {
     setState(() {
       _starting = true;
@@ -111,6 +134,7 @@ class _PlayerWatchPartyTabState extends State<PlayerWatchPartyTab> {
             icon: Icons.play_arrow_rounded,
             primary: true,
             busy: _starting,
+            focusNode: _action,
             onPressed: _start,
           ),
         ),
@@ -184,6 +208,7 @@ class _PlayerWatchPartyTabState extends State<PlayerWatchPartyTab> {
                 key: const ValueKey('player-party-leave'),
                 label: tr('Quitter la séance'),
                 icon: Icons.logout_rounded,
+                focusNode: _action,
                 onPressed: widget.onLeave,
               ),
             ],

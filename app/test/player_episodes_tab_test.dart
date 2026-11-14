@@ -224,22 +224,31 @@ void main() {
         expect(chosen, [4]);
       });
 
-      testWidgets('OK sur une autre saison la demande', (tester) async {
+      testWidgets(
+          'OK sur une autre saison la demande, et la télécommande reste sur '
+          'son bouton quand la saison arrive', (tester) async {
         final asked = <int>[];
+        var selected = 10;
         final nav = await TvNavHarness.pump(
           tester,
-          providers(tab(
-            episodes: [for (var i = 1; i <= 3; i++) episode(i)],
-            seasons: [season(10, 1), season(11, 2)],
-            selectedSeason: 10,
-            onSeasonChanged: asked.add,
+          providers(StatefulBuilder(
+            builder: (context, setState) => tab(
+              episodes: [for (var i = 1; i <= 3; i++) episode(i)],
+              seasons: [season(10, 1), season(11, 2)],
+              selectedSeason: selected,
+              onSeasonChanged: (id) {
+                asked.add(id);
+                // Comme le lecteur : la saison demandée devient l'affichée.
+                setState(() => selected = id);
+              },
+            ),
           )),
           engine: engine,
         );
         await tester.pumpAndSettle();
 
         // De la saison affichée, un pas à droite.
-        nodeLabelled('player-season-now').requestFocus();
+        nodeLabelled('player-season-10').requestFocus();
         await TvNavHarness.settle(tester);
         await nav.select();
         expect(asked, isEmpty,
@@ -248,8 +257,12 @@ void main() {
         await nav.press(TraversalDirection.right);
         await tester.pumpAndSettle();
         await nav.select();
+        await tester.pumpAndSettle();
 
         expect(asked, [11]);
+        expect(nodeLabelled('player-season-11').hasPrimaryFocus, isTrue,
+            reason: 'le bouton pressé garde le focus en devenant la saison '
+                'affichée');
       });
     });
   });

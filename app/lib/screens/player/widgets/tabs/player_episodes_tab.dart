@@ -53,10 +53,22 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
 
   final ScrollController _scroll = ScrollController();
 
-  /// La carte de l'épisode en cours, et le bouton de la saison affichée : la
-  /// télécommande y arrive en entrant dans leur rangée.
-  final FocusNode _currentCard = FocusNode(debugLabel: 'player-episode-now');
-  final FocusNode _currentSeason = FocusNode(debugLabel: 'player-season-now');
+  /// Un nœud par saison et par épisode, le même tant que l'onglet vit. La
+  /// télécommande entre dans une rangée par celui de la saison affichée ou de
+  /// l'épisode en cours ; un nœud « de l'élément en cours » passé de l'un à
+  /// l'autre ferait perdre le focus au bouton qu'on vient de presser.
+  final Map<int, FocusNode> _seasonNodes = <int, FocusNode>{};
+  final Map<int, FocusNode> _episodeNodes = <int, FocusNode>{};
+
+  FocusNode _seasonNode(int id) => _seasonNodes.putIfAbsent(
+        id,
+        () => FocusNode(debugLabel: 'player-season-$id'),
+      );
+
+  FocusNode _episodeNode(int id) => _episodeNodes.putIfAbsent(
+        id,
+        () => FocusNode(debugLabel: 'player-episode-$id'),
+      );
 
   double _cardWidth = 240;
 
@@ -78,8 +90,12 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
   @override
   void dispose() {
     _scroll.dispose();
-    _currentCard.dispose();
-    _currentSeason.dispose();
+    for (final node in _seasonNodes.values) {
+      node.dispose();
+    }
+    for (final node in _episodeNodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -153,7 +169,7 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
 
   Widget _buildSeasons() {
     return OnyxControlsRow(
-      preferredFocus: _currentSeason,
+      preferredFocus: _seasonNode(widget.selectedSeasonId),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         clipBehavior: Clip.none,
@@ -170,7 +186,7 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
                   ? tr('Saison {0}', [number])
                   : season.title,
               selected: selected,
-              focusNode: selected ? _currentSeason : null,
+              focusNode: _seasonNode(season.id),
               onPressed: () {
                 if (!selected) widget.onSeasonChanged(season.id);
               },
@@ -215,7 +231,9 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
             (constraints.maxHeight - _captionHeight).clamp(72.0, 135.0);
         _cardWidth = thumbHeight * 16 / 9;
         return OnyxControlsRow(
-          preferredFocus: _currentIndex >= 0 ? _currentCard : null,
+          preferredFocus: _currentIndex >= 0
+              ? _episodeNode(widget.currentEpisodeId)
+              : null,
           child: ListView.separated(
             controller: _scroll,
             scrollDirection: Axis.horizontal,
@@ -233,7 +251,7 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
                   isCurrent: isCurrent,
                   width: _cardWidth,
                   thumbHeight: thumbHeight,
-                  focusNode: isCurrent ? _currentCard : null,
+                  focusNode: _episodeNode(episode.media.id),
                   showTitle: widget.showTitle,
                   showId: showId,
                   seasonNumber: seasonNumber,
@@ -259,7 +277,7 @@ class _EpisodeCard extends StatelessWidget {
     required this.showId,
     required this.seasonNumber,
     required this.onTap,
-    this.focusNode,
+    required this.focusNode,
   });
 
   final HomeMediaItem episode;
@@ -270,7 +288,7 @@ class _EpisodeCard extends StatelessWidget {
   final int? showId;
   final int? seasonNumber;
   final VoidCallback onTap;
-  final FocusNode? focusNode;
+  final FocusNode focusNode;
 
   static const BorderRadius _radius = BorderRadius.all(Radius.circular(10));
 

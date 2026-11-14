@@ -156,7 +156,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // La carte du chapitre en cours : c'est là que la rangée fait entrer.
-        nodeLabelled('player-chapter-now').requestFocus();
+        nodeLabelled('player-chapter-1').requestFocus();
         await TvNavHarness.settle(tester);
         await tester.pumpAndSettle();
 
@@ -173,6 +173,35 @@ void main() {
         await nav.press(TraversalDirection.right);
         await nav.select();
         expect(seeks, [778]);
+      });
+
+      testWidgets(
+          'le chapitre en cours change pendant qu’on regarde la liste : la '
+          'carte que la télécommande tient la garde', (tester) async {
+        var position = 300;
+        late StateSetter rebuild;
+        await TvNavHarness.pump(
+          tester,
+          StatefulBuilder(builder: (context, setState) {
+            rebuild = setState;
+            return host(PlayerChaptersTab(
+              chapters: chapters,
+              positionSeconds: position,
+              onSeek: (_) {},
+            ));
+          }),
+          engine: engine,
+        );
+        await tester.pumpAndSettle();
+        nodeLabelled('player-chapter-2').requestFocus();
+        await TvNavHarness.settle(tester);
+
+        // La lecture entre dans le troisième chapitre, celui qui est focalisé.
+        rebuild(() => position = 800);
+        await tester.pumpAndSettle();
+
+        expect(nodeLabelled('player-chapter-2').hasPrimaryFocus, isTrue);
+        expect(find.text('12:58 · En cours'), findsOneWidget);
       });
     });
   });
@@ -263,6 +292,44 @@ void main() {
         expect(find.text('Quitter la séance'), findsOneWidget);
         expect(
             find.text('En attente des autres participants…'), findsOneWidget);
+      });
+
+      testWidgets(
+          'sur un téléviseur, démarrer la séance laisse la télécommande sur '
+          'le bouton de l’onglet, devenu « Quitter la séance »',
+          (tester) async {
+        String? code;
+        late StateSetter rebuild;
+        final nav = await TvNavHarness.pump(
+          tester,
+          StatefulBuilder(builder: (context, setState) {
+            rebuild = setState;
+            return host(PlayerWatchPartyTab(
+              code: code,
+              members: const [],
+              onStart: () async => rebuild(() => code = 'K7QD'),
+              onLeave: () => rebuild(() => code = null),
+            ));
+          }),
+          engine: engine,
+        );
+        await tester.pumpAndSettle();
+        nodeLabelled('player-party-action').requestFocus();
+        await TvNavHarness.settle(tester);
+
+        await nav.select();
+        await tester.pumpAndSettle();
+
+        expect(find.text('K7QD'), findsOneWidget);
+        expect(focusedLabelOf(primaryFocus), 'Quitter la séance',
+            reason: 'le bouton pressé a disparu : la télécommande ne doit '
+                'pas se retrouver nulle part');
+
+        // Et dans l'autre sens.
+        await nav.select();
+        await tester.pumpAndSettle();
+        expect(find.text('K7QD'), findsNothing);
+        expect(focusedLabelOf(primaryFocus), 'Démarrer une séance');
       });
     });
   });

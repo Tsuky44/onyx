@@ -40,7 +40,17 @@ class _PlayerChaptersTabState extends State<PlayerChaptersTab> {
   static const double _gap = 14;
 
   final ScrollController _scroll = ScrollController();
-  final FocusNode _currentCard = FocusNode(debugLabel: 'player-chapter-now');
+
+  /// Un nœud par carte, le même tant que l'onglet vit : le chapitre en cours
+  /// change pendant qu'on regarde la liste, et un nœud « du chapitre en
+  /// cours » passé d'une carte à l'autre ferait perdre le focus à celle que la
+  /// télécommande tient.
+  final Map<int, FocusNode> _nodes = <int, FocusNode>{};
+
+  FocusNode _nodeFor(int index) => _nodes.putIfAbsent(
+        index,
+        () => FocusNode(debugLabel: 'player-chapter-$index'),
+      );
 
   @override
   void initState() {
@@ -61,7 +71,9 @@ class _PlayerChaptersTabState extends State<PlayerChaptersTab> {
   @override
   void dispose() {
     _scroll.dispose();
-    _currentCard.dispose();
+    for (final node in _nodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -84,7 +96,7 @@ class _PlayerChaptersTabState extends State<PlayerChaptersTab> {
       child: SizedBox(
         height: _cardHeight,
         child: OnyxControlsRow(
-          preferredFocus: current >= 0 ? _currentCard : null,
+          preferredFocus: current >= 0 ? _nodeFor(current) : null,
           child: ListView.separated(
             controller: _scroll,
             scrollDirection: Axis.horizontal,
@@ -103,7 +115,7 @@ class _PlayerChaptersTabState extends State<PlayerChaptersTab> {
                 title: '${index + 1} · $name',
                 detail: isCurrent ? '$time · ${tr('En cours')}' : time,
                 isCurrent: isCurrent,
-                focusNode: isCurrent ? _currentCard : null,
+                focusNode: _nodeFor(index),
                 onTap: () => widget.onSeek(chapter.startTime.round()),
               );
             },
@@ -121,32 +133,23 @@ class _ChapterCard extends StatefulWidget {
     required this.detail,
     required this.isCurrent,
     required this.onTap,
-    this.focusNode,
+    required this.focusNode,
   });
 
   final String title;
   final String detail;
   final bool isCurrent;
   final VoidCallback onTap;
-  final FocusNode? focusNode;
+  final FocusNode focusNode;
 
   @override
   State<_ChapterCard> createState() => _ChapterCardState();
 }
 
 class _ChapterCardState extends State<_ChapterCard> {
-  FocusNode? _ownedNode;
   bool _hovered = false;
 
-  FocusNode get _node =>
-      widget.focusNode ??
-      (_ownedNode ??= FocusNode(debugLabel: 'player-chapter'));
-
-  @override
-  void dispose() {
-    _ownedNode?.dispose();
-    super.dispose();
-  }
+  FocusNode get _node => widget.focusNode;
 
   @override
   Widget build(BuildContext context) {
