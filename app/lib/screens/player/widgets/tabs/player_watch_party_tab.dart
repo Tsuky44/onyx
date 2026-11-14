@@ -12,9 +12,7 @@ import '../onyx/onyx_chrome_theme.dart';
 /// L'onglet « Regarder ensemble » du lecteur : démarrer une séance, ou en voir
 /// le code et les participants, et la quitter (ADR-0130).
 ///
-/// Une colonne de présentation à gauche, les lignes à droite, comme le panneau
-/// de l'écran natif d'Apple TV (`NativeTvPanels.watchParty`) dont il reprend
-/// les textes.
+/// Une colonne de présentation à gauche, les lignes à droite.
 class PlayerWatchPartyTab extends StatefulWidget {
   const PlayerWatchPartyTab({
     super.key,

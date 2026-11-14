@@ -27,7 +27,6 @@ public final class OnyxPlayerApplePlugin: NSObject, FlutterPlugin {
     PictureInPictureChangedStreamHandler.register(
       with: messenger, streamHandler: host.pictureInPicture)
     EngineLogStreamHandler.register(with: messenger, streamHandler: host.engineLog)
-    NativeEventsStreamHandler.register(with: messenger, streamHandler: host.nativeEvents)
 
     // Global au processus, comme le journal d'AetherEngine lui-même : un seul
     // relais, quel que soit le nombre de lecteurs.

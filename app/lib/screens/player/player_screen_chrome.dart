@@ -3,8 +3,7 @@ part of 'player_screen.dart';
 /// Ce qui s'affiche par-dessus l'image : le chrome et son compte à rebours,
 /// les gestes sur l'image, les menus, la petite fenêtre du système.
 extension _PlayerChrome on _PlayerScreenState {
-  bool _needsPositionUiRefresh() =>
-      !_nativeTvShown && (_showControls || _tabs.isOpen);
+  bool _needsPositionUiRefresh() => _showControls || _tabs.isOpen;
 
   void _refreshPositionUi({bool force = false}) {
     if (!_needsPositionUiRefresh()) return;
@@ -304,8 +303,7 @@ extension _PlayerChrome on _PlayerScreenState {
     if (byUser) _episodeNav?.onUserActivity();
     // The end card owns the screen: waking the HUD on every mouse move would
     // stack a progress bar and a play button over it.
-    // Sous l'écran natif, AVKit a son propre chrome.
-    if (_pageOverImage || _stillWatchingAsked || _nativeTvShown) return;
+    if (_pageOverImage || _stillWatchingAsked) return;
     _update(() => _showControls = true);
     _refreshPositionUi(force: true);
     _scheduleSubtitlePaddingSync();

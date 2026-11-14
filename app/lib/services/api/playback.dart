@@ -158,7 +158,6 @@ mixin _PlaybackEndpoints {
     int audioIndex = 0,
     int burnSubtitleIndex = -1,
     PlaybackAccess? access,
-    PlaybackCapabilities? capabilities,
     bool standby = false,
   }) async {
     final stopwatch = Stopwatch()..start();
@@ -182,10 +181,7 @@ mixin _PlaybackEndpoints {
         // What this device can decode and play back. Without it the server
         // assumes the weakest client it has ever had to serve — H.264 8-bit and
         // stereo AAC — and re-encodes a file this one could have taken as it is.
-        // Celles du moteur qui lira la session quand ce n'est pas celui de
-        // l'appareil — AVPlayer à côté de mpv sur iPhone et Mac (ADR-0035).
-        ...(capabilities ?? PlaybackCapabilitiesResolver.current)
-            .toQueryParameters(),
+        ...PlaybackCapabilitiesResolver.current.toQueryParameters(),
       },
     );
     stopwatch.stop();

@@ -1,6 +1,6 @@
 # ADR-0119 — L'écran natif d'Apple TV s'ouvre et se ferme sans plan noir
 
-- **Statut :** accepté. Le Dart est testé ; le Swift est compilé par la CI et **n'a pas été vu sur une
+- **Statut :** remplacée par l'[ADR-0133](0133-pas-de-lecteur-natif-sur-l-apple-tv.md) (lecteur natif retiré le 2026-11-14). Avant : accepté. Le Dart est testé ; le Swift est compilé par la CI et **n'a pas été vu sur une
   vraie Apple TV** (le simulateur prend la route logicielle, où l'écran natif ne se présente pas).
 - **Date :** 2026-11-12
 - **Portée :** `packages/onyx_player_apple/darwin/.../NativePlayerPresenter.swift` (et sa copie

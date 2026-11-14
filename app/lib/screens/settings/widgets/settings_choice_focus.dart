@@ -7,8 +7,8 @@ import 'package:flutter/widgets.dart';
 /// chevauchent horizontalement l'élément quitté. Les puces sont alignées à
 /// gauche, les lignes de réglage voisines prennent toute la largeur : depuis un
 /// interrupteur ou un menu à droite, haut et bas sautaient la rangée entière.
-/// « Lecteur Apple TV » (Natif / Onyx) était ainsi inatteignable au D-pad,
-/// comme « Épisodes sans intervention » et « Quand la poser ».
+/// « Épisodes sans intervention » et « Quand la poser » étaient ainsi
+/// inatteignables au D-pad.
 ///
 /// Ce nœud couvre toute la ligne, donc il est toujours dans la bande, et rend
 /// aussitôt le focus à la puce choisie. Tant que le focus est dans la rangée,

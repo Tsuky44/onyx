@@ -1,9 +1,9 @@
 import '../../l10n/tr.dart';
 import '../../models/models.dart';
 
-/// Ce que les menus du lecteur proposent, nommé une seule fois : le menu du
-/// Chrome Onyx et l'écran natif d'Apple TV doivent dire la même vitesse et
-/// offrir les mêmes barreaux de qualité.
+/// Ce que les menus du lecteur proposent, nommé une seule fois : chaque menu
+/// du chrome Onyx doit dire la même vitesse et offrir les mêmes barreaux de
+/// qualité.
 abstract final class PlayerMenuChoices {
   const PlayerMenuChoices._();
 

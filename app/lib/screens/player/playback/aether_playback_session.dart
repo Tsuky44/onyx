@@ -9,7 +9,6 @@ import '../playback_profile.dart';
 import 'aether_failure.dart';
 import 'aether_tracks.dart';
 import 'aether_video_fit.dart';
-import 'native_tv_screen.dart';
 import 'native_video_framing.dart';
 import 'playback_session.dart';
 import 'screen_awake.dart';
@@ -400,11 +399,6 @@ class AetherPlaybackSession implements PlaybackSession {
     // couche RPU.
   }
 
-  /// Le natif répond `unavailable` là où il n'a pas d'écran à présenter
-  /// (iPhone, Mac) : la capacité existe sur tout appareil Apple.
-  @override
-  late final NativeTvScreen nativeTvScreen = _AetherNativeTvScreen(this);
-
   @override
   Future<PlaybackDiagnostics> readDiagnostics() async {
     final stats = await (await _ready).stats();
@@ -445,77 +439,6 @@ class AetherPlaybackSession implements PlaybackSession {
     final player = await _ready;
     PictureInPicture.detach(player);
     await player.release();
-  }
-}
-
-/// [NativeTvScreen] sur le lecteur AetherEngine de cette session.
-class _AetherNativeTvScreen implements NativeTvScreen {
-  _AetherNativeTvScreen(this._session);
-
-  final AetherPlaybackSession _session;
-  Future<OnyxApplePlayer> get _ready => _session._ready;
-
-  @override
-  Future<void> present(OnyxAppleNativeSpec spec) async =>
-      (await _ready).presentNative(spec);
-
-  @override
-  Future<void> update(OnyxAppleNativeSpec spec) async =>
-      (await _ready).updateNative(spec);
-
-  @override
-  Future<void> dismiss() async => (await _ready).dismissNative();
-
-  @override
-  Future<void> setFit(OnyxAppleVideoFit fit) async =>
-      (await _ready).setVideoFit(fit);
-
-  @override
-  Future<void> prepareSubtitles(OnyxAppleLoadSubtitles subtitles) async =>
-      (await _ready).setLoadSubtitles(subtitles);
-
-  @override
-  bool get softwareRoute => _session._status?.videoRoute == 'software';
-
-  // Les deux routes d'AetherEngine qui jouent par un `AVPlayer`
-  // (`VideoRoute.loopback` et `.remoteBypass`).
-  @override
-  bool get hasNativePlayer {
-    final route = _session._status?.videoRoute;
-    return route == 'loopback' || route == 'remoteBypass';
-  }
-
-  @override
-  bool get showsBitmapSubtitle => _session._tracksNow.currentSubtitleIsBitmap;
-
-  /// Déjà filtré sur ce lecteur par [OnyxApplePlayer.nativeEvents].
-  @override
-  Stream<OnyxAppleNativeEvent> get events => Stream.fromFuture(_ready)
-      .asyncExpand((player) => player.nativeEvents)
-      .map(_inPlayerTrackIds)
-      .where((event) => event != null)
-      .cast<OnyxAppleNativeEvent>();
-
-  /// Le natif parle en index de flux du moteur, le contrôleur dans sa propre
-  /// numérotation (voir [AetherTracks]). Une piste qu'il ne liste plus est
-  /// écartée plutôt que prise pour une autre.
-  OnyxAppleNativeEvent? _inPlayerTrackIds(OnyxAppleNativeEvent event) {
-    final nativeId = event.trackId;
-    if (event.kind != OnyxAppleNativeEventKind.subtitleSelected ||
-        nativeId == null) {
-      return event;
-    }
-    final track = _session._tracksNow.subtitleForNativeId(nativeId);
-    if (track == null) {
-      debugPrint('AetherEngine: sous-titre natif $nativeId hors des pistes '
-          'du fichier, ignoré');
-      return null;
-    }
-    return OnyxAppleNativeEvent(
-      playerId: event.playerId,
-      kind: event.kind,
-      trackId: track.id,
-    );
   }
 }
 

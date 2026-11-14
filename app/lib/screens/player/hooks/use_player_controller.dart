@@ -14,8 +14,6 @@ import '../playback/carried_subtitle.dart';
 import '../playback/embedded_subtitle_pairing.dart';
 import '../playback/hls_retain_window.dart';
 import '../playback/live_subtitles.dart';
-import '../playback/native_tv_presenter.dart' show isNativeTvPlayerEligible;
-import '../playback/native_tv_source.dart';
 import '../playback/playback_engine.dart';
 import '../playback/playback_session.dart';
 import '../playback/playback_stats.dart';
@@ -46,7 +44,6 @@ part 'player_controller_diagnostics.dart';
 part 'player_controller_dolby_vision.dart';
 part 'player_controller_hls.dart';
 part 'player_controller_language.dart';
-part 'player_controller_native_tv.dart';
 part 'player_controller_startup.dart';
 part 'player_controller_tracks.dart';
 
@@ -213,12 +210,6 @@ class PlayerController {
   /// Le serveur recopie l'image de ce barreau-là : il pèse ce que pèse le
   /// fichier, pas son débit affiché.
   bool _autoCeilingCopies = false;
-
-  /// La source que l'écran natif d'Apple TV peut montrer. Voir
-  /// [NativeTvSource].
-  late final NativeTvSource _nativeTvSource = NativeTvSource(
-    eligible: isNativeTvPlayerEligible() && session.nativeTvScreen != null,
-  );
 
   /// Change à chaque fois que quelqu'un reprend la main sur la lecture : une
   /// bascule en préparation qui ne retrouve pas le sien renonce.
