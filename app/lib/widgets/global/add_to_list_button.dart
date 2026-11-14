@@ -7,6 +7,7 @@ import '../../providers/watch_lists_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import 'add_to_list_sheet.dart';
+import 'detail_hero.dart';
 
 /// Le bouton « Ajouter à une liste » d'une fiche (ADR-0070) : le signet est
 /// plein quand le titre est déjà dans une des listes du compte.
@@ -14,9 +15,14 @@ import 'add_to_list_sheet.dart';
 /// Absent quand le serveur ne tient pas de listes : ce qui n'est pas dessiné
 /// ne produit pas de 404.
 class AddToListButton extends StatefulWidget {
-  const AddToListButton({super.key, required this.title});
+  const AddToListButton({super.key, required this.title, this.named = false});
 
   final ListableTitle title;
+
+  /// La pastille « Ma liste » (icône et texte) de la rangée d'une fiche hors
+  /// TV (ADR-0132), plutôt que le rond qu'il fallait survoler pour le
+  /// comprendre.
+  final bool named;
 
   @override
   State<AddToListButton> createState() => _AddToListButtonState();
@@ -64,6 +70,14 @@ class _AddToListButtonState extends State<AddToListButton> {
     if (!_probed) {
       _probed = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+    }
+    if (widget.named) {
+      return HeroPill(
+        label: tr('Ma liste'),
+        icon: _inList ? AppIcons.inList : AppIcons.addToList,
+        style: HeroPillStyle.status,
+        onPressed: _open,
+      );
     }
     return IconButton(
       tooltip: _inList ? tr('Dans vos listes') : tr('Ajouter à une liste'),

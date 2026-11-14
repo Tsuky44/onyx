@@ -31,13 +31,11 @@ import '../../widgets/global/share_media_button.dart';
 import '../../widgets/global/staggered_entrance.dart';
 import 'season_detail_screen.dart';
 import 'show_episode_actions.dart';
+import 'show_hero_actions.dart';
 import 'show_metadata_actions.dart';
 import 'widgets/missing_season_banner.dart';
 import 'widgets/season_tabs.dart';
-import 'widgets/show_metadata_menu.dart';
 import '../../l10n/tr.dart';
-import '../../models/watch_list.dart';
-import '../../widgets/global/add_to_list_button.dart';
 
 class ShowDetailScreen extends StatefulWidget {
   final Media show;
@@ -522,7 +520,8 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
                     status: _details?.status,
                     releaseDate: _details?.releaseDate ?? _show.releaseDate,
                   ),
-                  actions: DetailActions(
+                  actions: ShowHeroActions(
+                    show: _show,
                     playLabel: resumeEp != null
                         ? detailPlayLabel(
                             resuming: resumeInProgress,
@@ -535,27 +534,19 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
                           ),
                     onPlay:
                         playTarget == null ? null : () => _playEpisode(playTarget),
-                    // Même chose que sur un film : la télécommande part de Lecture.
-                    autofocusPlay: TvMode.isTv,
                     progress: resumeInProgress ? resumeEp.percentWatched : null,
                     progressLabel: resumeInProgress
                         ? formatRemaining(resumeEp.effectiveDuration -
                             resumeEp.currentPositionSeconds)
                         : null,
-                    secondary: [
-                      AddToListButton(title: ListableTitle.server(_show)),
-                      ShareCollectionButton(
-                        mediaId: _show.id,
-                        title: _show.title,
-                        tooltip: tr('Partager la série par lien'),
-                        hasPlayableEpisode: lp.seasons.any((s) => s.isAvailable),
-                      ),
-                      ShowMetadataMenu(
-                        onRedetect: _autoRedetect,
-                        onPickOnTmdb: _rematch,
-                        onChangePoster: _changePoster,
-                      ),
-                    ],
+                    episodes: lp.episodes,
+                    hasPlayableEpisode: lp.seasons.any((s) => s.isAvailable),
+                    seasonNumber: _playerSeasonNumber,
+                    seasonBusy: _updatingSeasonWatched,
+                    onSetSeasonWatched: _setSeasonWatched,
+                    onRedetect: _autoRedetect,
+                    onPickOnTmdb: _rematch,
+                    onChangePoster: _changePoster,
                   ),
                 ),
               ),
@@ -587,7 +578,8 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
                           onOpen: _openSeason,
                           fallbackPosterUrl: _show.posterUrl,
                         ),
-                        if (!_seasonFolded) ...[
+                        // Hors TV, le geste vit dans « Plus » (ADR-0132).
+                        if (!_seasonFolded && TvScope.of(context)) ...[
                           const SizedBox(height: 12),
                           SeasonWatchedButton(
                             episodes: lp.episodes,
@@ -668,6 +660,9 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
                               showId: _show.id,
                               showPosterUrl: _show.posterUrl,
                               seasonNumber: _playerSeasonNumber,
+                              // Hors TV, le départ est dans « Plus » ; la
+                              // progression reste lisible ici (ADR-0132).
+                              statusOnly: !TvScope.of(context),
                             ),
                           ],
                         ),

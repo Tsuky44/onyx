@@ -6,7 +6,9 @@ import '../../../theme/app_icons.dart';
 import '../../../l10n/tr.dart';
 import '../../../widgets/global/onyx_menu.dart';
 
-/// Le menu « Métadonnées série » de la fiche d'une série.
+/// Le menu « Métadonnées série » de la fiche d'une série, sur un téléviseur
+/// seulement : ailleurs, ses lignes vivent dans la section « Administration »
+/// du menu « Plus » (ADR-0132).
 ///
 /// Ses entrées appellent des routes que le serveur réserve à
 /// `manage_library` (ADR-0001) : un compte sans ce droit n'a pas de menu du

@@ -116,7 +116,8 @@ void main() {
     expect(find.byType(DetailInfoTable), findsOneWidget);
     expect(find.widgetWithText(HeroPill, 'Reprendre'), findsOneWidget);
     expect(find.text('1h 15min restantes'), findsOneWidget);
-    expect(find.byTooltip('Marquer vu'), findsOneWidget);
+    // « Marquer vu » vit dans « Plus » hors TV (ADR-0132).
+    expect(find.widgetWithText(HeroPill, 'Plus'), findsOneWidget);
     expect(find.text('Un résumé.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
