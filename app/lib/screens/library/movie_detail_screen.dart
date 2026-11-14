@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'version_picker.dart';
 import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../navigation/catalog_navigation.dart';
@@ -447,28 +448,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen>
                   child: Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: DropdownButtonFormField<int>(
-                      key: ValueKey(_selectedVersion?.item.media.id),
-                      initialValue: _selectedVersion?.item.media.id,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: tr('Version'),
-                        helperText:
-                            tr('La meilleure qualité est sélectionnée par défaut.'),
-                      ),
-                      items: _versions
-                          .map((version) => DropdownMenuItem(
-                                value: version.item.media.id,
-                                child: Text(version.label,
-                                    overflow: TextOverflow.ellipsis),
-                              ))
-                          .toList(),
-                      onChanged: (id) {
-                        if (id != null) {
-                          _selectVersion(
-                              _versions.firstWhere((v) => v.item.media.id == id));
-                        }
-                      },
+                    child: VersionPicker(
+                      versions: _versions,
+                      selectedId: _selectedVersion?.item.media.id,
+                      helperText:
+                          tr('La meilleure qualité est sélectionnée par défaut.'),
+                      onSelected: _selectVersion,
                     ),
                   ),
                 ),
