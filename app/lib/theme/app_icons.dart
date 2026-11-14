@@ -52,6 +52,7 @@ abstract final class AppIcons {
       IconData(0xe3d2, fontFamily: _regular); // playCircle
   static const IconData playCircleFilled =
       IconData(0xe3d2, fontFamily: _fill); // playCircle
+  static const IconData pause = IconData(0xe39e, fontFamily: _fill); // pause
   static const IconData pauseCircle =
       IconData(0xe3a0, fontFamily: _regular); // pauseCircle
   static const IconData stop = IconData(0xe46c, fontFamily: _fill); // stop

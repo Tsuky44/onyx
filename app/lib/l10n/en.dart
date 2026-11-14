@@ -882,6 +882,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Pending · {0}',
   'En cours':
       'In progress',
+  'En cours · {0}':
+      'In progress · {0}',
   'En cours de lecture':
       'Now playing',
   'En erreur':
@@ -892,6 +894,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Online for {0}',
   'En pause · {0} téléchargés':
       'Paused · {0} downloaded',
+  'En pause':
+      'Paused',
   'En production':
       'In production',
   'Enregistrement impossible.':
@@ -2292,6 +2296,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Delete {0}?',
   'Sur cet appareil':
       'On this device',
+  'Sur cet appareil · {0}':
+      'On this device · {0}',
   'Sur le serveur':
       'On the server',
   'Sur un réseau limité':
@@ -2790,6 +2796,8 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} result{1}',
   '{0} sur {1}':
       '{0} of {1}',
+  '{0} % vu':
+      '{0}% watched',
   '{0} sur le serveur {1}':
       '{0} on server {1}',
   '{0} sur le serveur {1} (en attente des administrateurs)':
@@ -2894,6 +2902,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Could not save.',
   'Échec du téléchargement':
       'Download failed',
+  'Échec':
+      'Failed',
   'Échec.':
       'Failed.',
   'Écran verrouillé. Maintenir deux secondes pour déverrouiller.':
