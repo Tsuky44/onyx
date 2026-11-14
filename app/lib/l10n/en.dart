@@ -1384,6 +1384,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Play / pause',
   'Lecture auto.':
       'Autoplay',
+  'Lecture automatique en pause':
+      'Autoplay paused',
+  'Lecture dans {0} s':
+      'Playing in {0} s',
   'Lecture en cours sur un autre appareil':
       'Playing on another device',
   'Lecture en cours sur {0}':
@@ -2160,6 +2164,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Season watched',
   'Saison {0}':
       'Season {0}',
+  'Saison {0}, épisode {1}':
+      'Season {0}, episode {1}',
   'Saisons':
       'Seasons',
   'Sans limite':
@@ -2252,6 +2258,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Subtitles…',
   'Statistiques':
       'Statistics',
+  'Stats':
+      'Stats',
   'Statut':
       'Status',
   'Stockage':

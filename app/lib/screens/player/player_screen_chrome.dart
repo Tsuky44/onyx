@@ -4,7 +4,7 @@ part of 'player_screen.dart';
 /// les gestes sur l'image, les menus, la petite fenêtre du système.
 extension _PlayerChrome on _PlayerScreenState {
   bool _needsPositionUiRefresh() =>
-      !_nativeTvShown && (_showControls || _episodesPanel.isOpen);
+      !_nativeTvShown && (_showControls || _tabs.isOpen);
 
   void _refreshPositionUi({bool force = false}) {
     if (!_needsPositionUiRefresh()) return;
@@ -39,9 +39,12 @@ extension _PlayerChrome on _PlayerScreenState {
   void _handlePictureInPictureChanged() {
     final inPip = PictureInPicture.active.value;
     if (!mounted || _inPip == inPip) return;
-    // A menu open when the window shrinks would be most of the window.
+    // A menu open when the window shrinks would be most of the window. Le
+    // volet des onglets aussi : au retour, le lecteur est dans son état de
+    // repos.
     if (inPip) {
       _popups.dismissTop();
+      _tabs.close();
       _controlsTimer?.cancel();
     }
     _safeSetState(() {
@@ -208,7 +211,9 @@ extension _PlayerChrome on _PlayerScreenState {
       if (!chromeMayAutoHide(
         isPlaying: _playerController.isPlaying,
         isDraggingSlider: _playerController.isDraggingSlider,
-        menuOpen: _popups.isOpen,
+        // Un volet d'onglets ouvert tient le chrome comme un menu : on y lit
+        // un résumé, un code de séance, des mesures.
+        menuOpen: _popups.isOpen || _tabs.isOpen,
       )) {
         return;
       }
@@ -275,7 +280,17 @@ extension _PlayerChrome on _PlayerScreenState {
 
   /// How much of the screen the video keeps. It gives way to an end card
   /// without ever being hidden: the credits stay visible and playing.
-  double get _videoScale => _endCardVisible ? 0.34 : 1.0;
+  double get _videoScale => _nextEpisodePageVisible
+      ? PlayerVideoStage.nextEpisodeScale
+      : _endCardVisible
+          ? 0.34
+          : 1.0;
+
+  /// Le coin où l'image se range : en haut à gauche devant l'épisode suivant,
+  /// à mi-hauteur devant une carte de fin.
+  Alignment get _videoAlignment => _nextEpisodePageVisible
+      ? PlayerVideoStage.nextEpisodeAlignment
+      : Alignment.centerLeft;
 
   void _showControlsTransient({bool byUser = true}) {
     // Nearly everything that raises the chrome does so because someone asked
@@ -290,7 +305,7 @@ extension _PlayerChrome on _PlayerScreenState {
     // The end card owns the screen: waking the HUD on every mouse move would
     // stack a progress bar and a play button over it.
     // Sous l'écran natif, AVKit a son propre chrome.
-    if (_endCardVisible || _stillWatchingAsked || _nativeTvShown) return;
+    if (_pageOverImage || _stillWatchingAsked || _nativeTvShown) return;
     _update(() => _showControls = true);
     _refreshPositionUi(force: true);
     _scheduleSubtitlePaddingSync();
@@ -305,7 +320,7 @@ extension _PlayerChrome on _PlayerScreenState {
   /// card is up; only the back button survives it.
   bool get _controlsVisible =>
       _showControls &&
-      !_endCardVisible &&
+      !_pageOverImage &&
       !_screenLocked &&
       !_stillWatchingAsked;
 
@@ -329,25 +344,13 @@ extension _PlayerChrome on _PlayerScreenState {
   /// Never on an end card, which has buttons to aim at.
   bool get _shouldHideCursor =>
       !_showControls &&
-      !_endCardVisible &&
+      !_pageOverImage &&
       _playerController.isPlaying &&
       // Never during start-up. `isPlaying` goes true when play() is issued,
       // which on a slow open is seconds before there is any picture — hiding
       // the pointer over a black screen looks like the app froze.
       _playerController.hasFirstFrame &&
       !_playerController.isDraggingSlider;
-
-  Future<void> _openEpisodesPanel() async {
-    if (!_info.isEpisode || _apiClient == null) return;
-    _update(() => _showControls = true);
-    _controlsTimer?.cancel();
-    await _episodesPanel.open(showTitle: _info.showTitle);
-  }
-
-  void _closeEpisodesPanel() {
-    if (!_episodesPanel.close()) return;
-    _hideControlsWithDelay();
-  }
 
   void _updateDisplayMode(VideoDisplayMode mode) {
     // La surface est reconstruite avec le nouveau cadrage ; chaque moteur
@@ -459,16 +462,20 @@ extension _PlayerChrome on _PlayerScreenState {
   }
 
   /// Chrome Onyx settings menu, anchored to the button that opened it.
+  ///
+  /// [standalone] : le menu d'un seul réglage, ouvert par son bouton rond sur
+  /// un téléviseur (ADR-0130). Le bouton reste allumé tant qu'il est ouvert.
   void _showOnyxSettingsMenu({
     OnyxMenuSection section = OnyxMenuSection.root,
-    required GlobalKey anchorKey,
+    required BuildContext? anchor,
+    bool standalone = false,
   }) {
     // Le menu est posé dans la couche mise à l'échelle sur téléviseur
     // (voir [PlayerTvScale]) : on le place dans ses coordonnées.
     final screen = MediaQuery.sizeOf(context);
     final scale = PlayerTvScale.factorFor(screen.width, isTv: TvMode.isTv);
     final screenSize = screen / scale;
-    final placement = placeSettingsPopup(anchorKey, screenSize, scale: scale);
+    final placement = placeSettingsPopup(anchor, screenSize, scale: scale);
     _popups.insert(
       context,
       (dismiss) => PlayerSettingsPopup(
@@ -486,42 +493,23 @@ extension _PlayerChrome on _PlayerScreenState {
           onRateChanged: _setPlaybackRate,
           onSeekToAbsolute: _seekTo,
           initialSection: section,
+          standalone: standalone,
           onClose: dismiss,
         ),
       ),
     );
+    // Après l'insertion : elle ferme d'abord le menu précédent, qui éteint
+    // son bouton en partant.
+    if (standalone) _update(() => _openMenu = section);
   }
 
-  /// Le panneau s'ouvre partout où un serveur peut héberger une séance — pas
-  /// pour le visiteur d'un lien de partage, qui n'a pas de compte pour en
-  /// ouvrir une.
-  VoidCallback? get _watchPartyAction =>
-      _apiClient != null && !_apiClient!.isGuest ? _showWatchPartyPanel : null;
-
-  void _showWatchPartyPanel() {
-    _controlsTimer?.cancel();
-    _popups.insert(
-      context,
-      (dismiss) => PlayerCenteredPopup(
-        onDismiss: dismiss,
-        child: WatchPartyPanel(
-          party: _party.party,
-          onStart: () async {
-            await _party.start();
-            dismiss();
-            if (mounted) _showWatchPartyPanel();
-          },
-          onLeave: () {
-            dismiss();
-            _party.leave(notice: tr('Vous avez quitté la séance'));
-          },
-          onClose: () {
-            dismiss();
-            _hideControlsWithDelay();
-          },
-        ),
-      ),
-    );
+  /// L'onglet « Regarder ensemble » existe partout où un serveur peut héberger
+  /// une séance — pas pour le visiteur d'un lien de partage, qui n'a pas de
+  /// compte pour en ouvrir une.
+  VoidCallback? get _watchPartyAction {
+    final api = _apiClient;
+    if (api == null || api.isGuest) return null;
+    return () => _showTab(OnyxTab.watchParty);
   }
 
   Future<void> _setPlaybackRate(double rate) async {
@@ -590,7 +578,6 @@ extension _PlayerChrome on _PlayerScreenState {
       title: _info.showTitle,
       overline: _info.overline,
       logoUrl: _mediaLogoUrl,
-      overview: _info.media.overview,
       volume: _playerController.session.volume,
       onVolumeChanged: (v) => _playerController.session.setVolume(v),
       brightness: _screenBrightness,
@@ -601,16 +588,27 @@ extension _PlayerChrome on _PlayerScreenState {
       onBack: _leavePlayer,
       onToggleSubtitles: () => _showOnyxSettingsMenu(
         section: OnyxMenuSection.subtitles,
-        anchorKey: _subtitlesButtonKey,
+        anchor: _subtitlesButtonKey.currentContext,
       ),
       onOpenAudio: () => _showOnyxSettingsMenu(
         section: OnyxMenuSection.audio,
-        anchorKey: _subtitlesButtonKey,
+        anchor: _subtitlesButtonKey.currentContext,
       ),
       onCycleSpeed: _cyclePlaybackRate,
       onOpenSettings: () => _showOnyxSettingsMenu(
-        anchorKey: _settingsButtonKey,
+        anchor: _settingsButtonKey.currentContext,
       ),
+      onOpenMenu: (section, anchor) => _showOnyxSettingsMenu(
+        section: section,
+        anchor: anchor,
+        standalone: true,
+      ),
+      openMenu: _openMenu,
+      // Sur un téléviseur les onglets sont dans le chrome ; ailleurs, la même
+      // liste alimente la feuille du bas (`_buildOverChrome`).
+      tabs: isTv ? _tabEntries : const <OnyxTabEntry>[],
+      openTab: _tabs.open,
+      onTabChanged: _tabs.show,
       onOpenWatchParty: _watchPartyAction,
       watchPartyActive: _party.party != null,
       onToggleFullscreen: _toggleFullscreen,
@@ -623,7 +621,10 @@ extension _PlayerChrome on _PlayerScreenState {
       onSkipPrevious: _episodesPanel.previousEpisode != null
           ? _goToPreviousEpisode
           : null,
-      onOpenEpisodes: _info.isEpisode ? _openEpisodesPanel : null,
+      onOpenEpisodes: _info.isEpisode && _apiClient != null
+          ? () => _showTab(OnyxTab.episodes)
+          : null,
+      onOpenInfo: () => _showTab(OnyxTab.info),
       onSkipIntro:
           (nav?.showSkipIntro ?? false) ? _skipIntroFromControl : null,
       skipIntroCountdown: nav?.introAutoSkipCountdown,

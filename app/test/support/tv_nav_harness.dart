@@ -415,3 +415,9 @@ class TvTestTile extends StatelessWidget {
   Widget build(BuildContext context) =>
       SizedBox(width: width, height: height, child: Center(child: Text(label)));
 }
+
+/// Le nœud de focus nommé [label]. Sous dpad, `Focus.of` rendrait le `Focus`
+/// que `TvFocusable` pose sous la cible, qui ne prend jamais le focus.
+FocusNode nodeLabelled(String label) =>
+    FocusManager.instance.rootScope.descendants
+        .firstWhere((node) => node.debugLabel == label);

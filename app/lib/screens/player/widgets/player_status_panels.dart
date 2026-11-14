@@ -7,6 +7,7 @@ import '../../../services/client_log.dart';
 import '../playback/playback_session.dart';
 import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
+import 'player_question_window.dart';
 
 /// Le cercle d'attente du lecteur : démarrage, recherche, changement de
 /// qualité.
@@ -97,58 +98,20 @@ class PlayingElsewhere extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: Colors.black.withValues(alpha: 0.86),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.devices_rounded,
-                  size: 54, color: Colors.white70),
-              const SizedBox(height: 22),
-              Text(
-                tr('Lecture en cours sur un autre appareil'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: AppType.title2,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                tr('La lecture continue sur « {0} ». Reprenez-la ici, là où '
-                    'il en est.', [deviceName]),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: AppType.callout,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 28),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ElevatedButton.icon(
-                    autofocus: true,
-                    onPressed: busy ? null : onResume,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: Text(tr('Reprendre la lecture ici')),
-                  ),
-                  const SizedBox(width: 12),
-                  TextButton(
-                    onPressed: onBack,
-                    child: Text(tr('Quitter')),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return PlayerQuestionWindow(
+      title: tr('Lecture en cours sur un autre appareil'),
+      message: tr(
+          'La lecture continue sur « {0} ». Reprenez-la ici, là où '
+          'il en est.',
+          [deviceName]),
+      answers: [
+        PlayerQuestionAnswer(
+          label: tr('Reprendre la lecture ici'),
+          onPressed: onResume,
+          busy: busy,
         ),
-      ),
+        PlayerQuestionAnswer(label: tr('Quitter'), onPressed: onBack),
+      ],
     );
   }
 }

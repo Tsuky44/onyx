@@ -12,9 +12,11 @@ import '../../playback/timeline_previews.dart';
 import 'onyx_brightness_slider.dart';
 import 'onyx_chrome_buttons.dart';
 import 'onyx_chrome_theme.dart';
+import 'onyx_menu_section.dart';
 import 'onyx_progress_bar.dart';
 import 'onyx_scrim.dart';
 import 'onyx_skip_intro_button.dart';
+import 'onyx_tabs.dart';
 import 'onyx_tv_tabs.dart';
 import '../../../../l10n/tr.dart';
 
@@ -70,9 +72,6 @@ class OnyxControlsLayer extends StatelessWidget {
 
   final String? logoUrl;
 
-  /// Le résumé du titre, pour l'onglet « Infos » d'un téléviseur.
-  final String? overview;
-
   // --- Volume -------------------------------------------------------------
 
   /// 0.0 -> 100.0, matching media_kit.
@@ -118,6 +117,10 @@ class OnyxControlsLayer extends StatelessWidget {
   /// Opens the episode browser. Series only — null on a movie.
   final VoidCallback? onOpenEpisodes;
 
+  /// Hors téléviseur, sur un film : ouvre le volet des onglets sur « Infos ».
+  /// Une série y entre par [onOpenEpisodes], dans le même emplacement.
+  final VoidCallback? onOpenInfo;
+
   /// Only while an intro chapter is playing.
   final VoidCallback? onSkipIntro;
 
@@ -142,6 +145,19 @@ class OnyxControlsLayer extends StatelessWidget {
   final GlobalKey? subtitlesButtonKey;
 
   // --- Television ---------------------------------------------------------
+
+  /// Sur un téléviseur, chaque réglage a son bouton rond : il ouvre le menu de
+  /// [section], posé au-dessus de [anchor], le bouton lui-même (ADR-0130).
+  final void Function(OnyxMenuSection section, BuildContext anchor)? onOpenMenu;
+
+  /// Le menu ouvert par l'un de ces boutons, qui reste allumé tant qu'il l'est.
+  final OnyxMenuSection? openMenu;
+
+  /// Les onglets sous la barre d'un téléviseur, et celui dont le volet est
+  /// ouvert. Voir [OnyxTvTabs].
+  final List<OnyxTabEntry> tabs;
+  final OnyxTab? openTab;
+  final ValueChanged<OnyxTab?>? onTabChanged;
 
   /// How big the chrome is drawn, as a factor.
   ///
@@ -241,10 +257,15 @@ class OnyxControlsLayer extends StatelessWidget {
     this.title,
     this.overline,
     this.logoUrl,
-    this.overview,
     this.onSkipNext,
     this.onSkipPrevious,
     this.onOpenEpisodes,
+    this.onOpenInfo,
+    this.onOpenMenu,
+    this.openMenu,
+    this.tabs = const <OnyxTabEntry>[],
+    this.openTab,
+    this.onTabChanged,
     this.onSkipIntro,
     this.skipIntroCountdown,
     this.skipSegment = SkipSegment.intro,

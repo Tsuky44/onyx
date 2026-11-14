@@ -438,7 +438,8 @@ class EpisodeNavigationController extends ChangeNotifier {
       if (inOutro &&
           nextEpisode != null &&
           !showEndCard &&
-          !_languageGapDeclined) {
+          !_languageGapDeclined &&
+          !_nextEpisodeDeferred) {
         _startOutroAutoPlay();
       } else {
         _cancelOutroAutoPlay();
@@ -551,6 +552,29 @@ class EpisodeNavigationController extends ChangeNotifier {
       upcomingEpisode != null &&
       !_upcomingDismissed;
 
+  /// « Plus tard » a été répondu à la page de l'épisode suivant : elle ne
+  /// revient pas pour cet épisode, ni son compte à rebours.
+  bool _nextEpisodeDeferred = false;
+
+  /// Whether the next-episode page should be on screen: in the credits, with
+  /// an episode to go to, no end card over it, and not put away (ADR-0130).
+  bool get showNextEpisodePage =>
+      showNextEpisodeOutro &&
+      nextEpisode != null &&
+      !showEndCard &&
+      !_nextEpisodeDeferred;
+
+  /// « Plus tard » : la page se range pour de bon. Pas [cancelAutoPlay], qui
+  /// ne range que jusqu'à la position suivante : toujours au générique, elle
+  /// relèverait la proposition avec un compte à rebours neuf. Le bouton
+  /// « Épisode suivant » du chrome reste.
+  void deferNextEpisode() {
+    if (_nextEpisodeDeferred) return;
+    _nextEpisodeDeferred = true;
+    _cancelOutroAutoPlay();
+    notifyListeners();
+  }
+
   /// Whether either end card owns the screen. Both shrink the video, suppress
   /// the chrome and hold auto-advance back, so the session asks this one thing.
   bool get showEndCard =>
@@ -591,7 +615,10 @@ class EpisodeNavigationController extends ChangeNotifier {
     _nextSeasonDismissed = true;
     // Putting the card away mid-outro hands the outro back to the next-episode
     // pill, countdown included — the behaviour of any other episode.
-    if (showNextEpisodeOutro && nextEpisode != null && !showEndCard) {
+    if (showNextEpisodeOutro &&
+        nextEpisode != null &&
+        !showEndCard &&
+        !_nextEpisodeDeferred) {
       _startOutroAutoPlay();
     }
     notifyListeners();
@@ -599,7 +626,10 @@ class EpisodeNavigationController extends ChangeNotifier {
 
   void dismissUpcomingEpisodeCard() {
     _upcomingDismissed = true;
-    if (showNextEpisodeOutro && nextEpisode != null && !showEndCard) {
+    if (showNextEpisodeOutro &&
+        nextEpisode != null &&
+        !showEndCard &&
+        !_nextEpisodeDeferred) {
       _startOutroAutoPlay();
     }
     notifyListeners();

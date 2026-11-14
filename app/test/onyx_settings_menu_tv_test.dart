@@ -5,6 +5,7 @@ import 'package:onyx/screens/player/playback/playback_session.dart';
 import 'package:onyx/screens/player/playback/sleep_timer.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_settings_menu.dart';
 import 'package:onyx/screens/player/video_display_mode.dart';
+import 'package:onyx/theme/focus_fill.dart';
 import 'package:onyx/tv/nav/tv_nav_engine.dart';
 
 import 'support/tv_nav_harness.dart';
@@ -120,6 +121,66 @@ void main() {
       expect(find.text('Vitesse de lecture'), findsNothing);
     });
 
+    // Sur un téléviseur, chaque réglage a son bouton rond et son propre menu
+    // (ADR-0130) : pas d'index à traverser pour changer une piste.
+    group('le menu d’un seul réglage', () {
+      testWidgets('s’ouvre sur le choix en cours, sous le nom du réglage',
+          (tester) async {
+        await _pumpMenu(tester, engine, standalone: OnyxMenuSection.audio);
+
+        expect(_highlighted(tester), 'English');
+        // L'en-tête nomme le réglage ; les lignes de l'index n'existent pas.
+        expect(find.text('Audio'), findsOneWidget);
+        expect(find.text('Vitesse de lecture'), findsNothing);
+        expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+      });
+
+      testWidgets('Retour le ferme : il n’y a pas d’index où remonter',
+          (tester) async {
+        final nav =
+            await _pumpMenu(tester, engine, standalone: OnyxMenuSection.audio);
+
+        await nav.back();
+
+        expect(find.text('English'), findsNothing);
+        expect(find.text('Vitesse de lecture'), findsNothing);
+      });
+
+      testWidgets('Gauche n’y remonte nulle part', (tester) async {
+        final nav =
+            await _pumpMenu(tester, engine, standalone: OnyxMenuSection.audio);
+
+        await nav.press(left);
+
+        expect(_highlighted(tester), 'English');
+        expect(find.text('Vitesse de lecture'), findsNothing);
+      });
+
+      testWidgets('OK sur un choix le prend et ferme le menu', (tester) async {
+        final session = _FakeSession();
+        final nav = await _pumpMenu(tester, engine,
+            session: session, standalone: OnyxMenuSection.audio);
+
+        await nav.press(up);
+        await nav.select();
+
+        expect(session.chosen?.title, 'Français');
+        expect(find.text('English'), findsNothing);
+      });
+
+      testWidgets(
+          'la minuterie sépare « Désactivée » de ses durées, et le filet ne '
+          'prend pas la télécommande', (tester) async {
+        final nav =
+            await _pumpMenu(tester, engine, standalone: OnyxMenuSection.sleep);
+        expect(_highlighted(tester), 'Désactivée');
+
+        await nav.press(down);
+
+        expect(_highlighted(tester), '5 minutes');
+      });
+    });
+
     if (engine == TvNavEngine.dpad) {
       testWidgets(
           'une touche Retour suivie de son popRoute ne défait qu’un '
@@ -146,17 +207,16 @@ void main() {
   });
 }
 
-/// Le remplissage que [_OnyxMenuTile] pose sur la ligne focalisée.
-final Color _focusFill = Colors.white.withValues(alpha: 0.14);
-
 /// Le libellé de la ligne mise en évidence à l'écran — pas celle qui détient le
-/// focus : ce qui est en cause ici est ce que l'utilisateur voit.
+/// focus : ce qui est en cause ici est ce que l'utilisateur voit. Sur un
+/// téléviseur, c'est la pastille blanche de `_OnyxMenuTile` ([FocusFill],
+/// ADR-0112 et ADR-0130).
 String _highlighted(WidgetTester tester) {
   final fill = find.byWidgetPredicate(
     (widget) =>
         widget is DecoratedBox &&
         widget.decoration is BoxDecoration &&
-        (widget.decoration as BoxDecoration).color == _focusFill,
+        (widget.decoration as BoxDecoration).color == FocusFill.fill,
   );
   expect(fill, findsOneWidget);
   return tester
@@ -168,10 +228,17 @@ String _highlighted(WidgetTester tester) {
 /// L'écran d'accueil : il ouvre le menu par un vrai [PlayerPopupHost], après
 /// sa première image, comme le lecteur ouvre un popup.
 class _MenuHome extends StatefulWidget {
-  const _MenuHome({required this.host, required this.session});
+  const _MenuHome({
+    required this.host,
+    required this.session,
+    this.standalone,
+  });
 
   final PlayerPopupHost host;
   final _FakeSession session;
+
+  /// Le réglage du menu seul, ou nul pour l'index.
+  final OnyxMenuSection? standalone;
 
   @override
   State<_MenuHome> createState() => _MenuHomeState();
@@ -189,7 +256,7 @@ class _MenuHomeState extends State<_MenuHome> {
           type: MaterialType.transparency,
           child: MediaQuery(
             // La police de test est à chasse fixe et bien plus large que la
-            // vraie : sans ça les libellés débordent des 292 px du panneau.
+            // vraie : sans ça les libellés débordent du panneau.
             data: MediaQuery.of(context).copyWith(
               textScaler: const TextScaler.linear(0.4),
             ),
@@ -200,6 +267,8 @@ class _MenuHomeState extends State<_MenuHome> {
               playbackRate: 1.0,
               playbackRates: const [0.5, 1.0, 1.5, 2.0],
               onRateChanged: (_) {},
+              initialSection: widget.standalone ?? OnyxMenuSection.root,
+              standalone: widget.standalone != null,
               onClose: dismiss,
             ),
           ),
@@ -218,13 +287,18 @@ Future<TvNavHarness> _pumpMenu(
   WidgetTester tester,
   TvNavEngine engine, {
   _FakeSession? session,
+  OnyxMenuSection? standalone,
 }) async {
   final host = PlayerPopupHost(isActive: () => true, onDismissed: (_) {});
   addTearDown(host.dispose);
 
   final nav = await TvNavHarness.pump(
     tester,
-    _MenuHome(host: host, session: session ?? _FakeSession()),
+    _MenuHome(
+      host: host,
+      session: session ?? _FakeSession(),
+      standalone: standalone,
+    ),
     engine: engine,
   );
   await tester.pumpAndSettle();

@@ -10,7 +10,7 @@ import '../../../l10n/tr.dart';
 /// *and* has never been requested — the server withholds the payload otherwise,
 /// so the credits are never interrupted just to restate a pending download.
 ///
-/// Deliberately unlike [NextEpisodeOverlay]: no countdown and no automatic
+/// Deliberately unlike `NextEpisodePage`: no countdown and no automatic
 /// action. Sending a request is a commitment, so it always waits for a tap.
 ///
 /// The same page also runs one episode early, on the outro of the penultimate

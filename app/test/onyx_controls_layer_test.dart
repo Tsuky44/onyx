@@ -2,16 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_brightness_slider.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_capsule_button.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_chrome_buttons.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_chrome_theme.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_controls_layer.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_menu_section.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_progress_bar.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_tabs.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_tv_tabs.dart';
 import 'package:onyx/theme/app_colors.dart';
 import 'package:onyx/theme/focus_fill.dart';
 import 'package:onyx/tv/nav/tv_nav_engine.dart';
 import 'package:onyx/widgets/global/app_slider.dart';
 
 import 'support/tv_nav_harness.dart';
+
+/// Un onglet de test : son nom, et un bouton dans son volet pour que la
+/// télécommande ait où entrer.
+OnyxTabEntry testTab(OnyxTab tab, String label, {bool marked = false}) =>
+    OnyxTabEntry(
+      tab: tab,
+      label: label,
+      marked: marked,
+      builder: (_) => Align(
+        alignment: Alignment.topLeft,
+        child: OnyxControlsRow(
+          child: OnyxCapsuleButton(
+            key: ValueKey('contenu-${tab.name}'),
+            label: 'Dans $label',
+            onPressed: () {},
+          ),
+        ),
+      ),
+    );
 
 /// Mounts the chrome at a given viewport width.
 Future<void> pumpChrome(
@@ -39,18 +62,26 @@ Future<void> pumpChrome(
   VoidCallback? onPlayPause,
   VoidCallback? onLockScreen,
   VoidCallback? onOpenWatchParty,
-  String? overview,
+  VoidCallback? onOpenInfo,
   String? logoUrl,
+  List<OnyxTabEntry> tabs = const [],
+  OnyxTab? openTab,
+  ValueChanged<OnyxTab?>? onTabChanged,
+  void Function(OnyxMenuSection section, BuildContext anchor)? onOpenMenu,
+  OnyxMenuSection? openMenu,
 }) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = Size(width, height);
   addTearDown(tester.view.reset);
 
+  // L'écran du lecteur tient l'onglet ouvert ; ici, ce petit état le fait.
+  var open = openTab;
   await tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
         backgroundColor: Colors.black,
-        body: OnyxControlsLayer(
+        body: StatefulBuilder(
+          builder: (context, setState) => OnyxControlsLayer(
           visible: visible,
           isPlaying: isPlaying,
           position: const Duration(minutes: 42),
@@ -81,11 +112,20 @@ Future<void> pumpChrome(
           onOpenEpisodes: onOpenEpisodes,
           onSkipIntro: onSkipIntro,
           onOpenWatchParty: onOpenWatchParty,
-          overview: overview,
+          onOpenInfo: onOpenInfo,
           logoUrl: logoUrl,
           isTv: isTv,
           playPauseFocusNode: playPauseFocusNode,
           progressFocusNode: progressFocusNode,
+          tabs: tabs,
+          openTab: open,
+          onTabChanged: (tab) {
+            setState(() => open = tab);
+            onTabChanged?.call(tab);
+          },
+          onOpenMenu: onOpenMenu,
+          openMenu: openMenu,
+          ),
         ),
       ),
     ),
@@ -105,13 +145,16 @@ Future<TvNavHarness> pumpTvChrome(
   VoidCallback? onRewind,
   VoidCallback? onSkipNext,
   VoidCallback? onPlayPause,
-  VoidCallback? onOpenEpisodes,
+  List<OnyxTabEntry> tabs = const [],
+  ValueChanged<OnyxTab?>? onTabChanged,
 }) {
+  OnyxTab? open;
   return TvNavHarness.pump(
     tester,
     Scaffold(
       backgroundColor: Colors.black,
-      body: OnyxControlsLayer(
+      body: StatefulBuilder(
+        builder: (context, setState) => OnyxControlsLayer(
         visible: true,
         isPlaying: true,
         position: const Duration(minutes: 42),
@@ -137,10 +180,16 @@ Future<TvNavHarness> pumpTvChrome(
         onOpenSettings: () {},
         onToggleFullscreen: () {},
         onSkipNext: onSkipNext,
-        onOpenEpisodes: onOpenEpisodes,
         isTv: true,
         playPauseFocusNode: playPauseFocusNode,
         progressFocusNode: progressFocusNode,
+        tabs: tabs,
+        openTab: open,
+        onTabChanged: (tab) {
+          setState(() => open = tab);
+          onTabChanged?.call(tab);
+        },
+        ),
       ),
     ),
     engine: engine,
@@ -725,19 +774,21 @@ void main() {
         isTv: true,
         onSkipNext: () {},
         onSkipPrevious: () {},
-        onOpenEpisodes: () {},
-        onOpenWatchParty: () {},
-        overview: 'Un résumé.',
+        tabs: [
+          testTab(OnyxTab.info, 'Infos'),
+          testTab(OnyxTab.episodes, 'Épisodes'),
+          testTab(OnyxTab.stats, 'Stats'),
+        ],
       );
 
-      // One per control: previous, subtitles, audio, settings, next, the
-      // scrubber, and the three tabs. A count is what catches a control added
-      // later without a way to reach it.
+      // One per control: previous, the six settings, next, the scrubber, and
+      // the three tabs. A count is what catches a control added later without
+      // a way to reach it.
       final focusable = tester
           .widgetList<Focus>(find.byType(Focus))
           .where((f) => f.canRequestFocus)
           .length;
-      expect(focusable, greaterThanOrEqualTo(9));
+      expect(focusable, greaterThanOrEqualTo(12));
     });
 
     testWidgets('a hidden chrome holds no focus', (tester) async {
@@ -769,7 +820,8 @@ void main() {
         WidgetTester tester, {
         VoidCallback? onRewind,
         VoidCallback? onSkipNext,
-        VoidCallback? onOpenEpisodes,
+        List<OnyxTabEntry> tabs = const [],
+        ValueChanged<OnyxTab?>? onTabChanged,
       }) async {
         final progress = FocusNode(debugLabel: 'progress');
         addTearDown(progress.dispose);
@@ -779,7 +831,8 @@ void main() {
           progressFocusNode: progress,
           onRewind: onRewind,
           onSkipNext: onSkipNext,
-          onOpenEpisodes: onOpenEpisodes,
+          tabs: tabs,
+          onTabChanged: onTabChanged,
         );
         progress.requestFocus();
         await TvNavHarness.settle(tester);
@@ -814,21 +867,21 @@ void main() {
         await nav.press(TraversalDirection.up);
         expect(progress.hasFocus, isFalse);
 
-        final settings = find.byIcon(Icons.more_horiz_rounded);
-        var reached = focusedOn(tester, settings);
-        for (var press = 0; press < 6 && !reached; press++) {
+        // Sans épisode voisin, la minuterie de veille ferme la rangée.
+        final last = find.byIcon(Icons.bedtime_rounded);
+        var reached = focusedOn(tester, last);
+        for (var press = 0; press < 8 && !reached; press++) {
           await nav.press(TraversalDirection.right);
-          reached = focusedOn(tester, settings);
+          reached = focusedOn(tester, last);
         }
-        expect(reached, isTrue,
-            reason: 'the settings button was never reached');
+        expect(reached, isTrue, reason: 'the last button was never reached');
 
         await nav.press(TraversalDirection.right);
-        expect(focusedOn(tester, settings), isTrue,
+        expect(focusedOn(tester, last), isTrue,
             reason: 'the edge of a row is a wall');
 
         await nav.press(TraversalDirection.up);
-        expect(focusedOn(tester, settings), isTrue,
+        expect(focusedOn(tester, last), isTrue,
             reason: 'nothing above the round buttons');
 
         await nav.press(TraversalDirection.down);
@@ -840,29 +893,125 @@ void main() {
         final (nav, _) = await pumpTv(tester, onSkipNext: () {});
 
         await nav.press(TraversalDirection.up);
-        for (var press = 0; press < 6; press++) {
+        for (var press = 0; press < 8; press++) {
           await nav.press(TraversalDirection.right);
         }
         expect(
             focusedOn(tester, find.byIcon(Icons.skip_next_rounded)), isTrue);
       });
 
-      testWidgets('down from the timeline reaches the tabs, and OK opens one',
-          (tester) async {
-        var opened = 0;
-        final (nav, progress) =
-            await pumpTv(tester, onOpenEpisodes: () => opened++);
+      // ADR-0130 : descendre sur un onglet ouvre son volet, comme dans le
+      // lecteur d'Apple.
+      testWidgets(
+          'down from the timeline lands on the first tab and opens its '
+          'panel; leaving upwards folds it', (tester) async {
+        final changes = <OnyxTab?>[];
+        final (nav, progress) = await pumpTv(
+          tester,
+          tabs: [
+            testTab(OnyxTab.info, 'Infos'),
+            testTab(OnyxTab.episodes, 'Épisodes'),
+            testTab(OnyxTab.stats, 'Stats'),
+          ],
+          onTabChanged: changes.add,
+        );
+        expect(find.text('Dans Infos'), findsNothing);
 
         await nav.press(TraversalDirection.down);
-        expect(focusedOn(tester, find.text('Épisodes')), isTrue);
-        await nav.select(key: LogicalKeyboardKey.enter);
-        expect(opened, 1);
+        await tester.pumpAndSettle();
+        // Le premier onglet, pas le plus proche du milieu de l'écran.
+        expect(focusedOn(tester, find.text('Infos')), isTrue);
+        expect(find.text('Dans Infos'), findsOneWidget);
+        expect(changes, [OnyxTab.info]);
 
-        await nav.press(TraversalDirection.down);
-        expect(focusedOn(tester, find.text('Épisodes')), isTrue,
-            reason: 'nothing below the tabs');
         await nav.press(TraversalDirection.up);
+        await tester.pumpAndSettle();
         expect(progress.hasFocus, isTrue);
+        expect(find.text('Dans Infos'), findsNothing,
+            reason: 'the panel folds when the remote leaves the tabs');
+        expect(changes.last, isNull);
+      });
+
+      testWidgets('left and right change tab, and its panel follows',
+          (tester) async {
+        final (nav, _) = await pumpTv(
+          tester,
+          tabs: [
+            testTab(OnyxTab.info, 'Infos'),
+            testTab(OnyxTab.episodes, 'Épisodes'),
+            testTab(OnyxTab.stats, 'Stats'),
+          ],
+        );
+        await nav.press(TraversalDirection.down);
+        await nav.press(TraversalDirection.right);
+        await tester.pumpAndSettle();
+
+        expect(focusedOn(tester, find.text('Épisodes')), isTrue);
+        expect(find.text('Dans Épisodes'), findsOneWidget);
+        expect(find.text('Dans Infos'), findsNothing);
+
+        // Le bord de la rangée est un mur.
+        await nav.press(TraversalDirection.right);
+        await nav.press(TraversalDirection.right);
+        await tester.pumpAndSettle();
+        expect(focusedOn(tester, find.text('Stats')), isTrue);
+        expect(find.text('Dans Stats'), findsOneWidget);
+      });
+
+      testWidgets(
+          'down enters the panel, and up comes back to its own tab, not to '
+          'the nearest one', (tester) async {
+        final (nav, _) = await pumpTv(
+          tester,
+          tabs: [
+            testTab(OnyxTab.info, 'Infos'),
+            testTab(OnyxTab.episodes, 'Épisodes'),
+            testTab(OnyxTab.stats, 'Stats'),
+          ],
+        );
+        await nav.press(TraversalDirection.down);
+        await nav.press(TraversalDirection.right);
+        await nav.press(TraversalDirection.right);
+        await tester.pumpAndSettle();
+        expect(focusedOn(tester, find.text('Stats')), isTrue);
+
+        // Le bouton du volet est tout à gauche, sous « Infos ».
+        await nav.press(TraversalDirection.down);
+        await tester.pumpAndSettle();
+        expect(focusedOn(tester, find.text('Dans Stats')), isTrue);
+        expect(find.text('Dans Stats'), findsOneWidget,
+            reason: 'the panel stays open while the remote is inside it');
+
+        await nav.press(TraversalDirection.down);
+        await tester.pumpAndSettle();
+        expect(focusedOn(tester, find.text('Dans Stats')), isTrue,
+            reason: 'nothing below the panel');
+
+        await nav.press(TraversalDirection.up);
+        await tester.pumpAndSettle();
+        expect(focusedOn(tester, find.text('Stats')), isTrue);
+        expect(find.text('Dans Stats'), findsOneWidget);
+      });
+
+      testWidgets('coming back down returns to the tab last opened',
+          (tester) async {
+        final (nav, progress) = await pumpTv(
+          tester,
+          tabs: [
+            testTab(OnyxTab.info, 'Infos'),
+            testTab(OnyxTab.episodes, 'Épisodes'),
+          ],
+        );
+        await nav.press(TraversalDirection.down);
+        await nav.press(TraversalDirection.right);
+        await nav.press(TraversalDirection.up);
+        await tester.pumpAndSettle();
+        expect(progress.hasFocus, isTrue);
+
+        await nav.press(TraversalDirection.down);
+        await tester.pumpAndSettle();
+        expect(focusedOn(tester, find.text('Épisodes')), isTrue);
+        expect(find.text('Dans Épisodes'), findsOneWidget);
       });
 
       testWidgets('without tabs, down from the timeline is a wall',
@@ -876,7 +1025,17 @@ void main() {
   });
 
   group('the television chrome is laid out for the remote', () {
-    // ADR-0124 : l'arrangement du lecteur d'Apple.
+    // ADR-0124 : l'arrangement du lecteur d'Apple. ADR-0130 : un bouton rond
+    // par réglage, dans cet ordre.
+    const settingIcons = [
+      Icons.subtitles_rounded,
+      Icons.graphic_eq_rounded,
+      Icons.high_quality_rounded,
+      Icons.speed_rounded,
+      Icons.aspect_ratio_rounded,
+      Icons.bedtime_rounded,
+    ];
+
     testWidgets(
         'nothing in the middle: title and round buttons above the '
         'timeline, times below', (tester) async {
@@ -904,11 +1063,7 @@ void main() {
       expect(overline.bottom, lessThanOrEqualTo(bar.top));
       expect(title.left, bar.left);
       // Les boutons ronds à droite, au-dessus de la barre.
-      for (final icon in [
-        Icons.subtitles_rounded,
-        Icons.graphic_eq_rounded,
-        Icons.more_horiz_rounded,
-      ]) {
+      for (final icon in settingIcons) {
         final button = tester.getRect(find.byIcon(icon));
         expect(button.bottom, lessThanOrEqualTo(bar.top), reason: '$icon');
         expect(button.left, greaterThan(480), reason: '$icon');
@@ -922,10 +1077,62 @@ void main() {
       expect(title.top, greaterThan(270));
     });
 
-    testWidgets('no speed button: the rate is in the settings menu',
-        (tester) async {
-      await pumpChrome(tester, width: 960, height: 540, isTv: true);
-      expect(find.byIcon(Icons.speed_rounded), findsNothing);
+    testWidgets(
+        'one round button per setting, in order, and no « Réglages » to go '
+        'through', (tester) async {
+      final opened = <OnyxMenuSection>[];
+      await pumpChrome(
+        tester,
+        width: 960,
+        height: 540,
+        isTv: true,
+        onOpenMenu: (section, anchor) {
+          // Le repère est le bouton lui-même : le menu se pose au-dessus.
+          expect(anchor.findRenderObject(), isNotNull);
+          opened.add(section);
+        },
+      );
+
+      expect(find.byIcon(Icons.more_horiz_rounded), findsNothing);
+      expect(find.byIcon(Icons.settings_rounded), findsNothing);
+      final lefts = [
+        for (final icon in settingIcons) tester.getRect(find.byIcon(icon)).left,
+      ];
+      expect(lefts, [...lefts]..sort(), reason: 'left to right, in order');
+
+      for (final icon in settingIcons) {
+        await tester.tap(find.byIcon(icon));
+      }
+      expect(opened, const [
+        OnyxMenuSection.subtitles,
+        OnyxMenuSection.audio,
+        OnyxMenuSection.quality,
+        OnyxMenuSection.speed,
+        OnyxMenuSection.display,
+        OnyxMenuSection.sleep,
+      ]);
+    });
+
+    testWidgets('the button whose menu is open stays lit', (tester) async {
+      await pumpChrome(
+        tester,
+        width: 960,
+        height: 540,
+        isTv: true,
+        openMenu: OnyxMenuSection.quality,
+      );
+
+      Color? disc(IconData icon) => (tester
+              .widgetList<AnimatedContainer>(find.ancestor(
+                of: find.byIcon(icon),
+                matching: find.byType(AnimatedContainer),
+              ))
+              .first
+              .decoration! as BoxDecoration)
+          .color;
+
+      expect(disc(Icons.high_quality_rounded), FocusFill.fill);
+      expect(disc(Icons.speed_rounded), isNot(FocusFill.fill));
     });
 
     testWidgets(
@@ -933,7 +1140,7 @@ void main() {
         'remote', (tester) async {
       await pumpChrome(tester, width: 960, height: 540, isTv: true);
 
-      final icon = find.byIcon(Icons.more_horiz_rounded);
+      final icon = find.byIcon(Icons.speed_rounded);
       BoxDecoration disc() => tester
           .widgetList<AnimatedContainer>(find.ancestor(
             of: icon,
@@ -1017,54 +1224,117 @@ void main() {
       expect(find.text('Avatar : La Voie de l’eau'), findsOneWidget);
     });
 
-    testWidgets('the tabs: only the ones with something to open',
+    testWidgets('the tabs the screen gives sit under the timeline',
         (tester) async {
-      await pumpChrome(tester, width: 960, height: 540, isTv: true);
+      await pumpChrome(tester, width: 1280, height: 720, isTv: true);
       expect(find.byType(OnyxChromeTab), findsNothing);
 
-      var episodes = 0;
-      var party = 0;
       await pumpChrome(
         tester,
-        width: 960,
-        height: 540,
+        width: 1280,
+        height: 720,
         isTv: true,
-        overview: 'Sur une lune lointaine, une famille défend son récif.',
-        onOpenEpisodes: () => episodes++,
-        onOpenWatchParty: () => party++,
+        tabs: [
+          testTab(OnyxTab.info, 'Infos'),
+          testTab(OnyxTab.episodes, 'Épisodes'),
+          testTab(OnyxTab.chapters, 'Chapitres'),
+          testTab(OnyxTab.watchParty, 'Regarder ensemble'),
+          testTab(OnyxTab.stats, 'Stats'),
+        ],
       );
 
       final bar = tester.getRect(find.byType(OnyxProgressBar));
-      for (final label in ['Infos', 'Épisodes', 'Regarder ensemble']) {
-        expect(tester.getRect(find.text(label)).top, greaterThan(bar.bottom),
-            reason: label);
+      var previous = double.negativeInfinity;
+      for (final label in [
+        'Infos',
+        'Épisodes',
+        'Chapitres',
+        'Regarder ensemble',
+        'Stats',
+      ]) {
+        final rect = tester.getRect(find.text(label));
+        expect(rect.top, greaterThan(bar.bottom), reason: label);
+        expect(rect.left, greaterThan(previous), reason: label);
+        previous = rect.left;
       }
       expect(tester.getRect(find.text('Infos')).left, closeTo(bar.left, 0.5));
-
-      await tester.tap(find.text('Épisodes'));
-      await tester.tap(find.text('Regarder ensemble'));
-      expect((episodes, party), (1, 1));
     });
 
-    testWidgets('« Infos » unfolds the synopsis, and hiding the chrome folds it',
-        (tester) async {
-      const overview = 'Sur une lune lointaine, une famille défend son récif.';
+    testWidgets(
+        'an open tab lifts the timeline and lays its panel down to the '
+        'bottom edge', (tester) async {
+      final tabs = [
+        testTab(OnyxTab.info, 'Infos'),
+        testTab(OnyxTab.stats, 'Stats'),
+      ];
+      await pumpChrome(tester,
+          width: 1280, height: 720, isTv: true, tabs: tabs);
+      final restingBar = tester.getRect(find.byType(OnyxProgressBar));
+      expect(find.text('Dans Stats'), findsNothing);
+
+      await tester.tap(find.text('Stats'));
+      await tester.pumpAndSettle();
+
+      final bar = tester.getRect(find.byType(OnyxProgressBar));
+      final panel = tester.getRect(find.byType(OnyxTvTabs));
+      final content = tester.getRect(find.text('Dans Stats'));
+      expect(bar.top, lessThan(restingBar.top - OnyxTvTabs.contentHeight),
+          reason: 'the bar moves up to make room');
+      expect(panel.bottom, 720);
+      expect(panel.left, 0);
+      expect(panel.right, 1280);
+      expect(content.top, greaterThan(tester.getRect(find.text('Stats')).bottom));
+      // Le contenu garde la marge du chrome.
+      expect(content.left, greaterThanOrEqualTo(bar.left));
+    });
+
+    testWidgets('hiding the chrome folds the open tab', (tester) async {
+      final changes = <OnyxTab?>[];
+      final tabs = [testTab(OnyxTab.info, 'Infos')];
       await pumpChrome(
         tester,
-        width: 960,
-        height: 540,
+        width: 1280,
+        height: 720,
         isTv: true,
-        overview: overview,
+        tabs: tabs,
+        openTab: OnyxTab.info,
+        onTabChanged: changes.add,
       );
-      expect(find.text(overview), findsNothing);
+      expect(find.text('Dans Infos'), findsOneWidget);
 
-      await tester.tap(find.text('Infos'));
+      await pumpChrome(
+        tester,
+        width: 1280,
+        height: 720,
+        isTv: true,
+        visible: false,
+        tabs: tabs,
+        openTab: OnyxTab.info,
+        onTabChanged: changes.add,
+      );
       await tester.pumpAndSettle();
-      expect(find.text(overview), findsOneWidget);
 
-      await tester.tap(find.text('Infos'));
-      await tester.pumpAndSettle();
-      expect(find.text(overview), findsNothing);
+      expect(changes, [null]);
+      expect(find.text('Dans Infos'), findsNothing);
+    });
+
+    testWidgets('a tab whose panel is going on keeps its name clear',
+        (tester) async {
+      await pumpChrome(
+        tester,
+        width: 1280,
+        height: 720,
+        isTv: true,
+        tabs: [
+          testTab(OnyxTab.info, 'Infos'),
+          testTab(OnyxTab.watchParty, 'Séance en cours', marked: true),
+        ],
+      );
+
+      Color? ink(String label) =>
+          tester.widget<Text>(find.text(label)).style?.color;
+      expect(ink('Séance en cours'), OnyxChromeTheme.title);
+      expect(ink('Infos'), OnyxChromeTheme.meta);
     });
 
     testWidgets('the skip-intro offer is a glass capsule on a television',

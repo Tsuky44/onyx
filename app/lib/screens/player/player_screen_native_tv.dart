@@ -95,7 +95,7 @@ extension _PlayerNativeTv on _PlayerScreenState {
   }
 
   /// L'onglet Épisodes se remplit dès la première présentation, comme
-  /// `_openEpisodesPanel` sans l'interface : le contrat ne dit pas quand AVKit
+  /// L'onglet « Épisodes » sans l'interface : le contrat ne dit pas quand AVKit
   /// affiche l'onglet. La saison seule, sans ouvrir le panneau Onyx, qui
   /// apparaîtrait si Flutter reprenait la main.
   void _requestNativeEpisodes(NativeTvMemory memory) {
@@ -179,7 +179,7 @@ extension _PlayerNativeTv on _PlayerScreenState {
     ));
   }
 
-  /// Les conditions de `NextEpisodeOverlay` : au générique, vers un épisode
+  /// Les conditions de `NextEpisodePage` : au générique, vers un épisode
   /// qui existe, sans carte de fin par-dessus.
   NativeTvNextUpState? _nativeTvNextUp(NativeTvMemory memory) {
     final nav = _episodeNav;
@@ -379,7 +379,7 @@ extension _PlayerNativeTv on _PlayerScreenState {
     nav.onUserActivity();
   }
 
-  /// Le bouton « Démarrer une séance » de `WatchPartyPanel`, dont l'attente
+  /// Le bouton « Démarrer une séance » de `PlayerWatchPartyTab`, dont l'attente
   /// et l'erreur vivent ici, faute de widget.
   Future<void> _startWatchPartyFromNative() async {
     final memory = _nativeTv?.memory;

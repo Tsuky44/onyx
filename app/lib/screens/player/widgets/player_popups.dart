@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'onyx/onyx_settings_menu.dart';
+import 'onyx/onyx_menu_style.dart';
 import 'player_settings_anchor.dart';
 
 /// Où poser le menu des réglages : au-dessus (ou au-dessous) du bouton qui
@@ -14,19 +14,22 @@ typedef SettingsPopupPlacement = ({
 
 /// Mesuré une fois, à l'ouverture : le menu reste où il est apparu.
 ///
-/// [screenSize] est la taille où le menu est mis en page, et [scale] ce qui
-/// sépare cette mise en page de l'écran (`PlayerTvScale` sur téléviseur) :
-/// le bouton, mesuré à l'écran, y est ramené.
+/// [anchor] est le bouton qui ouvre le menu. [screenSize] est la taille où le
+/// menu est mis en page, et [scale] ce qui sépare cette mise en page de
+/// l'écran (`PlayerTvScale` sur téléviseur) : le bouton, mesuré à l'écran, y
+/// est ramené. La largeur et la hauteur sont celles du menu de l'appareil
+/// ([OnyxMenuStyle.current]).
 SettingsPopupPlacement placeSettingsPopup(
-  GlobalKey anchorKey,
+  BuildContext? anchor,
   Size screenSize, {
   double scale = 1,
 }) {
-  final renderBox = anchorKey.currentContext?.findRenderObject() as RenderBox?;
-  const menuWidth = OnyxSettingsMenu.width;
-  const menuMaxHeight = OnyxSettingsMenu.maxHeight;
+  final renderBox = anchor?.findRenderObject() as RenderBox?;
+  final style = OnyxMenuStyle.current;
+  final menuWidth = style.width;
+  final menuMaxHeight = style.maxHeight;
 
-  if (renderBox == null) {
+  if (renderBox == null || !renderBox.hasSize) {
     return (
       left: (screenSize.width - menuWidth) / 2,
       top: (screenSize.height - menuMaxHeight) / 2,
@@ -98,37 +101,6 @@ class PlayerSettingsPopup extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Un panneau au centre du lecteur : un tap à côté le ferme, un tap dedans
-/// non.
-class PlayerCenteredPopup extends StatelessWidget {
-  const PlayerCenteredPopup({
-    super.key,
-    required this.onDismiss,
-    required this.child,
-  });
-
-  final VoidCallback onDismiss;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onDismiss,
-      behavior: HitTestBehavior.translucent,
-      child: Material(
-        type: MaterialType.transparency,
-        child: Center(
-          child: GestureDetector(
-            // Un tap dans le panneau ne doit pas le fermer.
-            onTap: () {},
-            child: child,
           ),
         ),
       ),

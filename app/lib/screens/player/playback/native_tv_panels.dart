@@ -68,7 +68,7 @@ abstract final class NativeTvPanels {
     'container',
   ];
 
-  /// Comme `PlayerEpisodesPanel` : les saisons en onglets, l'épisode qui joue
+  /// Comme `PlayerEpisodesTab` : les saisons en onglets, l'épisode qui joue
   /// marqué, l'avancement d'un épisode commencé.
   static OnyxAppleNativePanel episodes(NativeTvEpisodes state) {
     final selectedSeason = state.selectedSeasonId;
@@ -112,7 +112,7 @@ abstract final class NativeTvPanels {
     );
   }
 
-  /// Comme `WatchPartyPanel`. « Copier » n'a pas de sens à la télécommande.
+  /// Comme `PlayerWatchPartyTab`. « Copier » n'a pas de sens à la télécommande.
   ///
   /// Une colonne de présentation à gauche (`headline`), les lignes à droite :
   /// hors séance, le titre, l'explication, le bouton, et à côté les trois

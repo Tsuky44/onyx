@@ -2,6 +2,9 @@
 
 - **Statut :** accepté. Maquette validée par l'utilisateur (2026-11-13, « parfait, fais que tout marche
   comme maintenant ») ; rendu vérifié sur une capture de l'app, pas encore vu sur une Apple TV.
+  L'[ADR-0130](0130-le-lecteur-a-un-bouton-par-reglage-des-menus-de-verre-et-un-volet-d-onglets.md)
+  remplace son bouton « Réglages » par un bouton par réglage (point 3) et ses trois onglets par un
+  volet de cinq (point 5), et met le lecteur à l'échelle des pages.
 - **Date :** 2026-11-13
 - **Portée :** `screens/player/widgets/onyx/onyx_controls_rows.dart` (`_buildTvChrome`),
   `onyx_tv_tabs.dart` (`OnyxTvTabs`), `onyx_chrome_buttons.dart` (`OnyxIconButton.glass`,

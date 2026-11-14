@@ -18,22 +18,19 @@ import '../../video_display_mode.dart';
 import '../direct_source_label.dart';
 import '../track_label.dart';
 import 'onyx_chrome_theme.dart';
+import 'onyx_glass_panel.dart';
+import 'onyx_menu_section.dart';
+import 'onyx_menu_style.dart';
+import '../../../../theme/app_motion.dart';
 import '../../../../theme/app_type.dart';
+import '../../../../theme/focus_fill.dart';
 import '../../../../l10n/tr.dart';
 
-part 'onyx_settings_menu_rows.dart';
+export 'onyx_menu_section.dart';
+export 'onyx_menu_style.dart';
 
-/// Which list the menu is showing. [root] is the index of sections.
-enum OnyxMenuSection {
-  root,
-  quality,
-  audio,
-  subtitles,
-  speed,
-  display,
-  sleep,
-  chapters,
-}
+part 'onyx_settings_menu_rows.dart';
+part 'onyx_settings_menu_sections.dart';
 
 /// Chrome Onyx settings menu: a narrow list of sections, each drilling into a
 /// list of choices, instead of a tall tabbed panel.
@@ -43,6 +40,11 @@ enum OnyxMenuSection {
 /// Chrome Onyx that reads as a dialog dropped on the video. This menu instead
 /// puts one column of rows over the picture: what each setting is *currently*
 /// on is visible without opening anything, and a category costs one tap.
+///
+/// Sur un téléviseur, chaque réglage a son bouton rond et son propre menu
+/// ([standalone]) : pas d'index à traverser, Retour le ferme. Le dessin est
+/// celui des menus de l'Apple TV — un panneau de verre, de grandes lignes, la
+/// ligne sous la télécommande en blanc ([OnyxMenuStyle], ADR-0130).
 ///
 /// Like the rest of this chrome, the look is locked — see [OnyxChromeTheme].
 class OnyxSettingsMenu extends StatefulWidget {
@@ -63,6 +65,10 @@ class OnyxSettingsMenu extends StatefulWidget {
   /// point at their own list rather than at the index.
   final OnyxMenuSection initialSection;
 
+  /// Le menu d'un seul réglage : [initialSection] et rien d'autre. Son en-tête
+  /// nomme le réglage au lieu de ramener à l'index, et Retour ferme le menu.
+  final bool standalone;
+
   final VoidCallback onClose;
 
   const OnyxSettingsMenu({
@@ -78,10 +84,11 @@ class OnyxSettingsMenu extends StatefulWidget {
     this.episodeNav,
     this.onSeekToAbsolute,
     this.initialSection = OnyxMenuSection.root,
-  });
-
-  static const double width = 292;
-  static const double maxHeight = 420;
+    this.standalone = false,
+  }) : assert(
+          !standalone || initialSection != OnyxMenuSection.root,
+          'un menu seul montre un réglage, pas l’index',
+        );
 
   @override
   State<OnyxSettingsMenu> createState() => _OnyxSettingsMenuState();
@@ -96,7 +103,7 @@ class _UpOneLevelAction extends Action<PlayerPopupBackIntent> {
 
   @override
   bool isEnabled(PlayerPopupBackIntent intent) =>
-      _menu.mounted && _menu._section != OnyxMenuSection.root;
+      _menu.mounted && _menu._canGoUp;
 
   @override
   Object? invoke(PlayerPopupBackIntent intent) {
@@ -126,6 +133,13 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
   OnyxMenuSection? _returnedFrom;
 
   PlayerController? get _controller => widget.playerController;
+
+  /// Une section ouverte depuis l'index peut y remonter. Le menu d'un seul
+  /// réglage n'a pas d'index : Retour le ferme.
+  bool get _canGoUp => !widget.standalone && _section != OnyxMenuSection.root;
+
+  /// `setState`, pour les extensions de cet état (le membre est protégé).
+  void _update(VoidCallback fn) => setState(fn);
 
   @override
   void initState() {
@@ -220,7 +234,7 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
   /// right next step up.
   KeyEventResult _handleMenuKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
-    if (_section == OnyxMenuSection.root) return KeyEventResult.ignored;
+    if (!_canGoUp) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
     if (key == LogicalKeyboardKey.arrowLeft) {
@@ -244,108 +258,11 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
 
   bool get _hasQuality => _controller != null;
 
-  // --- Current-value summaries shown on the root rows ----------------------
-
-  String get _qualityValue {
-    final playing = _playingQualityLabel(short: true);
-    // En Auto, la ligne dit les deux : qui choisit, et ce qui est joué.
-    return (_controller?.isAutoQuality ?? false)
-        ? tr('Auto · {0}', [playing])
-        : playing;
-  }
-
-  /// Ce qui est joué en ce moment : le fichier, ou un barreau de l'échelle.
-  ///
-  /// [short] pour la ligne de résumé, étroite : la résolution seule, sans le
-  /// débit qui l'accompagne dans le menu déroulé.
-  String _playingQualityLabel({required bool short}) {
-    final quality = _controller?.currentQuality;
-    if (quality == null) {
-      return directSourceLabel(local: _controller?.isLocalPlayback ?? false)
-          .label;
-    }
-    for (final tier in _qualityTiers) {
-      if (tier.key == quality) return short ? tier.resolutionLabel : tier.label;
-    }
-    return quality == '2160p' ? '4K' : quality;
-  }
-
-  String get _audioValue {
-    final controller = _controller;
-    final tracks = controller?.mediaTracks?.audio;
-    if (controller != null && tracks != null && tracks.isNotEmpty) {
-      final index = controller.selectedAudioIndex;
-      if (index >= 0 && index < tracks.length) {
-        return splitTrackLabel(tracks[index].displayName).$1;
-      }
-      return '—';
-    }
-    final current = widget.session.currentAudioTrack;
-    if (current == null || current.id == 'no') return tr('Désactivé');
-    return current.title ?? current.language ?? tr('Piste 1');
-  }
-
-  String get _subtitlesValue {
-    final controller = _controller;
-    if (controller == null) return '—';
-
-    if (controller.listsEmbeddedSubtitles) {
-      final current = widget.session.currentSubtitleTrack;
-      if (current == null || current.id == 'no') return tr('Désactivés');
-      return current.title ?? current.language ?? tr('Piste 1');
-    }
-
-    final lang = controller.selectedSubtitleLang;
-    if (lang == null) return tr('Désactivés');
-    final track = controller.mediaTracks?.subtitles
-        .where((s) => s.lang == lang)
-        .firstOrNull;
-    return track == null ? lang : splitTrackLabel(track.displayName).$1;
-  }
-
-  String get _speedValue => PlayerMenuChoices.rateLabel(widget.playbackRate);
-
-  String get _displayValue => _mode.label;
-
-  String get _sleepValue {
-    final episodes = SleepTimer.instance.episodesLeft;
-    if (episodes != null) return _sleepEpisodes(episodes);
-    final remaining = SleepTimer.instance.remaining;
-    return remaining == null ? tr('Désactivée') : _sleepRemaining(remaining);
-  }
-
-  /// Arrondi à la minute supérieure : « 1 min » tant qu'il reste du temps,
-  /// jamais un « 0 min » qui annoncerait une coupure déjà faite.
-  static String _sleepRemaining(Duration remaining) {
-    final minutes = (remaining.inSeconds / 60).ceil();
-    if (minutes < 60) return '$minutes min';
-    final rest = (minutes % 60).toString().padLeft(2, '0');
-    return '${minutes ~/ 60} h $rest';
-  }
-
-  static String _sleepEpisodes(int count) =>
-      tr('{0} épisode{1}', [count, count > 1 ? 's' : '']);
-
-  static String _sleepChoiceLabel(Duration choice) {
-    if (choice.inMinutes < 60) return '${choice.inMinutes} minutes';
-    final hours = choice.inHours;
-    return hours == 1 ? '1 heure' : '$hours heures';
-  }
-
-  static String _timecode(double seconds) {
-    final total = seconds.round();
-    final h = total ~/ 3600;
-    final m = (total % 3600) ~/ 60;
-    final s = total % 60;
-    final mm = m.toString().padLeft(h > 0 ? 2 : 1, '0');
-    final ss = s.toString().padLeft(2, '0');
-    return h > 0 ? '$h:$mm:$ss' : '$mm:$ss';
-  }
-
   // --- Build ---------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
+    final style = OnyxMenuStyle.current;
     return Focus(
       // Never a destination itself: this node is here only to see the keys
       // travelling up from the focused row.
@@ -358,34 +275,26 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
         },
         child: Material(
           color: Colors.transparent,
-          child: Container(
-            width: OnyxSettingsMenu.width,
-            decoration: BoxDecoration(
-              // Flat surface, no blur: this chrome renders no glass anywhere.
-              color: OnyxChromeTheme.tooltipSurface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 32,
-                  offset: const Offset(0, 12),
+          child: SizedBox(
+            width: style.width,
+            child: OnyxGlassPanel(
+              radius: BorderRadius.circular(style.radius),
+              // Height follows the visible section, so leaving a 12-chapter
+              // list for "Format d'image" shrinks the menu instead of leaving
+              // a hole.
+              child: AnimatedSize(
+                duration: AppMotion.focus,
+                curve: AppMotion.curve,
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: style.maxHeight),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: style.padding),
+                    child: _section == OnyxMenuSection.root
+                        ? _buildRoot()
+                        : _buildSection(),
+                  ),
                 ),
-              ],
-            ),
-            // Height follows the visible section, so leaving a 12-chapter list
-            // for "Affichage" shrinks the menu instead of leaving a hole.
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxHeight: OnyxSettingsMenu.maxHeight,
-                ),
-                child: _section == OnyxMenuSection.root
-                    ? _buildRoot()
-                    : _buildSection(),
               ),
             ),
           ),
@@ -404,16 +313,19 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
       );
     }
 
+    final style = OnyxMenuStyle.current;
     return ListView(
       shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: style.padding - style.overhang,
+      ),
       children: [
         if (_hasQuality)
           row(OnyxMenuSection.quality, tr('Qualité'), _qualityValue),
         row(OnyxMenuSection.audio, tr('Audio'), _audioValue),
         row(OnyxMenuSection.subtitles, tr('Sous-titres'), _subtitlesValue),
         row(OnyxMenuSection.speed, tr('Vitesse de lecture'), _speedValue),
-        row(OnyxMenuSection.display, tr('Affichage'), _displayValue),
+        row(OnyxMenuSection.display, tr('Format d’image'), _displayValue),
         row(OnyxMenuSection.sleep, tr('Minuterie de veille'), _sleepValue),
         if (_hasChapters)
           row(
@@ -431,7 +343,7 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
       OnyxMenuSection.audio => (tr('Audio'), _buildAudio()),
       OnyxMenuSection.subtitles => (tr('Sous-titres'), _buildSubtitles()),
       OnyxMenuSection.speed => (tr('Vitesse de lecture'), _buildSpeed()),
-      OnyxMenuSection.display => (tr('Affichage'), _buildDisplay()),
+      OnyxMenuSection.display => (tr('Format d’image'), _buildDisplay()),
       OnyxMenuSection.sleep => (tr('Minuterie de veille'), _buildSleep()),
       OnyxMenuSection.chapters => (tr('Chapitres'), _buildChapters()),
       OnyxMenuSection.root => ('', const SizedBox.shrink()),
@@ -440,304 +352,12 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _OnyxMenuBackHeader(title: title, onBack: _backToRoot),
+        if (widget.standalone)
+          _OnyxMenuHeader(title: title)
+        else
+          _OnyxMenuBackHeader(title: title, onBack: _backToRoot),
         Flexible(child: body),
       ],
     );
-  }
-
-  /// Lays out a section and decides which of its rows the remote arrives on.
-  ///
-  /// The option already in force, so opening "Audio" outlines the language
-  /// being played and the next press moves from there. A list with nothing
-  /// selected — the chapters — hands it to the first row.
-  Widget _sectionList(List<_OnyxMenuOption> options) {
-    final selected = options.indexWhere((option) => option.selected);
-    final entry = selected < 0 ? 0 : selected;
-
-    return ListView(
-      shrinkWrap: true,
-      padding: const EdgeInsets.only(bottom: 6),
-      children: [
-        for (var i = 0; i < options.length; i++)
-          options[i].withFocusNode(i == entry ? _entryNode : null),
-      ],
-    );
-  }
-
-  // --- Sections ------------------------------------------------------------
-
-  List<QualityTier> get _qualityTiers =>
-      PlayerMenuChoices.qualityTiers(_controller?.mediaTracks);
-
-  Widget _buildQuality() {
-    final controller = _controller;
-    if (controller == null) return const _OnyxMenuEmpty();
-    final direct = directSourceLabel(
-      local: controller.isLocalPlayback,
-      streamSubtitle: tr('Le fichier tel quel'),
-    );
-
-    final auto = controller.isAutoQuality;
-
-    return _sectionList([
-      // L'Auto choisit entre toutes les lignes qui suivent, d'après ce que la
-      // connexion porte (ADR-0056). Absente d'un fichier téléchargé et face à
-      // un serveur qui n'annonce pas ses débits : elle n'aurait rien à choisir.
-      if (controller.autoQualityAvailable)
-        _OnyxMenuOption(
-          label: tr('Auto'),
-          subtitle: auto
-              ? _playingQualityLabel(short: false)
-              : tr('S’adapte à la connexion'),
-          selected: auto,
-          onTap: () {
-            widget.onClose();
-            controller.chooseAutoQuality();
-          },
-        ),
-      // Direct Play is native-only: it hands the player the file itself, which
-      // a browser cannot open. Un Dolby Vision profil 5 que ce moteur montre
-      // rose et vert reste proposé, en le disant (ADR-0060).
-      if (!AppPlatform.isWeb)
-        _OnyxMenuOption(
-          label: direct.label,
-          subtitle: controller.directPlayHasWrongColours
-              ? tr('Couleurs incorrectes sur cet appareil')
-              : direct.subtitle,
-          selected: !auto && controller.currentQuality == null,
-          onTap: () {
-            widget.onClose();
-            controller.chooseQuality(null);
-          },
-        ),
-      for (final tier in _qualityTiers)
-        () {
-          return _OnyxMenuOption(
-            label: tier.resolutionLabel,
-            subtitle: tier.bitrateLabel,
-            selected: !auto && controller.currentQuality == tier.key,
-            onTap: () {
-              widget.onClose();
-              controller.chooseQuality(tier.key);
-            },
-          );
-        }(),
-    ]);
-  }
-
-  Widget _buildAudio() {
-    final controller = _controller;
-    final tracks = controller?.mediaTracks?.audio;
-
-    if (controller != null && tracks != null && tracks.isNotEmpty) {
-      return _sectionList([
-        for (var i = 0; i < tracks.length; i++)
-          () {
-            final (title, subtitle) = splitTrackLabel(tracks[i].displayName);
-            final selected = i == controller.selectedAudioIndex;
-            return _OnyxMenuOption(
-              label: title,
-              subtitle: subtitle,
-              selected: selected,
-              onTap: () {
-                if (!selected) controller.switchAudioTrack(i);
-                widget.onClose();
-              },
-            );
-          }(),
-      ]);
-    }
-
-    final internal = widget.session.audioTracks;
-    if (internal.isEmpty) return const _OnyxMenuEmpty();
-    final current = widget.session.currentAudioTrack;
-
-    return _sectionList([
-      for (var i = 0; i < internal.length; i++)
-        _OnyxMenuOption(
-          label: internal[i].id == 'no'
-              ? tr('Désactivé')
-              : internal[i].title ??
-                  (internal[i].language != null
-                      ? tr('Audio ({0})', [internal[i].language])
-                      : tr('Audio {0}', [i + 1])),
-          selected: internal[i] == current,
-          onTap: () {
-            widget.session.setAudioTrack(internal[i]);
-            widget.onClose();
-          },
-        ),
-    ]);
-  }
-
-  Widget _buildSubtitles() {
-    final controller = _controller;
-    if (controller == null) return const _OnyxMenuEmpty();
-
-    // Direct Play reads the tracks off the file; a transcode carries the
-    // canonical list from the server. Same split as [PlayerSubtitlesPicker].
-    if (controller.listsEmbeddedSubtitles) {
-      final subs =
-          widget.session.subtitleTracks.where((t) => t.id != 'auto').toList();
-      if (subs.isEmpty) return const _OnyxMenuEmpty();
-      final current = widget.session.currentSubtitleTrack;
-
-      return _sectionList([
-        for (var i = 0; i < subs.length; i++)
-          _OnyxMenuOption(
-            label: subs[i].id == 'no'
-                ? tr('Désactivés')
-                : subs[i].title ??
-                    (subs[i].language != null
-                        ? tr('Sous-titre ({0})', [subs[i].language])
-                        : tr('Sous-titre {0}', [i + 1])),
-            selected: subs[i] == current,
-            onTap: () {
-              controller.selectInternalSubtitle(subs[i]);
-              widget.onClose();
-            },
-          ),
-      ]);
-    }
-
-    final subtitles =
-        controller.mediaTracks?.subtitles ?? const <MediaSubtitleTrack>[];
-    return _sectionList([
-      _OnyxMenuOption(
-        label: tr('Désactivés'),
-        selected: controller.selectedSubtitleLang == null,
-        onTap: () {
-          controller.setSubtitle(null);
-          widget.onClose();
-        },
-      ),
-      for (final track in subtitles)
-        () {
-          final (title, subtitle) = splitTrackLabel(track.displayName);
-          return _OnyxMenuOption(
-            label: title,
-            subtitle: subtitle,
-            // A bitmap track has to be burned into the video while
-            // transcoding, so picking it costs a short reload.
-            badge: !track.ready ? '…' : (track.image ? 'image' : null),
-            selected: controller.selectedSubtitleLang == track.lang,
-            onTap: () {
-              controller.setSubtitle(track.lang);
-              widget.onClose();
-            },
-          );
-        }(),
-    ]);
-  }
-
-  Widget _buildSpeed() {
-    return _sectionList([
-      for (final rate in widget.playbackRates)
-        _OnyxMenuOption(
-          label: PlayerMenuChoices.rateLabel(rate),
-          selected: rate == widget.playbackRate,
-          onTap: () {
-            widget.onRateChanged(rate);
-            widget.onClose();
-          },
-        ),
-    ]);
-  }
-
-  Widget _buildDisplay() {
-    return _sectionList([
-      for (final mode in VideoDisplayMode.values)
-        _OnyxMenuOption(
-          label: mode.label,
-          subtitle: mode.description,
-          selected: mode == _mode,
-          onTap: () => _setMode(mode),
-        ),
-    ]);
-  }
-
-  /// The one section that stays open after a choice, so the ring has to follow
-  /// it: the entry node has just moved to the other row, and without this the
-  /// focus would be left on a row that no longer holds it.
-  void _setMode(VideoDisplayMode mode) {
-    setState(() => _mode = mode);
-    widget.onModeChanged(mode);
-    _focusEntryAfterBuild();
-  }
-
-  /// La lecture se met en pause à l'échéance, où qu'elle en soit : la
-  /// minuterie suit d'un épisode au suivant. Voir [SleepTimer].
-  ///
-  /// Le compte en épisodes n'est proposé que devant un épisode : un film n'a
-  /// pas de suivant à ne pas lancer.
-  Widget _buildSleep() {
-    final timer = SleepTimer.instance;
-    final remaining = timer.remaining;
-    final episodesLeft = timer.episodesLeft;
-
-    return _sectionList([
-      _OnyxMenuOption(
-        label: tr('Désactivée'),
-        selected: !timer.isActive,
-        onTap: () {
-          timer.cancel();
-          widget.onClose();
-        },
-      ),
-      if (widget.episodeNav != null)
-        for (final count in SleepTimer.episodeChoices)
-          () {
-            final selected = timer.episodesChosen == count;
-            return _OnyxMenuOption(
-              label: count == 1
-                  ? tr('À la fin de l’épisode')
-                  : tr('Après {0} épisodes', [count]),
-              value: selected && episodesLeft != null && episodesLeft < count
-                  ? tr('reste {0}', [_sleepEpisodes(episodesLeft)])
-                  : null,
-              selected: selected,
-              onTap: () {
-                timer.startEpisodes(count);
-                widget.onClose();
-              },
-            );
-          }(),
-      for (final choice in SleepTimer.choices)
-        () {
-          final selected = timer.chosen == choice;
-          return _OnyxMenuOption(
-            label: _sleepChoiceLabel(choice),
-            value: selected && remaining != null
-                ? 'reste ${_sleepRemaining(remaining)}'
-                : null,
-            selected: selected,
-            onTap: () {
-              timer.start(choice);
-              widget.onClose();
-            },
-          );
-        }(),
-    ]);
-  }
-
-  Widget _buildChapters() {
-    final chapters = widget.episodeNav!.chapters;
-    final seek = widget.onSeekToAbsolute!;
-
-    return _sectionList([
-      for (final chapter in chapters)
-        _OnyxMenuOption(
-          label: chapter.title.isEmpty
-              ? tr('Chapitre {0}', [chapter.id])
-              : chapter.title,
-          value: _timecode(chapter.startTime),
-          selected: false,
-          onTap: () {
-            widget.onClose();
-            seek(chapter.startTime.round());
-          },
-        ),
-    ]);
   }
 }

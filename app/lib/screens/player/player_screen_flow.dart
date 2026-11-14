@@ -184,7 +184,7 @@ extension _PlayerFlow on _PlayerScreenState {
   void _askStillWatching() {
     if (!mounted || _isLeaving || _isDisposing) return;
     _popups.dismissTop();
-    _closeEpisodesPanel();
+    _tabs.close();
     _controlsTimer?.cancel();
     _pauseByChoice();
     _update(() {
@@ -250,7 +250,7 @@ extension _PlayerFlow on _PlayerScreenState {
     final gap = await _playerController.launchLanguageGap();
     if (gap == null || !mounted || _isLeaving || _isDisposing) return;
     _popups.dismissTop();
-    _closeEpisodesPanel();
+    _tabs.close();
     _pauseByChoice();
     nav.askLaunchLanguage(gap);
   }
@@ -364,11 +364,11 @@ extension _PlayerFlow on _PlayerScreenState {
     bool startPaused = false,
   }) {
     if (next.media.id == _info.media.id) {
-      _closeEpisodesPanel();
+      _closeTabs();
       return;
     }
 
-    _closeEpisodesPanel();
+    _tabs.close();
     _isEpisodeTransition = true;
     _isLeaving = true;
     // Fermé avant que l'épisode suivant ne présente le sien : UIKit ne
