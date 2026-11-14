@@ -168,3 +168,29 @@ func TestAdminDeleteWithoutMediaHubOnlyErasesTheFiles(t *testing.T) {
 		}
 	}
 }
+
+func TestAdminDeleteErasesTheFilesItselfWhenSorraaKnowsNothingOfTheTitle(t *testing.T) {
+	setupDirectory(t)
+	admin := createTestUser(t, "admin", true, models.DefaultPermissions())
+	show, _, files := showOnDisk(t)
+	// Ni média ni demande chez sorraa : MediaHub n'a rien retiré.
+	bodies := mediaHubRemovals(t, http.StatusOK, `{"manager":"sorraa","managerRemoved":false,"requestsRemoved":0}`)
+
+	rec := callAdminDelete(show, admin)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("HTTP %d %s", rec.Code, rec.Body.String())
+	}
+	if len(*bodies) != 1 {
+		t.Fatalf("MediaHub doit être interrogé une fois : %v", *bodies)
+	}
+	for _, f := range files {
+		if _, err := os.Stat(f); !os.IsNotExist(err) {
+			t.Fatalf("Onyx doit effacer lui-même %s : %v", f, err)
+		}
+	}
+	var n int
+	_ = database.DB.QueryRow(`SELECT COUNT(*) FROM medias WHERE id = ?`, show).Scan(&n)
+	if n != 0 {
+		t.Fatal("la série reste au catalogue")
+	}
+}

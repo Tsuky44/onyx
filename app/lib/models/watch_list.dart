@@ -25,13 +25,30 @@ enum WatchListMediaType {
   String get wire => name;
 }
 
-/// Un compte du serveur tel qu'une liste le montre : un invité à la remplir
-/// (ADR-0127), ou quelqu'un qu'on peut inviter.
+/// Ce qu'un invité peut faire d'une liste (ADR-0129).
+enum WatchListRole {
+  /// Il y ajoute et en retire des titres.
+  editor,
+
+  /// Il la voit, même privée, sans la modifier.
+  viewer;
+
+  /// Un serveur d'avant les rôles (ADR-0127) n'en envoie pas : ses invités
+  /// remplissent tous la liste.
+  static WatchListRole parse(String? value) =>
+      value == 'viewer' ? WatchListRole.viewer : WatchListRole.editor;
+
+  String get wire => name;
+}
+
+/// Un compte du serveur tel qu'une liste le montre : un invité, à la remplir
+/// ou à la voir (ADR-0127, ADR-0129), ou quelqu'un qu'on peut inviter.
 class WatchListMember {
   const WatchListMember({
     required this.id,
     required this.username,
     this.avatar = '',
+    this.role = WatchListRole.editor,
   });
 
   final int id;
@@ -40,11 +57,15 @@ class WatchListMember {
   /// L'image de profil, au format de l'ADR-0078 (vide : l'initiale).
   final String avatar;
 
+  /// Le rôle de l'invité ; sans objet pour un compte qu'on peut inviter.
+  final WatchListRole role;
+
   factory WatchListMember.fromJson(Map<String, dynamic> json) =>
       WatchListMember(
         id: (json['id'] as num?)?.toInt() ?? 0,
         username: json['username'] as String? ?? '',
         avatar: json['avatar'] as String? ?? '',
+        role: WatchListRole.parse(json['role'] as String?),
       );
 }
 
@@ -74,6 +95,7 @@ class WatchList {
     required this.itemCount,
     required this.posters,
     this.canEdit = false,
+    this.isMember = false,
     this.memberCount = 0,
     this.updatedAt,
     this.containsItemId,
@@ -87,10 +109,13 @@ class WatchList {
   final bool isMine;
 
   /// Le compte peut y ajouter et en retirer des titres : la liste est à lui,
-  /// ou son propriétaire l'y a invité.
+  /// ou son propriétaire l'a invité à la remplir.
   final bool canEdit;
 
-  /// Combien de comptes le propriétaire a invités à la remplir.
+  /// Le compte y est invité, à la remplir ou à la voir : il peut la quitter.
+  final bool isMember;
+
+  /// Combien de comptes le propriétaire a invités, à la remplir ou à la voir.
   final int memberCount;
   final WatchListOwner owner;
   final int itemCount;
@@ -121,6 +146,11 @@ class WatchList {
         isShared: json['is_shared'] as bool? ?? false,
         isMine: json['is_mine'] as bool? ?? false,
         canEdit: json['can_edit'] as bool? ?? false,
+        // Un serveur d'avant les rôles (ADR-0127) ne dit pas `is_member` :
+        // chez lui, un invité est celui qui remplit la liste d'un autre.
+        isMember: json['is_member'] as bool? ??
+            ((json['can_edit'] as bool? ?? false) &&
+                !(json['is_mine'] as bool? ?? false)),
         memberCount: (json['member_count'] as num?)?.toInt() ?? 0,
         owner: WatchListOwner.fromJson(
             Map<String, dynamic>.from(json['owner'] as Map? ?? const {})),
@@ -142,6 +172,7 @@ class WatchList {
         isShared: isShared,
         isMine: isMine,
         canEdit: canEdit,
+        isMember: isMember,
         memberCount: memberCount,
         owner: owner,
         itemCount: itemCount +

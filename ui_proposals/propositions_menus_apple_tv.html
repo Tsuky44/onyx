@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onyx — Refonte Visuelle des Menus (Alignement Apple TV)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0A0A0A;
+      --surface: #141414;
+      --surface-elevated: #1C1C1E;
+      --surface-hover: #252528;
+      --surface-glass: rgba(24, 24, 27, 0.75);
+      --surface-glass-heavy: rgba(18, 18, 20, 0.88);
+      --text-primary: #F5F5F7;
+      --text-secondary: #A1A1A6;
+      --text-muted: #6E6E73;
+      --accent: #0A84FF;
+      --accent-glow: rgba(10, 132, 255, 0.25);
+      --focus-fill: #FFFFFF;
+      --focus-ink: #0A0A0A;
+      --danger: #FF453A;
+      --danger-soft: rgba(255, 69, 58, 0.15);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glass: rgba(255, 255, 255, 0.14);
+      --border-highlight: rgba(255, 255, 255, 0.22);
+      --shadow-ambient: 0 32px 64px -12px rgba(0, 0, 0, 0.7);
+      --shadow-popup: 0 20px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      --shadow-pill: 0 12px 30px rgba(0, 0, 0, 0.45);
+      --radius-pill: 9999px;
+      --radius-menu: 18px;
+      --radius-item: 11px;
+      --font-ui: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-meta: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+      --spring: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      line-height: 1.5;
+      padding-bottom: 80px;
+      overflow-x: hidden;
+    }
+
+    /* BARRE D'OUTILS PRINCIPALE DU PROTOTYPE */
+    .prototype-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 10, 10, 0.88);
+      backdrop-filter: blur(24px) saturate(160%);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .proto-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .proto-badge {
+      font-family: var(--font-meta);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(10, 132, 255, 0.15);
+      color: #64D2FF;
+      border: 1px solid rgba(10, 132, 255, 0.3);
+    }
+
+    .proto-title h1 {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .proto-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mode-switch-group {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font-ui);
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s var(--spring);
+    }
+
+    .mode-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .mode-btn.active {
+      background: #FFFFFF;
+      color: #0A0A0A;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .mode-btn.active.tv-theme {
+      background: var(--accent);
+      color: #FFFFFF;
+    }
+
+    .nav-sections-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 8px 32px;
+      background: rgba(14, 14, 16, 0.6);
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto;
+    }
+
+    .section-tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-tab-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .section-tab-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    /* CONTENEUR DE PRÉSENTATION */
+    .proposal-container {
+      max-width: 1380px;
+      margin: 32px auto;
+      padding: 0 24px;
+    }
+
+    .hero-summary {
+      background: linear-gradient(145deg, rgba(20, 20, 24, 0.7), rgba(12, 12, 14, 0.9));
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .hero-text h2 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      background: linear-gradient(180deg, #FFFFFF 30%, #A1A1A6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-text p {
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      max-width: 780px;
+      line-height: 1.6;
+    }
+
+    .principles-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .principle-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .principle-card .title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64D2FF;
+      font-family: var(--font-meta);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .principle-card .desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* SECTIONS DE PROPOSITIONS */
+    .proposal-section {
+      margin-bottom: 64px;
+      scroll-margin-top: 130px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 14px;
+    }
+
+    .section-title-wrap h3 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title-wrap p {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .badge-diff {
+      font-family: var(--font-meta);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(48, 209, 88, 0.15);
+      color: #30D158;
+      border: 1px solid rgba(48, 209, 88, 0.3);
+    }
+
+    /* COMPARAISON DUO STAGE */
+    .comparison-stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .comparison-stage {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stage-card {
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    .stage-card.is-proposed {
+      border-color: rgba(10, 132, 255, 0.4);
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(10, 132, 255, 0.2);
+    }
+
+    .stage-header {
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stage-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stage-label .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .stage-card.is-current .dot { background: #FF9F0A; }
+    .stage-card.is-proposed .dot { background: #30D158; }
+
+    .stage-canvas {
+      padding: 36px 28px;
+      background: #0A0A0A;
+      position: relative;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* SIMULATION DE BACKDROP CINÉMA */
+    .ambient-backdrop {
+      position: absolute;
+      inset: 0;
+      opacity: 0.35;
+      background-image: url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1600&auto=format&fit=crop&q=80');
+      background-size: cover;
+      background-position: center 20%;
+      filter: blur(2px);
+      pointer-events: none;
+    }
+
+    .ambient-gradient-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(10, 10, 10, 0.4) 0%, rgba(10, 10, 10, 0.95) 90%);
+      pointer-events: none;
+    }
+
+    .stage-footer {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.015);
+      border-top: 1px solid var(--border-subtle);
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stage-footer strong {
+      color: var(--text-primary);
+    }
+
+    /* ========================================================
+       1. NAVIGATION DESKTOP : AVANT VS APRÈS
+       ======================================================== */
+
+    /* AVANT : Bandeau rectangulaire rigide pleine largeur */
+    .desktop-header-legacy {
+      width: 100%;
+      height: 58px;
+      background: rgba(10, 10, 10, 0.75);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .legacy-tabs {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .legacy-tab {
+      color: var(--text-secondary);
+      font-size: 13.5px;
+      font-weight: 500;
+      padding: 18px 0;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .legacy-tab.active {
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+
+    .legacy-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #FFFFFF;
+    }
+
+    .legacy-search-box {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 180px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* APRÈS : Capsule Flottante Centrée (Style Apple TV / Vision Pro / macOS Big Sur+) */
+    .desktop-header-proposed-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 20;
+    }
+
+    .desktop-floating-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+    }
+
+    .floating-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .brand-disc {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0A0A0A;
+      font-weight: 900;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+    }
+
+    .brand-name {
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+    }
+
+    /* LA PILULE D'ONGLETS CENTRÉE */
+    .floating-pill-nav {
+      height: 46px;
+      background: rgba(20, 20, 24, 0.65);
+      backdrop-filter: blur(32px) saturate(180%);
+      -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-pill);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      box-shadow: var(--shadow-pill), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      position: relative;
+      transition: all 0.25s var(--spring);
+    }
+
+    .floating-pill-nav:hover {
+      border-color: var(--border-highlight);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    }
+
+    .pill-nav-item {
+      height: 38px;
+      padding: 0 16px;
+      border-radius: var(--radius-pill);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all 0.18s var(--spring);
+      user-select: none;
+    }
+
+    .pill-nav-item:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .pill-nav-item.active {
+      background: rgba(255, 255, 255, 0.14);
+      color: #FFFFFF;
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .pill-nav-item.focused-tv {
+      background: #FFFFFF !important;
+      color: #0A0A0A !important;
+      font-weight: 800;
+      transform: scale(1.04);
+      box-shadow: 0 4px 16px rgba(255, 255, 255, 0.35);
+    }
+
+    .pill-search-trigger {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      padding: 0;
+      justify-content: center;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+    }
+
+    .pill-search-trigger:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+    }
+
+    .desktop-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .quick-action-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .quick-action-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: scale(1.04);
+    }
+
+    .user-profile-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0A84FF, #5E5CE6);
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      color: #FFF;
+      font-weight: 700;
+      font-size: 13.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.18s;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .user-profile-avatar:hover {
+      border-color: #FFFFFF;
+      transform: scale(1.05);
+    }
+
+    /* ========================================================
+       2. LES MENUS DÉROULANTS & CONTEXTUELS : AVANT VS APRÈS
+       ======================================================== */
+
+    /* AVANT : PopupMenuButton Material par défaut */
+    .legacy-material-menu {
+      width: 220px;
+      background: #1C1C1E;
+      border-radius: 4px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+      padding: 8px 0;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .legacy-menu-item {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .legacy-menu-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+    }
+
+    .legacy-menu-item.active {
+      color: var(--accent);
+    }
+
+    /* APRÈS : Glass Action Popover Apple (Liquid Glass + FocusFill) */
+    .apple-glass-popover {
+      width: 270px;
+      background: var(--surface-glass);
+      backdrop-filter: blur(36px) saturate(180%);
+      -webkit-backdrop-filter: blur(36px) saturate(180%);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-menu);
+      box-shadow: var(--shadow-popup);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+      animation: popoverFadeIn 0.2s var(--spring);
+    }
+
+    @keyframes popoverFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(-6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .popover-header {
+      padding: 8px 12px 4px 12px;
+      font-family: var(--font-meta);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .popover-item {
+      padding: 9px 12px;
+      border-radius: var(--radius-item);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s var(--spring);
+      user-select: none;
+    }
+
+    /* EFFET FOCUS FILL (SIGNATURE APPLE TV) */
+    .popover-item:hover, .popover-item.focused {
+      background: var(--focus-fill);
+      color: var(--focus-ink) !important;
+      transform: scale(1.015);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .popover-item:hover .item-meta, .popover-item.focused .item-meta {
+      color: #4A4A4F;
+    }
+
+    .popover-item:hover svg, .popover-item.focused svg {
+      stroke: var(--focus-ink);
+    }
+
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .item-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-meta);
+    }
+
+    .popover-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 4px 6px;
+    }
+
+    .popover-item.danger {
+      color: var(--danger);
+    }
+
+    .popover-item.danger:hover {
+      background: var(--danger);
+      color: #FFFFFF !important;
+    }
+
+    /* ========================================================
+       3. NAVIGATION MOBILE : BARRE D'ONGLETS & SHEET
+       ======================================================== */
+
+    .mobile-phone-frame {
+      width: 320px;
+      height: 480px;
+      background: #0A0A0A;
+      border-radius: 36px;
+      border: 3px solid #2C2C2E;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+    }
+
+    .phone-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    /* AVANT : Barre mobile basse ordinaire */
+    .mobile-bottom-legacy {
+      height: 56px;
+      background: #141414;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px;
+    }
+
+    .legacy-mob-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--text-muted);
+      font-size: 10.5px;
+    }
+
+    .legacy-mob-tab.active {
+      color: #FFFFFF;
+    }
+
+    /* APRÈS : Barre d'onglets Flottante en Îlot de Verre (Floating Glass Island) */
+    .mobile-bottom-proposed-wrap {
+      padding: 0 16px 14px 16px;
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+    }
+
+    .mobile-floating-island {
+      height: 52px;
+      background: rgba(22, 22, 26, 0.72);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-pill);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 4px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+    }
+
+    .mobile-island-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      height: 100%;
+      padding: 0 12px;
+      border-radius: var(--radius-pill);
+      color: var(--text-secondary);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .mobile-island-item.active {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 0 14px;
+    }
+
+    .mobile-island-item svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* MODALE FEUILLE DE VERRE MOBILE (LIQUID GLASS SHEET) */
+    .liquid-glass-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface-glass-heavy);
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      border-top: 1px solid var(--border-highlight);
+      border-radius: 28px 28px 0 0;
+      padding: 14px 20px 24px 20px;
+      box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.8);
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: sheetSlideUp 0.25s var(--spring);
+    }
+
+    @keyframes sheetSlideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      align-self: center;
+      margin-bottom: 4px;
+    }
+
+    .sheet-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sheet-card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sheet-library-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sheet-library-card:hover, .sheet-library-card.active {
+      background: #FFFFFF;
+      color: #0A0A0A;
+      border-color: #FFFFFF;
+    }
+
+    .sheet-library-card.active .lib-count {
+      color: #4A4A4F;
+    }
+
+    /* ========================================================
+       4. MENUS DU LECTEUR : AUDIOS / SUBS / RÉGLAGES
+       ======================================================== */
+
+    /* AVANT : Panneau opaque austère */
+    .legacy-player-menu {
+      width: 280px;
+      background: #141416;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 8px 0;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
+    }
+
+    .legacy-player-row {
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    /* APRÈS : Cinematic Glass HUD Player Menu */
+    .proposed-player-menu {
+      width: 310px;
+      background: rgba(18, 18, 22, 0.78);
+      backdrop-filter: blur(40px) saturate(190%);
+      -webkit-backdrop-filter: blur(40px) saturate(190%);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      padding: 10px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .player-menu-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .player-menu-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quality-badge {
+      font-family: var(--font-meta);
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #FFF;
+    }
+
+    .segmented-picker {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .segment-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .segment-tab.active {
+      background: rgba(255, 255, 255, 0.18);
+      color: #FFFFFF;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .track-choice-row {
+      padding: 10px 12px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      transition: all 0.15s var(--spring);
+    }
+
+    .track-choice-row:hover, .track-choice-row.focused {
+      background: #FFFFFF;
+      color: #0A0A0A;
+      transform: scale(1.015);
+    }
+
+    .track-choice-row:hover .track-sub, .track-choice-row.focused .track-sub {
+      color: #55555A;
+    }
+
+    .track-choice-row:hover svg, .track-choice-row.focused svg {
+      stroke: #0A0A0A;
+    }
+
+    .track-sub {
+      font-size: 11.5px;
+      font-family: var(--font-meta);
+      color: var(--text-muted);
+    }
+
+    /* ========================================================
+       5. COMPTE & PROFILS (ADR-0126 ALIGNEMENT)
+       ======================================================== */
+    .account-panel-demo {
+      width: 320px;
+      background: rgba(24, 24, 28, 0.78);
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      border: 1px solid var(--border-glass);
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: var(--shadow-popup);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .profiles-head-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 4px;
+      overflow-x: auto;
+    }
+
+    .profile-bubble-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .bubble-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: #FFF;
+      position: relative;
+      transition: all 0.2s var(--spring);
+    }
+
+    .bubble-avatar:hover {
+      transform: scale(1.08);
+    }
+
+    .profile-bubble-item.current .bubble-avatar {
+      box-shadow: 0 0 0 2.5px #FFFFFF, 0 8px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .bubble-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      max-width: 54px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-bubble-item.current .bubble-name {
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+
+    /* FOOTER DÉTAILLÉ DE LA PAGE */
+    .review-matrix {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+      font-size: 13px;
+    }
+
+    .review-matrix th {
+      text-align: left;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      font-family: var(--font-meta);
+      font-size: 11.5px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .review-matrix td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .review-matrix tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tag-token {
+      font-family: var(--font-meta);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #DDD;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRE SUPÉRIEURE DE NAVIGATION ET CONTRÔLE -->
+  <header class="prototype-bar">
+    <div class="proto-brand">
+      <div class="brand-disc">O</div>
+      <div class="proto-title">
+        <h1>Onyx — Refonte Visuelle des Menus <span class="proto-badge">Alignement Apple TV</span></h1>
+      </div>
+    </div>
+
+    <div class="proto-controls">
+      <div class="mode-switch-group">
+        <button class="mode-btn active" id="btn-view-all" onclick="switchFilter('all')">Tous les Menus</button>
+        <button class="mode-btn" id="btn-view-nav" onclick="switchFilter('nav')">Navigation</button>
+        <button class="mode-btn" id="btn-view-popover" onclick="switchFilter('popover')">Popovers & Tri</button>
+        <button class="mode-btn" id="btn-view-player" onclick="switchFilter('player')">Lecteur</button>
+      </div>
+
+      <button class="mode-btn tv-theme" onclick="simulateTvFocus()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+        Tester FocusFill TV
+      </button>
+    </div>
+  </header>
+
+  <!-- ONGLETS DE SAUT RAPIDE -->
+  <nav class="nav-sections-tabs">
+    <button class="section-tab-btn active" onclick="scrollToSection('sec-desktop-header')">1. Barre de Nav Desktop</button>
+    <button class="section-tab-btn" onclick="scrollToSection('sec-dropdowns')">2. Popovers de Tri & Filtres</button>
+    <button class="section-tab-btn" onclick="scrollToSection('sec-mobile-nav')">3. Navigation & Sheets Mobile</button>
+    <button class="section-tab-btn" onclick="scrollToSection('sec-player-hud')">4. Menus Audio & Sous-titres Lecteur</button>
+    <button class="section-tab-btn" onclick="scrollToSection('sec-account-sync')">5. Compte & Profils Multi-Device</button>
+  </nav>
+
+  <main class="proposal-container">
+
+    <!-- SYNTHÈSE DU DIAGNOSTIC -->
+    <div class="hero-summary">
+      <div class="hero-text">
+        <h2>Harmonisation des Menus avec la DA Apple TV</h2>
+        <p>
+          La récente refonte Apple TV (ADR-0117, ADR-0118, ADR-0124, ADR-0126) a introduit un langage <strong>Quiet Premium</strong> extrêmement soigné : pilules de verre dépoli flottantes, recherche intégrée, navigation respirante et le marqueur <code>FocusFill</code> (remplissage blanc plein à l'encre noire). Cette maquette propose la transposition fidèle de ces avancées sur le reste de l'application (Desktop, Web, Mobile et menus contextuels).
+        </p>
+
+        <div class="principles-grid">
+          <div class="principle-card">
+            <div class="title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              Floating Glass Pill
+            </div>
+            <div class="desc">Abandon des bandeaux rectangulaires opaques au profit de capsules flottantes en verre liquide.</div>
+          </div>
+          <div class="principle-card">
+            <div class="title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M2 12h20"/></svg>
+              FocusFill Apple TV
+            </div>
+            <div class="desc">Remplissage blanc pur à l'encre noire sur tout élément survolé ou sélectionné à la télécommande.</div>
+          </div>
+          <div class="principle-card">
+            <div class="title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+              Translucidité Hiérarchique
+            </div>
+            <div class="desc">Matériau de verre dépoli à blur 32-40px laissant respirer l'artwork cinématographique en fond.</div>
+          </div>
+          <div class="principle-card">
+            <div class="title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              Zéro PopMenu Material
+            </div>
+            <div class="desc">Remplacement de tous les menus gris Flutter par des Glass Popovers unifiés aux coins 18px.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         SECTION 1 : BARRE DE NAVIGATION DESKTOP
+         ======================================================== -->
+    <section class="proposal-section" id="sec-desktop-header" data-category="nav">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h3>1. Barre de Navigation Principale (Desktop / macOS / Web)</h3>
+          <p>Passage d'un bandeau rigide pleine largeur à une pilule de verre flottante inspirée de l'Apple TV et de Safari macOS.</p>
+        </div>
+        <span class="badge-diff">Impact Majeur UI</span>
+      </div>
+
+      <div class="comparison-stage">
+        <!-- AVANT -->
+        <div class="stage-card is-current">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Actuel : Bandeau rectangulaire rigide (ShellDesktopHeader)</div>
+            <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-meta);">Bandeau 100% largeur</span>
+          </div>
+          <div class="stage-canvas">
+            <div class="ambient-backdrop"></div>
+            <div class="ambient-gradient-overlay"></div>
+
+            <div class="desktop-header-legacy">
+              <div class="floating-brand">
+                <div class="brand-disc">O</div>
+                <span class="brand-name">ONYX</span>
+              </div>
+
+              <div class="legacy-tabs">
+                <div class="legacy-tab active">Accueil</div>
+                <div class="legacy-tab">Films</div>
+                <div class="legacy-tab">Séries</div>
+                <div class="legacy-tab">Demandes</div>
+                <div class="legacy-tab">Listes</div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="legacy-search-box">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Rechercher...
+                </div>
+                <div class="user-profile-avatar" style="width: 32px; height: 32px; font-size: 12px;">M</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; color: var(--text-muted); font-size: 12.5px;">
+              Le bandeau traverse tout l'écran, coupe l'affiche du Hero et sépare les onglets par un simple trait de 2px.
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Défaut :</strong> Coupure visuelle brutale du hero, absence de flou moderne, champ de recherche rectangulaire trop lourd.</div>
+            <div><strong>Référence code :</strong> <code>screens/shell/shell_desktop_header.dart</code> & <code>GlassHeaderStrip</code></div>
+          </div>
+        </div>
+
+        <!-- APRÈS -->
+        <div class="stage-card is-proposed">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Proposition : Capsule de Verre Flottante (Style Apple TV / macOS)</div>
+            <span class="badge-diff">Recommandé</span>
+          </div>
+          <div class="stage-canvas">
+            <div class="ambient-backdrop"></div>
+            <div class="ambient-gradient-overlay"></div>
+
+            <div class="desktop-header-proposed-wrap">
+              <div class="desktop-floating-bar">
+                <div class="floating-brand">
+                  <div class="brand-disc">O</div>
+                  <span class="brand-name">ONYX</span>
+                </div>
+
+                <!-- PILULE CENTRÉE -->
+                <nav class="floating-pill-nav">
+                  <button class="pill-search-trigger" title="Rechercher (⌘K)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </button>
+                  <button class="pill-nav-item active">Accueil</button>
+                  <button class="pill-nav-item">Films</button>
+                  <button class="pill-nav-item">Séries</button>
+                  <button class="pill-nav-item">Demandes</button>
+                  <button class="pill-nav-item">Listes</button>
+                </nav>
+
+                <div class="desktop-right-actions">
+                  <div class="quick-action-btn" title="Téléchargements">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  </div>
+                  <div class="user-profile-avatar" onclick="togglePopover('demo-account-popover')" title="Mathis (Ouvrir Menu Compte)">M</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+              ✨ La capsule flotte au centre. Les affiches continuent sans coupure. La loupe est directement dans la pilule.
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Gain :</strong> Cohérence absolue avec l'en-tête de salon (ADR-0117), fluidité visuelle, recherche intégrée élégante.</div>
+            <div><strong>Transposition :</strong> Réutilisation du patron <code>TvTabBar</code> et <code>TvTabBarItem</code> pour le Desktop.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SECTION 2 : POPOVERS DE TRI & FILTRES
+         ======================================================== -->
+    <section class="proposal-section" id="sec-dropdowns" data-category="popover">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h3>2. Menus Déroulants & Menus Contextuels (Popovers Unifiés)</h3>
+          <p>Remplacement de tous les <code>PopupMenuButton</code> Flutter bruts par un Glass Popover Apple avec <code>FocusFill</code>.</p>
+        </div>
+        <span class="badge-diff">Cohérence Globale</span>
+      </div>
+
+      <div class="comparison-stage">
+        <!-- AVANT -->
+        <div class="stage-card is-current">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Actuel : Menu Material Gris Classique (PopupMenuButton)</div>
+            <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-meta);">Material 3 Raw</span>
+          </div>
+          <div class="stage-canvas">
+            <div class="ambient-backdrop"></div>
+            <div class="ambient-gradient-overlay"></div>
+
+            <div class="legacy-material-menu">
+              <div class="legacy-menu-item active">
+                <span>Date d'ajout</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="legacy-menu-item"><span>Titre alphabétique</span></div>
+              <div class="legacy-menu-item"><span>Année de sortie</span></div>
+              <div class="legacy-menu-item"><span>Note TMDB</span></div>
+              <div class="legacy-menu-item"><span>Durée</span></div>
+            </div>
+
+            <div style="margin-top: 30px; text-align: center; color: var(--text-muted); font-size: 12px;">
+              Menu rectangulaire gris opaque, pas d'état focalisé de salon, coins carrés 4px.
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Défaut :</strong> Utilisé dans <code>CatalogSortCapsule</code>, <code>PosterGridDisplayMenu</code> et les fiches sans aucun accord avec la DA de salon.</div>
+          </div>
+        </div>
+
+        <!-- APRÈS -->
+        <div class="stage-card is-proposed">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Proposition : Glass Popover Apple (Liquid Glass + FocusFill)</div>
+            <span class="badge-diff">Survol & Focus interactif</span>
+          </div>
+          <div class="stage-canvas">
+            <div class="ambient-backdrop"></div>
+            <div class="ambient-gradient-overlay"></div>
+
+            <!-- LE POPOVER EN VERRE APPLE -->
+            <div class="apple-glass-popover" id="demo-sort-popover">
+              <div class="popover-header">Trier les éléments</div>
+
+              <div class="popover-item focused">
+                <div class="item-left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Date d'ajout</span>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+
+              <div class="popover-item">
+                <div class="item-left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
+                  <span>Titre alphabétique</span>
+                </div>
+              </div>
+
+              <div class="popover-item">
+                <div class="item-left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+                  <span>Année de sortie</span>
+                </div>
+              </div>
+
+              <div class="popover-item">
+                <div class="item-left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span>Note TMDB</span>
+                </div>
+                <span class="item-meta">8.4+</span>
+              </div>
+
+              <div class="popover-divider"></div>
+
+              <div class="popover-item danger">
+                <div class="item-left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <span>Réinitialiser les filtres</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+              Survol ou navigation au D-pad : la ligne se remplit immédiatement de blanc pur avec encre noire.
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Gain :</strong> Coins arrondis 18px, verre translucide <code>backdrop-filter</code>, interaction tactile et télécommande 100% harmonisée.</div>
+            <div><strong>Composant cible :</strong> Un widget générique <code>GlassMenuPopover<T></code> réutilisable dans toute l'app.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SECTION 3 : NAVIGATION & SHEETS MOBILE
+         ======================================================== -->
+    <section class="proposal-section" id="sec-mobile-nav" data-category="nav">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h3>3. Expérience Mobile : Barre Flottante & Liquid Glass Sheets</h3>
+          <p>La barre d'onglets devient un îlot détachable au-dessus du contenu, et les modales de bibliothèques passent au verre liquide.</p>
+        </div>
+        <span class="badge-diff">Touch Ergonomics</span>
+      </div>
+
+      <div class="comparison-stage">
+        <!-- AVANT -->
+        <div class="stage-card is-current">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Actuel : Barre basse rigide + BottomSheet Material</div>
+            <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-meta);">Edge-to-edge bar</span>
+          </div>
+          <div class="stage-canvas">
+            <div class="mobile-phone-frame">
+              <div class="ambient-backdrop"></div>
+              <div class="phone-screen">
+                <div style="padding: 24px; font-size: 13px; color: var(--text-muted);">
+                  Aperçu écran mobile...
+                </div>
+
+                <div class="mobile-bottom-legacy">
+                  <div class="legacy-mob-tab active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    <span>Accueil</span>
+                  </div>
+                  <div class="legacy-mob-tab">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/></svg>
+                    <span>Films</span>
+                  </div>
+                  <div class="legacy-mob-tab">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                    <span>Listes</span>
+                  </div>
+                  <div class="legacy-mob-tab">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
+                    <span>Hors ligne</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Défaut :</strong> Barre rigide ancrée au bas d'écran sans relief, modal de choix de bibliothèques en simple <code>ListView</code> Material.</div>
+          </div>
+        </div>
+
+        <!-- APRÈS -->
+        <div class="stage-card is-proposed">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Proposition : Floating Glass Island & Liquid Glass Sheet</div>
+            <span class="badge-diff">iOS 18 / Apple TV Style</span>
+          </div>
+          <div class="stage-canvas">
+            <div class="mobile-phone-frame">
+              <div class="ambient-backdrop"></div>
+              <div class="phone-screen">
+                <div style="padding: 24px; font-size: 13px; color: var(--text-secondary); text-align: center;">
+                  L'image défile sous la barre en transparence complète.
+                </div>
+
+                <!-- MODALE LIQUID GLASS (QUAND ON CLIQUE SUR BIBLIOTHÈQUE) -->
+                <div class="liquid-glass-sheet" id="demo-mobile-sheet">
+                  <div class="sheet-handle"></div>
+                  <div class="sheet-title">
+                    <span>Bibliothèques</span>
+                    <span style="font-size: 12px; color: var(--accent); cursor: pointer;" onclick="toggleMobileSheet()">Fermer</span>
+                  </div>
+                  <div class="sheet-card-list">
+                    <div class="sheet-library-card active">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/></svg>
+                        <span style="font-weight: 700; font-size: 14px;">Films 4K & HDR</span>
+                      </div>
+                      <span class="lib-count" style="font-size: 12px;">384 titres</span>
+                    </div>
+
+                    <div class="sheet-library-card">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                        <span style="font-weight: 600; font-size: 14px;">Séries Télévisées</span>
+                      </div>
+                      <span class="lib-count" style="font-size: 12px; color: var(--text-muted);">92 séries</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- LA BARRE FLOTTANTE EN CAPSULE -->
+                <div class="mobile-bottom-proposed-wrap">
+                  <div class="mobile-floating-island">
+                    <div class="mobile-island-item active">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                      <span>Accueil</span>
+                    </div>
+                    <div class="mobile-island-item" onclick="toggleMobileSheet()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/></svg>
+                      <span>Médias</span>
+                    </div>
+                    <div class="mobile-island-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                      <span>Listes</span>
+                    </div>
+                    <div class="mobile-island-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <span>Chercher</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Gain :</strong> Allègement maximal de l'écran, sensation tactile haut de gamme, interaction naturelle au pouce.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SECTION 4 : MENUS DU LECTEUR
+         ======================================================== -->
+    <section class="proposal-section" id="sec-player-hud" data-category="player">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h3>4. Menus de Réglages du Lecteur (Pistes Audio, Sous-titres, Qualité)</h3>
+          <p>Alignement avec le lecteur Apple TV (ADR-0124) : suppression de la boîte opaque pour un HUD cinématographique.</p>
+        </div>
+        <span class="badge-diff">Quiet Premium Cinema</span>
+      </div>
+
+      <div class="comparison-stage">
+        <!-- AVANT -->
+        <div class="stage-card is-current">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Actuel : Boîte opaque rigide (OnyxSettingsMenu)</div>
+            <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-meta);">Sans flou / Opaque</span>
+          </div>
+          <div class="stage-canvas">
+            <div class="ambient-backdrop" style="filter: brightness(0.4);"></div>
+
+            <div class="legacy-player-menu">
+              <div class="legacy-player-row"><span>Qualité</span> <strong>Direct Play (4K)</strong></div>
+              <div class="legacy-player-row"><span>Audio</span> <strong>Français (E-AC3)</strong></div>
+              <div class="legacy-player-row"><span>Sous-titres</span> <strong>Complets (FR)</strong></div>
+              <div class="legacy-player-row"><span>Vitesse</span> <strong>1.0x</strong></div>
+              <div class="legacy-player-row"><span>Affichage</span> <strong>Ajuster</strong></div>
+            </div>
+
+            <div style="margin-top: 30px; text-align: center; color: var(--text-muted); font-size: 12px;">
+              Le code spécifie expressément : « Flat surface, no blur: renders no glass anywhere ».
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Défaut :</strong> Rectangle sombre qui masque le film, manque d'immersion, typographie compactée.</div>
+          </div>
+        </div>
+
+        <!-- APRÈS -->
+        <div class="stage-card is-proposed">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Proposition : Cinematic Glass HUD (Apple Player Controls)</div>
+            <span class="badge-diff">Sublime au-dessus du film</span>
+          </div>
+          <div class="stage-canvas">
+            <div class="ambient-backdrop" style="filter: brightness(0.6);"></div>
+
+            <div class="proposed-player-menu">
+              <div class="player-menu-topbar">
+                <div class="player-menu-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <span>Pistes & Réglages</span>
+                </div>
+                <span class="quality-badge">4K DOLBY ATMOS</span>
+              </div>
+
+              <!-- SÉLECTEUR SEGMENTÉ -->
+              <div class="segmented-picker">
+                <button class="segment-tab active" onclick="switchPlayerTab(this, 'audio')">Audio (3)</button>
+                <button class="segment-tab" onclick="switchPlayerTab(this, 'subs')">Sous-titres (4)</button>
+              </div>
+
+              <!-- LISTE DES PISTES AVEC FOCUSFILL -->
+              <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+                <div class="track-choice-row focused">
+                  <div>
+                    <div>Français [VFF]</div>
+                    <div class="track-sub">Dolby Digital Plus 5.1 · 640 kbps</div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+
+                <div class="track-choice-row">
+                  <div>
+                    <div>Anglais [Original]</div>
+                    <div class="track-sub">TrueHD Atmos 7.1 · 4 800 kbps</div>
+                  </div>
+                </div>
+
+                <div class="track-choice-row">
+                  <div>
+                    <div>Commentaires Audio</div>
+                    <div class="track-sub">Stéréo 2.0 · Réalisateur</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+              Verre dépoli profond (blur 40px), badges techniques dorés/blancs discrets, sélection fluide.
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Gain :</strong> Cohérence avec les boutons ronds 44px de l'ADR-0124 et l'arrangement du lecteur Apple.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SECTION 5 : COMPTE & PROFILS MULTI-DEVICE
+         ======================================================== -->
+    <section class="proposal-section" id="sec-account-sync" data-category="popover">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h3>5. Menu Compte & Profils (Alignement Global ADR-0126)</h3>
+          <p>Le panneau « Profils en tête » validé sur TV est étendu avec la même élégance sur Desktop et Mobile.</p>
+        </div>
+        <span class="badge-diff">Validation Finale</span>
+      </div>
+
+      <div class="comparison-stage">
+        <div class="stage-card is-proposed" style="grid-column: span 2;">
+          <div class="stage-header">
+            <div class="stage-label"><span class="dot"></span> Panneau Unifié : « B · Profils en tête » avec verre translucide & FocusFill</div>
+            <span class="badge-diff">Adopté sur TV, à déployer partout</span>
+          </div>
+          <div class="stage-canvas" style="flex-direction: row; gap: 48px; justify-content: center; flex-wrap: wrap;">
+            <div class="ambient-backdrop"></div>
+            <div class="ambient-gradient-overlay"></div>
+
+            <!-- LE PANNEAU DU COMPTE RÉEL -->
+            <div class="account-panel-demo">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px;">
+                <span style="font-size: 11px; font-family: var(--font-meta); font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Qui regarde ?</span>
+                <span style="font-size: 11px; font-family: var(--font-meta); color: #30D158;">Serveur Maison</span>
+              </div>
+
+              <!-- RANGÉE DES PROFILS -->
+              <div class="profiles-head-row">
+                <div class="profile-bubble-item current">
+                  <div class="bubble-avatar" style="background: linear-gradient(135deg, #0A84FF, #0051A8);">M</div>
+                  <span class="bubble-name">Mathis</span>
+                </div>
+                <div class="profile-bubble-item">
+                  <div class="bubble-avatar" style="background: linear-gradient(135deg, #FF9F0A, #D25400);">L</div>
+                  <span class="bubble-name">Léa</span>
+                </div>
+                <div class="profile-bubble-item">
+                  <div class="bubble-avatar" style="background: linear-gradient(135deg, #30D158, #1E8238);">E</div>
+                  <span class="bubble-name">Enfants</span>
+                </div>
+                <div class="profile-bubble-item">
+                  <div class="bubble-avatar" style="background: rgba(255, 255, 255, 0.08); border: 1.5px dashed rgba(255, 255, 255, 0.25);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </div>
+                  <span class="bubble-name">Ajouter</span>
+                </div>
+              </div>
+
+              <div class="popover-divider"></div>
+
+              <!-- LISTE DES ACTIONS COMPTE AVEC FOCUSFILL -->
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                <div class="popover-item focused">
+                  <div class="item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span>Gérer les profils</span>
+                  </div>
+                </div>
+
+                <div class="popover-item">
+                  <div class="item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>Rejoindre une séance à plusieurs</span>
+                  </div>
+                </div>
+
+                <div class="popover-item">
+                  <div class="item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>Paramètres & Serveur</span>
+                  </div>
+                </div>
+
+                <div class="popover-divider"></div>
+
+                <div class="popover-item danger">
+                  <div class="item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <span>Se déconnecter</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- EXPLICATIONS ARCHITECTURE -->
+            <div style="max-width: 480px; display: flex; flex-direction: column; gap: 14px;">
+              <h4 style="font-size: 17px; font-weight: 700;">Le Standard Unifié pour tous les menus</h4>
+              <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6;">
+                Ce panneau synthétise l'ADN visuel complet à appliquer à <strong>tous les menus</strong> d'Onyx :
+              </p>
+              <ul style="color: var(--text-secondary); font-size: 13px; line-height: 1.7; padding-left: 20px;">
+                <li><strong>Matériau :</strong> Fond <code>surfaceElevated</code> à opacité 75% + <code>ImageFilter.blur(sigma: 32)</code>.</li>
+                <li><strong>Bordure :</strong> Trait hairline <code>rgba(255, 255, 255, 0.12)</code> et ombre douce projetée.</li>
+                <li><strong>Focus & Survol :</strong> La commande se soulève légèrement et devient blanc pur avec typographie encre noire.</li>
+                <li><strong>Actions destructives :</strong> Déconnexion et suppression teintées de rouge doux, s'illuminant en rouge plein au survol.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div><strong>Statut :</strong> Déjà codé pour le compte dans <code>account_menu_panel.dart</code> (ADR-0126), prêt à être généralisé à l'ensemble des menus.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLEAU COMPARATIF TECHNIQUE -->
+    <section style="margin-top: 64px;">
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Matrice de Déploiement : Tous les Menus Concernés</h3>
+      <table class="review-matrix">
+        <thead>
+          <tr>
+            <th>Menu / Composant</th>
+            <th>Fichier Actuel</th>
+            <th>État Actuel</th>
+            <th>Nouveau Design Apple TV</th>
+            <th>Seam Flutter Proposé</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Barre Nav Desktop</strong></td>
+            <td><code>screens/shell/shell_desktop_header.dart</code></td>
+            <td>Bandeau 100% largeur, trait 2px, champ lourd</td>
+            <td>Capsule de verre flottante centrée, loupe intégrée</td>
+            <td><span class="tag-token">ShellDesktopFloatingPill</span> (dérivé de TvTabBar)</td>
+          </tr>
+          <tr>
+            <td><strong>Barre Nav Mobile</strong></td>
+            <td><code>screens/shell/mobile_bottom_nav.dart</code></td>
+            <td>Barre pleine largeur rigide, bottom sheet Material</td>
+            <td>Îlot de verre flottant (Floating Island) + Sheet liquide</td>
+            <td><span class="tag-token">MobileFloatingBar</span> + LiquidGlassSheet</td>
+          </tr>
+          <tr>
+            <td><strong>Menu de Tri Catalogue</strong></td>
+            <td><code>catalog_sort_capsule.dart</code> & <code>catalog_header.dart</code></td>
+            <td>Bouton capsule ouvrant un <code>showMenu</code> gris</td>
+            <td>GlassPopover avec items FocusFill blanc/encre noire</td>
+            <td><span class="tag-token">GlassPopoverRoute</span></td>
+          </tr>
+          <tr>
+            <td><strong>Affichage Grille (Zoom)</strong></td>
+            <td><code>poster_grid_display_menu.dart</code></td>
+            <td><code>PopupMenuButton<int></code> Material</td>
+            <td>Popover 4 capsules de densité d'affiches</td>
+            <td><span class="tag-token">PosterGridDisplayPopover</span></td>
+          </tr>
+          <tr>
+            <td><strong>Menu 3 points / Actions</strong></td>
+            <td><code>show_metadata_menu.dart</code> & <code>poster_more_button.dart</code></td>
+            <td><code>PopupMenuButton</code> avec <code>ListTile</code> bruts</td>
+            <td>Menu contextuel en verre avec icônes Phosphor et FocusFill</td>
+            <td><span class="tag-token">MediaActionPopover</span></td>
+          </tr>
+          <tr>
+            <td><strong>Réglages du Lecteur</strong></td>
+            <td><code>onyx_settings_menu.dart</code></td>
+            <td>Boîte noire 100% opaque sans flou, séparateurs</td>
+            <td>Cinematic Glass HUD avec sélecteur segmenté</td>
+            <td><span class="tag-token">OnyxCinematicHud</span></td>
+          </tr>
+          <tr>
+            <td><strong>Menu du Compte</strong></td>
+            <td><code>account_menu_panel.dart</code></td>
+            <td>Validé sur TV (ADR-0126), à unifier sur bureau/mobile</td>
+            <td>Pastilles profils en tête + carte de verre flottante</td>
+            <td><span class="tag-token">AccountMenuPanel</span> (existant)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <script>
+    // Filtrage des sections
+    function switchFilter(category) {
+      document.querySelectorAll('.mode-switch-group .mode-btn').forEach(b => b.classList.remove('active'));
+      if (category === 'all') document.getElementById('btn-view-all').classList.add('active');
+      if (category === 'nav') document.getElementById('btn-view-nav').classList.add('active');
+      if (category === 'popover') document.getElementById('btn-view-popover').classList.add('active');
+      if (category === 'player') document.getElementById('btn-view-player').classList.add('active');
+
+      document.querySelectorAll('.proposal-section').forEach(sec => {
+        if (category === 'all' || sec.dataset.category === category) {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+    }
+
+    // Scroll doux vers une section
+    function scrollToSection(id) {
+      document.querySelectorAll('.section-tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Simulation FocusFill TV (anime les éléments focalisés)
+    let isTvFocusActive = false;
+    function simulateTvFocus() {
+      isTvFocusActive = !isTvFocusActive;
+      const pillItems = document.querySelectorAll('.pill-nav-item');
+      const popoverItems = document.querySelectorAll('.popover-item');
+
+      if (isTvFocusActive) {
+        pillItems.forEach((item, index) => {
+          if (index === 1) item.classList.add('focused-tv');
+        });
+      } else {
+        pillItems.forEach(item => item.classList.remove('focused-tv'));
+      }
+    }
+
+    // Toggle de la modal feuille mobile
+    function toggleMobileSheet() {
+      const sheet = document.getElementById('demo-mobile-sheet');
+      if (sheet) {
+        sheet.style.display = sheet.style.display === 'none' ? 'flex' : 'none';
+      }
+    }
+
+    // Switch onglet du lecteur (Audio vs Subs)
+    function switchPlayerTab(btn, tab) {
+      btn.parentElement.querySelectorAll('.segment-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Interaction sur les items de menu
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.popover-item, .pill-nav-item, .track-choice-row').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+          const siblings = this.parentElement.querySelectorAll('.' + this.classList[0]);
+          siblings.forEach(s => s.classList.remove('focused', 'active', 'focused-tv'));
+          this.classList.add('focused');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

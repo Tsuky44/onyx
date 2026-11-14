@@ -73,7 +73,8 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     for (final s in details.seasons) {
       if (s.number <= 0) continue;
       if (s.airDate != null && s.airDate!.compareTo(todayStr) >= 0) {
-        if (targetSeason == null || s.airDate!.compareTo(targetSeason.airDate!) < 0) {
+        if (targetSeason == null ||
+            s.airDate!.compareTo(targetSeason.airDate!) < 0) {
           targetSeason = s;
         }
       }
@@ -166,10 +167,12 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   }
 
   /// « Demander » envoie le titre entier (un film, ou toutes les saisons d'une
-  /// série encore vierge) et referme la fiche. « Compléter » ouvre la liste des
-  /// saisons pas encore demandées ([RequestSeasonPickerSheet]) et n'envoie que
-  /// celles qu'on coche, puis recharge la fiche pour que « Lire » reste là.
-  /// Une saison seule se demande aussi en la dépliant ([RequestSeasonList]).
+  /// série encore vierge) et referme la fiche ; quand MediaHub laisse choisir
+  /// les saisons ([RequestAccess.seasonChoice]), il ouvre d'abord leur liste.
+  /// « Compléter » ouvre la liste des saisons pas encore demandées
+  /// ([RequestSeasonPickerSheet]) et n'envoie que celles qu'on coche, puis
+  /// recharge la fiche pour que « Lire » reste là. Une saison seule se
+  /// demande aussi en la dépliant ([RequestSeasonList]).
   Future<void> _request(RequestMediaDetails details,
       {bool complete = false}) async {
     List<int>? seasons;
@@ -178,7 +181,15 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       if (seasons == null || seasons.isEmpty || !mounted) return;
     } else if (details.mediaType == RequestMediaType.tv) {
       final all = [for (final s in details.requestableSeasons) s.number];
-      seasons = all.isEmpty ? null : all;
+      final access = await context.read<MediaRequestsProvider>().loadAccess();
+      if (!mounted) return;
+      if (access.seasonChoice && all.length > 1) {
+        seasons = await RequestSeasonPickerSheet.show(context, details,
+            completing: false);
+        if (seasons == null || seasons.isEmpty || !mounted) return;
+      } else {
+        seasons = all.isEmpty ? null : all;
+      }
     }
     setState(() => _submitting = true);
     try {

@@ -869,6 +869,16 @@ var migrations = []migration{
 			`CREATE INDEX IF NOT EXISTS idx_watch_list_members_user ON watch_list_members(user_id);`,
 		},
 	},
+	{
+		id:   31,
+		name: "watch list member roles",
+		// Voir ADR-0129. Un invité peut ajouter des titres (« editor ») ou
+		// seulement voir la liste (« viewer »). Les invitations d'avant
+		// étaient toutes des droits d'écriture : elles restent « editor ».
+		stmts: []string{
+			`ALTER TABLE watch_list_members ADD COLUMN role TEXT NOT NULL DEFAULT 'editor';`,
+		},
+	},
 }
 
 // applyMigrations brings the database up to the latest schema version.

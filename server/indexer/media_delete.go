@@ -56,6 +56,9 @@ func DeleteMedia(id int) (DeleteReport, error) {
 	if err != nil {
 		return DeleteReport{}, err
 	}
+	if err := checkWritableDirs(files); err != nil {
+		return DeleteReport{}, fmt.Errorf("delete media %d: %w", id, err)
+	}
 
 	var report DeleteReport
 	var failed []string
@@ -93,13 +96,28 @@ func DeleteMedia(id int) (DeleteReport, error) {
 	return report, nil
 }
 
-// CheckDeletable dit, sans rien toucher, si DeleteMedia accepterait id :
-// mêmes erreurs (ErrMediaNotFound, ErrOutsideLibrary). L'administration
-// d'Onyx s'en sert avant de prévenir MediaHub (ADR-0115) : un titre qu'Onyx
-// refusera ne doit pas d'abord disparaître de sorraa ou de Radarr/Sonarr.
+// CheckDeletable dit, sans rien toucher, si id est un média qu'Onyx a le
+// droit de supprimer : mêmes erreurs que DeleteMedia (ErrMediaNotFound,
+// ErrOutsideLibrary), sauf l'écriture sur le disque. L'administration d'Onyx
+// s'en sert avant de prévenir MediaHub (ADR-0115), dont le gestionnaire
+// efface lui-même les fichiers (ADR-0128) : Onyx n'a alors rien à écrire.
 func CheckDeletable(id int) error {
 	_, _, _, err := planDeletion(id)
 	return err
+}
+
+// CheckErasable dit en plus si Onyx pourrait effacer lui-même les fichiers
+// qui restent (ErrNotWritable) : MediaHub s'en sert avant de toucher aux
+// demandes quand le gestionnaire ne supprimera rien.
+func CheckErasable(id int) error {
+	_, files, _, err := planDeletion(id)
+	if err != nil {
+		return err
+	}
+	if err := checkWritableDirs(files); err != nil {
+		return fmt.Errorf("delete media %d: %w", id, err)
+	}
+	return nil
 }
 
 // planDeletion rend le type du média, ses fichiers et les racines des

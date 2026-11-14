@@ -122,8 +122,9 @@ class _WatchListEditorState extends State<_WatchListEditor> {
                 subtitle: Text(
                   _isShared
                       ? tr('Tous les comptes de ce serveur peuvent voir la '
-                          'liste. Vous seul la modifiez.')
-                      : tr('Vous seul voyez cette liste.'),
+                          'liste.')
+                      : tr('Seuls vous et les personnes avec qui vous la '
+                          'partagez la voient.'),
                   style: const TextStyle(
                       color: AppColors.textMuted, fontSize: AppType.subhead),
                 ),

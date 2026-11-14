@@ -472,6 +472,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Chosen when a media opens if a matching track exists.',
   'Choisir la fiche':
       'Choose the match',
+  'Choisir les saisons':
+      'Choose seasons',
   'Choisir sur TMDB':
       'Choose on TMDB',
   'Choisir une image':
@@ -692,6 +694,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Tick the seasons to add.',
   'Genres · {0}':
       'Genres · {0}',
+  'Cochez les saisons à demander.':
+      'Tick the seasons to request.',
   'Il s’affiche ici une fois la séance ouverte.':
       'It appears here once the session is open.',
   'Impossible de charger les genres.':
@@ -3200,10 +3204,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Description (optional)',
   'Partager avec les autres comptes':
       'Share with the other accounts',
-  'Tous les comptes de ce serveur peuvent voir la liste. Vous seul la modifiez.':
-      'Every account on this server can see the list. Only you can change it.',
-  'Vous seul voyez cette liste.':
-      'Only you can see this list.',
+  'Tous les comptes de ce serveur peuvent voir la liste.':
+      'Every account on this server can see the list.',
+  'Seuls vous et les personnes avec qui vous la partagez la voient.':
+      'Only you and the people you share it with can see it.',
   'Créer':
       'Create',
   'Tester':
@@ -3638,6 +3642,22 @@ const Map<String, String> kEnglish = <String, String>{
       'Invite to the list',
   'Les comptes cochés peuvent ajouter et retirer des titres dans « {0} ». Vous seul la modifiez.':
       'Checked accounts can add and remove titles in “{0}”. Only you can edit it.',
+  'Partagée avec : {0}':
+      'Shared with: {0}',
+  'Partager « {0} »':
+      'Share “{0}”',
+  'Tout le serveur peut la voir':
+      'Everyone on the server can see it',
+  'Les autres comptes la voient sans pouvoir la modifier.':
+      'Other accounts can see it but can’t change it.',
+  'Choisissez qui peut ajouter des titres, ou seulement voir la liste quand elle est privée.':
+      'Choose who can add titles, or only see the list when it’s private.',
+  'Aucun accès':
+      'No access',
+  'Peut voir':
+      'Can view',
+  'Peut ajouter des titres':
+      'Can add titles',
   'Il n’y a pas d’autre compte sur ce serveur.':
       'There are no other accounts on this server.',
   'Profil par défaut de cet appareil':

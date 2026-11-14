@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 
 	"project-player/server/models"
@@ -23,10 +26,17 @@ func ListWatchListPeople(w http.ResponseWriter, _ *http.Request, _ httprouter.Pa
 	writeWatchListJSON(w, http.StatusOK, people)
 }
 
-// AddWatchListMember invite un compte à remplir une liste du compte
-// (PUT /api/lists/:id/members/:user). Inviter deux fois renvoie les mêmes
-// invités. La réponse est la liste des invités.
-func AddWatchListMember(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, userID int) {
+// memberRequest est le corps, facultatif, d'une invitation.
+type memberRequest struct {
+	Role string `json:"role"`
+}
+
+// AddWatchListMember invite un compte à une liste du compte
+// (PUT /api/lists/:id/members/:user), avec le corps facultatif
+// {"role": "editor"|"viewer"} (ADR-0129). Sans corps, l'invité remplit la
+// liste : c'est ce que demandent les apps d'avant les rôles (ADR-0127).
+// Inviter un invité change son rôle. La réponse est la liste des invités.
+func AddWatchListMember(w http.ResponseWriter, r *http.Request, ps httprouter.Params, userID int) {
 	listID, ok := listIDParam(w, ps, "id")
 	if !ok {
 		return
@@ -35,7 +45,18 @@ func AddWatchListMember(w http.ResponseWriter, _ *http.Request, ps httprouter.Pa
 	if !ok {
 		return
 	}
-	members, err := watchListStore().AddMember(userID, listID, memberID)
+	req := memberRequest{Role: models.WatchListRoleEditor}
+	if r.Body != nil {
+		r.Body = http.MaxBytesReader(w, r.Body, watchListBodyLimit)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
+			writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+			return
+		}
+		if req.Role == "" {
+			req.Role = models.WatchListRoleEditor
+		}
+	}
+	members, err := watchListStore().AddMember(userID, listID, memberID, req.Role)
 	if err != nil {
 		writeWatchListError(w, "AddWatchListMember", err)
 		return

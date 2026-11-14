@@ -81,7 +81,8 @@ func (s *Store) queryLists(viewerID int, query string, args ...interface{}) ([]m
 
 // Lists renvoie les listes du compte, « à regarder plus tard » en tête, puis
 // celles des autres que le compte voit : les partagées avec tous, et celles où
-// il est invité, même privées (ADR-0127). Avec probe, chaque liste dit si elle
+// il est invité, même privées, à les remplir ou à les voir (ADR-0127,
+// ADR-0129). Avec probe, chaque liste dit si elle
 // contient déjà ce titre.
 func (s *Store) Lists(viewerID int, probe *Probe) (models.WatchListsResponse, error) {
 	if err := s.EnsureWatchLater(viewerID); err != nil {
@@ -137,7 +138,7 @@ func (s *Store) summary(viewerID, listID int) (models.WatchList, error) {
 	return lists[0], nil
 }
 
-// decorate remplit le nombre d'éléments, les invités, le droit du compte qui
+// decorate remplit le nombre d'éléments, les invités, le rôle du compte qui
 // lit et les affiches des listes, en trois requêtes pour toutes plutôt que
 // trois par liste.
 func (s *Store) decorate(viewerID int, groups ...[]models.WatchList) error {
@@ -171,22 +172,24 @@ func (s *Store) decorate(viewerID int, groups ...[]models.WatchList) error {
 	}
 
 	members := map[int]int{}
-	invited := map[int]bool{}
+	roles := map[int]string{}
 	rows, err = s.db.Query(fmt.Sprintf(`
-		SELECT list_id, COUNT(*), COALESCE(SUM(user_id = ?), 0) FROM watch_list_members
+		SELECT list_id, COUNT(*), COALESCE(MAX(CASE WHEN user_id = ? THEN role END), '')
+		FROM watch_list_members
 		WHERE list_id IN (%s) GROUP BY list_id`, placeholders(len(ids))),
 		append([]interface{}{viewerID}, intArgs(ids)...)...)
 	if err != nil {
 		return fmt.Errorf("count watch list members: %w", err)
 	}
 	for rows.Next() {
-		var id, n, me int
-		if err := rows.Scan(&id, &n, &me); err != nil {
+		var id, n int
+		var role string
+		if err := rows.Scan(&id, &n, &role); err != nil {
 			rows.Close()
 			return fmt.Errorf("scan watch list members: %w", err)
 		}
 		members[id] = n
-		invited[id] = me > 0
+		roles[id] = role
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
@@ -223,8 +226,12 @@ func (s *Store) decorate(viewerID int, groups ...[]models.WatchList) error {
 		for i := range group {
 			group[i].ItemCount = counts[group[i].ID]
 			group[i].MemberCount = members[group[i].ID]
-			if invited[group[i].ID] {
+			switch roles[group[i].ID] {
+			case models.WatchListRoleEditor:
+				group[i].IsMember = true
 				group[i].CanEdit = true
+			case models.WatchListRoleViewer:
+				group[i].IsMember = true
 			}
 			if p := posters[group[i].ID]; p != nil {
 				group[i].Posters = p
@@ -242,7 +249,7 @@ func (s *Store) Get(viewerID, listID int) (models.WatchListDetail, error) {
 	if err != nil {
 		return models.WatchListDetail{}, err
 	}
-	if !l.IsMine && !l.IsShared && !l.CanEdit {
+	if !l.IsMine && !l.IsShared && !l.IsMember {
 		return models.WatchListDetail{}, ErrNotFound
 	}
 	items, err := s.items(s.db, listID, 0)

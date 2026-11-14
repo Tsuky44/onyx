@@ -258,14 +258,37 @@ func MediaHubDeleteStorage(w http.ResponseWriter, _ *http.Request, ps httprouter
 	_ = json.NewEncoder(w).Encode(report)
 }
 
+// MediaHubCheckDeletableStorage dit, sans rien toucher, si Onyx pourra
+// effacer lui-même :id (GET /api/integrations/mediahub/storage/:id/deletable) :
+// 204, ou l'erreur que rendrait la suppression. MediaHub l'appelle quand le
+// gestionnaire n'effacera pas les fichiers, avant de supprimer les demandes
+// (ADR-0128).
+func MediaHubCheckDeletableStorage(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, _ int) {
+	id, err := strconv.Atoi(ps.ByName("id"))
+	if err != nil || id <= 0 {
+		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		return
+	}
+	if err := indexer.CheckErasable(id); err != nil {
+		writeStorageDeleteError(w, "MediaHubCheckDeletableStorage", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // writeStorageDeleteError traduit une erreur de indexer.DeleteMedia ou de
 // indexer.CheckDeletable.
 func writeStorageDeleteError(w http.ResponseWriter, where string, err error) {
+	var notWritable *indexer.NotWritableError
 	switch {
 	case errors.Is(err, indexer.ErrMediaNotFound):
 		writeJSONError(w, http.StatusNotFound, "Média introuvable dans Onyx")
 	case errors.Is(err, indexer.ErrOutsideLibrary):
 		writeJSONError(w, http.StatusConflict, "Un fichier du média n'est dans aucune bibliothèque de films ou de séries d'Onyx")
+	case errors.As(err, &notWritable):
+		log.Printf("%s: %v", where, err)
+		writeJSONError(w, http.StatusConflict, "Onyx n'a pas le droit d'écrire dans « "+notWritable.Dir+
+			" » : le dossier des médias est monté en lecture seule (« :ro » dans docker-compose) ou n'appartient pas au compte du serveur (PUID/PGID). Rien n'a été supprimé.")
 	default:
 		log.Printf("%s: %v", where, err)
 		writeJSONError(w, http.StatusInternalServerError, "Onyx n'a pas pu supprimer tous les fichiers (droits d'écriture sur le disque ?)")

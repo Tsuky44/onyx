@@ -390,6 +390,18 @@ capacité `watch_lists` sur `/api/ping`.
   "release_date": "1999-03-31" }` pour un titre du catalogue. Un titre déjà présent revient tel
   quel. 1 000 titres par liste.
 * `DELETE /api/lists/:id/items/:item` — retire un titre.
+* `GET /api/list-people` — les autres comptes du serveur `[{ "id", "username", "avatar" }]`,
+  ceux qu'on peut inviter (ADR-0127).
+* `PUT /api/lists/:id/members/:user` — invite un compte à une liste `custom` du propriétaire,
+  corps facultatif `{ "role": "editor"|"viewer" }` (`editor` sans corps) : `editor` y ajoute et
+  retire des titres, `viewer` la voit seulement, même privée (ADR-0129, capacité
+  `watch_list_member_roles`). Réinviter change le rôle. 50 invités par liste. Renvoie les invités
+  `[{ "id", "username", "avatar", "role" }]`.
+* `DELETE /api/lists/:id/members/:user` — le propriétaire retire un invité, ou l'invité quitte la
+  liste.
+
+Une liste porte aussi `can_edit` (le compte peut la remplir), `is_member` (il y est invité, à la
+remplir ou à la voir) et `member_count` ; `GET /api/lists/:id` renvoie `members`.
 
 ---
 

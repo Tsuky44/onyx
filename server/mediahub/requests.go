@@ -238,6 +238,9 @@ type Access struct {
 	// MediaHub prête les droits d'un compte sans rôle, sans demandes à lui.
 	Linked bool      `json:"linked"`
 	Can    Abilities `json:"can"`
+	// SeasonChoice : le compagnon laisse choisir les saisons d'une série au
+	// moment de la demander. Faux quand MediaHub force toutes les saisons.
+	SeasonChoice bool `json:"seasonChoice"`
 }
 
 // Access lit les droits du compte (le ping de MediaHub, fait en son nom).
@@ -254,7 +257,10 @@ func (c Client) Access(ctx context.Context, as Account) (Access, error) {
 	if err != nil {
 		return Access{}, err
 	}
-	access := Access{Service: DialectV1.String(), Version: ping.Version}
+	// Un MediaHub qui ne dit rien du réglage laisse choisir : c'est sa valeur
+	// par défaut, et ce que fait sa propre page de demande.
+	seasonChoice := ping.RequestAllSeasons == nil || !*ping.RequestAllSeasons
+	access := Access{Service: DialectV1.String(), Version: ping.Version, SeasonChoice: seasonChoice}
 	if ping.User != nil {
 		access.Linked = ping.User.Linked
 		access.Can = ping.User.Can

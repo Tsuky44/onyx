@@ -314,6 +314,7 @@ void main() {
     expect(access.linked, isTrue);
     expect(access.canModerate && access.canReadAll && access.canDelete, isTrue);
     expect(access.canInteractiveSearch, isTrue);
+    expect(access.seasonChoice, isTrue);
 
     // La recherche interactive (ADR-0098).
     final releases = (_contract('request_releases')['releases'] as List)

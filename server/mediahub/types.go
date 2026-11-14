@@ -97,11 +97,14 @@ type PingUser struct {
 
 // Ping est la réponse de GET /ping, qui vérifie la clé.
 type Ping struct {
-	Status            string    `json:"status"`
-	Service           string    `json:"service"`
-	Version           string    `json:"version"`
-	APIVersion        int       `json:"apiVersion"`
-	Features          []string  `json:"features"`
-	WebhookConfigured bool      `json:"webhookConfigured"`
+	Status            string   `json:"status"`
+	Service           string   `json:"service"`
+	Version           string   `json:"version"`
+	APIVersion        int      `json:"apiVersion"`
+	Features          []string `json:"features"`
+	WebhookConfigured bool     `json:"webhookConfigured"`
+	// RequestAllSeasons reflète le réglage « Forcer la demande de toutes les
+	// saisons ». Absent chez un MediaHub d'avant ce champ : nil.
+	RequestAllSeasons *bool     `json:"requestAllSeasons"`
 	User              *PingUser `json:"user"`
 }

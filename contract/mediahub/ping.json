@@ -5,6 +5,7 @@
   "apiVersion": 1,
   "features": ["catalog", "media-detail", "availability", "availability-batch", "requests-create", "my-requests", "all-requests", "request-detail", "request-feed", "request-moderation", "request-delete", "interactive-search", "webhook-events"],
   "webhookConfigured": true,
+  "requestAllSeasons": false,
   "user": {
     "linked": true,
     "id": 12,

@@ -45,6 +45,9 @@ class ServerCapabilities {
   /// (ADR-0127).
   static const watchListMembers = 'watch_list_members';
 
+  /// Un invité peut seulement voir une liste, même privée (ADR-0129).
+  static const watchListMemberRoles = 'watch_list_member_roles';
+
   /// Le serveur vérifie lui-même qu'il joint OnyxHub (ADR-0072).
   static const mediaHubLinkTest = 'mediahub_link_test';
 

@@ -292,6 +292,37 @@ func TestMediaHubContractAccessCarriesTheAccountsRights(t *testing.T) {
 	}
 }
 
+func TestSeasonChoiceFollowsMediaHubsAllSeasonsSetting(t *testing.T) {
+	cases := []struct {
+		name string
+		ping string
+		want bool
+	}{
+		{"réglage coupé", `"requestAllSeasons":false,`, true},
+		{"toutes les saisons forcées", `"requestAllSeasons":true,`, false},
+		{"MediaHub d'avant le champ", ``, true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			seedRequestUser(t, 3, "lea")
+			v1Stub(t, map[string]http.HandlerFunc{
+				"GET /ping": func(w http.ResponseWriter, _ *http.Request) {
+					_, _ = w.Write([]byte(`{"status":"ok","service":"mediahub","version":"1.0.0","apiVersion":1,` + c.ping + `"user":{"linked":true,"id":3,"name":"lea","role":"Membre","can":{"request":true}}}`))
+				},
+			})
+			recorder := httptest.NewRecorder()
+			MediaHubRequestAccess(recorder, httptest.NewRequest(http.MethodGet, "/api/requests/access", nil), nil, 3)
+			var access mediahub.Access
+			if err := json.Unmarshal(recorder.Body.Bytes(), &access); err != nil {
+				t.Fatalf("HTTP %d : %s", recorder.Code, recorder.Body.String())
+			}
+			if access.SeasonChoice != c.want {
+				t.Fatalf("seasonChoice = %v, attendu %v", access.SeasonChoice, c.want)
+			}
+		})
+	}
+}
+
 func TestOnyxHubOffersNoModeration(t *testing.T) {
 	seedRequestUser(t, 1, "admin")
 	hubStub(t, func(w http.ResponseWriter, r *http.Request) { http.NotFound(w, r) })

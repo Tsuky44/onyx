@@ -18,9 +18,10 @@ import (
 )
 
 // La suppression depuis l'administration d'Onyx (ADR-0115) : MediaHub
-// retire d'abord le titre de sorraa ou de Radarr/Sonarr et en supprime les
-// demandes, puis Onyx efface les fichiers. Dans cet ordre : un titre effacé
-// du disque mais toujours suivi serait retéléchargé dans l'heure.
+// retire d'abord le titre de sorraa ou de Radarr/Sonarr, qui en efface les
+// fichiers (ADR-0128), et en supprime les demandes, puis Onyx efface ce qui
+// reste et l'oublie. Dans cet ordre : un titre effacé du disque mais toujours
+// suivi serait retéléchargé dans l'heure.
 
 // adminStorageForgetTimeout : sorraa répond vite, mais Sonarr relit toute sa
 // liste de séries pour trouver la bonne par TMDB.

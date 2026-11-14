@@ -3,7 +3,14 @@ import 'media_request.dart';
 /// Où en est une demande chez MediaHub (ou OnyxHub). `approved` n'existe pas
 /// dans [RequestMediaStatus] : la demande est partie vers Radarr/Sonarr, rien
 /// n'est encore en téléchargement. `declined` : refusée, avec un motif.
-enum MyRequestStatus { pending, approved, processing, partial, available, declined }
+enum MyRequestStatus {
+  pending,
+  approved,
+  processing,
+  partial,
+  available,
+  declined
+}
 
 MyRequestStatus _statusFrom(String? raw) => MyRequestStatus.values
     .firstWhere((s) => s.name == raw, orElse: () => MyRequestStatus.pending);
@@ -82,8 +89,9 @@ class MyRequest {
         : null;
     return MyRequest(
       tmdbId: json['tmdbId'] as int? ?? 0,
-      mediaType:
-          json['mediaType'] == 'tv' ? RequestMediaType.tv : RequestMediaType.movie,
+      mediaType: json['mediaType'] == 'tv'
+          ? RequestMediaType.tv
+          : RequestMediaType.movie,
       title: json['title'] as String? ?? '',
       posterPath: json['posterPath'] as String?,
       seasons: (json['seasons'] as List<dynamic>? ?? const [])
@@ -154,6 +162,7 @@ class RequestAccess {
     required this.canModerate,
     required this.canDelete,
     this.canInteractiveSearch = false,
+    this.seasonChoice = false,
   });
 
   /// Ce que sait l'app d'un serveur d'avant cette route : demander, et
@@ -180,6 +189,11 @@ class RequestAccess {
   /// Choisir soi-même la release d'une saison ou d'un épisode (ADR-0098).
   final bool canInteractiveSearch;
 
+  /// MediaHub laisse choisir les saisons d'une série au moment de la demander
+  /// (son réglage « Forcer la demande de toutes les saisons » est coupé) :
+  /// « Demander » ouvre alors le choix des saisons au lieu de tout envoyer.
+  final bool seasonChoice;
+
   factory RequestAccess.fromJson(Map<String, dynamic> json) {
     final can = json['can'] is Map
         ? Map<String, dynamic>.from(json['can'] as Map)
@@ -192,6 +206,7 @@ class RequestAccess {
       canModerate: can['moderate'] as bool? ?? false,
       canDelete: can['delete'] as bool? ?? false,
       canInteractiveSearch: can['interactiveSearch'] as bool? ?? false,
+      seasonChoice: json['seasonChoice'] as bool? ?? false,
     );
   }
 }

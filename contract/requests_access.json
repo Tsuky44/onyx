@@ -9,5 +9,6 @@
     "moderate": true,
     "delete": true,
     "interactiveSearch": true
-  }
+  },
+  "seasonChoice": true
 }
