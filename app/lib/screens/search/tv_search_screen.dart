@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../l10n/tr.dart';
 import '../../models/models.dart';
 import '../../providers/library_provider.dart';
+import '../../services/api_client.dart';
+import '../../services/unavailable_titles_search.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../tv/nav/tv_region.dart';
@@ -12,6 +14,8 @@ import '../../utils/responsive.dart';
 import '../../widgets/global/empty_state.dart';
 import '../../widgets/global/glass_chrome.dart';
 import '../../widgets/global/tv_poster_wall.dart';
+import '../requests/request_availability.dart';
+import 'search_shelves.dart';
 
 /// La recherche d'un téléviseur : le champ en tête, qui ouvre le clavier du
 /// système, et dessous les résultats rangés par rayons (ADR-0126).
@@ -32,7 +36,13 @@ import '../../widgets/global/tv_poster_wall.dart';
 /// - valider referme le clavier et pose la télécommande sur le premier
 ///   résultat ;
 /// - les affiches ont la taille de celles de l'accueil et défilent rangée
-///   par rangée ([TvPosterWall]).
+///   par rangée ([TvPosterWall]) ;
+/// - un dernier rayon montre les titres que le serveur n'a pas, voilés, qui
+///   ouvrent leur fiche de demande (ADR-0129).
+///
+/// Sur l'Apple TV, c'est l'écran de recherche du système qui s'ouvre
+/// (`TvSystemSearchScreen`, ADR-0129) ; cette page reste celle des autres
+/// téléviseurs, et celle de l'Apple TV si l'écran du système se refuse.
 class TvSearchScreen extends StatefulWidget {
   const TvSearchScreen({super.key});
 
@@ -68,25 +78,50 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
     skipTraversal: true,
   );
 
+  /// Ce que le catalogue de demandes connaît pour la recherche tapée.
+  late final UnavailableTitlesSearch _catalog =
+      UnavailableTitlesSearch(context.read<ApiClient>());
+
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onQueryChanged);
+    _catalog.addListener(_onCatalogAnswered);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<LibraryProvider>().ensureCatalogLoaded();
     });
   }
 
+  /// Vrai tant que la page est au premier plan.
+  bool _current = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Au retour d'une fiche de demande, le statut d'un titre a pu changer :
+    // « Indispo » devient « Demandé ».
+    final current = ModalRoute.of(context)?.isCurrent ?? true;
+    if (current && !_current) _catalog.refresh();
+    _current = current;
+  }
+
   @override
   void dispose() {
     _controller.removeListener(_onQueryChanged);
+    _catalog.removeListener(_onCatalogAnswered);
+    _catalog.dispose();
     _controller.dispose();
     _fieldNode.dispose();
     _results.dispose();
     super.dispose();
   }
 
-  void _onQueryChanged() => setState(() {});
+  void _onQueryChanged() {
+    _catalog.search(_controller.text, enabled: canRequestMedia(context));
+    setState(() {});
+  }
+
+  void _onCatalogAnswered() => setState(() {});
 
   /// Valider : le clavier se referme et la télécommande va droit au premier
   /// résultat, sans un pas de plus. Sans résultat, elle reste dans le champ.
@@ -116,35 +151,35 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
         );
 
     if (query.isEmpty) {
-      final recent = <Media>[
-        for (final item in library.movies) item.media,
-        ...library.shows,
-      ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final recent =
+          SearchShelves.recentlyAdded(library, TvSearchScreen.suggestions);
       return [
         PosterWallSection(
           title: tr('Ajouts récents'),
-          entries: [
-            for (final media in recent.take(TvSearchScreen.suggestions))
-              entry(media),
-          ],
+          entries: [for (final media in recent) entry(media)],
         ),
       ];
     }
-    final results = library.searchCatalog(query);
-    List<PosterWallEntry> of(MediaType type) => [
-          for (final media in results)
-            if (media.type == type) entry(media),
-        ];
-    final movies = of(MediaType.movie);
-    final shows = of(MediaType.show);
+    final shelves = SearchShelves.of(
+      library,
+      query,
+      catalog: _catalog.resultsFor(query),
+    );
+    final movies = shelves.movies;
+    final shows = shelves.shows;
     return [
       PosterWallSection(
         title: '${tr('Films')} · ${movies.length}',
-        entries: movies,
+        entries: [for (final media in movies) entry(media)],
       ),
       PosterWallSection(
         title: '${tr('Séries')} · ${shows.length}',
-        entries: shows,
+        entries: [for (final media in shows) entry(media)],
+      ),
+      PosterWallSection.unavailable(
+        title: '${tr('Pas sur le serveur')} · '
+            '${shelves.unavailable.length}',
+        unavailable: shelves.unavailable,
       ),
     ];
   }
@@ -155,7 +190,7 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
     final padding = AppLayout.pagePadding(context);
     final query = _controller.text.trim();
     final sections = _sections(library, query);
-    final empty = sections.every((section) => section.entries.isEmpty);
+    final empty = sections.every((section) => section.length == 0);
     final loading = empty &&
         query.isEmpty &&
         (library.isLoadingMovies || library.isLoadingShows);

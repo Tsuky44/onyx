@@ -29,6 +29,7 @@ La direction s'appelle **Quiet Premium** : une scène charbon OLED, un accent bl
 | Page de réglages | `SettingsPage`, `SettingsGroup`, `SettingsTile`… (`settings/widgets/settings_ui.dart`) | Une mise en page et une densité cohérentes. |
 | Mise en page, grilles | `Responsive` (`utils/responsive.dart`) | Points de rupture, marges, colonnes d'affiches et taille tactile minimale. |
 | Verre, chrome | `glass_chrome.dart` | Un seul rendu de verre. |
+| Titre que le serveur n'a pas | affiche voilée (`PosterCard.dimmed`) et `UnavailableBadge` ; dans une recherche, le rangement de `SearchShelves` | Un seul signe pour « pas là » partout : titres similaires, listes, recherche (ADR-0129). |
 
 Avant de créer un composant, cherche dans `widgets/global/` et dans les `widgets/` de l'écran voisin. Un composant utilisé par un deuxième écran monte dans `widgets/global/`.
 
@@ -41,6 +42,7 @@ Chaque écran atteignable sur TV se pilote entièrement au D-pad.
 - L'échelle vient de `tv_ui_scale.dart`, et la répétition des touches de `tv_key_repeat.dart`.
 - Un seul défilement par pas de focus, celui de `TvFocusScroll` (ou de `TvFocusable`) : n'appelle pas `Scrollable.ensureVisible` à côté. Sur Apple TV, la force d'un glissé passe par `TvTouchpad.boostFor` (ADR-0039).
 - Une fiche (film, série, saison, demande) est un `TvRegion.sections` autour de la page et un `TvRegion.section` par bloc (ADR-0128) : Haut et Bas y suivent les lignes sans en sauter, chaque ligne pose la page à une seule place (`TvSectionsScroll`) et le pavé de l'Apple TV s'y arrête à chaque section. Une cible posée hors de toute section n'est plus atteinte par Haut et Bas. L'action principale porte `autofocus` : c'est l'entrée de sa ligne, et `TvEntryFocus.claim` lui rend le focus quand elle arrive après l'ouverture.
+- Sur l'Apple TV, la recherche est l'écran du système, natif (ADR-0129) : `TvSystemSearchScreen` ne dessine rien et dit à l'hôte quoi montrer par `TvSystemSearch`. Ce qui s'affiche dans une recherche se change donc à trois endroits : `SearchShelves` pour le contenu, `TvSearchScreen` et `SearchResultsScreen` pour Flutter, `tvos/Runner/SystemSearch*.swift` pour l'Apple TV.
 - Le lecteur à la télécommande suit ADR-0006.
 - Refonte en cours vers un seul système de focus, dpad (ADR-0110, `docs/refonte-navigation-dpad.md`) : n'ajoute ni `FocusTraversalGroup`, ni politique de parcours, ni `Shortcuts`, ni `onKeyEvent`, ni gestionnaire global de touches, ni widget de l'ancien système (`TvFocusMemory`, `TvFocusPanes`…). Les écrans n'emploient que `TvFocusable` (action en `onSelect`) et `TvRegion` ; dpad ne s'importe que dans `lib/tv/`. Gardé par `test/no_parallel_focus_system_test.dart`.
 - Un écran TV nouveau ou modifié reçoit un test de focus sur le modèle de `tv_focus_test.dart` ou `onyx_settings_menu_tv_test.dart`.

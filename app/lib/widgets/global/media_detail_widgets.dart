@@ -10,6 +10,7 @@ import 'app_network_image.dart';
 import 'poster_card.dart';
 import 'poster_card_details.dart';
 import 'poster_rail.dart';
+import 'unavailable_badge.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -188,35 +189,8 @@ class CatalogPosterCard extends StatelessWidget {
       dimmed: !item.isOwned,
       overlays: [
         if (!item.isOwned)
-          const Positioned(top: 8, right: 8, child: _UnavailableBadge()),
+          const Positioned(top: 8, right: 8, child: UnavailableBadge()),
       ],
-    );
-  }
-}
-
-/// Glass pill for titles absent from the library — same language as the
-/// request catalog badges.
-class _UnavailableBadge extends StatelessWidget {
-  const _UnavailableBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
-      child: Text(
-        tr('Indispo'),
-        style: TextStyle(
-          fontSize: AppType.micro,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.4,
-          color: Colors.white.withValues(alpha: 0.85),
-        ),
-      ),
     );
   }
 }

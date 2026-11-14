@@ -1776,6 +1776,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Opening the code…',
   'Ouvrez Onyx sur le téléviseur, l’ordinateur ou le navigateur à connecter, et cadrez le code QR affiché.':
       'Open Onyx on the TV, computer or browser to connect, and frame the QR code shown.',
+  'Ouvrez un titre pour le demander':
+      'Open a title to request it',
   'Ouvrez la bande-annonce : {0}':
       'Open the trailer: {0}',
   'Ouvrez l’application Onyx sur votre téléphone.':
@@ -2054,6 +2056,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Revenue',
   'Revoir le lien':
       'Show the link again',
+  'Rien dans la bibliothèque':
+      'Nothing in the library',
   'Rien ne descend sans que vous le demandiez.':
       'Nothing is downloaded unless you ask for it.',
   'Rien n’a été gardé de ce serveur : reconnectez-vous.':

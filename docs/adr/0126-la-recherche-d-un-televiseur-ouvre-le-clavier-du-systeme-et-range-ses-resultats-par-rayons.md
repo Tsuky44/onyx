@@ -1,7 +1,9 @@
 # ADR-0126 — La recherche d'un téléviseur ouvre le clavier du système et range ses résultats par rayons
 
 - **Statut :** accepté. Rendu vérifié sur une capture de l'app à 1280 × 720 ; pas encore vu sur une
-  Apple TV, et le clavier du système ne se voit que là.
+  Apple TV, et le clavier du système ne se voit que là. Sur l'Apple TV, remplacé par
+  l'[ADR-0129](0129-sur-l-apple-tv-la-recherche-est-l-ecran-du-systeme-et-montre-les-titres-absents.md)
+  (l'écran de recherche du système) ; il reste la recherche des autres téléviseurs.
 - **Date :** 2026-11-13
 - **Portée :** `screens/search/tv_search_screen.dart` (`TvSearchScreen`),
   `widgets/global/glass_catalog_search.dart` (`_openTvSearch`), `widgets/global/glass_chrome.dart`

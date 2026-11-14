@@ -6,9 +6,14 @@ import UIKit
 ///
 /// Généré par `flutter-tvos create`, puis complété de ce que l'hôte iOS fait
 /// déjà : la session audio d'un lecteur vidéo, et le canal `onyx/device` que
-/// `TvMode`, `ClientIdentity` et la session AVPlayer interrogent.
+/// `TvMode`, `ClientIdentity` et la session AVPlayer interrogent. S'y ajoute
+/// l'écran de recherche du système (`SystemSearch.swift`, ADR-0129).
 @main
 class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  /// L'écran de recherche du système (ADR-0129), que Dart commande par le
+  /// canal `onyx/tv_search`. Gardé ici : il vit autant que le moteur.
+  private var systemSearch: SystemSearchChannel?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -23,6 +28,9 @@ class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "OnyxDevice") {
       registerDeviceChannel(messenger: registrar.messenger())
+    }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "OnyxSystemSearch") {
+      systemSearch = SystemSearchChannel(messenger: registrar.messenger())
     }
   }
 
