@@ -3,11 +3,19 @@ import 'package:flutter/material.dart';
 import '../../l10n/tr.dart';
 import '../../models/server_account.dart';
 import '../../theme/app_colors.dart';
-import '../../tv/tv_mode.dart';
+import '../../theme/app_icons.dart';
+import '../../widgets/global/onyx_menu.dart';
 import 'server_account_subtitle.dart';
+import 'widgets/settings_ui.dart';
+
+enum _AccountAction { primary, link, unlink, rename, forget }
 
 /// Un compte de la liste « Mes serveurs » : son serveur, son état (actif,
 /// principal, lié) et le menu de ses options.
+///
+/// Une ligne de réglages comme les autres : la liste est un [SettingsGroup],
+/// qui apporte la carte et les filets. Le serveur actif se reconnaît à sa coche
+/// et à son avatar teinté.
 class ServerAccountTile extends StatelessWidget {
   const ServerAccountTile({
     super.key,
@@ -39,95 +47,86 @@ class ServerAccountTile extends StatelessWidget {
   final VoidCallback onUnlink;
   final VoidCallback? onForget;
 
+  void _run(_AccountAction action) {
+    switch (action) {
+      case _AccountAction.primary:
+        onTogglePrimary();
+      case _AccountAction.link:
+        onLink?.call();
+      case _AccountAction.unlink:
+        onUnlink();
+      case _AccountAction.rename:
+        onRename();
+      case _AccountAction.forget:
+        onForget?.call();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Le fond est porté par un Material et non par un DecoratedBox : sinon il
-    // se peint par-dessus l'onde de la tuile, et toucher un serveur ne donne
-    // aucun retour visible — précisément sur le geste dont tout dépend ici.
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: isActive
-            ? AppColors.primary.withValues(alpha: 0.10)
-            : AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          // Sur un téléviseur, le filet bleu du serveur actif se lisait comme
-          // l'anneau du focus : deux éléments semblaient focalisés à la fois.
-          // La coche et le fond teinté suffisent à le désigner.
-          side: BorderSide(
-            color: isActive && !TvMode.isTv
-                ? AppColors.primary.withValues(alpha: 0.45)
-                : Colors.transparent,
-          ),
+    return SettingsTile(
+      onTap: isActive || busy ? null : onSelect,
+      leading: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: isActive ? 0.28 : 0.14),
+          borderRadius: BorderRadius.circular(10),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: ListTile(
-          onTap: isActive || busy ? null : onSelect,
-          leading: CircleAvatar(
-            backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-            child: Icon(
-              isActive ? Icons.check_rounded : Icons.dns_rounded,
-              size: 20,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          title: Row(
-            children: [
-              Flexible(child: Text(account.displayName)),
-              if (isPrimary) ...[
-                const SizedBox(width: 6),
-                const Icon(
-                  Icons.star_rounded,
-                  size: 16,
-                  color: AppColors.warning,
-                ),
-              ],
-            ],
-          ),
-          subtitle: Text(
-            serverAccountSubtitle(account,
-                isActive: isActive, isPrimary: isPrimary, links: links),
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
-          trailing: PopupMenuButton<String>(
+        child: Icon(
+          isActive ? AppIcons.check : AppIcons.switchServer,
+          size: 18,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      title: account.displayName,
+      subtitle: serverAccountSubtitle(account,
+          isActive: isActive, isPrimary: isPrimary, links: links),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isPrimary)
+            const Icon(AppIcons.rating, size: 16, color: AppColors.warning),
+          OnyxMenuButton<_AccountAction>(
             tooltip: tr('Options du compte {0}', [account.username]),
+            icon: AppIcons.moreVertical,
             enabled: !busy,
-            onSelected: (value) {
-              switch (value) {
-                case 'primary':
-                  onTogglePrimary();
-                case 'link':
-                  onLink?.call();
-                case 'unlink':
-                  onUnlink();
-                case 'rename':
-                  onRename();
-                case 'forget':
-                  onForget?.call();
-              }
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'primary',
-                child: Text(isPrimary
+            items: [
+              OnyxMenuItem(
+                value: _AccountAction.primary,
+                label: isPrimary
                     ? tr('Ne plus démarrer ici')
-                    : tr('Démarrer sur ce serveur')),
+                    : tr('Démarrer sur ce serveur'),
+                icon: isPrimary ? AppIcons.ratingOutline : AppIcons.rating,
               ),
               if (onLink != null)
-                PopupMenuItem(value: 'link', child: Text(tr('Lier un compte'))),
+                OnyxMenuItem(
+                  value: _AccountAction.link,
+                  label: tr('Lier un compte'),
+                  icon: AppIcons.link,
+                ),
               if (links.isNotEmpty)
-                PopupMenuItem(
-                    value: 'unlink', child: Text(tr('Dissocier ce compte'))),
-              PopupMenuItem(value: 'rename', child: Text(tr('Renommer'))),
+                OnyxMenuItem(
+                  value: _AccountAction.unlink,
+                  label: tr('Dissocier ce compte'),
+                  icon: AppIcons.blocked,
+                ),
+              OnyxMenuItem(
+                value: _AccountAction.rename,
+                label: tr('Renommer'),
+                icon: AppIcons.edit,
+              ),
               if (onForget != null)
-                PopupMenuItem(
-                  value: 'forget',
-                  child: Text(tr('Retirer de cet appareil')),
+                OnyxMenuItem(
+                  value: _AccountAction.forget,
+                  label: tr('Retirer de cet appareil'),
+                  icon: AppIcons.delete,
+                  destructive: true,
                 ),
             ],
+            onSelected: _run,
           ),
-        ),
+        ],
       ),
     );
   }

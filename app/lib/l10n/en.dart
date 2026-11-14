@@ -3620,4 +3620,8 @@ const Map<String, String> kEnglish = <String, String>{
       '1 profile',
   '{0} profils':
       '{0} profiles',
+  'Comptes · {0}':
+      'Accounts · {0}',
+  'Actions pour {0}':
+      'Actions for {0}',
 };

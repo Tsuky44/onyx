@@ -21,10 +21,6 @@ const Map<String, (int ceiling, String why)> _grandfathered = {
     1218,
     'une seule classe pour la file d’attente, le disque et la reprise',
   ),
-  'lib/screens/settings/servers_screen.dart': (
-    835,
-    'deux écrans dans un fichier : la liste des serveurs et l’ajout',
-  ),
 };
 
 /// Fichiers que la limite ne concerne pas, et pourquoi.
