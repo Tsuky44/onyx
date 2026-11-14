@@ -11,6 +11,7 @@ import '../../theme/app_type.dart';
 import '../../tv/tv_focus.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/responsive.dart';
+import 'adaptive_panel.dart';
 import 'app_network_image.dart';
 import 'empty_state.dart';
 
@@ -48,11 +49,12 @@ class PosterPickerSheet extends StatefulWidget {
     required Media media,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
-    final choice = await showModalBottomSheet<_PosterChoice>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    // Une grille d'affiches ne tient pas dans un panneau collé à un bouton :
+    // sur grand écran, un panneau centré (ADR-0131).
+    final choice = await showAdaptivePanel<_PosterChoice>(
+      context,
+      centered: true,
+      width: 760,
       builder: (_) => PosterPickerSheet(api: api, media: media),
     );
     if (choice == null) return null;
@@ -92,11 +94,18 @@ class _PosterPickerSheetState extends State<PosterPickerSheet> {
   bool _unsupported = false;
   String? _error;
   _SourceFilter _filter = _SourceFilter.all;
+  final ScrollController _panelScroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _panelScroll.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -138,40 +147,46 @@ class _PosterPickerSheetState extends State<PosterPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (AdaptivePanelScope.isPanel(context)) {
+      return _column(_panelScroll, handle: false);
+    }
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (context, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: _column(scrollController, handle: true),
+      ),
+    );
+  }
+
+  Widget _column(ScrollController scrollController, {required bool handle}) {
+    return Column(
+      children: [
+        if (handle) ...[
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.textSecondary.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              _Header(
-                title: widget.media.title,
-                canReset: _posters?.locked ?? false,
-                onReset: () =>
-                    Navigator.of(context).pop(const _DefaultPoster()),
-              ),
-              if (_hasBothSources) _buildFilters(),
-              Expanded(child: _buildBody(scrollController)),
-            ],
-          ),
-        );
-      },
+        ],
+        _Header(
+          title: widget.media.title,
+          canReset: _posters?.locked ?? false,
+          onReset: () => Navigator.of(context).pop(const _DefaultPoster()),
+        ),
+        if (_hasBothSources) _buildFilters(),
+        Expanded(child: _buildBody(scrollController)),
+      ],
     );
   }
 

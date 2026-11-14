@@ -11,6 +11,7 @@ import '../../tv/tv_focus.dart';
 import '../../tv/nav/tv_region.dart';
 import '../../utils/poster_url.dart';
 import '../../utils/responsive.dart';
+import 'adaptive_panel.dart';
 import 'app_network_image.dart';
 import 'detail_metadata.dart';
 
@@ -64,11 +65,12 @@ class _CastSectionState extends State<CastSection> {
   }
 
   void _showFullCast(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    // Une grille de portraits : sur grand écran, un panneau centré
+    // (ADR-0131).
+    showAdaptivePanel<void>(
+      context,
+      centered: true,
+      width: 720,
       builder: (_) => _FullCastSheet(
         cast: widget.cast,
         onTapMember: widget.onTapMember,
@@ -678,24 +680,29 @@ class _FullCastSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Dans un panneau, le cadre vient du seam (ADR-0131).
+    final panel = AdaptivePanelScope.isPanel(context);
     final height = MediaQuery.sizeOf(context).height * 0.85;
     return Container(
-      height: height,
-      decoration: const BoxDecoration(
-        color: Color(0xFF141515),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      height: panel ? null : height,
+      decoration: panel
+          ? null
+          : const BoxDecoration(
+              color: Color(0xFF141515),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
       child: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2),
+          if (!panel)
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
