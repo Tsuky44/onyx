@@ -7,6 +7,7 @@ import '../../theme/app_type.dart';
 import '../../tv/nav/tv_focusable.dart';
 import '../../utils/responsive.dart';
 import 'onyx_menu.dart';
+import 'onyx_panel_surface.dart';
 
 /// Les mesures du panneau d'[OnyxMenuButton]. Les lignes ont une hauteur
 /// fixe : la route en déduit la hauteur du panneau avant de le poser (dessus
@@ -23,7 +24,7 @@ class OnyxMenuMetrics {
       );
 
   static const double padding = 6;
-  static const double radius = 16;
+  static const double radius = OnyxPanelSurface.radius;
   static const double minWidth = 200;
   static const double maxWidth = 320;
 
@@ -125,20 +126,7 @@ class _OnyxMenuPanelState<T> extends State<OnyxMenuPanel<T>> {
         maxWidth: OnyxMenuMetrics.maxWidth,
       ),
       child: IntrinsicWidth(
-        child: Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: BorderRadius.circular(OnyxMenuMetrics.radius),
-            border: Border.all(color: AppColors.glassBorder),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                blurRadius: 32,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
+        child: OnyxPanelSurface(
           child: SingleChildScrollView(
             controller: _scroll,
             padding: const EdgeInsets.all(OnyxMenuMetrics.padding),
@@ -148,8 +136,8 @@ class _OnyxMenuPanelState<T> extends State<OnyxMenuPanel<T>> {
               children: [
                 for (var i = 0; i < items.length; i++) ...[
                   if (OnyxMenuMetrics.hairlineBefore(items, i))
-                    const _Hairline(),
-                  _OnyxMenuRow(
+                    const OnyxMenuHairline(),
+                  OnyxMenuRow(
                     item: items[i],
                     height: widget.metrics.rowHeight(items[i]),
                     reserveCheck: choice,
@@ -166,8 +154,8 @@ class _OnyxMenuPanelState<T> extends State<OnyxMenuPanel<T>> {
   }
 }
 
-class _Hairline extends StatelessWidget {
-  const _Hairline();
+class OnyxMenuHairline extends StatelessWidget {
+  const OnyxMenuHairline({super.key});
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -176,11 +164,13 @@ class _Hairline extends StatelessWidget {
       );
 }
 
-/// La ligne `_MenuRow` du menu du compte, généralisée : survol et focus la
+/// La ligne `_MenuRow` du menu du compte, généralisée (publique : les panneaux
+/// d'[showAdaptivePanel] la réutilisent) : survol et focus la
 /// remplissent de blanc à l'encre noire ; une ligne destructive reste rouge,
 /// sur fond rouge pâle.
-class _OnyxMenuRow extends StatefulWidget {
-  const _OnyxMenuRow({
+class OnyxMenuRow extends StatefulWidget {
+  const OnyxMenuRow({
+    super.key,
     required this.item,
     required this.height,
     required this.reserveCheck,
@@ -195,10 +185,10 @@ class _OnyxMenuRow extends StatefulWidget {
   final FocusNode? focusNode;
 
   @override
-  State<_OnyxMenuRow> createState() => _OnyxMenuRowState();
+  State<OnyxMenuRow> createState() => OnyxMenuRowState();
 }
 
-class _OnyxMenuRowState extends State<_OnyxMenuRow> {
+class OnyxMenuRowState extends State<OnyxMenuRow> {
   bool _focused = false;
   bool _hovered = false;
 

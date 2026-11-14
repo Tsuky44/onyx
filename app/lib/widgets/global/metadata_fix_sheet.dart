@@ -4,6 +4,7 @@ import '../../models/models.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/responsive.dart';
+import 'adaptive_panel.dart';
 import 'app_network_image.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
@@ -44,12 +45,12 @@ class MetadataFixSheet extends StatefulWidget {
     String? localFolder,
     String? localEpisodeFile,
   }) {
-    return showModalBottomSheet<TmdbCandidate>(
-      context: context,
-      // Over the app's nav bar too, like the dialogs.
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    // Une recherche et sa liste de résultats : sur grand écran, un panneau
+    // centré plutôt que collé au bouton (ADR-0131).
+    return showAdaptivePanel<TmdbCandidate>(
+      context,
+      centered: true,
+      width: 560,
       builder: (_) => MetadataFixSheet(
         api: api,
         initialQuery: initialQuery,
@@ -71,6 +72,7 @@ class _MetadataFixSheetState extends State<MetadataFixSheet> {
   List<TmdbCandidate> _results = const [];
   bool _loading = false;
   bool _searched = false;
+  final ScrollController _panelScroll = ScrollController();
   String? _error;
 
   @override
@@ -82,6 +84,7 @@ class _MetadataFixSheetState extends State<MetadataFixSheet> {
 
   @override
   void dispose() {
+    _panelScroll.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -110,6 +113,9 @@ class _MetadataFixSheetState extends State<MetadataFixSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (AdaptivePanelScope.isPanel(context)) {
+      return _column(_panelScroll, handle: false);
+    }
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: viewInsets),
@@ -118,85 +124,88 @@ class _MetadataFixSheetState extends State<MetadataFixSheet> {
         minChildSize: 0.5,
         maxChildSize: 0.95,
         expand: false,
-        builder: (context, scrollController) {
-          return Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceElevated,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tr('Corriger la fiche'),
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: AppType.title3,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (widget.type == MediaType.show) ...[
-                        const SizedBox(height: 10),
-                        _LocalShowContextCard(
-                          folder: widget.localFolder,
-                          episodeFile: widget.localEpisodeFile,
-                        ),
-                      ] else if (widget.fileName != null &&
-                          widget.fileName!.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        _FileNameChip(
-                          fileName: widget.fileName!,
-                          label: widget.fileHintLabel ?? tr('Fichier local'),
-                        ),
-                      ],
-                      const SizedBox(height: 14),
-                      TvDeferredKeyboard(
-                        builder: (context, focusNode, canRequestFocus) =>
-                            TextField(
-                          focusNode: focusNode,
-                          canRequestFocus: canRequestFocus,
-                          controller: _controller,
-                          autofocus: false,
-                          textInputAction: TextInputAction.search,
-                          onSubmitted: (_) => _search(),
-                          decoration: InputDecoration(
-                            hintText: tr('Rechercher un titre…'),
-                            filled: true,
-                            fillColor: AppColors.surface,
-                            prefixIcon: const Icon(AppIcons.search),
-                            suffixIcon: IconButton(
-                              icon: const Icon(AppIcons.forward),
-                              onPressed: _search,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(child: _buildBody(scrollController)),
-              ],
-            ),
-          );
-        },
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: _column(scrollController, handle: true),
+        ),
       ),
+    );
+  }
+
+  Widget _column(ScrollController scrollController, {required bool handle}) {
+    return Column(
+      children: [
+        if (handle) ...[
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.textSecondary.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                tr('Corriger la fiche'),
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: AppType.title3,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (widget.type == MediaType.show) ...[
+                const SizedBox(height: 10),
+                _LocalShowContextCard(
+                  folder: widget.localFolder,
+                  episodeFile: widget.localEpisodeFile,
+                ),
+              ] else if (widget.fileName != null &&
+                  widget.fileName!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _FileNameChip(
+                  fileName: widget.fileName!,
+                  label: widget.fileHintLabel ?? tr('Fichier local'),
+                ),
+              ],
+              const SizedBox(height: 14),
+              TvDeferredKeyboard(
+                builder: (context, focusNode, canRequestFocus) => TextField(
+                  focusNode: focusNode,
+                  canRequestFocus: canRequestFocus,
+                  controller: _controller,
+                  autofocus: false,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _search(),
+                  decoration: InputDecoration(
+                    hintText: tr('Rechercher un titre…'),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    prefixIcon: const Icon(AppIcons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(AppIcons.forward),
+                      onPressed: _search,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: _buildBody(scrollController)),
+      ],
     );
   }
 
