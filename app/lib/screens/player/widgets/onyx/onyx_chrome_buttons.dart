@@ -49,11 +49,6 @@ class OnyxIconButton extends StatefulWidget {
   /// menu est là, pour dire d'où il vient (ADR-0130).
   final bool lit;
 
-  /// Le diamètre du disque de verre quand il est plus petit que sa cible : sur
-  /// un écran tenu en main, le doigt garde [glassSize] et l'œil voit
-  /// [handheldDisc] (ADR-0136). Nul, le disque remplit la cible.
-  final double? discSize;
-
   /// Posé sur l'image elle-même, sans dégradé derrière lui : l'icône porte
   /// alors sa propre ombre, sans quoi elle disparaît sur un plan clair. Les
   /// commandes de lecture au milieu de l'écran (ADR-0136).
@@ -72,17 +67,18 @@ class OnyxIconButton extends StatefulWidget {
     this.prominent = false,
     this.glass = false,
     this.lit = false,
-    this.discSize,
     this.onPicture = false,
   });
 
-  /// Le diamètre d'un bouton de verre, et la taille de son icône.
+  /// La place d'un bouton de verre : la cible d'un doigt, et l'écart qu'une
+  /// télécommande voit entre deux boutons.
   static const double glassSize = 44;
-  static const double _glassIcon = 22;
 
-  /// Le disque d'un bouton de verre sur un écran tenu en main : « un poil »
-  /// plus petit que sa cible, à la demande de l'utilisateur (ADR-0136).
-  static const double handheldDisc = 38;
+  /// Le disque qui s'y dessine, et son icône : « un poil » plus petits que la
+  /// cible, à la demande de l'utilisateur, sur un écran tenu en main (ADR-0136)
+  /// comme sur un téléviseur (ADR-0137).
+  static const double glassDisc = 38;
+  static const double _glassIcon = 20;
 
   /// L'ombre d'une icône posée sur l'image. Voir [onPicture].
   static const List<Shadow> _pictureShadow = [
@@ -164,7 +160,7 @@ class _OnyxIconButtonState extends State<OnyxIconButton> {
                         ? Colors.white.withValues(alpha: glass ? 0.18 : 0.16)
                         : null;
                 // La cible garde sa taille ; seul le disque rétrécit.
-                final drawn = glass ? (widget.discSize ?? box) : box;
+                final drawn = glass ? OnyxIconButton.glassDisc : box;
                 return SizedBox(
                   width: box,
                   height: box,

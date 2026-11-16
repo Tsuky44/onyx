@@ -8,7 +8,7 @@
 - **Portée :** `screens/player/widgets/onyx/onyx_handheld_chrome.dart` (nouveau),
   `onyx_chrome_layout.dart` (le délégué de mise en page, sorti de `onyx_controls_layer.dart`),
   `onyx_controls_layer.dart` (`handheld`), `onyx_chrome_theme.dart`
-  (`OnyxChromeMetrics.handheld`), `onyx_chrome_buttons.dart` (`discSize`, `onPicture`, `lit`),
+  (`OnyxChromeMetrics.handheld`), `onyx_chrome_buttons.dart` (`glassDisc`, `onPicture`, `lit`),
   `onyx_progress_bar.dart` (`rowHeight`), `onyx_tabs.dart` (`hitHeight`, `fontSize`),
   `onyx_settings_menu.dart` (`indexOmits`), `player_screen_chrome.dart`.
 - **Contredit** l'[ADR-0124](0124-le-lecteur-onyx-d-un-televiseur-prend-l-arrangement-du-lecteur-d-apple.md)
@@ -18,6 +18,10 @@
   main seulement, parce que l'utilisateur le demande. Elle **confirme** ce que l'ADR-0130 avait
   écarté, « un bouton par réglage hors téléviseur » : la première maquette le proposait, l'utilisateur
   l'a refusé.
+
+L'[ADR-0137](0137-sur-un-televiseur-aussi-l-essentiel-a-son-bouton-et-la-roue-crantee-ouvre-le-reste.md)
+ramène ensuite cette rangée de boutons sur le téléviseur : les deux arrangements la partagent
+(`_buildEssentialActions`).
 
 ## Contexte
 
@@ -45,7 +49,7 @@ l'arrangement d'un téléviseur, adapté au doigt.** L'ordinateur et le web à l
 3. **À droite du titre, l'essentiel en boutons ronds de verre** : sous-titres et audio, chacun avec
    son menu (`OnyxSettingsMenu.standalone`, posé sur son bouton), **la roue crantée pour le reste**,
    entre l'épisode précédent et le suivant quand il y en a. Le disque fait 38 dans une cible de 44
-   (`OnyxIconButton.handheldDisc`) : « un poil » plus petit, à la demande de l'utilisateur. Le bouton
+   (`OnyxIconButton.glassDisc`) : « un poil » plus petit, à la demande de l'utilisateur. Le bouton
    reste allumé tant que son menu est ouvert, et les commandes du milieu s'effacent : le panneau de
    verre se pose sur elles.
 4. **L'index de la roue crantée ne liste que le reste** (`indexOmits`) : qualité, vitesse, format

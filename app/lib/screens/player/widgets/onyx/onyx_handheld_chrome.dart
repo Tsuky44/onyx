@@ -12,11 +12,12 @@ part of 'onyx_controls_layer.dart';
 ///   doublaient la télécommande ; ici un toucher sur l'image ne fait
 ///   qu'afficher le chrome, et il faut bien un bouton pour mettre en pause ;
 /// - Retour et le verrou sont des boutons, en haut ;
-/// - seul l'essentiel a son bouton rond (sous-titres, audio, épisode précédent
-///   et suivant) ; la roue crantée ouvre le reste. Sept boutons de 44 tenaient
-///   sur la rangée, mais serrés contre le titre ;
 /// - un onglet ouvre la feuille du bas (`PlayerTabSheet`) : un doigt ne
 ///   « descend » pas sur un onglet, il le touche.
+///
+/// La rangée des boutons ronds est celle d'un téléviseur
+/// ([_buildEssentialActions]) : l'essentiel a son bouton, la roue crantée
+/// ouvre le reste.
 extension _OnyxHandheldChrome on OnyxControlsLayer {
   /// Sous cette largeur, le titre et les boutons ronds ne tiennent plus sur
   /// une rangée : ils s'empilent. Un téléphone couché fait au moins 568 ; il
@@ -100,28 +101,20 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
     );
   }
 
-  /// Un bouton rond de verre : la cible d'un doigt, un disque un peu plus
-  /// petit dedans.
+  /// Un bouton rond de verre du haut de l'écran : Retour, le verrou.
   Widget _handheldGlassButton(
     OnyxChromeMetrics m, {
     required String id,
     required IconData icon,
     required String tooltip,
     required VoidCallback onPressed,
-    GlobalKey? buttonKey,
-    bool lit = false,
   }) {
     return OnyxIconButton(
       key: ValueKey('onyx-$id'),
-      buttonKey: buttonKey,
       icon: icon,
       tooltip: tooltip,
       metrics: m,
       glass: true,
-      discSize: OnyxIconButton.handheldDisc,
-      // La taille des icônes du chrome, pas celle d'un bouton de téléviseur.
-      size: m.iconSize,
-      lit: lit,
       onPressed: onPressed,
     );
   }
@@ -220,7 +213,7 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
     // Transparent aux touchers, comme le titre des autres arrangements : un
     // toucher sur le titre range le chrome comme partout ailleurs sur l'image.
     final title = IgnorePointer(child: _buildTvTitleBlock(m));
-    final actions = _buildHandheldActions(m);
+    final actions = _buildEssentialActions(m);
     return OnyxScrim(
       gradient: OnyxChromeTheme.bottomScrim,
       child: Padding(
@@ -258,86 +251,6 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
           ],
         ),
       ),
-    );
-  }
-
-  /// L'essentiel, à droite du titre : les sous-titres et l'audio, chacun avec
-  /// son menu, la roue crantée pour le reste (qualité, vitesse, format
-  /// d'image, minuterie), entre l'épisode précédent et le suivant quand il y
-  /// en a. Le bouton reste allumé tant que son menu est ouvert.
-  Widget _buildHandheldActions(OnyxChromeMetrics m) {
-    // Le bouton est son propre repère : le menu se pose au-dessus de lui.
-    Widget menu(
-      OnyxMenuSection section,
-      IconData icon,
-      String label, {
-      required VoidCallback fallback,
-      GlobalKey? buttonKey,
-    }) =>
-        Builder(
-          key: ValueKey('onyx-${section.name}'),
-          builder: (anchor) => _handheldGlassButton(
-            m,
-            id: '${section.name}-button',
-            buttonKey: buttonKey,
-            icon: icon,
-            tooltip: label,
-            lit: openMenu == section,
-            onPressed: () {
-              final open = onOpenMenu;
-              if (open == null) return fallback();
-              open(section, anchor);
-            },
-          ),
-        );
-    final buttons = <Widget>[
-      if (onSkipPrevious != null)
-        _handheldGlassButton(
-          m,
-          id: 'previous',
-          icon: Icons.skip_previous_rounded,
-          tooltip: tr('Épisode précédent'),
-          onPressed: onSkipPrevious!,
-        ),
-      menu(
-        OnyxMenuSection.subtitles,
-        Icons.closed_caption_rounded,
-        tr('Sous-titres'),
-        fallback: onToggleSubtitles,
-        buttonKey: subtitlesButtonKey,
-      ),
-      menu(
-        OnyxMenuSection.audio,
-        Icons.graphic_eq_rounded,
-        tr('Pistes audio'),
-        fallback: onOpenAudio,
-      ),
-      _handheldGlassButton(
-        m,
-        id: 'settings',
-        buttonKey: settingsButtonKey,
-        icon: Icons.settings_rounded,
-        tooltip: tr('Réglages'),
-        lit: openMenu == OnyxMenuSection.root,
-        onPressed: onOpenSettings,
-      ),
-      if (onSkipNext != null)
-        _handheldGlassButton(
-          m,
-          id: 'next',
-          icon: Icons.skip_next_rounded,
-          tooltip: tr('Épisode suivant'),
-          onPressed: onSkipNext!,
-        ),
-    ];
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < buttons.length; i++) ...[
-          if (i > 0) SizedBox(width: m.clusterGap),
-          buttons[i],
-        ],
-      ],
     );
   }
 

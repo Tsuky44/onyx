@@ -4,6 +4,9 @@
   bien, j'aime beaucoup, fais les modifs », puis « adapte ce player à tout le reste ») ; rendu vérifié
   sur des captures de l'app en 1920 × 1080, 1440 × 810 et 844 × 390, **pas encore vu sur une
   Apple TV**.
+  L'[ADR-0137](0137-sur-un-televiseur-aussi-l-essentiel-a-son-bouton-et-la-roue-crantee-ouvre-le-reste.md)
+  remplace son point 1 : le téléviseur n'a plus un bouton par réglage, mais l'essentiel et une roue
+  crantée.
 - **Date :** 2026-11-14
 - **Portée :** `screens/player/widgets/onyx/` (`onyx_controls_rows.dart`, `onyx_tv_tabs.dart`,
   `onyx_tabs.dart`, `onyx_settings_menu*.dart`, `onyx_menu_style.dart`, `onyx_menu_section.dart`,

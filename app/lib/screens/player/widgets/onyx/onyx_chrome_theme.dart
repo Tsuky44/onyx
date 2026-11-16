@@ -201,7 +201,7 @@ class OnyxChromeMetrics {
   /// Un seul jeu, téléphone ou tablette : la largeur ne change pas la taille
   /// d'un doigt, seulement la marge ([OnyxChromeTheme.tabletBreakpoint]). Une
   /// cible fait 44, et ce qui s'y dessine est plus petit — le disque d'un
-  /// bouton de verre fait `OnyxIconButton.handheldDisc`. La barre est fine
+  /// bouton de verre fait `OnyxIconButton.glassDisc`. La barre est fine
   /// parce qu'un repère dit la position ; sa rangée garde la hauteur d'un
   /// doigt.
   const OnyxChromeMetrics.handheld({this.gutter = 16})

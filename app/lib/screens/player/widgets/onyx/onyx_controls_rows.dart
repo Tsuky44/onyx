@@ -13,8 +13,8 @@ extension _OnyxControlsRows on OnyxControlsLayer {
   ///
   /// Rien au milieu de l'image ni de bouton Retour : OK met en pause, gauche
   /// et droite déplacent sur la barre, Retour quitte. En haut à gauche le logo
-  /// du titre ; en bas, le titre et un bouton rond par réglage, la barre de
-  /// lecture et ses temps, puis les onglets et leur volet (ADR-0130).
+  /// du titre ; en bas, le titre et l'essentiel en boutons ronds, la barre de
+  /// lecture et ses temps, puis les onglets et leur volet (ADR-0130, ADR-0137).
   ///
   /// Des rangées parcourues en ligne droite ([TvRegion.controlRows]) : les
   /// boutons ronds, la barre, les onglets, puis celles du volet ouvert. La
@@ -119,7 +119,7 @@ extension _OnyxControlsRows on OnyxControlsLayer {
                     children: [
                       Expanded(child: _buildTvTitleBlock(m)),
                       const SizedBox(width: 24),
-                      TvRegion.controls(child: _buildTvActions(m)),
+                      TvRegion.controls(child: _buildEssentialActions(m)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -204,12 +204,17 @@ extension _OnyxControlsRows on OnyxControlsLayer {
     );
   }
 
-  /// Les boutons ronds, à droite du titre : un par réglage, chacun avec son
-  /// menu, entre l'épisode précédent et le suivant quand il y en a
-  /// (ADR-0130). L'ADR-0124 rangeait la qualité, la vitesse, le format
-  /// d'image et la minuterie derrière un seul bouton « Réglages » : un index
-  /// à traverser pour chaque changement.
-  Widget _buildTvActions(OnyxChromeMetrics m) {
+  /// L'essentiel, à droite du titre, en boutons ronds de verre : les
+  /// sous-titres et l'audio, chacun avec son menu, la roue crantée pour le
+  /// reste (qualité, vitesse, format d'image, minuterie), entre l'épisode
+  /// précédent et le suivant quand il y en a. Le bouton reste allumé tant que
+  /// son menu est ouvert.
+  ///
+  /// La même rangée sur un téléviseur et sur un écran tenu en main (ADR-0136,
+  /// ADR-0137). L'ADR-0130 donnait à un téléviseur un bouton par réglage :
+  /// huit disques contre le titre, dont quatre qu'on ne touche presque jamais
+  /// en cours de film.
+  Widget _buildEssentialActions(OnyxChromeMetrics m) {
     Widget plain(
       String id,
       IconData icon,
@@ -221,22 +226,35 @@ extension _OnyxControlsRows on OnyxControlsLayer {
           icon: icon,
           tooltip: label,
           metrics: m,
-          isTv: true,
+          isTv: isTv,
           glass: true,
           onPressed: onPressed,
         );
     // Le bouton est son propre repère : le menu se pose au-dessus de lui.
-    Widget menu(OnyxMenuSection section, IconData icon, String label) =>
+    // Sans [onOpenMenu], le chrome retombe sur l'ouverture d'avant.
+    Widget menu(
+      OnyxMenuSection section,
+      String id,
+      IconData icon,
+      String label, {
+      required VoidCallback fallback,
+      GlobalKey? buttonKey,
+    }) =>
         Builder(
-          key: ValueKey('onyx-${section.name}'),
+          key: ValueKey('onyx-$id'),
           builder: (anchor) => OnyxIconButton(
+            buttonKey: buttonKey,
             icon: icon,
             tooltip: label,
             metrics: m,
-            isTv: true,
+            isTv: isTv,
             glass: true,
             lit: openMenu == section,
-            onPressed: () => onOpenMenu?.call(section, anchor),
+            onPressed: () {
+              final open = onOpenMenu;
+              if (open == null) return fallback();
+              open(section, anchor);
+            },
           ),
         );
     final buttons = <Widget>[
@@ -247,16 +265,30 @@ extension _OnyxControlsRows on OnyxControlsLayer {
           tr('Épisode précédent'),
           onSkipPrevious!,
         ),
-      menu(OnyxMenuSection.subtitles, Icons.subtitles_rounded,
-          tr('Sous-titres')),
-      menu(OnyxMenuSection.audio, Icons.graphic_eq_rounded, tr('Pistes audio')),
-      menu(OnyxMenuSection.quality, Icons.high_quality_rounded, tr('Qualité')),
-      menu(OnyxMenuSection.speed, Icons.speed_rounded,
-          tr('Vitesse de lecture')),
-      menu(OnyxMenuSection.display, Icons.aspect_ratio_rounded,
-          tr('Format d’image')),
-      menu(OnyxMenuSection.sleep, Icons.bedtime_rounded,
-          tr('Minuterie de veille')),
+      menu(
+        OnyxMenuSection.subtitles,
+        'subtitles',
+        Icons.closed_caption_rounded,
+        tr('Sous-titres'),
+        fallback: onToggleSubtitles,
+        buttonKey: subtitlesButtonKey,
+      ),
+      menu(
+        OnyxMenuSection.audio,
+        'audio',
+        Icons.graphic_eq_rounded,
+        tr('Pistes audio'),
+        fallback: onOpenAudio,
+      ),
+      // L'index : [OnyxMenuSection.root].
+      menu(
+        OnyxMenuSection.root,
+        'settings',
+        Icons.settings_rounded,
+        tr('Réglages'),
+        fallback: onOpenSettings,
+        buttonKey: settingsButtonKey,
+      ),
       if (onSkipNext != null)
         plain(
           'next',

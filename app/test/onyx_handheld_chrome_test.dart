@@ -46,7 +46,6 @@ Future<void> _pump(
   VoidCallback? onSkipIntro,
   OnyxMenuSection? openMenu,
   void Function(OnyxMenuSection section, BuildContext anchor)? onOpenMenu,
-  VoidCallback? onOpenSettings,
   ValueChanged<OnyxTab?>? onTabChanged,
 }) async {
   tester.view.devicePixelRatio = 1.0;
@@ -81,7 +80,7 @@ Future<void> _pump(
           onToggleSubtitles: () {},
           onOpenAudio: () {},
           onCycleSpeed: () {},
-          onOpenSettings: onOpenSettings ?? () {},
+          onOpenSettings: () {},
           onToggleFullscreen: () {},
           onSkipPrevious: episode ? () {} : null,
           onSkipNext: episode ? () {} : null,
@@ -171,7 +170,7 @@ void main() {
         of: button,
         matching: find.byType(AnimatedContainer),
       );
-      expect(tester.getSize(disc), const Size.square(OnyxIconButton.handheldDisc),
+      expect(tester.getSize(disc), const Size.square(OnyxIconButton.glassDisc),
           reason: 'disque de $id');
     }
   });
@@ -235,10 +234,8 @@ void main() {
     expect(asked, OnyxTab.episodes);
   });
 
-  testWidgets('sous-titres et audio ouvrent chacun leur menu, sur leur bouton',
-      (tester) async {
+  testWidgets('chaque bouton ouvre son menu, posé sur lui', (tester) async {
     final opened = <OnyxMenuSection>[];
-    var settings = 0;
     await _pump(
       tester,
       onOpenMenu: (section, anchor) {
@@ -246,15 +243,18 @@ void main() {
         // Le repère est le bouton lui-même : le menu se pose au-dessus.
         expect(anchor.findRenderObject(), isNotNull);
       },
-      onOpenSettings: () => settings++,
     );
 
     await tester.tap(_key('subtitles'));
     await tester.tap(_key('audio'));
     await tester.tap(_key('settings'));
 
-    expect(opened, [OnyxMenuSection.subtitles, OnyxMenuSection.audio]);
-    expect(settings, 1);
+    // La roue crantée ouvre l'index : [OnyxMenuSection.root].
+    expect(opened, [
+      OnyxMenuSection.subtitles,
+      OnyxMenuSection.audio,
+      OnyxMenuSection.root,
+    ]);
   });
 
   testWidgets('un menu ouvert allume son bouton et efface le milieu',
