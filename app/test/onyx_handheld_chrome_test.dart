@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/player/playback/playback_session.dart';
 import 'package:onyx/screens/player/video_display_mode.dart';
+import 'package:onyx/screens/player/widgets/onyx/onyx_brightness_slider.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_chrome_buttons.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_controls_layer.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_progress_bar.dart';
@@ -45,6 +46,7 @@ Future<void> _pump(
   bool isPlaying = true,
   String? logoUrl,
   VoidCallback? onSkipIntro,
+  List<Rect> cutouts = const [],
   OnyxMenuSection? openMenu,
   void Function(OnyxMenuSection section, BuildContext anchor)? onOpenMenu,
   ValueChanged<OnyxTab?>? onTabChanged,
@@ -61,6 +63,7 @@ Future<void> _pump(
           visible: true,
           handheld: true,
           showVolume: false,
+          cutouts: cutouts,
           isPlaying: isPlaying,
           position: _position,
           duration: _duration,
@@ -98,6 +101,8 @@ Future<void> _pump(
       ),
     ),
   );
+  await tester.pump();
+  // Une rangée qui évite une caméra se cale à l'image suivante.
   await tester.pump();
 }
 
@@ -233,6 +238,31 @@ void main() {
     // Et le logo part bien du bouton Retour, pas du milieu.
     await _pump(tester, logoUrl: 'https://example.invalid/logo.png');
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'la luminosité est à la verticale du verrou et de l’épisode suivant',
+      (tester) async {
+    // La piste : le seul conteneur animé de la barre.
+    double track() => tester
+        .getCenter(find.descendant(
+          of: find.byType(OnyxBrightnessSlider),
+          matching: find.byType(AnimatedContainer),
+        ))
+        .dx;
+
+    await _pump(tester);
+    expect(track(), closeTo(tester.getCenter(_key('lock')).dx, 0.5));
+    expect(track(), closeTo(tester.getCenter(_key('next')).dx, 0.5));
+
+    // Et sur un iPhone couché, dont les deux bords sont des zones sûres :
+    // les trois se décalent ensemble.
+    const island = [Rect.fromLTWH(0, 0, 59, 390), Rect.fromLTWH(785, 0, 59, 390)];
+    await _pump(tester, cutouts: island);
+    final lock = tester.getCenter(_key('lock')).dx;
+    expect(lock, closeTo(785 - 22, 0.5));
+    expect(track(), closeTo(lock, 0.5));
+    expect(track(), closeTo(tester.getCenter(_key('next')).dx, 0.5));
   });
 
   testWidgets('la barre garde la hauteur d’un doigt et porte les temps',

@@ -34,7 +34,6 @@ void main() {
         duration: 2400,
         isFinished: watched,
         showId: 7,
-        showTitle: 'Ma série',
       );
 
   Media season(int id, int number) => Media(
@@ -75,7 +74,6 @@ void main() {
           child: SizedBox(
             height: 238,
             child: PlayerEpisodesTab(
-              showTitle: 'Ma série',
               currentEpisodeId: current,
               seasons: seasons,
               selectedSeasonId: selectedSeason,
@@ -88,8 +86,7 @@ void main() {
         ),
       );
 
-  testWidgets('chaque épisode et la suite de la saison se téléchargent d’ici',
-      (tester) async {
+  testWidgets('rien ne se télécharge depuis le lecteur', (tester) async {
     tester.view.physicalSize = const Size(1600, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -101,10 +98,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.byType(SeasonDownloadButton), findsOneWidget);
-    expect(find.text('Télécharger les non vus · 3 épisodes'), findsOneWidget);
-    // Une seule rangée, la saison entière : un bouton par épisode.
-    expect(find.byType(MediaDownloadButton), findsNWidgets(4));
+    // L'onglet sert à changer d'épisode. Ni la suite de la saison, ni un
+    // bouton par carte : on télécharge depuis la fiche de la série.
+    expect(find.byType(SeasonDownloadButton), findsNothing);
+    expect(find.byType(MediaDownloadButton), findsNothing);
+    expect(find.byIcon(Icons.download_rounded), findsNothing);
   });
 
   testWidgets('l’épisode en cours est marqué, celui déjà vu aussi',
@@ -184,7 +182,6 @@ void main() {
                   SizedBox(
                     height: 238,
                     child: PlayerEpisodesTab(
-                      showTitle: 'Ma série',
                       currentEpisodeId: 3,
                       seasons: [season(10, 1), season(11, 2)],
                       selectedSeasonId: 10,

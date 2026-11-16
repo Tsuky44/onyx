@@ -106,6 +106,19 @@ l'arrangement d'un téléviseur, adapté au doigt.** L'ordinateur et le web à l
   d'Android. iOS nomme les deux paysages à l'inverse (d'après le bouton principal, pas d'après le
   haut du téléphone) : les deux s'échangent sur iPhone (`orientationFor`).
 
+## Retouché après la 1.1.55, à la demande de l'utilisateur
+
+- **La barre de luminosité tombe à la verticale du verrou et de l'épisode suivant.** Sa colonne
+  prend la largeur d'un bouton rond (`OnyxBrightnessSlider.barWidth`) et sa rangée se cale comme
+  celles des boutons : elle était 11 points à gauche de leur axe.
+- **L'indication du pincement** (« Remplir la hauteur », « Original ») **est une capsule fine du
+  verre du lecteur** (`VideoZoomHint`, par `OnyxGlassPanel`) au lieu d'un pavé au fond et au flou à
+  elle, plus gros que tout ce que le lecteur pose d'autre sur l'image. Elle sort de la liste
+  d'exceptions de `test/player_glass_guard_test.dart`.
+- **Rien ne se télécharge depuis l'onglet « Épisodes » du lecteur** : ni le bouton de la suite de
+  la saison, ni celui de chaque carte. L'onglet sert à changer d'épisode ; on télécharge depuis la
+  fiche de la série. Vaut pour tous les écrans, le téléviseur n'en avait déjà pas.
+
 ## À vérifier sur l'appareil
 
 | Quoi | Pourquoi ici seulement |

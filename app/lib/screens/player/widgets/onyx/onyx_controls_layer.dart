@@ -417,23 +417,35 @@ class OnyxControlsLayer extends StatelessWidget {
   /// pinned to the right edge: that is the shape the cutout dodge reasons
   /// about, and it is what lets a camera on this edge push the bar in without
   /// moving anything else.
-  Widget _buildBrightnessBand(OnyxChromeMetrics m) {
+  ///
+  /// [barWidth] : la largeur d'un bouton rond, sur un écran tenu en main. La
+  /// rangée se cale alors comme celles des boutons — la marge dehors,
+  /// l'évitement de la caméra dedans — et la barre tombe à leur verticale.
+  Widget _buildBrightnessBand(OnyxChromeMetrics m, {double? barWidth}) {
+    final row = Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        _fadeWithChrome(
+          OnyxBrightnessSlider(
+            value: brightness!,
+            onChanged: onBrightnessChanged!,
+            onDraggingChanged: onBrightnessDraggingChanged,
+            metrics: m,
+            barWidth: barWidth ?? OnyxBrightnessSlider.defaultBarWidth,
+          ),
+        ),
+      ],
+    );
+    if (barWidth != null) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: m.gutter),
+        child: _dodgeCutouts(row),
+      );
+    }
     return _dodgeCutouts(
       Padding(
         padding: EdgeInsets.only(right: m.gutter - 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            _fadeWithChrome(
-              OnyxBrightnessSlider(
-                value: brightness!,
-                onChanged: onBrightnessChanged!,
-                onDraggingChanged: onBrightnessDraggingChanged,
-                metrics: m,
-              ),
-            ),
-          ],
-        ),
+        child: row,
       ),
     );
   }

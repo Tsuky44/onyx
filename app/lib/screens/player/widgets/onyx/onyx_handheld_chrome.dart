@@ -47,7 +47,11 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
         if (hasBrightness)
           LayoutId(
             id: _OnyxChromeLayout.brightness,
-            child: _buildBrightnessBand(m),
+            // À la verticale du verrou et de l'épisode suivant.
+            child: _buildBrightnessBand(
+              m,
+              barWidth: OnyxIconButton.glassSize,
+            ),
           ),
         LayoutId(
           id: _OnyxChromeLayout.bottom,
