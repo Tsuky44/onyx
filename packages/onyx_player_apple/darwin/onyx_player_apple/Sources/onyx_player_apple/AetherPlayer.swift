@@ -126,7 +126,21 @@ final class AetherPlayer {
           if self.wantsPlay { self.engine.play() } else { self.engine.pause() }
         }
       } catch is CancellationError {
-        // Une ouverture plus récente l'a remplacée : ce n'est pas une panne.
+        // Deux causes pour une même erreur, et ni l'une ni l'autre n'est une
+        // panne. Notre tâche annulée : une ouverture plus récente ou un stop
+        // l'a remplacée, et c'est elle qui tient la suite.
+        guard !Task.isCancelled else { return }
+        // Sinon c'est le moteur qui a remplacé ce chargement par sa propre
+        // reconstruction : une piste audio choisie pendant l'ouverture
+        // (`selectAudioTrack` reconstruit la session, ADR-0093). `load` ne
+        // rendra jamais la main, et la session revient en pause. Sans ceci,
+        // `loadTask` restait posé pour toujours : chaque play() de Dart était
+        // retenu pour une fin de chargement qui ne viendrait plus, et l'écran
+        // attendait son délai de démarrage devant une session prête (journal
+        // iOS 1.1.52 : `load superseded (gen 1 -> 2)` puis
+        // `reload: state=.paused`, plus rien).
+        self.loadTask = nil
+        self.deliverWantedTransport()
       } catch {
         guard !Task.isCancelled else { return }
         self.loadTask = nil
@@ -146,6 +160,14 @@ final class AetherPlayer {
   func pause() {
     wantsPlay = false
     if loadTask == nil { engine.pause() }
+  }
+
+  /// Porte au moteur le dernier play/pause retenu pendant un chargement que
+  /// le moteur a repris à son compte. Une reconstruction encore en cours le
+  /// note et revient dans cet état ; une reconstruction finie l'applique tout
+  /// de suite.
+  private func deliverWantedTransport() {
+    if wantsPlay { engine.play() } else { engine.pause() }
   }
 
   /// Relance la lecture que Dart a demandée quand quelque chose d'autre que

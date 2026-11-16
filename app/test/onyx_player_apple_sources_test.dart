@@ -68,6 +68,34 @@ void main() {
     );
   });
 
+  test('un chargement repris par le moteur rend la main au play() de Dart', () {
+    // Une piste audio choisie pendant l'ouverture fait reconstruire la
+    // session par le moteur (ADR-0093) : `load` lève alors
+    // `CancellationError` sans que notre tâche soit annulée, et la session
+    // revient en pause. Tant que `loadTask` restait posé, `play()` retenait sa
+    // demande pour une fin de chargement qui ne venait plus — vingt-cinq
+    // secondes d'attente puis « La lecture ne démarre pas » devant une
+    // session prête (journal iOS 1.1.52). Seul Xcode compile ce fichier : ce
+    // test tient la règle faute de pouvoir l'exécuter.
+    final player = File('$_darwin/AetherPlayer.swift').readAsStringSync();
+    final superseded = RegExp(
+      r'catch is CancellationError \{(.*?)\n      \} catch \{',
+      dotAll: true,
+    ).firstMatch(player)?.group(1);
+
+    expect(superseded, isNotNull,
+        reason: 'L’ouverture ne distingue plus un chargement remplacé.');
+    expect(superseded, contains('guard !Task.isCancelled else { return }'),
+        reason: 'Une ouverture plus récente doit garder la main : seule la '
+            'reprise par le moteur libère `loadTask`.');
+    expect(superseded, contains('self.loadTask = nil'),
+        reason: '`loadTask` reste posé après une reprise par le moteur : '
+            'play() est retenu pour toujours.');
+    expect(superseded, contains('self.deliverWantedTransport()'),
+        reason: 'Le play() demandé pendant le chargement n’est plus porté '
+            'au moteur : la session reste en pause.');
+  });
+
   test('le fichier brut est servi en segments progressifs (ADR-0093)', () {
     // Sans ce réglage, le premier segment d'un remux 4K attend sa coupe
     // entière (~1,1 s mesuré). Il ne vaut que pour le fichier brut : le HLS
