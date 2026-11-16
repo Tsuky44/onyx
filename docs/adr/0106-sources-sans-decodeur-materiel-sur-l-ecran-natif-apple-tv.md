@@ -1,6 +1,6 @@
 # ADR-0106 — Sources sans décodeur matériel sur l'écran natif d'Apple TV : HLS transcodé
 
-- **Statut :** accepté, réalisé — testé en Go et en Dart, chaîne FFmpeg exécutée sur des sources
+- **Statut :** remplacée par l'[ADR-0133](0133-pas-de-lecteur-natif-sur-l-apple-tv.md) (lecteur natif retiré le 2026-11-14). Avant : accepté, réalisé — testé en Go et en Dart, chaîne FFmpeg exécutée sur des sources
   de test (AV1 HDR10, MPEG-2 4:2:2 entrelacé). **Jamais vu sur une vraie Apple TV** : le simulateur
   n'a aucun décodeur matériel.
 - **Date :** 2026-11-05

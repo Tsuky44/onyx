@@ -1,6 +1,6 @@
 # ADR-0107 — Sous-titres image sur l'écran natif d'Apple TV : une couche UIKit côté plugin
 
-- **Statut :** accepté, réalisé — compilé pour le simulateur tvOS et testé en Dart. **Jamais vu sur une
+- **Statut :** remplacée par l'[ADR-0133](0133-pas-de-lecteur-natif-sur-l-apple-tv.md) (lecteur natif retiré le 2026-11-14). Avant : accepté, réalisé — compilé pour le simulateur tvOS et testé en Dart. **Jamais vu sur une
   vraie Apple TV** : le simulateur prend toujours la route logicielle, où l'écran natif ne se présente pas.
 - **Date :** 2026-11-05
 - **Portée :** `packages/onyx_player_apple/darwin/.../NativeBitmapSubtitles.swift` (nouveau),

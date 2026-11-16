@@ -5,6 +5,7 @@ import 'package:onyx/models/media_request.dart';
 import 'package:onyx/models/my_request.dart';
 import 'package:onyx/screens/requests/my_requests_screen.dart';
 import 'package:onyx/services/api_client.dart';
+import 'package:onyx/widgets/global/onyx_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -293,7 +294,8 @@ void main() {
     await tester.tap(find.text('Refuser'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Doublon');
-    await tester.tap(find.widgetWithText(FilledButton, 'Refuser'));
+    await tester.tap(find.descendant(
+        of: find.byType(OnyxDialog), matching: find.text('Refuser')));
     await tester.pumpAndSettle();
     expect(api.moderated.single.$2, RequestModeration.decline);
     expect(api.moderated.single.$3, 'Doublon');

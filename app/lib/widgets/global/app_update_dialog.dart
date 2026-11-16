@@ -7,10 +7,10 @@ import 'package:provider/provider.dart';
 import '../../models/app_download.dart';
 import '../../services/api_client.dart';
 import '../../services/app_updater.dart';
-import '../../theme/app_colors.dart';
 import '../../utils/app_platform.dart';
-import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
+import 'onyx_dialog.dart';
+import '../../theme/app_icons.dart';
 
 /// Walks the user through an in-place update: download, unpack, restart.
 ///
@@ -24,7 +24,7 @@ Future<void> showAppUpdateDialog(
   required AppDownload download,
   bool autoStart = false,
 }) {
-  return showDialog<void>(
+  return showOnyxDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (_) => _AppUpdateDialog(download: download, autoStart: autoStart),
@@ -208,32 +208,20 @@ class _AppUpdateDialogState extends State<_AppUpdateDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text(_title()),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _message(),
-            style: const TextStyle(
-                color: AppColors.textMuted, fontSize: AppType.subhead),
-          ),
-          if (_step == _Step.downloading || _step == _Step.installing) ...[
-            const SizedBox(height: 16),
-            ClipRRect(
+    return OnyxDialog(
+      title: _title(),
+      icon: _step == _Step.failed ? AppIcons.info : AppIcons.download,
+      message: _message(),
+      content: (_step == _Step.downloading || _step == _Step.installing)
+          ? ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: _step == _Step.downloading ? _progress : null,
                 minHeight: 6,
                 backgroundColor: Colors.white.withValues(alpha: 0.08),
               ),
-            ),
-          ],
-        ],
-      ),
+            )
+          : null,
       actions: _actions(),
     );
   }
@@ -269,10 +257,12 @@ class _AppUpdateDialogState extends State<_AppUpdateDialog> {
             ? tr(
                 'Prêt à installer la version {0}. Android va demander une '
                 'confirmation.',
-                [version])
+                [version],
+              )
             : tr(
                 'Onyx va se fermer, s’installer en version {0}, puis se rouvrir.',
-                [version]);
+                [version],
+              );
         if (countdown == null) return base;
         return tr('{0} Ouverture automatique dans {1}s…', [base, countdown]);
       case _Step.failed:
@@ -280,44 +270,55 @@ class _AppUpdateDialogState extends State<_AppUpdateDialog> {
       case _Step.idle:
         final size = widget.download.formattedSize;
         final action = AppPlatform.isAndroid
-            ? tr('Onyx la télécharge, puis Android demandera de confirmer '
-                'l’installation.')
+            ? tr(
+                'Onyx la télécharge, puis Android demandera de confirmer '
+                'l’installation.',
+              )
             : tr('Onyx la télécharge, l’installe et redémarre tout seul.');
-        return tr('La version {0} est disponible{1}. {2}',
-            [version, size.isEmpty ? '' : ' ($size)', action]);
+        return tr('La version {0} est disponible{1}. {2}', [
+          version,
+          size.isEmpty ? '' : ' ($size)',
+          action,
+        ]);
     }
   }
 
-  List<Widget> _actions() {
+  List<OnyxDialogAction> _actions() {
     switch (_step) {
       case _Step.idle:
         return [
-          TextButton(onPressed: _close, child: Text(tr('Plus tard'))),
-          FilledButton(onPressed: _start, child: Text(tr('Mettre à jour'))),
+          OnyxDialogAction(label: tr('Plus tard'), onPressed: _close),
+          OnyxDialogAction(
+            label: tr('Mettre à jour'),
+            primary: true,
+            onPressed: _start,
+          ),
         ];
       case _Step.downloading:
       case _Step.installing:
-        return [
-          TextButton(onPressed: _close, child: Text(tr('Annuler'))),
-        ];
+        return [OnyxDialogAction(label: tr('Annuler'), onPressed: _close)];
       case _Step.ready:
         return [
-          TextButton(
+          OnyxDialogAction(
+            label: _autoRestartIn != null ? tr('Annuler') : tr('Plus tard'),
             onPressed: _autoRestartIn != null ? _cancelAutoRestart : _close,
-            child:
-                Text(_autoRestartIn != null ? tr('Annuler') : tr('Plus tard')),
           ),
-          FilledButton(
-            onPressed: _restart,
-            child: Text(AppPlatform.isAndroid
+          OnyxDialogAction(
+            label: AppPlatform.isAndroid
                 ? tr('Installer maintenant')
-                : tr('Redémarrer maintenant')),
+                : tr('Redémarrer maintenant'),
+            primary: true,
+            onPressed: _restart,
           ),
         ];
       case _Step.failed:
         return [
-          TextButton(onPressed: _close, child: Text(tr('Fermer'))),
-          FilledButton(onPressed: _start, child: Text(tr('Réessayer'))),
+          OnyxDialogAction(label: tr('Fermer'), onPressed: _close),
+          OnyxDialogAction(
+            label: tr('Réessayer'),
+            primary: true,
+            onPressed: _start,
+          ),
         ];
     }
   }

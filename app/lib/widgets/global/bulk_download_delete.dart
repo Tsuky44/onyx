@@ -3,9 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../models/offline_download.dart';
 import '../../services/download_manager.dart';
-import '../../theme/app_colors.dart';
 import '../../utils/format.dart';
 import '../../l10n/tr.dart';
+import 'onyx_dialog.dart';
+import '../../theme/app_icons.dart';
 
 /// Efface une saison ou une série entière de l'appareil, après confirmation.
 ///
@@ -27,37 +28,29 @@ Future<void> confirmDeleteDownloads(
   final unsynced = entries.any((e) => e.needsSync);
   final items = tr('{0} élément{1}', [count, count > 1 ? 's' : '']);
 
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: AppColors.surface,
-      title: Text(tr('Supprimer {0} ?', [what])),
-      content: Text(
+  final confirmed = await showOnyxConfirm(
+    context,
+    title: tr('Supprimer {0} ?', [what]),
+    message:
         '$items (${formatBytes(bytes)}) ${count > 1 ? 'seront effacés' : 'sera effacé'} '
         'de cet appareil. '
         '${unsynced ? 'L’avancement non synchronisé sera envoyé au serveur dès que possible.' : 'Tout reste disponible sur le serveur.'}',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(tr('Annuler')),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          style: TextButton.styleFrom(foregroundColor: AppColors.error),
-          child: Text(tr('Supprimer')),
-        ),
-      ],
-    ),
+    confirmLabel: tr('Supprimer'),
+    destructive: true,
+    icon: AppIcons.delete,
   );
-  if (confirmed != true) return;
+  if (!confirmed) return;
 
   final deleted = await manager.deleteAll([for (final e in entries) e.mediaId]);
   if (deleted == 0) return;
-  messenger.showSnackBar(SnackBar(
-    content: Text(
-      tr('{0} élément{1}',
-          [deleted, deleted > 1 ? tr('s supprimés') : tr(' supprimé')]),
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        tr('{0} élément{1}', [
+          deleted,
+          deleted > 1 ? tr('s supprimés') : tr(' supprimé'),
+        ]),
+      ),
     ),
-  ));
+  );
 }

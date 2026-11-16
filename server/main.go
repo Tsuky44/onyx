@@ -92,6 +92,8 @@ func main() {
 	go safego.Forever("handlers.RunEmbySync", func() { handlers.RunEmbySync(playbackContext) })
 	go safego.Forever("handlers.RunPlaybackActivity", func() { handlers.RunPlaybackActivity(playbackContext) })
 	go safego.Forever("handlers.RunWatchParties", func() { handlers.RunWatchParties(playbackContext) })
+	// Les titres connus de TMDB, pour compléter la recherche des demandes (ADR-0135).
+	handlers.StartRequestTitleIndex(playbackContext, filepath.Dir(absDbPath))
 
 	// Initialize router
 	router := httprouter.New()
@@ -275,6 +277,7 @@ func main() {
 	// MediaHub le fait avec Emby. La clé ouvre là une écriture : voir l'ADR.
 	router.GET("/api/integrations/mediahub/storage", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubStorage)))
 	router.GET("/api/integrations/mediahub/storage/:id", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubStorageDetails)))
+	router.GET("/api/integrations/mediahub/storage/:id/deletable", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubCheckDeletableStorage)))
 	router.DELETE("/api/integrations/mediahub/storage/:id", handlers.RateLimited(handlers.PollLimiter, handlers.RequireMediaHubKey(handlers.MediaHubDeleteStorage)))
 	// Le même gestionnaire dans l'administration de l'app (ADR-0115) : la
 	// liste dit qui regarde quoi et la page supprime du disque, donc tout

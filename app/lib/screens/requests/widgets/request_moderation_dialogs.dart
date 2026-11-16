@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/tr.dart';
-import '../../../theme/app_colors.dart';
 import '../../../tv/tv_deferred_keyboard.dart';
+import '../../../widgets/global/onyx_dialog.dart';
+import '../../../theme/app_icons.dart';
 
 /// Demande le motif d'un refus. Null : l'administrateur a renoncé ; une
 /// chaîne vide : refus sans motif.
 Future<String?> askDeclineReason(BuildContext context, String title) {
-  return showDialog<String>(
+  return showOnyxDialog<String>(
     context: context,
     builder: (_) => _DeclineDialog(title: title),
   );
@@ -36,37 +37,35 @@ class _DeclineDialogState extends State<_DeclineDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      title: Text(tr('Refuser « {0} » ?', [widget.title])),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: TvDeferredKeyboard(
-          builder: (context, focusNode, canRequestFocus) => TextField(
-            controller: _reason,
-            focusNode: focusNode,
-            canRequestFocus: canRequestFocus,
-            maxLength: _maxReason,
-            minLines: 1,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: tr('Motif (facultatif)'),
-              hintText: tr('Déjà disponible ailleurs, doublon…'),
-              counterText: '',
-            ),
+    return OnyxDialog(
+      title: tr('Refuser « {0} » ?', [widget.title]),
+      destructive: true,
+      icon: AppIcons.blocked,
+      content: TvDeferredKeyboard(
+        builder: (context, focusNode, canRequestFocus) => TextField(
+          controller: _reason,
+          focusNode: focusNode,
+          canRequestFocus: canRequestFocus,
+          maxLength: _maxReason,
+          minLines: 1,
+          maxLines: 3,
+          decoration: InputDecoration(
+            labelText: tr('Motif (facultatif)'),
+            hintText: tr('Déjà disponible ailleurs, doublon…'),
+            counterText: '',
           ),
         ),
       ),
       actions: [
-        TextButton(
+        OnyxDialogAction(
+          label: tr('Annuler'),
           autofocus: true,
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(tr('Annuler')),
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+        OnyxDialogAction(
+          label: tr('Refuser'),
+          primary: true,
           onPressed: () => Navigator.of(context).pop(_reason.text.trim()),
-          child: Text(tr('Refuser')),
         ),
       ],
     );
@@ -75,26 +74,15 @@ class _DeclineDialogState extends State<_DeclineDialog> {
 
 /// Confirme la suppression d'une demande dans MediaHub.
 Future<bool> confirmDeleteRequest(BuildContext context, String title) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      title: Text(tr('Supprimer la demande « {0} » ?', [title])),
-      content: Text(tr('La demande disparaît de MediaHub. Ce que Radarr ou '
-          'Sonarr ont déjà téléchargé reste en place.')),
-      actions: [
-        TextButton(
-          autofocus: true,
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: Text(tr('Annuler')),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: Text(tr('Supprimer')),
-        ),
-      ],
+  return showOnyxConfirm(
+    context,
+    title: tr('Supprimer la demande « {0} » ?', [title]),
+    message: tr(
+      'La demande disparaît de MediaHub. Ce que Radarr ou '
+      'Sonarr ont déjà téléchargé reste en place.',
     ),
+    confirmLabel: tr('Supprimer'),
+    destructive: true,
+    icon: AppIcons.delete,
   );
-  return confirmed == true;
 }

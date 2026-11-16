@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,6 +34,11 @@ type tmdbCatalogRow struct {
 	ReleaseDate  string  `json:"release_date"`
 	FirstAirDate string  `json:"first_air_date"`
 	VoteAverage  float64 `json:"vote_average"`
+	// Pour ranger une recherche par pertinence (request_search_rank.go).
+	OriginalTitle string  `json:"original_title"`
+	OriginalName  string  `json:"original_name"`
+	Popularity    float64 `json:"popularity"`
+	VoteCount     int     `json:"vote_count"`
 }
 
 type tmdbCatalogResponse struct {
@@ -126,15 +130,7 @@ func TmdbRequestCatalog(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 
 	var err error
 	if query != "" {
-		var tmdbURL string
-		if mediaType == "movie" {
-			tmdbURL = fmt.Sprintf("/search/movie?language=%s&page=%d&query=%s", lang, page, url.QueryEscape(query))
-		} else if mediaType == "tv" {
-			tmdbURL = fmt.Sprintf("/search/tv?language=%s&page=%d&query=%s", lang, page, url.QueryEscape(query))
-		} else {
-			tmdbURL = fmt.Sprintf("/search/multi?language=%s&page=%d&query=%s", lang, page, url.QueryEscape(query))
-		}
-		raw, err = cachedTMDBCatalogPage(client, tmdbURL)
+		raw, err = searchCatalog(client, mediaType, lang, page, query)
 	} else if discover.active() {
 		if mediaType == "movie" || mediaType == "tv" {
 			raw, err = cachedTMDBCatalogPage(client, discoverURL(mediaType, lang, page, discover))

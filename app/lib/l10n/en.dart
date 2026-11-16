@@ -178,12 +178,18 @@ const Map<String, String> kEnglish = <String, String>{
       'Arabic',
   'Attendre le Wi-Fi':
       'Wait for Wi-Fi',
+  'Aucun genre.':
+      'No genres.',
   'Chacun la rejoint':
       'Everyone joins',
+  'Choisir une date':
+      'Pick a date',
   'Comment ça marche':
       'How it works',
   'Depuis ce panneau, pendant la lecture.':
       'From this panel, during playback.',
+  'Dès {0}':
+      'From {0}',
   'Démarrez la séance':
       'Start the session',
   'Effacer la recherche':
@@ -466,6 +472,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Chosen when a media opens if a matching track exists.',
   'Choisir la fiche':
       'Choose the match',
+  'Choisir les saisons':
+      'Choose seasons',
   'Choisir sur TMDB':
       'Choose on TMDB',
   'Choisir une image':
@@ -684,8 +692,18 @@ const Map<String, String> kEnglish = <String, String>{
       'Request',
   'Cochez les saisons à ajouter.':
       'Tick the seasons to add.',
+  'Genres · {0}':
+      'Genres · {0}',
+  'Cochez les saisons à demander.':
+      'Tick the seasons to request.',
   'Il s’affiche ici une fois la séance ouverte.':
       'It appears here once the session is open.',
+  'Impossible de charger les genres.':
+      'Could not load genres.',
+  'Impossible de charger les services.':
+      'Could not load services.',
+  'Jusqu’à {0}':
+      'Up to {0}',
   'Lecture, pauses et déplacements sont partagés entre tous, chacun sur son appareil.':
       'Playback, pauses and seeks are shared by everyone, each on their own device.',
   'Menu du compte › Rejoindre une séance.':
@@ -694,10 +712,20 @@ const Map<String, String> kEnglish = <String, String>{
       'Share the code',
   'Regardez à plusieurs':
       'Watch with others',
+  'Retirer le filtre':
+      'Remove filter',
+  'Région : {0}':
+      'Region: {0}',
+  'Streaming · {0}':
+      'Streaming · {0}',
   'Tout cocher':
       'Select all',
   'Tout décocher':
       'Clear all',
+  'Tout effacer':
+      'Clear all',
+  'Trier : {0}':
+      'Sort: {0}',
   '{0} épisodes sur {1} déjà là':
       '{0} of {1} episodes already here',
   'Demander ({0})':
@@ -882,6 +910,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Pending · {0}',
   'En cours':
       'In progress',
+  'En cours · {0}':
+      'In progress · {0}',
   'En cours de lecture':
       'Now playing',
   'En erreur':
@@ -892,6 +922,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Online for {0}',
   'En pause · {0} téléchargés':
       'Paused · {0} downloaded',
+  'En pause':
+      'Paused',
   'En production':
       'In production',
   'Enregistrement impossible.':
@@ -1922,14 +1954,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Period',
   'Qualité':
       'Quality',
-  'Lecteur Apple TV':
-      'Apple TV player',
-  'Natif : le lecteur d’Apple TV. Onyx : l’interface d’Onyx. Un fichier que le natif ne sait pas lire repasse seul sur Onyx.':
-      'Native: the Apple TV player. Onyx: the Onyx interface. A file the native player cannot handle falls back to Onyx on its own.',
-  'Natif':
-      'Native',
-  'Propre à cet appareil.':
-      'Specific to this device.',
   'Qualité automatique':
       'Automatic quality',
   'Quand la poser':
@@ -2304,6 +2328,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Delete {0}?',
   'Sur cet appareil':
       'On this device',
+  'Sur cet appareil · {0}':
+      'On this device · {0}',
   'Sur le serveur':
       'On the server',
   'Sur un réseau limité':
@@ -2802,6 +2828,8 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} result{1}',
   '{0} sur {1}':
       '{0} of {1}',
+  '{0} % vu':
+      '{0}% watched',
   '{0} sur le serveur {1}':
       '{0} on server {1}',
   '{0} sur le serveur {1} (en attente des administrateurs)':
@@ -2870,6 +2898,8 @@ const Map<String, String> kEnglish = <String, String>{
       '“{0}” is not in your library',
   'Ce titre n’est pas dans ta bibliothèque':
       'This title is not in your library',
+  'À':
+      'To',
   'À découvrir':
       'Discover',
   'À faire si le mot de passe Emby a changé ou si la session a été révoquée.':
@@ -2906,6 +2936,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Could not save.',
   'Échec du téléchargement':
       'Download failed',
+  'Échec':
+      'Failed',
   'Échec.':
       'Failed.',
   'Écran verrouillé. Maintenir deux secondes pour déverrouiller.':
@@ -3176,10 +3208,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Description (optional)',
   'Partager avec les autres comptes':
       'Share with the other accounts',
-  'Tous les comptes de ce serveur peuvent voir la liste. Vous seul la modifiez.':
-      'Every account on this server can see the list. Only you can change it.',
-  'Vous seul voyez cette liste.':
-      'Only you can see this list.',
+  'Tous les comptes de ce serveur peuvent voir la liste.':
+      'Every account on this server can see the list.',
+  'Seuls vous et les personnes avec qui vous la partagez la voient.':
+      'Only you and the people you share it with can see it.',
   'Créer':
       'Create',
   'Tester':
@@ -3424,12 +3456,8 @@ const Map<String, String> kEnglish = <String, String>{
       '“{0}” will be erased from this device.',
   'Demande envoyée':
       'Request sent',
-  '{0} minutes':
-      '{0} minutes',
   '1 heure':
       '1 hour',
-  '{0} heures':
-      '{0} hours',
   'Code de la séance : {0}':
       'Session code: {0}',
   '{0} participants':
@@ -3614,10 +3642,113 @@ const Map<String, String> kEnglish = <String, String>{
       'Invite to the list',
   'Les comptes cochés peuvent ajouter et retirer des titres dans « {0} ». Vous seul la modifiez.':
       'Checked accounts can add and remove titles in “{0}”. Only you can edit it.',
+  'Partagée avec : {0}':
+      'Shared with: {0}',
+  'Partager « {0} »':
+      'Share “{0}”',
+  'Tout le serveur peut la voir':
+      'Everyone on the server can see it',
+  'Les autres comptes la voient sans pouvoir la modifier.':
+      'Other accounts can see it but can’t change it.',
+  'Choisissez qui peut ajouter des titres, ou seulement voir la liste quand elle est privée.':
+      'Choose who can add titles, or only see the list when it’s private.',
+  'Aucun accès':
+      'No access',
+  'Peut voir':
+      'Can view',
+  'Peut ajouter des titres':
+      'Can add titles',
   'Il n’y a pas d’autre compte sur ce serveur.':
       'There are no other accounts on this server.',
   'Profil par défaut de cet appareil':
       'This device’s default profile',
   'Ouvrir {0} par défaut':
       'Open {0} by default',
+  'Quel serveur ?':
+      'Which server?',
+  '{0} ne répond pas.':
+      '{0} isn’t responding.',
+  'Continuer sur {0}':
+      'Continue on {0}',
+  'Serveur {0}':
+      'Server {0}',
+  '1 profil':
+      '1 profile',
+  '{0} profils':
+      '{0} profiles',
+  'Comptes · {0}':
+      'Accounts · {0}',
+  'Actions pour {0}':
+      'Actions for {0}',
+  // Menu « Plus » de la fiche (ADR-0132).
+  'Ma liste':
+      'My list',
+  'Corriger la fiche…':
+      'Fix metadata…',
+  'Changer l’affiche…':
+      'Change poster…',
+  'Partager la série':
+      'Share series',
+  'Partager':
+      'Share',
+  'Marquer comme non vu':
+      'Mark as unwatched',
+  'Marquer la saison comme vue':
+      'Mark season as watched',
+  'Marquer la saison {0} comme vue':
+      'Mark season {0} as watched',
+  'Marquer la saison comme non vue':
+      'Mark season as unwatched',
+  'Marquer la saison {0} comme non vue':
+      'Mark season {0} as unwatched',
+  'Retirer la saison de l’appareil':
+      'Remove season from this device',
+  'Retirer la saison {0} de l’appareil':
+      'Remove season {0} from this device',
+  'Téléchargée · {0}':
+      'Downloaded · {0}',
+  '{0}/{1} épisodes téléchargés':
+      '{0}/{1} episodes downloaded',
+  'Télécharger les non vus de la saison':
+      'Download unwatched episodes of the season',
+  'Télécharger les non vus de la saison {0}':
+      'Download unwatched episodes of season {0}',
+  'Compléter la saison':
+      'Finish downloading the season',
+  'Compléter la saison {0}':
+      'Finish downloading season {0}',
+  'Télécharger la saison {0}':
+      'Download season {0}',
+  '{0} % téléchargés':
+      '{0}% downloaded',
+  'Télécharger le film':
+      'Download movie',
+  'Télécharger l’épisode':
+      'Download episode',
+  'Réessayer le téléchargement':
+      'Retry download',
+  'Mettre en pause le téléchargement':
+      'Pause download',
+  'Supprimer le téléchargement':
+      'Delete download',
+  'Filtres':
+      'Filters',
+  'Filtres · {0}':
+      'Filters · {0}',
+  'Langue d’origine':
+      'Original language',
+  'Disponible sur':
+      'Available on',
+  'Tous les services':
+      'All services',
+  '{0} choisis':
+      '{0} selected',
+  'Du':
+      'From',
+  'Au':
+      'To',
+  'Min (minutes)':
+      'Min (minutes)',
+  'Max (minutes)':
+      'Max (minutes)',
 };

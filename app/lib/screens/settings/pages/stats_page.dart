@@ -14,6 +14,7 @@ import '../widgets/settings_ui.dart';
 import '../../../theme/app_type.dart';
 import '../../../tv/tv_focus.dart';
 import '../../../l10n/tr.dart';
+import '../../../widgets/global/onyx_menu.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -107,24 +108,24 @@ class _StatsPageState extends State<StatsPage> {
                   },
                 ),
               if (_users.length > 1)
-                PopupMenuButton<int?>(
+                OnyxMenuButton<int?>(
                   tooltip: tr('Filtrer par utilisateur'),
-                  color: AppColors.surfaceElevated,
                   onSelected: (id) {
-                    setState(() => _userId = id == -1 ? null : id);
+                    setState(() => _userId = id);
                     _load();
                   },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                        value: -1, child: Text(tr('Tout le monde'))),
+                  items: [
+                    OnyxMenuItem<int?>(
+                      value: null,
+                      label: tr('Tout le monde'),
+                      checked: _userId == null,
+                    ),
                     for (final user in _users)
-                      PopupMenuItem(
+                      OnyxMenuItem<int?>(
                         value: user.id,
-                        child: Row(children: [
-                          UserAvatar(user.username, size: 20),
-                          const SizedBox(width: 8),
-                          Text(user.username),
-                        ]),
+                        leading: UserAvatar(user.username, size: 20),
+                        label: user.username,
+                        checked: _userId == user.id,
                       ),
                   ],
                   child: Container(

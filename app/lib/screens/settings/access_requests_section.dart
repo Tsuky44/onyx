@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,8 +6,13 @@ import '../../models/server_account.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_colors.dart';
-import 'user_admin_sections.dart';
+import '../../theme/app_icons.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/global/onyx_dialog.dart';
+import 'widgets/admin_prompts.dart';
+import 'widgets/permissions_sheet.dart';
+import 'widgets/settings_ui.dart';
+import 'widgets/user_rights.dart';
 
 /// Les gens qui ont sonné à la porte de ce serveur.
 ///
@@ -47,7 +51,7 @@ class _AccessRequestsSectionState extends State<AccessRequestsSection> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = _errorText(e);
+        _error = adminErrorText(e);
       });
       // Les droits ont pu être retirés pendant que l'écran était ouvert.
       context.read<AuthProvider>().refreshProfile();
@@ -67,7 +71,7 @@ class _AccessRequestsSectionState extends State<AccessRequestsSection> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busyId = null);
-      _toast(_errorText(e), error: true);
+      _toast(adminErrorText(e), error: true);
     }
   }
 
@@ -86,29 +90,16 @@ class _AccessRequestsSectionState extends State<AccessRequestsSection> {
   }
 
   Future<void> _deny(AccessRequest request) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Refuser {0} ?', [request.username])),
-        content: Text(
-          tr('La personne en sera informée à sa prochaine tentative. Aucun '
-              'compte n’est créé.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('Refuser')),
-          ),
-        ],
-      ),
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: tr('Refuser {0} ?', [request.username]),
+      message: tr('La personne en sera informée à sa prochaine tentative. Aucun '
+          'compte n’est créé.'),
+      confirmLabel: tr('Refuser'),
+      destructive: true,
+      icon: AppIcons.close,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     setState(() => _busyId = request.id);
     try {
@@ -119,16 +110,13 @@ class _AccessRequestsSectionState extends State<AccessRequestsSection> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busyId = null);
-      _toast(_errorText(e), error: true);
+      _toast(adminErrorText(e), error: true);
     }
   }
 
   void _toast(String message, {bool error = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: error ? AppColors.error : null,
-    ));
+    showSettingsSnack(context, message, error: error);
   }
 
   String _waitingFor(AccessRequest request) {
@@ -143,50 +131,44 @@ class _AccessRequestsSectionState extends State<AccessRequestsSection> {
 
   @override
   Widget build(BuildContext context) {
+    final title = tr('Demandes d’accès');
+    final footer = tr('Accepter crée le compte et connecte aussitôt l’appareil '
+        'qui a fait la demande.');
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
+      return SettingsGroup(
+        title: title,
+        footer: footer,
+        padded: true,
+        children: const [SettingsLoading()],
       );
     }
 
     final canChooseGrants =
         context.watch<AuthProvider>().permissions.manageUsers;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return SettingsGroup(
+      title: title,
+      footer: footer,
+      trailing: IconButton(
+        tooltip: tr('Actualiser'),
+        icon: const Icon(AppIcons.refresh, size: 18),
+        onPressed: _load,
+      ),
       children: [
-        if (_error != null) ...[
-          Text(_error!, style: const TextStyle(color: AppColors.error)),
-          const SizedBox(height: 12),
-        ],
-        if (_requests.isEmpty)
-          Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Text(
-              tr('Aucune demande en attente.'),
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
+        if (_error != null)
+          SettingsBanner(_error!, tone: BannerTone.error)
+        else if (_requests.isEmpty)
+          SettingsEmptyNote(tr('Aucune demande en attente.'),
+              icon: AppIcons.person),
         for (final request in _requests)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-              child: Text(request.username.isEmpty
-                  ? '?'
-                  : request.username.substring(0, 1).toUpperCase()),
-            ),
-            title: Text(request.username),
-            subtitle: Text(
-              [
-                _waitingFor(request),
-                if (request.deviceName.isNotEmpty) request.deviceName,
-                if (request.message.isNotEmpty) '« ${request.message} »',
-              ].join(' · '),
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-            isThreeLine: request.message.isNotEmpty,
+          SettingsTile(
+            leading: UserAvatar(request.username, size: 34, rounded: true),
+            title: request.username,
+            subtitle: [
+              _waitingFor(request),
+              if (request.deviceName.isNotEmpty) request.deviceName,
+              if (request.message.isNotEmpty) '« ${request.message} »',
+            ].join(' · '),
             trailing: _busyId == request.id
                 ? const SizedBox(
                     width: 20,
@@ -198,32 +180,23 @@ class _AccessRequestsSectionState extends State<AccessRequestsSection> {
                     children: [
                       IconButton(
                         tooltip: tr('Refuser'),
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(AppIcons.close),
                         onPressed: () => _deny(request),
                       ),
                       IconButton(
                         tooltip: tr('Accepter'),
-                        icon: const Icon(Icons.check_rounded),
+                        icon: const Icon(AppIcons.check),
                         onPressed: () => _approve(request),
                       ),
                       if (canChooseGrants)
                         IconButton(
                           tooltip: tr('Accepter avec des droits précis'),
-                          icon: const Icon(Icons.tune_rounded),
+                          icon: const Icon(AppIcons.filters),
                           onPressed: () => _approveWithGrants(request),
                         ),
                     ],
                   ),
           ),
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: Text(tr('Actualiser')),
-          ),
-        ),
       ],
     );
   }
@@ -245,49 +218,20 @@ class _GrantsSheetState extends State<_GrantsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+    return SettingsSheetFrame(
+      title: tr('Droits de {0}', [widget.username]),
+      children: [
+        PermissionSwitches(
+          value: _grants,
+          onChanged: (key, granted) => setState(() {
+            _grants = writePermission(_grants, key, granted);
+          }),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              tr('Droits de {0}', [widget.username]),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            for (final entry in permissionLabels)
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: Text(entry.$2),
-                value: readPermission(_grants, entry.$1),
-                onChanged: (value) => setState(() {
-                  _grants = writePermission(_grants, entry.$1, value ?? false);
-                }),
-              ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(_grants),
-              child: Text(tr('Accepter')),
-            ),
-          ],
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_grants),
+          child: Text(tr('Accepter')),
         ),
-      ),
+      ],
     );
   }
-}
-
-String _errorText(Object error) {
-  if (error is DioException) {
-    final data = error.response?.data;
-    if (data is Map && data['error'] != null) return data['error'].toString();
-  }
-  return tr('Une erreur est survenue : {0}', [error]);
 }

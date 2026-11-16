@@ -4,6 +4,8 @@ import 'package:onyx/models/media_request.dart';
 import 'package:onyx/models/request_catalog_filters.dart';
 import 'package:onyx/providers/media_requests_provider.dart';
 import 'package:onyx/screens/requests/requests_screen.dart';
+import 'package:onyx/screens/requests/widgets/request_filter_bar.dart';
+import 'package:onyx/screens/requests/widgets/request_filters_fab.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/theme/app_colors.dart';
 import 'package:onyx/tv/nav/tv_nav_engine.dart';
@@ -62,10 +64,22 @@ void main() {
       );
     });
 
-    testWidgets('ailleurs, le bouton flottant reste', (tester) async {
+    testWidgets(
+        'sur un téléviseur, la feuille des filtres reste : '
+        'pas de rangée de capsules', (tester) async {
+      await _pump(tester, engine);
+
+      expect(find.byType(RequestFilterBar), findsNothing);
+    });
+
+    testWidgets(
+        'ailleurs, le bouton flottant Filtres reste à l’écran, '
+        'avec la rangée de capsules sur grand écran', (tester) async {
       await _pump(tester, engine, isTv: false);
 
-      expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(find.byType(RequestFiltersFab), findsOneWidget);
+      expect(find.byType(RequestFilterBar), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Filtres avancés'), findsNothing);
     });
 
     testWidgets(

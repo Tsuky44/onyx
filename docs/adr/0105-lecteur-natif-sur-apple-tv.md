@@ -1,6 +1,6 @@
 # ADR-0105 — Un `AVPlayerViewController` natif pour le lecteur de l'Apple TV
 
-- **Statut :** accepté, réalisé — compilé et testé en Dart ; jamais essayé sur une vraie Apple TV (le
+- **Statut :** remplacée par l'[ADR-0133](0133-pas-de-lecteur-natif-sur-l-apple-tv.md) (lecteur natif retiré le 2026-11-14). Avant : accepté, réalisé — compilé et testé en Dart ; jamais essayé sur une vraie Apple TV (le
   simulateur prend toujours la route logicielle d'AetherEngine). Le réglage vaut « Onyx » par défaut
   jusqu'à la recette décrite dans `docs/agents/native-tv-player-manual-tests.md`.
 - **Date :** 2026-11-04 ; mise à jour du 2026-11-05 (transcodage HLS, sous-titres image, parité)

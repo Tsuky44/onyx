@@ -5,6 +5,8 @@ import '../../models/models.dart';
 import '../../services/api_client.dart';
 import '../../widgets/global/metadata_fix_sheet.dart';
 import 'release_folder_hint.dart';
+import '../../widgets/global/onyx_dialog.dart';
+import '../../theme/app_icons.dart';
 
 /// Ce qu'on corrige de la fiche d'une série depuis sa page : relancer la
 /// détection TMDB, choisir la fiche à la main. Sorti de
@@ -58,33 +60,23 @@ Future<void> redetectShowMetadata(
   required String? folder,
   required Future<void> Function(Media updated) onUpdated,
 }) async {
-  final folderLine =
-      folder?.isNotEmpty == true ? folder! : tr('dossier inconnu');
+  final folderLine = folder?.isNotEmpty == true
+      ? folder!
+      : tr('dossier inconnu');
 
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(tr('Relancer la détection')),
-      content: Text(
-        tr(
-            'TMDB sera recherché à partir du dossier local '
-            ':\n\n{0}\n\nL’affiche et les métadonnées de cette série '
-            'seront remplacées.',
-            [folderLine]),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: Text(tr('Annuler')),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: Text(tr('Relancer')),
-        ),
-      ],
+  final confirmed = await showOnyxConfirm(
+    context,
+    title: tr('Relancer la détection'),
+    message: tr(
+      'TMDB sera recherché à partir du dossier local '
+      ':\n\n{0}\n\nL’affiche et les métadonnées de cette série '
+      'seront remplacées.',
+      [folderLine],
     ),
+    confirmLabel: tr('Relancer'),
+    icon: AppIcons.refresh,
   );
-  if (confirmed != true || !context.mounted) return;
+  if (!confirmed || !context.mounted) return;
 
   final messenger = ScaffoldMessenger.of(context);
   try {
@@ -98,8 +90,9 @@ Future<void> redetectShowMetadata(
     if (!context.mounted) return;
     messenger.showSnackBar(
       SnackBar(
-        content:
-            Text(tr('Détection impossible — essayez le choix manuel TMDB')),
+        content: Text(
+          tr('Détection impossible — essayez le choix manuel TMDB'),
+        ),
       ),
     );
   }
@@ -127,8 +120,10 @@ Future<void> rematchShowMetadata(
 
   final messenger = ScaffoldMessenger.of(context);
   try {
-    final updated =
-        await api.rematchMediaMetadata(show.id, tmdbId: choice.tmdbId);
+    final updated = await api.rematchMediaMetadata(
+      show.id,
+      tmdbId: choice.tmdbId,
+    );
     if (!context.mounted) return;
     await onUpdated(updated);
     messenger.showSnackBar(
@@ -137,9 +132,7 @@ Future<void> rematchShowMetadata(
   } catch (_) {
     if (!context.mounted) return;
     messenger.showSnackBar(
-      SnackBar(
-        content: Text(tr('Impossible de mettre à jour la fiche')),
-      ),
+      SnackBar(content: Text(tr('Impossible de mettre à jour la fiche'))),
     );
   }
 }

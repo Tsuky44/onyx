@@ -25,31 +25,50 @@ class PosterGridZoom extends ChangeNotifier {
 
   static const String _key = 'poster_grid_columns';
 
-  /// Les quatre modes d'affichage, en nombre d'affiches par ligne.
+  /// Les quatre modes d'affichage, en nombre d'affiches par ligne : tablette,
+  /// ordinateur et navigateur.
   static const List<int> presets = [4, 6, 8, 10];
+
+  /// Les trois modes d'un téléphone : au-delà de 4 par ligne, une affiche n'y
+  /// est plus lisible (10 par ligne tenait sur une rangée de timbres-poste).
+  static const List<int> phonePresets = [2, 3, 4];
+
+  /// Les modes proposés sur un écran étroit ([phone], largeur < 600) ou large.
+  static List<int> presetsFor({required bool phone}) =>
+      phone ? phonePresets : presets;
 
   /// Le nombre de colonnes choisi, ou null tant que la grille choisit seule.
   static final ValueNotifier<int?> _shared = ValueNotifier<int?>(null);
   static bool _loaded = false;
 
   int _base = 2;
+  bool _phone = false;
   bool _baseNotifyQueued = false;
   bool _disposed = false;
 
-  /// Nombre de colonnes affichées pour la dernière base reçue de la grille.
-  int get columns => _shared.value ?? _base;
+  List<int> get _available => presetsFor(phone: _phone);
+
+  /// Nombre de colonnes affichées pour la dernière base reçue de la grille. Un
+  /// choix hors des modes de l'écran (un 8 enregistré, puis une fenêtre
+  /// étroite) est ignoré : la grille choisit seule, sans effacer le choix.
+  int get columns {
+    final chosen = _shared.value;
+    return chosen != null && _available.contains(chosen) ? chosen : _base;
+  }
 
   /// Le mode d'affichage en vigueur, ou null quand le choix automatique tombe
   /// entre deux modes : le menu n'en coche alors aucun.
-  int? get selected => presets.contains(columns) ? columns : null;
+  int? get selected => _available.contains(columns) ? columns : null;
 
-  /// Nombre de colonnes à afficher pour un choix automatique de [base].
-  int apply(int base) {
+  /// Nombre de colonnes à afficher pour un choix automatique de [base] ;
+  /// [phone] dit quels modes le choix peut prendre.
+  int apply(int base, {bool phone = false}) {
     // Mémorisée pour que [step] parte de la grille réellement affichée. L'appel
     // a lieu en pleine mise en page : ceux qui lisent [columns] (le menu) sont
     // prévenus à l'image suivante.
-    if (base != _base) {
+    if (base != _base || phone != _phone) {
       _base = base;
+      _phone = phone;
       _notifyAfterLayout();
     }
     return columns;
@@ -71,7 +90,8 @@ class PosterGridZoom extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getInt(_key);
-      _shared.value = presets.contains(saved) ? saved : null;
+      _shared.value =
+          presets.contains(saved) || phonePresets.contains(saved) ? saved : null;
     } catch (_) {
       // Faute de disque, le choix vaut pour la séance.
     }
@@ -83,14 +103,17 @@ class PosterGridZoom extends ChangeNotifier {
   void step(int columnsDelta) {
     final current = columns;
     final next = columnsDelta > 0
-        ? presets.where((p) => p > current)
-        : presets.where((p) => p < current).toList().reversed;
+        ? _available.where((p) => p > current)
+        : _available.where((p) => p < current).toList().reversed;
     if (next.isNotEmpty) select(next.first);
   }
 
-  /// Choisit l'un des modes de [presets].
+  /// Choisit l'un des modes de [presets] ou de [phonePresets].
   void select(int preset) {
-    assert(presets.contains(preset), 'Mode d\'affichage inconnu : $preset');
+    assert(
+      presets.contains(preset) || phonePresets.contains(preset),
+      'Mode d\'affichage inconnu : $preset',
+    );
     if (_shared.value == preset) return;
     _shared.value = preset;
     _persist();
@@ -121,6 +144,7 @@ class PosterGridZoom extends ChangeNotifier {
   void resetForTest() {
     _shared.value = null;
     _base = 2;
+    _phone = false;
     _loaded = false;
   }
 }

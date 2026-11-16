@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'version_picker.dart';
 import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../navigation/catalog_navigation.dart';
@@ -26,6 +27,7 @@ import '../../widgets/global/metadata_fix_sheet.dart';
 import '../../widgets/global/poster_picker_sheet.dart';
 import '../../widgets/global/share_media_button.dart';
 import '../../widgets/global/watched_action_button.dart';
+import 'movie_more_button.dart';
 import '../../navigation/search_route_observer.dart';
 import '../player/player_screen.dart';
 import '../../theme/app_icons.dart';
@@ -411,7 +413,28 @@ class _MovieDetailScreenState extends State<MovieDetailScreen>
                         ? formatRemaining(
                             _playbackMedia.duration - _currentPosition)
                         : null,
-                    secondary: [
+                    // Hors TV : « Ma liste » et « Plus » (ADR-0132) ; sur un
+                    // téléviseur, la rangée de ronds d'avant (ADR-0112).
+                    secondary: !TvScope.of(context)
+                        ? [
+                            AddToListButton(
+                                title: ListableTitle.server(_media),
+                                named: true),
+                            MovieMoreButton(
+                              item: _playbackItem,
+                              isWatched: _isFinished,
+                              watchedBusy: _loadingWatched || _loadingProgress,
+                              onToggleWatched: _toggleWatched,
+                              onRematch: _rematch,
+                              onChangePoster: _changePoster,
+                            ),
+                            // L'anneau d'un téléchargement lancé reste dans
+                            // la rangée : la progression se lit sans ouvrir
+                            // de menu.
+                            MediaDownloadButton(
+                                item: _playbackItem, statusOnly: true),
+                          ]
+                        : [
                       WatchedActionButton(
                         isWatched: _isFinished,
                         isLoading: _loadingWatched || _loadingProgress,
@@ -447,28 +470,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen>
                   child: Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: DropdownButtonFormField<int>(
-                      key: ValueKey(_selectedVersion?.item.media.id),
-                      initialValue: _selectedVersion?.item.media.id,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: tr('Version'),
-                        helperText:
-                            tr('La meilleure qualité est sélectionnée par défaut.'),
-                      ),
-                      items: _versions
-                          .map((version) => DropdownMenuItem(
-                                value: version.item.media.id,
-                                child: Text(version.label,
-                                    overflow: TextOverflow.ellipsis),
-                              ))
-                          .toList(),
-                      onChanged: (id) {
-                        if (id != null) {
-                          _selectVersion(
-                              _versions.firstWhere((v) => v.item.media.id == id));
-                        }
-                      },
+                    child: VersionPicker(
+                      versions: _versions,
+                      selectedId: _selectedVersion?.item.media.id,
+                      helperText:
+                          tr('La meilleure qualité est sélectionnée par défaut.'),
+                      onSelected: _selectVersion,
                     ),
                   ),
                 ),

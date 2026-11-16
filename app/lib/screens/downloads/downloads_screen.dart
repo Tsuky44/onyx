@@ -2,24 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../desktop_window.dart';
+import '../../l10n/tr.dart';
 import '../../models/offline_download.dart';
-import '../../navigation/search_route_observer.dart';
 import '../../services/download_manager.dart';
 import '../../services/server_reachability.dart';
 import '../../theme/app_colors.dart';
-import '../../tv/tv_focus.dart';
-import '../../utils/format.dart';
-import '../../utils/responsive.dart';
-import '../../widgets/global/empty_state.dart';
-import '../../widgets/global/local_file_image.dart';
-import '../../widgets/global/media_download_button.dart';
-import '../../widgets/global/metered_download_dialog.dart';
-import '../player/player_screen.dart';
-import '../device_library/device_library_entry.dart';
-import 'download_group_headers.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
-import '../../l10n/tr.dart';
+import '../../tv/tv_mode.dart';
+import '../../utils/responsive.dart';
+import '../../widgets/global/empty_state.dart';
+import '../device_library/device_library_entry.dart';
+import 'download_group_headers.dart';
+import 'widgets/download_row.dart';
+import 'widgets/download_tv_row.dart';
+import 'widgets/downloads_header.dart';
 
 /// Ce qui est sur l'appareil, et rien d'autre.
 ///
@@ -39,7 +36,19 @@ class DownloadsScreen extends StatelessWidget {
     final compact = AppLayout.isCompact(context);
     final pad = AppLayout.pagePadding(context);
     final items = manager.downloads;
-    final groups = _groupByShow(items);
+    // Un téléviseur garde l'écran d'avant la refonte du PC (regroupement par
+    // série de tout ce qui est là) : sa navigation est épinglée par
+    // `downloads_navigation_map_test.dart`.
+    final tv = TvScope.of(context);
+    final groups = tv ? _groupByShow(items) : const <_Group>[];
+    // Hors TV, ce qui descend passe d'abord, dans l'ordre de la file ; ce qui
+    // est déjà là garde le regroupement par série.
+    final inProgress = tv
+        ? const <OfflineDownload>[]
+        : items.where((e) => !e.isCompleted).toList();
+    final onDevice = tv
+        ? const <OfflineDownload>[]
+        : items.where((e) => e.isCompleted).toList();
     final watchedCount =
         items.where((e) => e.isCompleted && e.isFinished).length;
 
@@ -56,7 +65,7 @@ class DownloadsScreen extends StatelessWidget {
                 pad,
                 0,
               ),
-              child: _Header(
+              child: DownloadsHeader(
                 compact: compact,
                 itemCount: items.length,
                 bytes: manager.totalBytesOnDisk,
@@ -96,45 +105,78 @@ class DownloadsScreen extends StatelessWidget {
                     'appareil. Il reste lisible même sans serveur.'),
               ),
             )
-          else
-            for (final group in groups) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(pad, 24, pad, 8),
-                  child: DownloadShowHeader(
-                    title: group.title,
-                    infoId: group.infoId,
-                    entries: group.entries,
-                    deletable: group.isShow,
-                  ),
-                ),
+          else if (tv)
+            ..._groupSlivers(groups, pad: pad, tv: true)
+          else ...[
+            if (inProgress.isNotEmpty) ...[
+              _SectionTitle(
+                label: tr('En cours · {0}', [inProgress.length]),
+                pad: pad,
               ),
-              for (final season in group.seasons) ...[
-                // Une seule saison : l'en-tête de la série dit déjà tout, et
-                // son bouton supprime la même chose.
-                if (group.seasons.length > 1)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(pad, 12, pad - 8, 0),
-                      child: DownloadSeasonHeader(
-                        seasonNumber: season.number,
-                        entries: season.entries,
-                      ),
-                    ),
-                  ),
-                SliverList.builder(
-                  itemCount: season.entries.length,
-                  itemBuilder: (context, index) => _DownloadRow(
-                    entry: season.entries[index],
-                    compact: compact,
-                  ),
-                ),
-              ],
+              SliverList.builder(
+                itemCount: inProgress.length,
+                itemBuilder: (context, index) =>
+                    DownloadRow(entry: inProgress[index]),
+              ),
             ],
+            if (onDevice.isNotEmpty) ...[
+              _SectionTitle(
+                label: tr('Sur cet appareil · {0}', [onDevice.length]),
+                pad: pad,
+              ),
+              ..._groupSlivers(_groupByShow(onDevice), pad: pad, tv: false),
+            ],
+          ],
           const SliverToBoxAdapter(child: SizedBox(height: 48)),
         ],
       ),
     );
+  }
+
+  /// Les en-têtes de série et de saison, puis leurs lignes.
+  static List<Widget> _groupSlivers(
+    List<_Group> groups, {
+    required double pad,
+    required bool tv,
+  }) {
+    return [
+      for (final group in groups) ...[
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(pad, tv ? 24 : 12, pad, 8),
+            child: DownloadShowHeader(
+              title: group.title,
+              infoId: group.infoId,
+              entries: group.entries,
+              deletable: group.isShow,
+            ),
+          ),
+        ),
+        for (final season in group.seasons) ...[
+          // Une seule saison : l'en-tête de la série dit déjà tout, et son
+          // bouton supprime la même chose.
+          if (group.seasons.length > 1)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(pad, 12, pad - 8, 0),
+                child: DownloadSeasonHeader(
+                  seasonNumber: season.number,
+                  entries: season.entries,
+                ),
+              ),
+            ),
+          SliverList.builder(
+            itemCount: season.entries.length,
+            itemBuilder: (context, index) => tv
+                ? DownloadTvRow(
+                    entry: season.entries[index],
+                    compact: AppLayout.isCompact(context),
+                  )
+                : DownloadRow(entry: season.entries[index]),
+          ),
+        ],
+      ],
+    ];
   }
 
   /// Regroupe par série, les films ensemble à la fin.
@@ -209,434 +251,28 @@ class _Season {
   const _Season(this.number, this.entries);
 }
 
-class _Header extends StatelessWidget {
-  final bool compact;
-  final int itemCount;
-  final int bytes;
-  final int watchedCount;
-  final bool offline;
-  final int pendingSync;
+/// Le titre d'une section par état, en petites capitales.
+class _SectionTitle extends StatelessWidget {
+  final String label;
+  final double pad;
 
-  /// La file est pleine, mais le réseau du moment se paie à l'octet.
-  final bool heldForNetwork;
-  final int queuedCount;
-
-  const _Header({
-    required this.compact,
-    required this.itemCount,
-    required this.bytes,
-    required this.watchedCount,
-    required this.offline,
-    required this.pendingSync,
-    required this.heldForNetwork,
-    required this.queuedCount,
-  });
+  const _SectionTitle({required this.label, required this.pad});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                tr('Téléchargements'),
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: compact ? 26 : 32,
-                      color: AppColors.textPrimary,
-                    ),
-              ),
-            ),
-            if (watchedCount > 0)
-              TextButton.icon(
-                onPressed: () => _deleteWatched(context, watchedCount),
-                icon: const Icon(AppIcons.clearAll, size: 18),
-                label: Text(compact
-                    ? tr('Vus ({0})', [watchedCount])
-                    : tr('Supprimer les vus ({0})', [watchedCount])),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                ),
-              ),
-          ],
-        ),
-        if (itemCount > 0) ...[
-          const SizedBox(height: 4),
-          Text(
-            '$itemCount ${itemCount > 1 ? 'éléments' : 'élément'} · ${formatBytes(bytes)}',
-            style: const TextStyle(
-              color: AppColors.textMuted,
-              fontSize: AppType.subhead,
-            ),
-          ),
-        ],
-        if (heldForNetwork) ...[
-          const SizedBox(height: 16),
-          _Banner(
-            icon: AppIcons.wifiOff,
-            color: AppColors.warning,
-            text: queuedCount > 1
-                ? tr(
-                    '{0} téléchargements attendent le Wi-Fi : le réseau '
-                    'actuel se paie à l’octet.',
-                    [queuedCount])
-                : tr('Un téléchargement attend le Wi-Fi : le réseau actuel se '
-                    'paie à l’octet.'),
-            action: TextButton(
-              onPressed: () => allowMeteredDownloadsNow(context),
-              child: Text(tr('Quand même')),
-            ),
-          ),
-        ],
-        if (offline) ...[
-          const SizedBox(height: 16),
-          _Banner(
-            icon: AppIcons.cloudOff,
-            color: AppColors.warning,
-            text: pendingSync > 0
-                ? tr(
-                    'Serveur injoignable. {0} {1} au retour de la connexion.', [
-                    pendingSync,
-                    pendingSync > 1
-                        ? tr('lectures seront synchronisées')
-                        : tr('lecture sera synchronisée')
-                  ])
-                : tr('Serveur injoignable. Vous pouvez regarder ce qui est '
-                    'sur cet appareil.'),
-          ),
-        ] else if (pendingSync > 0) ...[
-          const SizedBox(height: 16),
-          _Banner(
-            icon: AppIcons.sync,
-            color: AppColors.accent,
-            text: tr('Synchronisation de {0} {1} avec le serveur…', [
-              pendingSync,
-              pendingSync > 1 ? tr('lectures') : tr('lecture')
-            ]),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Future<void> _deleteWatched(BuildContext context, int count) async {
-    final manager = context.read<DownloadManager>();
-    final messenger = ScaffoldMessenger.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Supprimer les médias vus ?')),
-        content: Text(
-          tr(
-              '{0} {1} de cet appareil. Ils restent disponibles sur le serveur.',
-              [
-                count,
-                count > 1
-                    ? tr('éléments seront effacés')
-                    : tr('élément sera effacé')
-              ]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text(tr('Supprimer')),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    final deleted = await manager.deleteWatched();
-    messenger.showSnackBar(SnackBar(
-      content: Text(
-          '$deleted ${deleted > 1 ? 'éléments supprimés' : 'élément supprimé'}'),
-    ));
-  }
-}
-
-class _Banner extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String text;
-
-  /// La sortie du bandeau, quand il y en a une — « télécharger quand même »
-  /// n'a de sens qu'à côté de la phrase qui explique pourquoi rien ne descend.
-  final Widget? action;
-
-  const _Banner({
-    required this.icon,
-    required this.color,
-    required this.text,
-    this.action,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: AppType.subhead,
-                height: 1.35,
-              ),
-            ),
-          ),
-          if (action != null) ...[
-            const SizedBox(width: 8),
-            action!,
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _DownloadRow extends StatelessWidget {
-  final OfflineDownload entry;
-  final bool compact;
-
-  const _DownloadRow({required this.entry, required this.compact});
-
-  @override
-  Widget build(BuildContext context) {
-    final manager = context.read<DownloadManager>();
-    final pad = AppLayout.pagePadding(context);
-    final thumbW = compact ? 104.0 : 140.0;
-    final thumbH = thumbW * 9 / 16;
-    final playable = entry.isCompleted;
-
-    return TvFocusable(
-      enabled: playable,
-      onSelect: () => _play(context),
-      focusScale: 1.0,
-      scrollAlignment: 0.3,
-      showRing: false,
-      // Le menu de la ligne (suspendre, supprimer) reste une cible : droite
-      // y entre, gauche en ressort.
-      childFocus: true,
-      child: InkWell(
-        onTap: playable ? () => _play(context) : null,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: pad, vertical: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Thumbnail(
-                entry: entry,
-                width: thumbW,
-                height: thumbH,
-                manager: manager,
-              ),
-              SizedBox(width: compact ? 12 : 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      [
-                        if (entry.episodeCode != null) entry.episodeCode!,
-                        entry.title,
-                      ].join(' · '),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: compact ? 14 : 15,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _statusLine(entry),
-                      style: TextStyle(
-                        color: entry.status == DownloadStatus.failed
-                            ? AppColors.error
-                            : AppColors.textMuted,
-                        fontSize: AppType.footnote,
-                      ),
-                    ),
-                    if (entry.isActive) ...[
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: entry.progress,
-                          minHeight: 3,
-                          backgroundColor: AppColors.border,
-                          valueColor:
-                              const AlwaysStoppedAnimation(AppColors.progress),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              _RowActions(entry: entry),
-            ],
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(pad, 28, pad, 6),
+        child: Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            color: AppColors.textMuted,
+            fontSize: AppType.caption,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.1,
           ),
         ),
       ),
-    );
-  }
-
-  String _statusLine(OfflineDownload entry) {
-    switch (entry.status) {
-      case DownloadStatus.completed:
-        final size = formatBytes(entry.bytesTotal);
-        if (entry.isFinished) return tr('Vu · {0}', [size]);
-        if (entry.positionSeconds > 0) {
-          return tr('{0}% visionné · {1}',
-              [(entry.watchedFraction * 100).round(), size]);
-        }
-        return size;
-      case DownloadStatus.downloading:
-        final total =
-            entry.bytesTotal > 0 ? ' sur ${formatBytes(entry.bytesTotal)}' : '';
-        return tr(
-            '{0}{1} téléchargés', [formatBytes(entry.bytesReceived), total]);
-      case DownloadStatus.queued:
-        return tr('En attente');
-      case DownloadStatus.paused:
-        return tr(
-            'En pause · {0} téléchargés', [formatBytes(entry.bytesReceived)]);
-      case DownloadStatus.failed:
-        return entry.error ?? tr('Échec du téléchargement');
-    }
-  }
-
-  void _play(BuildContext context) {
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(
-          name: SearchRouteObserver.playerRouteName,
-        ),
-        builder: (_) => PlayerScreen(
-          media: entry.toHomeMediaItem(),
-          seasonNumber: entry.seasonNumber,
-        ),
-      ),
-    );
-  }
-}
-
-class _Thumbnail extends StatelessWidget {
-  final OfflineDownload entry;
-  final double width;
-  final double height;
-  final DownloadManager manager;
-
-  const _Thumbnail({
-    required this.entry,
-    required this.width,
-    required this.height,
-    required this.manager,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Le fichier local et rien d'autre : une URL distante ne s'afficherait pas
-    // là où cet écran sert le plus.
-    final path = manager.localPosterPath(entry.mediaId);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: SizedBox(
-        width: width,
-        height: height,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (path != null)
-              localFileImage(path)
-            else
-              const ColoredBox(color: AppColors.surfaceElevated),
-            if (entry.isCompleted && entry.isFinished)
-              Positioned(
-                top: 4,
-                left: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.65),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(AppIcons.check,
-                      size: 13, color: AppColors.success),
-                ),
-              ),
-            if (entry.isCompleted &&
-                !entry.isFinished &&
-                entry.watchedFraction > 0)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: LinearProgressIndicator(
-                  value: entry.watchedFraction,
-                  minHeight: 3,
-                  backgroundColor: Colors.black.withValues(alpha: 0.4),
-                  valueColor: const AlwaysStoppedAnimation(AppColors.progress),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RowActions extends StatelessWidget {
-  final OfflineDownload entry;
-
-  const _RowActions({required this.entry});
-
-  @override
-  Widget build(BuildContext context) {
-    final manager = context.read<DownloadManager>();
-    return PopupMenuButton<String>(
-      icon: const Icon(AppIcons.moreVertical,
-          color: AppColors.textSecondary, size: 20),
-      color: AppColors.surfaceElevated,
-      onSelected: (value) async {
-        switch (value) {
-          case 'pause':
-            await manager.pause(entry.mediaId);
-          case 'resume':
-            await manager.resume(entry.mediaId);
-          case 'retry':
-            await manager.resume(entry.mediaId);
-          case 'delete':
-            final confirmed = await confirmDeleteDownload(context, entry);
-            if (confirmed) await manager.delete(entry.mediaId);
-        }
-      },
-      itemBuilder: (context) => [
-        if (entry.isActive)
-          PopupMenuItem(value: 'pause', child: Text(tr('Mettre en pause'))),
-        if (entry.status == DownloadStatus.paused)
-          PopupMenuItem(value: 'resume', child: Text(tr('Reprendre'))),
-        if (entry.status == DownloadStatus.failed)
-          PopupMenuItem(value: 'retry', child: Text(tr('Réessayer'))),
-        PopupMenuItem(value: 'delete', child: Text(tr('Supprimer'))),
-      ],
     );
   }
 }

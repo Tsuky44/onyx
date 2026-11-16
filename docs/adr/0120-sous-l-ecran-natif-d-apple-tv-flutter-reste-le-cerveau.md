@@ -1,6 +1,6 @@
 # ADR-0120 — Sous l'écran natif d'Apple TV, Flutter doit rester le cerveau
 
-- **Statut :** accepté. Le Dart est testé ; le Swift est compilé par la CI. Écrit d'après le premier
+- **Statut :** remplacée par l'[ADR-0133](0133-pas-de-lecteur-natif-sur-l-apple-tv.md) (lecteur natif retiré le 2026-11-14). Avant : accepté. Le Dart est testé ; le Swift est compilé par la CI. Écrit d'après le premier
   essai de l'utilisateur sur une vraie Apple TV (version 1.1.41) et la lecture du code : **les causes
   sont déduites, pas observées**, et se confirment au prochain essai.
 - **Date :** 2026-11-12

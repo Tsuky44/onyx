@@ -5,13 +5,13 @@ import '../../../theme/app_colors.dart';
 import '../../../utils/app_platform.dart';
 import '../../player/display_frame_rate.dart';
 import '../../player/playback/auto_quality.dart';
-import '../../player/playback/native_tv_preference.dart';
 import '../../player/hardware_decoding.dart';
 import '../widgets/settings_dropdown_label.dart';
 import '../widgets/settings_scope.dart';
 import '../widgets/settings_ui.dart';
 import 'playback_still_watching_group.dart';
 import '../../../l10n/tr.dart';
+import '../../../widgets/global/onyx_menu.dart';
 
 class PlaybackPage extends StatefulWidget {
   const PlaybackPage({super.key});
@@ -87,28 +87,15 @@ class _PlaybackPageState extends State<PlaybackPage> {
               showChevron: false,
               trailing: !_loaded
                   ? null
-                  : PopupMenuButton<String?>(
+                  : OnyxMenuButton<String?>(
                       tooltip: tr('Langue audio par défaut'),
-                      color: AppColors.surfaceElevated,
-                      initialValue: _audioLang,
                       onSelected: _setAudioLang,
-                      itemBuilder: (_) => [
+                      items: [
                         for (final option in options)
-                          PopupMenuItem<String?>(
+                          OnyxMenuItem<String?>(
                             value: option.code,
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 22,
-                                  child: option.code == _audioLang
-                                      ? const Icon(Icons.check_rounded,
-                                          size: 18, color: AppColors.primary)
-                                      : null,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(tr(option.label)),
-                              ],
-                            ),
+                            label: tr(option.label),
+                            checked: option.code == _audioLang,
                           ),
                       ],
                       child: SettingsDropdownLabel(current),
@@ -202,31 +189,6 @@ class _PlaybackPageState extends State<PlaybackPage> {
                     if (mounted) setState(() {});
                   },
                 ),
-            ],
-          ),
-        if (NativeTvPlayerPreference.isAvailable(isTvOS: AppPlatform.isTvOS))
-          SettingsGroup(
-            title: tr('Apple TV'),
-            footer: tr('Propre à cet appareil.'),
-            children: [
-              SettingsChoiceTile<NativeTvPlayerMode>(
-                icon: Icons.tv_rounded,
-                title: tr('Lecteur Apple TV'),
-                subtitle:
-                    tr('Natif : le lecteur d’Apple TV. Onyx : l’interface '
-                        'd’Onyx. Un fichier que le natif ne sait pas lire '
-                        'repasse seul sur Onyx.'),
-                footnote: tr('Prend effet à la prochaine lecture.'),
-                value: NativeTvPlayerPreference.mode,
-                options: [
-                  (NativeTvPlayerMode.native, tr('Natif')),
-                  (NativeTvPlayerMode.onyx, tr('Onyx')),
-                ],
-                onChanged: (value) async {
-                  await NativeTvPlayerPreference.setMode(value);
-                  if (mounted) setState(() {});
-                },
-              ),
             ],
           ),
         SettingsGroup(

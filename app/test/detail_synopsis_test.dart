@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/models.dart';
 import 'package:onyx/widgets/global/detail_metadata.dart';
 import 'package:onyx/widgets/global/detail_synopsis.dart';
+import 'package:onyx/widgets/global/onyx_dialog.dart';
 
 Widget _host(String overview) => MaterialApp(
       home: Scaffold(
@@ -29,13 +30,13 @@ void main() {
     await tester.tap(find.byType(DetailSynopsis));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(OnyxDialog), findsOneWidget);
     expect(find.text('Severance'), findsOneWidget);
     expect(find.text(overview), findsNWidgets(2));
 
     await tester.tap(find.text('Fermer'));
     await tester.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(OnyxDialog), findsNothing);
   });
 
   testWidgets("un synopsis coupé s'ouvre à la télécommande", (tester) async {
@@ -47,7 +48,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(OnyxDialog), findsOneWidget);
   });
 
   testWidgets("un synopsis qui tient en entier ne s'ouvre pas", (tester) async {
@@ -56,7 +57,7 @@ void main() {
     await tester.tap(find.byType(DetailSynopsis));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(OnyxDialog), findsNothing);
   });
 
   test('la ligne de métadonnées porte au plus trois genres, après la note', () {

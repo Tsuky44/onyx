@@ -3,8 +3,7 @@ part of 'player_screen.dart';
 /// Ce qui s'affiche par-dessus l'image : le chrome et son compte à rebours,
 /// les gestes sur l'image, les menus, la petite fenêtre du système.
 extension _PlayerChrome on _PlayerScreenState {
-  bool _needsPositionUiRefresh() =>
-      !_nativeTvShown && (_showControls || _tabs.isOpen);
+  bool _needsPositionUiRefresh() => _showControls || _tabs.isOpen;
 
   void _refreshPositionUi({bool force = false}) {
     if (!_needsPositionUiRefresh()) return;
@@ -304,8 +303,7 @@ extension _PlayerChrome on _PlayerScreenState {
     if (byUser) _episodeNav?.onUserActivity();
     // The end card owns the screen: waking the HUD on every mouse move would
     // stack a progress bar and a play button over it.
-    // Sous l'écran natif, AVKit a son propre chrome.
-    if (_pageOverImage || _stillWatchingAsked || _nativeTvShown) return;
+    if (_pageOverImage || _stillWatchingAsked) return;
     _update(() => _showControls = true);
     _refreshPositionUi(force: true);
     _scheduleSubtitlePaddingSync();
@@ -463,7 +461,7 @@ extension _PlayerChrome on _PlayerScreenState {
 
   /// Ce que l'index de la roue crantée ne répète pas sur un écran tenu en
   /// main : les sous-titres et l'audio y ont leur bouton, les chapitres leur
-  /// onglet (ADR-0131).
+  /// onglet (ADR-0136).
   static const Set<OnyxMenuSection> _handheldIndexOmits = {
     OnyxMenuSection.subtitles,
     OnyxMenuSection.audio,
@@ -473,7 +471,7 @@ extension _PlayerChrome on _PlayerScreenState {
   /// Chrome Onyx settings menu, anchored to the button that opened it.
   ///
   /// [standalone] : le menu d'un seul réglage, ouvert par son bouton rond sur
-  /// un téléviseur (ADR-0130) ou un écran tenu en main (ADR-0131). Le bouton
+  /// un téléviseur (ADR-0130) ou un écran tenu en main (ADR-0136). Le bouton
   /// reste allumé tant qu'il est ouvert.
   void _showOnyxSettingsMenu({
     OnyxMenuSection section = OnyxMenuSection.root,

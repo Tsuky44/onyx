@@ -45,8 +45,20 @@ Map<String, Object?> _list(int id, String kind, String name,
 
 /// Un serveur réduit aux listes. [requests] garde ce qui lui a été demandé ;
 /// le titre 603 n'est d'abord dans aucune liste.
-ApiClient _server(List<String> requests, {bool lists = true}) {
+ApiClient _server(List<String> requests,
+    {bool lists = true, bool roles = false}) {
   var inLater = 0;
+  // Le rôle de carol sur la liste 2, tel que le serveur le tient.
+  String? carolRole;
+  List<Object> members() => [
+        if (carolRole != null)
+          {
+            'id': 3,
+            'username': 'carol',
+            'avatar': 'preset:fox',
+            'role': carolRole
+          },
+      ];
   final dio = Dio()
     ..httpClientAdapter = Adapter((options) {
       final query = options.uri.hasQuery ? '?${options.uri.query}' : '';
@@ -57,7 +69,8 @@ ApiClient _server(List<String> requests, {bool lists = true}) {
             'status': 'ok',
             'capabilities': [
               if (lists) 'watch_lists',
-              if (lists) 'watch_list_members'
+              if (lists) 'watch_list_members',
+              if (lists && roles) 'watch_list_member_roles',
             ],
           }),
         ('GET', '/api/lists') => _json({
@@ -85,16 +98,22 @@ ApiClient _server(List<String> requests, {bool lists = true}) {
         ('GET', '/api/lists/2') => _json({
             ..._list(2, 'custom', 'Mes recos'),
             'items': <Object>[],
-            'members': <Object>[],
+            'members': members(),
           }),
         ('GET', '/api/list-people') => _json([
             {'id': 2, 'username': 'bob', 'avatar': ''},
             {'id': 3, 'username': 'carol', 'avatar': 'preset:fox'},
           ]),
-        ('PUT', '/api/lists/2/members/3') => _json([
-            {'id': 3, 'username': 'carol', 'avatar': 'preset:fox'},
-          ]),
-        ('DELETE', '/api/lists/2/members/3') => _json({'status': 'ok'}),
+        ('PUT', '/api/lists/2/members/3') => () {
+            final body = options.data;
+            requests.add('body ${body == null ? '-' : jsonEncode(body)}');
+            carolRole = body is Map ? body['role'] as String : 'editor';
+            return _json(members());
+          }(),
+        ('DELETE', '/api/lists/2/members/3') => () {
+            carolRole = null;
+            return _json({'status': 'ok'});
+          }(),
         ('POST', '/api/lists/1/items') => () {
             inLater = 41;
             return _json({
@@ -309,5 +328,78 @@ void main() {
     expect(requests, contains('PUT /api/lists/2/members/3'));
     expect(find.byIcon(AppIcons.check), findsOneWidget,
         reason: 'carol est cochée avec les invités que le serveur renvoie');
+  });
+  testWidgets(
+      'la feuille « Partager » invite à voir seulement, puis à ajouter, '
+      'puis retire', (tester) async {
+    final requests = <String>[];
+    final provider = WatchListsProvider(_server(requests, roles: true));
+    addTearDown(provider.dispose);
+    // Dio répond hors du temps simulé du test : la lecture des capacités
+    // passe par du vrai asynchrone.
+    await tester.runAsync(provider.load);
+    expect(provider.supportsMemberRoles, isTrue);
+    final list = WatchList.fromJson(_list(2, 'custom', 'Mes recos'));
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: provider,
+      child: MaterialApp(
+        home: Scaffold(body: WatchListMembersSheet(list: list)),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Aucun accès'), findsNWidgets(2));
+
+    await tester.tap(find.text('carol'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Peut voir'));
+    await tester.pumpAndSettle();
+    expect(requests, contains('body {"role":"viewer"}'));
+    expect(provider.detail(2)!.members.single.role, WatchListRole.viewer);
+    expect(find.text('Peut voir'), findsOneWidget,
+        reason: 'la ligne de carol dit son accès, choix repliés');
+
+    await tester.tap(find.text('carol'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Peut ajouter des titres'));
+    await tester.pumpAndSettle();
+    expect(requests, contains('body {"role":"editor"}'));
+    expect(provider.detail(2)!.members.single.role, WatchListRole.editor);
+
+    await tester.tap(find.text('carol'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aucun accès').last);
+    await tester.pumpAndSettle();
+    expect(requests, contains('DELETE /api/lists/2/members/3'));
+    expect(provider.detail(2)!.members, isEmpty);
+  });
+
+  test('un serveur d’avant les rôles reçoit une invitation sans corps',
+      () async {
+    final requests = <String>[];
+    final provider = WatchListsProvider(_server(requests));
+    addTearDown(provider.dispose);
+    await provider.load();
+    expect(provider.supportsMemberRoles, isFalse);
+    await provider.addMember(2, 3, role: WatchListRole.viewer);
+    expect(requests, contains('body -'),
+        reason: 'un rôle ignoré donnerait le droit d’écrire à un invité '
+            'qui ne devait que voir');
+  });
+
+  test('un invité à voir peut quitter la liste sans pouvoir la remplir', () {
+    final list = WatchList.fromJson({
+      ..._list(5, 'custom', 'Recos de bob'),
+      'is_mine': false,
+      'is_member': true,
+    });
+    expect(list.isMember, isTrue);
+    expect(list.canEdit, isFalse);
+    final legacy = WatchList.fromJson({
+      ..._list(4, 'custom', 'Soirée ciné'),
+      'is_mine': false,
+      'can_edit': true,
+    });
+    expect(legacy.isMember, isTrue,
+        reason: 'un serveur d’avant les rôles ne dit pas is_member');
   });
 }

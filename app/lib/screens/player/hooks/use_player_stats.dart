@@ -19,9 +19,7 @@ class PlayerStatLine {
 /// Ce que le lecteur fait vraiment, relu sur le moteur tant que l'onglet
 /// « Stats » est à l'écran (ADR-0130).
 ///
-/// Les mêmes lignes, dans le même ordre, que le panneau de l'écran natif
-/// d'Apple TV (`NativeTvPanels.statsRows`) : là-bas Swift lit AVKit, ici Dart
-/// lit [PlaybackSession.readDiagnostics], que tous les moteurs servent. Une
+/// Dart lit [PlaybackSession.readDiagnostics], que tous les moteurs servent. Une
 /// mesure que le moteur ne donne pas s'écrit « — » : une valeur inventée ne se
 /// distinguerait pas d'une mesure.
 ///

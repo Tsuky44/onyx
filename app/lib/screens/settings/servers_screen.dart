@@ -1,20 +1,24 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/otp.dart';
 import '../../models/server_account.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_client.dart';
-import '../../services/server_discovery.dart';
-import '../../services/server_registry.dart';
 import '../../theme/app_colors.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import '../../utils/on_screen.dart';
-import '../../widgets/global/otp_code_dialog.dart';
+import 'add_server_screen.dart';
+import '../../theme/app_icons.dart';
+import '../../widgets/global/onyx_dialog.dart';
 import 'server_account_tile.dart';
+import 'widgets/settings_pick_dialog.dart';
+import 'widgets/settings_ui.dart';
+import 'servers_support.dart';
+
+export 'add_server_screen.dart' show AddServerScreen;
+export 'servers_support.dart' show linkAndReport;
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 
@@ -119,11 +123,10 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
 
   Future<void> _rename(ServerAccount account) async {
     final controller = TextEditingController(text: account.label ?? '');
-    final label = await showDialog<String>(
+    final label = await showOnyxDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Nom du serveur')),
+      builder: (ctx) => OnyxDialog(
+        title: tr('Nom du serveur'),
         content: TvDeferredKeyboard(
           builder: (context, focusNode, canRequestFocus) => TextField(
             focusNode: focusNode,
@@ -137,13 +140,14 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
           ),
         ),
         actions: [
-          TextButton(
+          OnyxDialogAction(
+            label: tr('Annuler'),
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(tr('Annuler')),
           ),
-          FilledButton(
+          OnyxDialogAction(
+            label: tr('Enregistrer'),
+            primary: true,
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: Text(tr('Enregistrer')),
           ),
         ],
       ),
@@ -155,35 +159,19 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
 
   Future<void> _link(ServerAccount account) async {
     final api = context.read<ApiClient>();
-    final candidates = _linkCandidates(api, account);
-    final chosen = await showDialog<String>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(tr('Lier {0} à un compte', [account.username])),
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: Text(
-                tr('Choisissez un autre de vos comptes. Les deux serveurs '
-                    'se transmettront votre progression, et chacun '
-                    'apparaîtra sur vos autres appareils. Les '
-                    'administrateurs des deux serveurs doivent accepter le '
-                    'lien une première fois.')),
-          ),
-          for (final other in candidates)
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(ctx).pop(other.id),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text('${other.username} · ${other.displayName}'),
-              ),
-            ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(tr('Annuler')),
-          ),
-        ],
-      ),
+    final candidates = linkCandidates(api, account);
+    final chosen = await pickSettingsOption<String>(
+      context,
+      title: tr('Lier {0} à un compte', [account.username]),
+      message: tr('Choisissez un autre de vos comptes. Les deux serveurs '
+          'se transmettront votre progression, et chacun '
+          'apparaîtra sur vos autres appareils. Les '
+          'administrateurs des deux serveurs doivent accepter le '
+          'lien une première fois.'),
+      options: [
+        for (final other in candidates)
+          (other.id, '${other.username} · ${other.displayName}'),
+      ],
     );
     if (chosen == null || !mounted) return;
     await linkAndReport(context, account.id, chosen);
@@ -196,33 +184,20 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
     if (links.isEmpty) return;
     final link = links.length == 1
         ? links.single
-        : await showDialog<AccountLink>(
-            context: context,
-            builder: (ctx) => SimpleDialog(
-              title: Text(tr('Dissocier quel compte ?')),
-              children: [
-                for (final link in links)
-                  SimpleDialogOption(
-                    onPressed: () => Navigator.of(ctx).pop(link),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child:
-                          Text('${link.remoteUsername} · ${link.displayName}'),
-                    ),
-                  ),
-                SimpleDialogOption(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text(tr('Annuler')),
-                ),
-              ],
-            ),
+        : await pickSettingsOption<AccountLink>(
+            context,
+            title: tr('Dissocier quel compte ?'),
+            options: [
+              for (final link in links)
+                (link, '${link.remoteUsername} · ${link.displayName}'),
+            ],
           );
     if (link == null || !mounted) return;
     try {
       await api.unlinkAccount(account.id, link);
       _toast(tr('Compte dissocié. L’historique déjà partagé est conservé.'));
     } catch (e) {
-      _toast(_errorText(e), error: true);
+      _toast(serverErrorText(e), error: true);
     }
     if (mounted) setState(() {});
   }
@@ -241,30 +216,17 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
   }
 
   Future<void> _forget(ServerAccount account) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Retirer {0} ?', [account.displayName])),
-        content: Text(
-          tr('Ce serveur disparaît de cet appareil et il faudra retaper un '
-              'mot de passe pour y revenir. Le compte lui-même n’est pas '
-              'supprimé.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('Retirer')),
-          ),
-        ],
-      ),
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: tr('Retirer {0} ?', [account.displayName]),
+      message: tr('Ce serveur disparaît de cet appareil et il faudra retaper un '
+          'mot de passe pour y revenir. Le compte lui-même n’est pas '
+          'supprimé.'),
+      confirmLabel: tr('Retirer'),
+      destructive: true,
+      icon: AppIcons.delete,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
     await context.read<AuthProvider>().forgetServer(account.id);
     if (mounted) setState(() {});
   }
@@ -283,7 +245,7 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
     final activeId = auth.activeServer?.id;
     final pending = auth.pendingAccessRequests;
     final api = context.read<ApiClient>();
-    final elsewhere = _serversNotOnThisDevice(api);
+    final elsewhere = serversNotOnThisDevice(api);
 
     final children = <Widget>[
       if (!widget.embedded) ...[
@@ -303,100 +265,85 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
         ),
         const SizedBox(height: 20),
       ],
-      for (final account in accounts)
-        ServerAccountTile(
-          account: account,
-          isActive: account.id == activeId,
-          isPrimary: auth.isPrimaryServer(account.id),
-          busy: auth.isLoading,
-          onSelect: () => _switchTo(account),
-          onTogglePrimary: () => _togglePrimary(account),
-          onRename: () => _rename(account),
-          links: api.servers.serverLinksFor(account.id),
-          onLink: _linkCandidates(api, account).isNotEmpty
-              ? () => _link(account)
-              : null,
-          onUnlink: () => _unlink(account),
-          onForget: accounts.length == 1 ? null : () => _forget(account),
-        ),
-      if (elsewhere.isNotEmpty) ...[
-        const SizedBox(height: 24),
-        Text(
-          tr('Vos autres serveurs'),
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          tr('Liés à votre compte, mais pas encore ouverts sur cet '
+      SettingsGroup(
+        children: [
+          for (final account in accounts)
+            ServerAccountTile(
+              account: account,
+              isActive: account.id == activeId,
+              isPrimary: auth.isPrimaryServer(account.id),
+              busy: auth.isLoading,
+              onSelect: () => _switchTo(account),
+              onTogglePrimary: () => _togglePrimary(account),
+              onRename: () => _rename(account),
+              links: api.servers.serverLinksFor(account.id),
+              onLink: linkCandidates(api, account).isNotEmpty
+                  ? () => _link(account)
+                  : null,
+              onUnlink: () => _unlink(account),
+              onForget: accounts.length == 1 ? null : () => _forget(account),
+            ),
+        ],
+      ),
+      if (elsewhere.isNotEmpty)
+        SettingsGroup(
+          title: tr('Vos autres serveurs'),
+          footer: tr('Liés à votre compte, mais pas encore ouverts sur cet '
               'appareil. Entrez votre mot de passe une fois pour pouvoir y '
               'basculer.'),
-          style: TextStyle(color: AppColors.textSecondary, fontSize: AppType.footnote),
-        ),
-        for (final link in elsewhere)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.dns_outlined),
-            title: Text(link.displayName),
-            subtitle: Text(
-              link.remoteUsername,
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-            trailing: TextButton(
-              onPressed: () => _signInToLinked(link),
-              child: Text(tr('Se connecter')),
-            ),
-          ),
-      ],
-      if (pending.isNotEmpty) ...[
-        const SizedBox(height: 24),
-        Text(
-          tr('Demandes en attente'),
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          tr('Un administrateur du serveur doit accepter. La réponse est '
-              'récupérée toute seule, y compris après un redémarrage de '
-              'l’app.'),
-          style: TextStyle(color: AppColors.textSecondary, fontSize: AppType.footnote),
-        ),
-        for (final request in pending)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const SizedBox(
-              width: 24,
-              height: 24,
-              child: Center(
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+          children: [
+            for (final link in elsewhere)
+              SettingsTile(
+                icon: AppIcons.switchServer,
+                title: link.displayName,
+                subtitle: link.remoteUsername,
+                trailing: TextButton(
+                  onPressed: () => _signInToLinked(link),
+                  child: Text(tr('Se connecter')),
                 ),
               ),
-            ),
-            title: Text(request.prettyHost),
-            subtitle: Text(
-              tr('En attente · {0}', [request.username]),
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-            trailing: IconButton(
-              tooltip: tr('Abandonner'),
-              icon: const Icon(Icons.close_rounded),
-              onPressed: () async {
-                await context
-                    .read<AuthProvider>()
-                    .abandonAccessRequest(request);
-                if (mounted) setState(() {});
-              },
-            ),
-          ),
-      ],
-      const SizedBox(height: 24),
+          ],
+        ),
+      if (pending.isNotEmpty)
+        SettingsGroup(
+          title: tr('Demandes en attente'),
+          footer: tr('Un administrateur du serveur doit accepter. La réponse est '
+              'récupérée toute seule, y compris après un redémarrage de '
+              'l’app.'),
+          children: [
+            for (final request in pending)
+              SettingsTile(
+                leading: const SizedBox(
+                  width: 34,
+                  height: 34,
+                  child: Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+                title: request.prettyHost,
+                subtitle: tr('En attente · {0}', [request.username]),
+                trailing: IconButton(
+                  tooltip: tr('Abandonner'),
+                  icon: const Icon(AppIcons.close),
+                  onPressed: () async {
+                    await context
+                        .read<AuthProvider>()
+                        .abandonAccessRequest(request);
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ),
+          ],
+        ),
       Align(
         alignment: Alignment.centerLeft,
         child: FilledButton.tonalIcon(
           onPressed: _addServer,
-          icon: const Icon(Icons.add_rounded),
+          icon: const Icon(AppIcons.add),
           label: Text(tr('Ajouter un serveur')),
         ),
       ),
@@ -417,419 +364,4 @@ class _ServersScreenState extends State<ServersScreen> with OnScreenState {
       ),
     );
   }
-}
-
-/// Ajoute un serveur : soit on y a déjà un compte, soit on demande à y entrer.
-///
-/// Les deux chemins sont sur le même écran parce que la personne, elle, ne sait
-/// pas toujours lequel la concerne avant d'avoir tapé l'adresse.
-class AddServerScreen extends StatefulWidget {
-  const AddServerScreen({
-    super.key,
-    this.initialUrl,
-    this.initialUsername,
-    this.signIn = false,
-  });
-
-  /// Pré-remplis quand on vient d'un serveur lié à son compte : il ne reste
-  /// que le mot de passe à taper.
-  final String? initialUrl;
-  final String? initialUsername;
-  final bool signIn;
-
-  @override
-  State<AddServerScreen> createState() => _AddServerScreenState();
-}
-
-enum _AddMode { signIn, request }
-
-class _AddServerScreenState extends State<AddServerScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _serverController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _messageController = TextEditingController();
-
-  late _AddMode _mode = widget.signIn ? _AddMode.signIn : _AddMode.request;
-  bool _busy = false;
-  bool _discovering = false;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _serverController.text = widget.initialUrl ?? '';
-    _usernameController.text = widget.initialUsername ?? '';
-  }
-
-  @override
-  void dispose() {
-    _serverController.dispose();
-    _usernameController.dispose();
-    _passwordController.dispose();
-    _messageController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _discover() async {
-    if (_discovering) return;
-    setState(() => _discovering = true);
-    String? found;
-    try {
-      found = await ServerDiscovery.find();
-    } catch (_) {
-      found = null;
-    }
-    if (!mounted) return;
-    final address = found;
-    setState(() {
-      _discovering = false;
-      if (address != null) _serverController.text = address;
-    });
-    if (found == null) _snack(tr('Aucun serveur Onyx trouvé sur ce réseau.'));
-  }
-
-  void _snack(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  Future<void> _submit() async {
-    FocusScope.of(context).unfocus();
-    if (!_formKey.currentState!.validate()) return;
-
-    final auth = context.read<AuthProvider>();
-    final url = _serverController.text.trim();
-    final username = _usernameController.text.trim();
-    final password = _passwordController.text;
-
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-
-    final previous = auth.activeServer;
-    try {
-      if (_mode == _AddMode.signIn) {
-        final account = await _signIn(auth, url, username, password);
-        if (account == null || !mounted) {
-          if (mounted) setState(() => _busy = false);
-          return;
-        }
-        _snack(tr('{0} ajouté.', [account.displayName]));
-        if (previous != null && !ServerRegistry.sameServer(previous, account)) {
-          await _offerLink(previous, account);
-        }
-      } else {
-        await auth.requestAccess(
-          serverUrl: url,
-          username: username,
-          password: password,
-          message: _messageController.text.trim(),
-        );
-        if (!mounted) return;
-        _snack(
-            tr('Demande envoyée. Vous serez connecté dès qu’elle sera acceptée.'));
-      }
-      if (mounted) Navigator.of(context).pop(true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _busy = false;
-        _error = _errorText(e);
-      });
-      return;
-    }
-    if (mounted) setState(() => _busy = false);
-  }
-
-  /// Ouvre la session, code compris quand ce serveur en demande un
-  /// (ADR-0041). null : le code a été abandonné.
-  Future<ServerAccount?> _signIn(
-    AuthProvider auth,
-    String url,
-    String username,
-    String password,
-  ) async {
-    try {
-      return await auth.addServerWithPassword(
-        serverUrl: url,
-        username: username,
-        password: password,
-      );
-    } on OtpRequired catch (e) {
-      if (!mounted) return null;
-      final api = context.read<ApiClient>();
-      final result = await showOtpLoginDialog(
-        context,
-        challenge: e.challenge,
-        verify: (code) => api.verifyLoginOtp(e.challenge, code),
-      );
-      if (result == null) return null;
-      return auth.adoptOtpSession(result);
-    }
-  }
-
-  /// Juste après l'ajout, le bon moment pour demander si c'est la même
-  /// personne : sur un appareil partagé, ce n'est pas toujours le cas, donc
-  /// rien n'est lié sans le demander.
-  Future<void> _offerLink(ServerAccount previous, ServerAccount added) async {
-    final api = context.read<ApiClient>();
-    await api.refreshAccountLinks();
-    if (!mounted ||
-        api.servers.linkedAccounts(previous.id).any((a) => a.id == added.id)) {
-      return;
-    }
-    final link = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title:
-            Text(tr('Lier à {0} sur {1} ?', [previous.username, previous.displayName])),
-        content: Text(
-          tr('Si ces deux comptes sont à vous, vos serveurs se '
-              'transmettront votre progression et chacun apparaîtra sur vos '
-              'autres appareils. Les administrateurs des deux serveurs '
-              'doivent accepter le lien une première fois.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('Plus tard')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('Lier')),
-          ),
-        ],
-      ),
-    );
-    if (link == true && mounted) {
-      await linkAndReport(context, previous.id, added.id);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final requesting = _mode == _AddMode.request;
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: Text(tr('Ajouter un serveur'))),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-          children: [
-            SegmentedButton<_AddMode>(
-              segments: [
-                ButtonSegment(
-                  value: _AddMode.request,
-                  label: Text(tr('Demander l’accès')),
-                  icon: Icon(Icons.doorbell_outlined, size: 18),
-                ),
-                ButtonSegment(
-                  value: _AddMode.signIn,
-                  label: Text(tr('J’ai un compte')),
-                  icon: Icon(Icons.login_rounded, size: 18),
-                ),
-              ],
-              selected: {_mode},
-              onSelectionChanged: _busy
-                  ? null
-                  : (selection) => setState(() => _mode = selection.first),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              requesting
-                  ? tr('Choisissez l’identifiant et le mot de passe que vous '
-                      'aurez sur ce serveur. Le compte n’est créé qu’une '
-                      'fois la demande acceptée.')
-                  : tr('Entrez les identifiants de votre compte sur ce '
-                      'serveur. Votre serveur actuel n’est pas touché.'),
-              style:
-                  const TextStyle(color: AppColors.textSecondary, fontSize: AppType.subhead),
-            ),
-            const SizedBox(height: 20),
-            TvDeferredKeyboard(
-              builder: (context, focusNode, canRequestFocus) => TextFormField(
-                focusNode: focusNode,
-                canRequestFocus: canRequestFocus,
-                controller: _serverController,
-                keyboardType: TextInputType.url,
-                decoration: InputDecoration(
-                  labelText: tr('Adresse du serveur'),
-                  hintText: 'http://192.168.1.50:8080',
-                  prefixIcon: Icon(Icons.dns_rounded),
-                ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? tr('Requis') : null,
-              ),
-            ),
-            if (ServerDiscovery.isSupported)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _discovering ? null : _discover,
-                  icon: _discovering
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.travel_explore_rounded, size: 18),
-                  label: Text(_discovering
-                      ? tr('Recherche…')
-                      : tr('Détecter le serveur sur le réseau')),
-                ),
-              ),
-            const SizedBox(height: 12),
-            TvDeferredKeyboard(
-              builder: (context, focusNode, canRequestFocus) => TextFormField(
-                focusNode: focusNode,
-                canRequestFocus: canRequestFocus,
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: tr('Nom d’utilisateur'),
-                  prefixIcon: Icon(Icons.person_outline_rounded),
-                ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? tr('Requis') : null,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TvDeferredKeyboard(
-              builder: (context, focusNode, canRequestFocus) => TextFormField(
-                focusNode: focusNode,
-                canRequestFocus: canRequestFocus,
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: tr('Mot de passe'),
-                  prefixIcon: Icon(Icons.lock_outline_rounded),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return tr('Requis');
-                  if (v.length < 4) return tr('Minimum 4 caractères');
-                  return null;
-                },
-              ),
-            ),
-            if (requesting) ...[
-              const SizedBox(height: 12),
-              TvDeferredKeyboard(
-                builder: (context, focusNode, canRequestFocus) => TextFormField(
-                  focusNode: focusNode,
-                  canRequestFocus: canRequestFocus,
-                  controller: _messageController,
-                  maxLength: 280,
-                  decoration: InputDecoration(
-                    labelText: tr('Message (facultatif)'),
-                    hintText: tr('Dites qui vous êtes'),
-                    prefixIcon: Icon(Icons.chat_bubble_outline_rounded),
-                  ),
-                ),
-              ),
-            ],
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppColors.error.withValues(alpha: 0.35)),
-                ),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: AppColors.error, fontSize: AppType.subhead),
-                ),
-              ),
-            ],
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: _busy ? null : _submit,
-              child: _busy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(requesting ? tr('Envoyer la demande') : tr('Ajouter')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Les autres comptes de cet appareil qu'on peut lier à [account] : sur un
-/// autre serveur, et pas déjà liés.
-List<ServerAccount> _linkCandidates(ApiClient api, ServerAccount account) {
-  final linked =
-      api.servers.linkedAccounts(account.id).map((a) => a.id).toSet();
-  return api.servers.accounts
-      .where((a) =>
-          !linked.contains(a.id) && !ServerRegistry.sameServer(a, account))
-      .toList();
-}
-
-/// Les serveurs liés à un compte de cet appareil sur lesquels il n'a pas
-/// encore de session, une fois chacun.
-List<AccountLink> _serversNotOnThisDevice(ApiClient api) {
-  final seen = <String>{};
-  final result = <AccountLink>[];
-  for (final account in api.servers.accounts) {
-    for (final link in api.servers.serverLinksFor(account.id)) {
-      if (api.servers.accountForLink(link) != null) continue;
-      final key = link.serverId.isEmpty ? link.url : link.serverId;
-      if (seen.add(key)) result.add(link);
-    }
-  }
-  return result;
-}
-
-/// Lie deux comptes et dit où en est le lien.
-Future<void> linkAndReport(
-    BuildContext context, String fromId, String toId) async {
-  final messenger = ScaffoldMessenger.of(context);
-  final api = context.read<ApiClient>();
-  try {
-    final link = await api.linkAccounts(fromId, toId);
-    messenger.showSnackBar(SnackBar(
-      content: Text(link.isActive
-          ? tr('Comptes liés. Les serveurs se transmettent désormais votre '
-              'progression.')
-          : tr('Lien demandé. Il sera actif dès que les administrateurs des '
-              'deux serveurs l’auront accepté.')),
-    ));
-  } catch (e) {
-    messenger.showSnackBar(SnackBar(
-      content: Text(_errorText(e)),
-      backgroundColor: AppColors.error,
-    ));
-  }
-}
-
-/// Message d'erreur lisible : le serveur en écrit un français, sinon on parle
-/// de réseau.
-String _errorText(Object error) {
-  if (error is DioException) {
-    final data = error.response?.data;
-    if (data is Map && data['error'] != null) return data['error'].toString();
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.receiveTimeout:
-        return tr('Le serveur ne répond pas (délai dépassé).');
-      case DioExceptionType.connectionError:
-        return tr('Serveur injoignable. Vérifiez l’adresse et le réseau.');
-      default:
-        break;
-    }
-  }
-  if (error is StateError) return error.message;
-  return tr('Une erreur est survenue : {0}', [error]);
 }

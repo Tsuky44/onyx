@@ -8,17 +8,20 @@ import '../../providers/watch_lists_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
+import 'adaptive_panel.dart';
+import 'add_to_list_panel_body.dart';
 import 'empty_state.dart';
 import 'watch_list_editor_dialog.dart';
 
 /// Ouvre la feuille « Ajouter à une liste » pour [title] (ADR-0070).
+///
+/// Une feuille sur téléphone, un panneau collé au bouton ([context]) sur grand
+/// écran (ADR-0131).
 Future<void> showAddToListSheet(BuildContext context, ListableTitle title) {
-  return showModalBottomSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    backgroundColor: AppColors.surface,
-    showDragHandle: true,
+  return showAdaptivePanel<void>(
+    context,
+    sheetColor: AppColors.surface,
+    dragHandle: true,
     builder: (_) => AddToListSheet(title: title),
   );
 }
@@ -149,6 +152,17 @@ class _AddToListSheetState extends State<AddToListSheet> {
   @override
   Widget build(BuildContext context) {
     final lists = _lists;
+    if (AdaptivePanelScope.isPanel(context)) {
+      return AddToListPanelBody(
+        title: widget.title.title,
+        lists: lists,
+        error: _error,
+        pending: _pending,
+        onToggle: _toggle,
+        onCreate: _create,
+        onRetry: _load,
+      );
+    }
     return SafeArea(
       child: ConstrainedBox(
         constraints:

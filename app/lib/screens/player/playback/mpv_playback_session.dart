@@ -18,7 +18,6 @@ import 'mpv_native_surface.dart';
 import 'mpv_startup_trace.dart';
 import 'mpv_subtitle_overlay.dart';
 import 'playback_session.dart';
-import 'native_tv_screen.dart';
 import 'seek_timeline.dart';
 import 'texture_video_surface.dart';
 
@@ -118,10 +117,6 @@ class MpvPlaybackSession implements PlaybackSession {
 
   @override
   Future<void> useDolbyVisionOutput() async => _dolbyVision.enable();
-
-  /// Pas d'écran natif hors d'Apple TV.
-  @override
-  NativeTvScreen? get nativeTvScreen => null;
 
   @override
   void setSubtitlePadding(EdgeInsets padding,

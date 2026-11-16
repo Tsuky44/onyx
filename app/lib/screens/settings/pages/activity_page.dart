@@ -13,6 +13,8 @@ import '../widgets/history_tile.dart';
 import '../widgets/settings_ui.dart';
 import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
+import '../../../widgets/global/onyx_menu.dart';
+import '../../../theme/app_icons.dart';
 
 class ActivityPage extends StatefulWidget {
   const ActivityPage({super.key});
@@ -169,21 +171,21 @@ class _ActivityPageState extends State<ActivityPage> {
               'qui ont échoué y figurent aussi, quelle qu’ait été leur durée.'),
       onRefresh: _reload,
       actions: [
-        PopupMenuButton<String>(
+        OnyxMenuButton<VoidCallback>(
           tooltip: tr('Plus'),
-          color: AppColors.surfaceElevated,
-          icon: const Icon(Icons.more_horiz_rounded),
-          onSelected: (value) =>
-              value == 'export' ? _exportLogs() : _clear(),
-          itemBuilder: (_) => [
-            PopupMenuItem(
-              value: 'export',
-              child: Text(tr('Télécharger tous les journaux')),
+          icon: AppIcons.more,
+          onSelected: (action) => action(),
+          items: [
+            OnyxMenuItem(
+              value: _exportLogs,
+              icon: AppIcons.download,
+              label: tr('Télécharger tous les journaux'),
             ),
-            PopupMenuItem(
-              value: 'clear',
-              child: Text(tr('Vider l’historique'),
-                  style: TextStyle(color: AppColors.error)),
+            OnyxMenuItem(
+              value: _clear,
+              icon: AppIcons.delete,
+              label: tr('Vider l’historique'),
+              destructive: true,
             ),
           ],
         ),

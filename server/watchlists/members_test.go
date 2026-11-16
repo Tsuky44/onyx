@@ -21,7 +21,7 @@ func newTeamStore(t *testing.T) *Store {
 
 func mustInvite(t *testing.T, s *Store, owner, listID, user int) []models.WatchListMember {
 	t.Helper()
-	members, err := s.AddMember(owner, listID, user)
+	members, err := s.AddMember(owner, listID, user, models.WatchListRoleEditor)
 	if err != nil {
 		t.Fatalf("AddMember(%d→%d): %v", owner, user, err)
 	}
@@ -87,7 +87,7 @@ func TestInvitedAccountsCannotManageTheList(t *testing.T) {
 	if err := s.Delete(bob, list.ID); !errors.Is(err, ErrNotOwner) {
 		t.Fatalf("invited deletes: %v, want ErrNotOwner", err)
 	}
-	if _, err := s.AddMember(bob, list.ID, carol); !errors.Is(err, ErrNotOwner) {
+	if _, err := s.AddMember(bob, list.ID, carol, models.WatchListRoleEditor); !errors.Is(err, ErrNotOwner) {
 		t.Fatalf("invited invites: %v, want ErrNotOwner", err)
 	}
 	if err := s.RemoveMember(bob, list.ID, carol); !errors.Is(err, ErrNotOwner) {
@@ -146,13 +146,13 @@ func TestInvitingIsIdempotentAndBounded(t *testing.T) {
 	}
 
 	later := watchLaterOf(t, s, alice)
-	if _, err := s.AddMember(alice, later.ID, bob); !errors.Is(err, ErrInvalid) {
+	if _, err := s.AddMember(alice, later.ID, bob, models.WatchListRoleEditor); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("invite to watch later: %v, want ErrInvalid", err)
 	}
-	if _, err := s.AddMember(alice, list.ID, alice); !errors.Is(err, ErrInvalid) {
+	if _, err := s.AddMember(alice, list.ID, alice, models.WatchListRoleEditor); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("invite oneself: %v, want ErrInvalid", err)
 	}
-	if _, err := s.AddMember(alice, list.ID, 999); !errors.Is(err, ErrInvalid) {
+	if _, err := s.AddMember(alice, list.ID, 999, models.WatchListRoleEditor); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("invite an unknown account: %v, want ErrInvalid", err)
 	}
 
@@ -165,7 +165,7 @@ func TestInvitingIsIdempotentAndBounded(t *testing.T) {
 			mustInvite(t, s, alice, list.ID, id)
 		}
 	}
-	if _, err := s.AddMember(alice, list.ID, 100+MaxMembersPerList-1); !errors.Is(err, ErrTooMany) {
+	if _, err := s.AddMember(alice, list.ID, 100+MaxMembersPerList-1, models.WatchListRoleEditor); !errors.Is(err, ErrTooMany) {
 		t.Fatalf("past the bound: %v, want ErrTooMany", err)
 	}
 }

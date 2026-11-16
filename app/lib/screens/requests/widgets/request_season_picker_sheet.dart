@@ -8,22 +8,35 @@ import '../../../theme/app_type.dart';
 import '../../../utils/responsive.dart';
 import 'request_season_panel.dart' show seasonTitle;
 
-/// « Compléter » : les saisons d'une série qu'on peut encore ajouter à la
-/// demande, à cocher une à une. Rend les numéros cochés, ou `null` si on
-/// referme sans rien envoyer.
+/// Les saisons d'une série qu'on peut encore demander, à cocher une à une :
+/// « Compléter » une demande, ou « Demander » quand MediaHub laisse choisir
+/// les saisons ([RequestAccess.seasonChoice]). Rend les numéros cochés, ou
+/// `null` si on referme sans rien envoyer.
 class RequestSeasonPickerSheet extends StatefulWidget {
-  const RequestSeasonPickerSheet({super.key, required this.details});
+  const RequestSeasonPickerSheet({
+    super.key,
+    required this.details,
+    this.completing = true,
+  });
 
   final RequestMediaDetails details;
 
+  /// `true` : on ajoute des saisons à une demande ; `false` : première
+  /// demande de la série.
+  final bool completing;
+
   static Future<List<int>?> show(
     BuildContext context,
-    RequestMediaDetails details,
-  ) {
+    RequestMediaDetails details, {
+    bool completing = true,
+  }) {
     return showDialog<List<int>>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.85),
-      builder: (_) => RequestSeasonPickerSheet(details: details),
+      builder: (_) => RequestSeasonPickerSheet(
+        details: details,
+        completing: completing,
+      ),
     );
   }
 
@@ -123,7 +136,9 @@ class _RequestSeasonPickerSheetState extends State<RequestSeasonPickerSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tr('Compléter la demande'),
+                  widget.completing
+                      ? tr('Compléter la demande')
+                      : tr('Choisir les saisons'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -132,7 +147,9 @@ class _RequestSeasonPickerSheetState extends State<RequestSeasonPickerSheet> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  tr('Cochez les saisons à ajouter.'),
+                  widget.completing
+                      ? tr('Cochez les saisons à ajouter.')
+                      : tr('Cochez les saisons à demander.'),
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: AppType.subhead,

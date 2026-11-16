@@ -51,12 +51,12 @@ class OnyxIconButton extends StatefulWidget {
 
   /// Le diamètre du disque de verre quand il est plus petit que sa cible : sur
   /// un écran tenu en main, le doigt garde [glassSize] et l'œil voit
-  /// [handheldDisc] (ADR-0131). Nul, le disque remplit la cible.
+  /// [handheldDisc] (ADR-0136). Nul, le disque remplit la cible.
   final double? discSize;
 
   /// Posé sur l'image elle-même, sans dégradé derrière lui : l'icône porte
   /// alors sa propre ombre, sans quoi elle disparaît sur un plan clair. Les
-  /// commandes de lecture au milieu de l'écran (ADR-0131).
+  /// commandes de lecture au milieu de l'écran (ADR-0136).
   final bool onPicture;
 
   const OnyxIconButton({
@@ -81,7 +81,7 @@ class OnyxIconButton extends StatefulWidget {
   static const double _glassIcon = 22;
 
   /// Le disque d'un bouton de verre sur un écran tenu en main : « un poil »
-  /// plus petit que sa cible, à la demande de l'utilisateur (ADR-0131).
+  /// plus petit que sa cible, à la demande de l'utilisateur (ADR-0136).
   static const double handheldDisc = 38;
 
   /// L'ombre d'une icône posée sur l'image. Voir [onPicture].

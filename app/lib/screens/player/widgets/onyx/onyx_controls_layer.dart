@@ -153,7 +153,7 @@ class OnyxControlsLayer extends StatelessWidget {
 
   /// Sur un téléviseur, chaque réglage a son bouton rond : il ouvre le menu de
   /// [section], posé au-dessus de [anchor], le bouton lui-même (ADR-0130). Sur
-  /// un écran tenu en main, les sous-titres et l'audio font de même (ADR-0131).
+  /// un écran tenu en main, les sous-titres et l'audio font de même (ADR-0136).
   final void Function(OnyxMenuSection section, BuildContext anchor)? onOpenMenu;
 
   /// Le menu ouvert par l'un de ces boutons, qui reste allumé tant qu'il l'est.
@@ -196,7 +196,7 @@ class OnyxControlsLayer extends StatelessWidget {
 
   /// Un écran tenu en main, téléphone ou tablette : le chrome prend
   /// l'arrangement d'un téléviseur adapté au doigt ([_buildHandheldChrome],
-  /// ADR-0131). Passé plutôt que lu de la plateforme, comme [showVolume] : un
+  /// ADR-0136). Passé plutôt que lu de la plateforme, comme [showVolume] : un
   /// test dessine ce chrome loin de tout appareil.
   final bool handheld;
 

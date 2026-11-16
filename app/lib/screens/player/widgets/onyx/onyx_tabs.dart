@@ -70,7 +70,7 @@ class OnyxChromeTab extends StatefulWidget {
 
   /// La hauteur que prend le doigt, quand elle dépasse celle de la capsule :
   /// sous la barre d'un écran tenu en main, l'onglet se dessine à [height] et
-  /// se touche sur 44 (ADR-0131). Nulle, la cible est la capsule.
+  /// se touche sur 44 (ADR-0136). Nulle, la cible est la capsule.
   final double? hitHeight;
 
   /// La taille du nom. Celle d'un titre de rangée par défaut ; plus petite

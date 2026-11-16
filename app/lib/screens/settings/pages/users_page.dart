@@ -21,34 +21,11 @@ class UsersPage extends StatelessWidget {
               'demandent un accès et les liens d’invitation.')
           : tr('Les personnes qui demandent un accès et vos liens d’invitation.'),
       children: [
-        if (perms.manageUsers)
-          SettingsGroup(
-            title: tr('Comptes'),
-            footer:
-                tr('Le propriétaire ne peut pas être rétrogradé. '
-                    'Réinitialiser un mot de passe déconnecte tous les '
-                    'appareils du compte.'),
-            padded: true,
-            children: [UsersSection()],
-          ),
+        if (perms.manageUsers) const UsersSection(),
         // Un inviteur sans manage_users voit aussi cette section — et seulement
         // ses propres liens.
-        SettingsGroup(
-          title: tr('Demandes d’accès'),
-          footer:
-              tr('Accepter crée le compte et connecte aussitôt l’appareil '
-                  'qui a fait la demande.'),
-          padded: true,
-          children: [AccessRequestsSection()],
-        ),
-        SettingsGroup(
-          title: tr('Invitations'),
-          footer:
-              tr('Liens à usage unique, valables 7 jours. Les droits '
-                  'accordés sont fixés par un administrateur.'),
-          padded: true,
-          children: [InvitationsSection()],
-        ),
+        const AccessRequestsSection(),
+        const InvitationsSection(),
       ],
     );
   }

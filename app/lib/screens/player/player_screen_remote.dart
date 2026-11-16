@@ -105,9 +105,6 @@ extension _PlayerRemote on _PlayerScreenState {
   /// cible suit le doigt, d'autant plus loin qu'il va vite (ADR-0039).
   bool _handleTouchpadMove(TouchpadMove move) {
     if (!_isInitialized || _isDisposing || !TvMode.isTv) return false;
-    // Sous l'écran natif, la télécommande est à AVKit : sa barre de lecture
-    // suit déjà le doigt, la nôtre chercherait une seconde fois.
-    if (_nativeTvShown) return false;
     // Un glissé vertical appelle les commandes, par les pas du trackpad.
     if (move.dx.abs() < move.dy.abs()) return false;
     if (_popups.isOpen || _pageOverImage) return false;

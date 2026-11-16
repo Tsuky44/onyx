@@ -6,6 +6,7 @@
   "is_shared": true,
   "is_mine": true,
   "can_edit": true,
+  "is_member": true,
   "member_count": 2,
   "owner": {
     "id": 3,
@@ -92,7 +93,8 @@
     {
       "id": 35,
       "username": "username-value",
-      "avatar": "avatar-value"
+      "avatar": "avatar-value",
+      "role": "role-value"
     }
   ]
 }

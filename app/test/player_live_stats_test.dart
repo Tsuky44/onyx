@@ -29,7 +29,7 @@ void main() {
   String value(PlayerLiveStats stats, String label) =>
       stats.lines.firstWhere((line) => line.label == label).value;
 
-  test('les mêmes mesures que l’écran natif, dans le même ordre', () {
+  test('les mesures du lecteur, toujours dans le même ordre', () {
     final live = stats(read: () async => PlaybackDiagnostics.none);
     addTearDown(live.dispose);
 

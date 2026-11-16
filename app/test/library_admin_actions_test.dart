@@ -29,7 +29,9 @@ final RegExp _libraryAdminCall = RegExp(
 /// vérifié à sa place.
 const Map<String, String> _gatedElsewhere = {
   'lib/screens/library/show_metadata_actions.dart':
-      'appelé par la fiche série depuis ShowMetadataMenu seulement',
+      'appelé par la fiche série depuis ShowMetadataMenu (TV) et la section '
+          'Administration de « Plus » (show_hero_actions.dart), sous '
+          'manageLibrary',
   'lib/screens/settings/media_review_screen.dart':
       'atteint seulement depuis la page Bibliothèque, sous perms.manageLibrary',
   'lib/screens/player/hooks/player_controller_tracks.dart':
@@ -125,12 +127,23 @@ void main() {
       );
     }
 
-    testWidgets('fiche film : « Corriger la fiche »', (tester) async {
+    // Hors TV, l'action vit dans la section Administration de « Plus »
+    // (ADR-0132).
+    testWidgets('fiche film : « Corriger la fiche… »', (tester) async {
+      Future<void> openMore() async {
+        await tester.tap(find.text('Plus'));
+        await tester.pumpAndSettle();
+      }
+
       await pumpMovie(tester, _member);
-      expect(find.byTooltip('Corriger la fiche'), findsNothing);
+      await openMore();
+      expect(find.text('Corriger la fiche…'), findsNothing);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
 
       await pumpMovie(tester, _librarian);
-      expect(find.byTooltip('Corriger la fiche'), findsOneWidget);
+      await openMore();
+      expect(find.text('Corriger la fiche…'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

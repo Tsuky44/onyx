@@ -306,6 +306,10 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = AppLayout.isCompact(context);
+    String names(WatchListRole role) =>
+        members.where((m) => m.role == role).map((m) => m.username).join(', ');
+    final editors = names(WatchListRole.editor);
+    final viewers = names(WatchListRole.viewer);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -328,13 +332,15 @@ class _Header extends StatelessWidget {
             ),
           ],
         ),
-        if (members.isNotEmpty) ...[
+        if (editors.isNotEmpty) ...[
           const SizedBox(height: 6),
-          Text(
-            tr('Remplie avec : {0}',
-                [members.map((m) => m.username).join(', ')]),
-            style: const TextStyle(color: AppColors.textMuted),
-          ),
+          Text(tr('Remplie avec : {0}', [editors]),
+              style: const TextStyle(color: AppColors.textMuted)),
+        ],
+        if (viewers.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(tr('Partagée avec : {0}', [viewers]),
+              style: const TextStyle(color: AppColors.textMuted)),
         ],
         if (list.description.isNotEmpty) ...[
           const SizedBox(height: 12),
@@ -350,7 +356,7 @@ class _Header extends StatelessWidget {
             ),
           ),
         ],
-        if (list.canEdit) ...[
+        if (list.canEdit || list.isMember) ...[
           const SizedBox(height: 18),
           Wrap(
             spacing: 10,
@@ -368,10 +374,10 @@ class _Header extends StatelessWidget {
               if (list.isMine && !list.isWatchLater && canInvite)
                 OutlinedButton.icon(
                   onPressed: onInvite,
-                  icon: const Icon(AppIcons.add, size: 18),
-                  label: Text(tr('Inviter')),
+                  icon: const Icon(AppIcons.sharedList, size: 18),
+                  label: Text(tr('Partager')),
                 ),
-              if (hasItems || removing)
+              if (list.canEdit && (hasItems || removing))
                 OutlinedButton.icon(
                   onPressed: onToggleRemoving,
                   icon: Icon(removing ? AppIcons.check : AppIcons.close,
@@ -379,7 +385,7 @@ class _Header extends StatelessWidget {
                   label:
                       Text(removing ? tr('Terminé') : tr('Retirer des titres')),
                 ),
-              if (!list.isMine)
+              if (list.isMember)
                 OutlinedButton.icon(
                   onPressed: onLeave,
                   icon: const Icon(AppIcons.close, size: 18),

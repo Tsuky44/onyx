@@ -64,6 +64,9 @@ class _Api extends ApiClient {
   Future<bool> supportsWatchListMembers() async => true;
 
   @override
+  Future<bool> supportsWatchListMemberRoles() async => true;
+
+  @override
   Future<WatchListsOverview> getWatchLists({ListableTitle? containing}) async =>
       WatchListsOverview.fromJson({
         'mine': [_list(1, 'watch_later'), _list(2, 'custom')],

@@ -8,6 +8,7 @@
       "is_shared": true,
       "is_mine": true,
       "can_edit": true,
+      "is_member": true,
       "member_count": 2,
       "owner": {
         "id": 3,
@@ -30,6 +31,7 @@
       "is_shared": true,
       "is_mine": true,
       "can_edit": true,
+      "is_member": true,
       "member_count": 7,
       "owner": {
         "id": 8,

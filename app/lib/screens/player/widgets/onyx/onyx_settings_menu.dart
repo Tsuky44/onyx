@@ -71,7 +71,7 @@ class OnyxSettingsMenu extends StatefulWidget {
 
   /// Les réglages que l'index ne liste pas, parce que le chrome les porte
   /// déjà : sur un écran tenu en main, les sous-titres et l'audio ont leur
-  /// bouton et les chapitres leur onglet (ADR-0131). L'index n'y est plus que
+  /// bouton et les chapitres leur onglet (ADR-0136). L'index n'y est plus que
   /// « le reste », et tient sans défiler dans la hauteur d'un téléphone couché.
   final Set<OnyxMenuSection> indexOmits;
 

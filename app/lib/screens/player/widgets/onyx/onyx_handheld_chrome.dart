@@ -1,6 +1,6 @@
 part of 'onyx_controls_layer.dart';
 
-/// Le chrome d'un écran tenu en main, téléphone ou tablette (ADR-0131) :
+/// Le chrome d'un écran tenu en main, téléphone ou tablette (ADR-0136) :
 /// l'arrangement d'un téléviseur ([_buildTvChrome], ADR-0124), adapté au doigt.
 ///
 /// Ce qu'il en garde : le logo en haut à gauche, le titre en gras et l'épisode

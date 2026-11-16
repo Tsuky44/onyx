@@ -150,6 +150,12 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   rend toujours `200` `{ "ok", "message", "service"?: "onyxhub"|"mediahub", "version"?, "notes"? }`.
   `notes` : compte de l'administrateur absent de MediaHub, `ONYX_WEBHOOK_URL` non réglé.
   Capacité `mediahub_link_test` sur `/api/ping`.
+* `GET /api/requests/catalog?query=&type=&page=` (`request_media`, ADR-0134) — tendances,
+  découverte ou recherche TMDB. Une recherche reclasse ensemble les trois premières pages de TMDB
+  (correspondance du titre traduit ou original, pondérée par la popularité et les votes), y ajoute
+  les titres connus qui commencent par la requête (index tiré de l'export quotidien de TMDB,
+  `title-index.db` à côté de la base, ADR-0135) et découpe le tout en pages 1 à 3 sans doublon ; les
+  pages suivantes sont celles de TMDB.
 * Le catalogue de demandes lit les disponibilités d'une page en un appel (`POST …/availability`,
   `{ "items": [{ "tmdbId", "mediaType" }] }`) ; un OnyxHub ancien qui répond `404`/`405` fait
   retomber sur l'appel par carte, et le lot n'est retenté qu'au bout de 10 minutes.
@@ -390,6 +396,18 @@ capacité `watch_lists` sur `/api/ping`.
   "release_date": "1999-03-31" }` pour un titre du catalogue. Un titre déjà présent revient tel
   quel. 1 000 titres par liste.
 * `DELETE /api/lists/:id/items/:item` — retire un titre.
+* `GET /api/list-people` — les autres comptes du serveur `[{ "id", "username", "avatar" }]`,
+  ceux qu'on peut inviter (ADR-0127).
+* `PUT /api/lists/:id/members/:user` — invite un compte à une liste `custom` du propriétaire,
+  corps facultatif `{ "role": "editor"|"viewer" }` (`editor` sans corps) : `editor` y ajoute et
+  retire des titres, `viewer` la voit seulement, même privée (ADR-0129, capacité
+  `watch_list_member_roles`). Réinviter change le rôle. 50 invités par liste. Renvoie les invités
+  `[{ "id", "username", "avatar", "role" }]`.
+* `DELETE /api/lists/:id/members/:user` — le propriétaire retire un invité, ou l'invité quitte la
+  liste.
+
+Une liste porte aussi `can_edit` (le compte peut la remplir), `is_member` (il y est invité, à la
+remplir ou à la voir) et `member_count` ; `GET /api/lists/:id` renvoie `members`.
 
 ---
 

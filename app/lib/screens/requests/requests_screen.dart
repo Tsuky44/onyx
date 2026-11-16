@@ -18,6 +18,9 @@ import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../widgets/global/staggered_entrance.dart';
 import '../../services/api_client.dart';
 import 'my_requests_screen.dart';
+import 'widgets/request_filter_bar.dart';
+import 'widgets/request_filters_bottom_sheet.dart';
+import 'widgets/request_filters_fab.dart';
 import 'widgets/request_filters_sheet.dart';
 import 'widgets/request_media_card.dart';
 import 'widgets/request_type_switch.dart';
@@ -29,6 +32,10 @@ class RequestsScreen extends StatefulWidget {
   final bool embedded;
 
   const RequestsScreen({super.key, this.embedded = false});
+
+  /// Le délai entre la dernière coche d'une capsule et le rechargement : on
+  /// coche trois genres d'affilée sans relancer trois requêtes.
+  static const filtersDebounce = Duration(milliseconds: 350);
 
   @override
   State<RequestsScreen> createState() => _RequestsScreenState();
@@ -42,6 +49,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
   String _draftType = 'all';
   RequestCatalogFilters _draftFilters = RequestCatalogFilters.defaults;
   Timer? _searchDebounce;
+  Timer? _filtersDebounce;
 
   /// Le serveur relaie les demandes du compte chez OnyxHub (ADR-0073).
   bool _hasMyRequests = false;
@@ -106,6 +114,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
       _provider.onPagePrefetched = null;
     }
     _searchDebounce?.cancel();
+    _filtersDebounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -161,6 +170,17 @@ class _RequestsScreenState extends State<RequestsScreen> {
     if (mounted) setState(() {});
   }
 
+  /// Une capsule a changé : la rangée suit tout de suite, la grille au
+  /// terme de [RequestsScreen.filtersDebounce], par le même chargement que
+  /// l'ancien « Voir les résultats ».
+  void _onFiltersChanged(RequestCatalogFilters filters) {
+    setState(() => _draftFilters = filters);
+    _filtersDebounce?.cancel();
+    _filtersDebounce = Timer(RequestsScreen.filtersDebounce, () {
+      if (mounted) _reloadCatalog();
+    });
+  }
+
   void _openAdvancedFilters() {
     RequestFiltersSheet.show(
       context,
@@ -170,6 +190,17 @@ class _RequestsScreenState extends State<RequestsScreen> {
         setState(() => _draftFilters = filters);
         _reloadCatalog();
       },
+    );
+  }
+
+  /// La feuille du bouton flottant (hors TV) : chaque changement passe par
+  /// le même [_onFiltersChanged] que les capsules.
+  void _openFiltersSheet() {
+    RequestFiltersBottomSheet.show(
+      context,
+      initial: _draftFilters,
+      mediaType: _draftType,
+      onChanged: _onFiltersChanged,
     );
   }
 
@@ -317,13 +348,13 @@ class _RequestsScreenState extends State<RequestsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: TvMode.isTv
           ? null
-          : FloatingActionButton(
-              onPressed: _openAdvancedFilters,
-              backgroundColor: AppColors.primary,
-              tooltip: tr('Filtres avancés'),
-              child: const Icon(AppIcons.filters),
+          : RequestFiltersFab(
+              activeCount:
+                  RequestFiltersBottomSheet.activeCount(_draftFilters),
+              onPressed: _openFiltersSheet,
             ),
       body: PosterGridZoomRegion(
         child: CustomScrollView(
@@ -370,7 +401,19 @@ class _RequestsScreenState extends State<RequestsScreen> {
                         style: TextStyle(color: AppColors.textSecondary)),
                     const SizedBox(height: 20),
                     _buildSearchAndTypeRow(),
-                    if (!provider.filters.isDefault) ...[
+                    // Sur téléphone, la rangée passait sur trois lignes et
+                    // partait au défilement : le bouton flottant et sa
+                    // feuille la remplacent (ADR-0132).
+                    if (!TvMode.isTv) ...[
+                      if (!compact) ...[
+                        const SizedBox(height: 16),
+                        RequestFilterBar(
+                          filters: _draftFilters,
+                          mediaType: _draftType,
+                          onChanged: _onFiltersChanged,
+                        ),
+                      ],
+                    ] else if (!provider.filters.isDefault) ...[
                       const SizedBox(height: 8),
                       Wrap(
                         alignment: WrapAlignment.center,
@@ -412,7 +455,8 @@ class _RequestsScreenState extends State<RequestsScreen> {
             else
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
-                    horizontalPadding, 8, horizontalPadding, 36),
+                    // Le bas dégage la dernière rangée du bouton flottant.
+                    horizontalPadding, 8, horizontalPadding, 96),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
                     final grid = AppLayout.posterGridDelegate(

@@ -194,7 +194,7 @@ class OnyxChromeMetrics {
         skipIntroTextSize = 13,
         previewWidth = 208;
 
-  /// Les tailles d'un écran tenu en main, pour l'arrangement de l'ADR-0131 :
+  /// Les tailles d'un écran tenu en main, pour l'arrangement de l'ADR-0136 :
   /// le titre et les boutons ronds sur une rangée, la barre fine, les onglets
   /// dessous, lecture et ±10 s au milieu de l'image.
   ///

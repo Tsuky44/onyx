@@ -5,8 +5,12 @@ import 'package:provider/provider.dart';
 import '../../models/server_account.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_icons.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/global/onyx_dialog.dart';
+import '../../widgets/global/onyx_menu.dart';
+import 'widgets/settings_ui.dart';
 
 /// Les serveurs liés à celui-ci (ADR-0017).
 ///
@@ -58,10 +62,7 @@ class _LinkedServersSectionState extends State<LinkedServersSection> {
       await action();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_errorText(e)),
-          backgroundColor: AppColors.error,
-        ));
+        showSettingsSnack(context, _errorText(e), error: true);
       }
     }
     if (!mounted) return;
@@ -70,42 +71,28 @@ class _LinkedServersSectionState extends State<LinkedServersSection> {
   }
 
   Future<void> _remove(PeerServer peer) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(peer.isActive || peer.localApproved
-            ? tr('Retirer {0} ?', [_name(peer)])
-            : tr('Refuser {0} ?', [_name(peer)])),
-        content: Text(
-          tr('Les deux serveurs cessent de se transmettre la progression et '
-              'les comptes liés entre eux sont dissociés. L’historique déjà '
-              'partagé reste sur chaque serveur.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('Confirmer')),
-          ),
-        ],
-      ),
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: peer.isActive || peer.localApproved
+          ? tr('Retirer {0} ?', [_name(peer)])
+          : tr('Refuser {0} ?', [_name(peer)]),
+      message: tr('Les deux serveurs cessent de se transmettre la progression et '
+          'les comptes liés entre eux sont dissociés. L’historique déjà '
+          'partagé reste sur chaque serveur.'),
+      confirmLabel: tr('Confirmer'),
+      destructive: true,
+      icon: AppIcons.link,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
     await _run(peer, () => context.read<ApiClient>().removePeerServer(peer.id));
   }
 
   Future<void> _editUrl(PeerServer peer) async {
     final controller = TextEditingController(text: peer.url);
-    final url = await showDialog<String>(
+    final url = await showOnyxDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Adresse du serveur lié')),
+      builder: (ctx) => OnyxDialog(
+        title: tr('Adresse du serveur lié'),
         content: TvDeferredKeyboard(
           builder: (context, focusNode, canRequestFocus) => TextField(
             focusNode: focusNode,
@@ -119,13 +106,14 @@ class _LinkedServersSectionState extends State<LinkedServersSection> {
           ),
         ),
         actions: [
-          TextButton(
+          OnyxDialogAction(
+            label: tr('Annuler'),
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(tr('Annuler')),
           ),
-          FilledButton(
+          OnyxDialogAction(
+            label: tr('Enregistrer'),
+            primary: true,
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: Text(tr('Enregistrer')),
           ),
         ],
       ),
@@ -149,44 +137,37 @@ class _LinkedServersSectionState extends State<LinkedServersSection> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
+      return SettingsGroup(
+        title: tr('Serveurs'),
+        padded: true,
+        children: const [SettingsLoading()],
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return SettingsGroup(
+      title: tr('Serveurs'),
+      trailing: IconButton(
+        tooltip: tr('Actualiser'),
+        icon: const Icon(AppIcons.refresh, size: 18),
+        onPressed: _load,
+      ),
       children: [
-        if (_error != null) ...[
-          Text(_error!, style: const TextStyle(color: AppColors.error)),
-          const SizedBox(height: 12),
-        ],
+        if (_error != null) SettingsBanner(_error!, tone: BannerTone.error),
         if (_peers.isEmpty)
-          Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Text(
-              tr('Aucun serveur lié. Une demande apparaît ici quand un '
-                  'utilisateur lie son compte à un compte d’un autre serveur.'),
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+          SettingsEmptyNote(
+            tr('Aucun serveur lié. Une demande apparaît ici quand un '
+                'utilisateur lie son compte à un compte d’un autre serveur.'),
+            icon: AppIcons.link,
           ),
         for (final peer in _peers)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(
-              peer.isActive ? Icons.link_rounded : Icons.link_off_rounded,
-              color: peer.isActive ? AppColors.primary : null,
-            ),
-            title: Text(_name(peer)),
-            subtitle: Text(
-              [
-                peer.url,
-                _status(peer),
-                if (peer.lastError.isNotEmpty) peer.lastError,
-              ].join('\n'),
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-            isThreeLine: true,
+          SettingsTile(
+            icon: AppIcons.link,
+            iconColor: peer.isActive ? AppColors.primary : null,
+            title: _name(peer),
+            subtitle: [
+              peer.url,
+              _status(peer),
+              if (peer.lastError.isNotEmpty) peer.lastError,
+            ].join('\n'),
             trailing: _busyId == peer.id
                 ? const SizedBox(
                     width: 20,
@@ -199,12 +180,12 @@ class _LinkedServersSectionState extends State<LinkedServersSection> {
                       if (!peer.localApproved) ...[
                         IconButton(
                           tooltip: tr('Refuser le lien'),
-                          icon: const Icon(Icons.close_rounded),
+                          icon: const Icon(AppIcons.close),
                           onPressed: () => _remove(peer),
                         ),
                         IconButton(
                           tooltip: tr('Autoriser le lien'),
-                          icon: const Icon(Icons.check_rounded),
+                          icon: const Icon(AppIcons.check),
                           onPressed: () => _run(
                               peer,
                               () => context
@@ -212,31 +193,30 @@ class _LinkedServersSectionState extends State<LinkedServersSection> {
                                   .approvePeerServer(peer.id)),
                         ),
                       ],
-                      PopupMenuButton<String>(
+                      OnyxMenuButton<String>(
                         tooltip: tr('Options de {0}', [_name(peer)]),
+                        icon: AppIcons.moreVertical,
+                        items: [
+                          OnyxMenuItem(
+                            value: 'url',
+                            label: tr('Modifier l’adresse'),
+                            icon: AppIcons.edit,
+                          ),
+                          OnyxMenuItem(
+                            value: 'remove',
+                            label: tr('Retirer le lien'),
+                            icon: AppIcons.delete,
+                            destructive: true,
+                          ),
+                        ],
                         onSelected: (value) {
                           if (value == 'url') _editUrl(peer);
                           if (value == 'remove') _remove(peer);
                         },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                              value: 'url', child: Text(tr('Modifier l’adresse'))),
-                          PopupMenuItem(
-                              value: 'remove', child: Text(tr('Retirer le lien'))),
-                        ],
                       ),
                     ],
                   ),
           ),
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: Text(tr('Actualiser')),
-          ),
-        ),
       ],
     );
   }

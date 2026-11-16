@@ -96,7 +96,7 @@ class OnyxProgressBar extends StatefulWidget {
 
   /// La hauteur de la rangée, quand elle n'est pas celle que [marker] décide.
   /// Un écran tenu en main prend le repère d'un téléviseur mais garde une
-  /// rangée à la taille d'un doigt (ADR-0131).
+  /// rangée à la taille d'un doigt (ADR-0136).
   final double? rowHeight;
 
   @override

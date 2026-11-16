@@ -12,15 +12,10 @@ import '../../tv/tv_mode.dart';
 import '../../tv/nav/tv_region.dart';
 import '../../utils/poster_url.dart';
 import '../../utils/responsive.dart';
+import 'adaptive_panel.dart';
 import 'app_network_image.dart';
+import 'detail_full_cast_sheet.dart';
 import 'detail_metadata.dart';
-
-String _initials(String name) {
-  final parts = name.trim().split(RegExp(r'\s+'));
-  if (parts.isEmpty || parts.first.isEmpty) return '';
-  if (parts.length == 1) return parts.first[0].toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
 
 (String first, String rest) _splitName(String name) {
   final parts = name.trim().split(RegExp(r'\s+'));
@@ -65,12 +60,13 @@ class _CastSectionState extends State<CastSection> {
   }
 
   void _showFullCast(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _FullCastSheet(
+    // Une grille de portraits : sur grand écran, un panneau centré
+    // (ADR-0131).
+    showAdaptivePanel<void>(
+      context,
+      centered: true,
+      width: 720,
+      builder: (_) => FullCastSheet(
         cast: widget.cast,
         onTapMember: widget.onTapMember,
       ),
@@ -251,7 +247,7 @@ class _CastSectionState extends State<CastSection> {
                                         selectedActor.profileUrl),
                                     fit: BoxFit.cover,
                                   )
-                                : _InitialsPlaceholder(
+                                : CastInitialsPlaceholder(
                                     name: selectedActor.name,
                                     fontSize: AppType.footnote,
                                   ),
@@ -471,10 +467,10 @@ class _CastSectionState extends State<CastSection> {
               AppNetworkImage(
                 url: castProfileUrl(member.profileUrl),
                 fit: BoxFit.cover,
-                errorWidget: _InitialsPlaceholder(name: member.name),
+                errorWidget: CastInitialsPlaceholder(name: member.name),
               )
             else
-              _InitialsPlaceholder(name: member.name),
+              CastInitialsPlaceholder(name: member.name),
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
@@ -637,159 +633,6 @@ class _ArrowButton extends StatelessWidget {
         tooltip: tooltip,
         padding: EdgeInsets.zero,
         onPressed: onPressed,
-      ),
-    );
-  }
-}
-
-class _InitialsPlaceholder extends StatelessWidget {
-  final String name;
-  final double fontSize;
-
-  const _InitialsPlaceholder({
-    required this.name,
-    this.fontSize = AppType.title2,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF2A2C2C), Color(0xFF161717)],
-        ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        _initials(name),
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: Colors.white.withValues(alpha: 0.3),
-        ),
-      ),
-    );
-  }
-}
-
-class _FullCastSheet extends StatelessWidget {
-  final List<CastMember> cast;
-  final void Function(CastMember member)? onTapMember;
-
-  const _FullCastSheet({required this.cast, this.onTapMember});
-
-  @override
-  Widget build(BuildContext context) {
-    final height = MediaQuery.sizeOf(context).height * 0.85;
-    return Container(
-      height: height,
-      decoration: const BoxDecoration(
-        color: Color(0xFF141515),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${tr('Distribution')} (${cast.length})',
-                  style: const TextStyle(
-                    fontSize: AppType.title2,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(AppIcons.close,
-                      color: AppColors.textSecondary),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Colors.white10),
-          Expanded(
-            child: GridView.builder(
-              scrollCacheExtent: AppLayout.imageCacheExtent(context),
-              padding: const EdgeInsets.all(20),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 150,
-                childAspectRatio: 0.62,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 18,
-              ),
-              itemCount: cast.length,
-              itemBuilder: (context, index) {
-                final member = cast[index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    onTapMember?.call(member);
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            color: const Color(0xFF1F2121),
-                            width: double.infinity,
-                            child: member.profileUrl != null &&
-                                    member.profileUrl!.isNotEmpty
-                                ? AppNetworkImage(
-                                    url: castProfileUrl(member.profileUrl),
-                                    fit: BoxFit.cover,
-                                    errorWidget:
-                                        _InitialsPlaceholder(name: member.name),
-                                  )
-                                : _InitialsPlaceholder(name: member.name),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        member.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: AppType.footnote,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                      if (member.character != null &&
-                          member.character!.isNotEmpty)
-                        Text(
-                          member.character!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: AppType.caption,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
       ),
     );
   }

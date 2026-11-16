@@ -9,6 +9,7 @@ import '../../tv/tv_deferred_keyboard.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
+import 'onyx_dialog.dart';
 
 /// Validation en deux étapes (ADR-0041) : le dialogue qui demande un code,
 /// précédé du QR code quand il s'agit d'en configurer un, et suivi des codes
@@ -25,7 +26,7 @@ Future<T?> showOtpCodeDialog<T>(
   bool acceptsRecoveryCode = false,
   List<String> Function(T result)? recoveryCodesOf,
 }) {
-  return showDialog<T>(
+  return showOnyxDialog<T>(
     context: context,
     barrierDismissible: false,
     builder: (_) => _OtpCodeDialog<T>(
@@ -40,21 +41,20 @@ Future<T?> showOtpCodeDialog<T>(
 
 /// Montre des codes de secours qui viennent d'être tirés.
 Future<void> showRecoveryCodesDialog(BuildContext context, List<String> codes) {
-  return showDialog<void>(
+  return showOnyxDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (dialogContext) => AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      title: Text(tr('Codes de secours')),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 380),
-        child: RecoveryCodesView(codes: codes),
-      ),
+    builder: (dialogContext) => OnyxDialog(
+      title: tr('Codes de secours'),
+      icon: AppIcons.info,
+      width: 380,
+      content: RecoveryCodesView(codes: codes),
       actions: [
-        FilledButton(
+        OnyxDialogAction(
+          label: tr('J’ai noté mes codes'),
+          primary: true,
           autofocus: true,
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text(tr('J’ai noté mes codes')),
         ),
       ],
     ),
@@ -134,7 +134,8 @@ class _OtpCodeDialogState<T> extends State<_OtpCodeDialog<T>> {
     final code = _code.text.trim();
     if (code.isEmpty) {
       setState(
-          () => _error = tr('Entrez le code affiché par votre application.'));
+        () => _error = tr('Entrez le code affiché par votre application.'),
+      );
       return;
     }
     setState(() {
@@ -168,32 +169,31 @@ class _OtpCodeDialogState<T> extends State<_OtpCodeDialog<T>> {
   @override
   Widget build(BuildContext context) {
     final showingCodes = _recoveryCodes.isNotEmpty;
-    return AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      title: Text(showingCodes ? tr('Codes de secours') : widget.title),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 380),
-        child: SingleChildScrollView(
-          child: showingCodes
-              ? RecoveryCodesView(codes: _recoveryCodes)
-              : _codeStep(),
-        ),
-      ),
+    return OnyxDialog(
+      title: showingCodes ? tr('Codes de secours') : widget.title,
+      icon: AppIcons.info,
+      width: 380,
+      content: showingCodes
+          ? RecoveryCodesView(codes: _recoveryCodes)
+          : _codeStep(),
       actions: showingCodes
           ? [
-              FilledButton(
+              OnyxDialogAction(
+                label: tr('J’ai noté mes codes'),
+                primary: true,
                 autofocus: true,
                 onPressed: () => Navigator.of(context).pop(_result),
-                child: Text(tr('J’ai noté mes codes')),
               ),
             ]
           : [
-              TextButton(
+              OnyxDialogAction(
+                label: _expired ? tr('Fermer') : tr('Annuler'),
                 onPressed: _busy ? null : () => Navigator.of(context).pop(),
-                child: Text(_expired ? tr('Fermer') : tr('Annuler')),
               ),
               if (!_expired)
-                FilledButton(
+                OnyxDialogAction(
+                  label: tr('Valider'),
+                  primary: true,
                   onPressed: _busy ? null : _submit,
                   child: _busy
                       ? const SizedBox(
@@ -201,7 +201,7 @@ class _OtpCodeDialogState<T> extends State<_OtpCodeDialog<T>> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(tr('Valider')),
+                      : null,
                 ),
             ],
     );
@@ -215,9 +215,11 @@ class _OtpCodeDialogState<T> extends State<_OtpCodeDialog<T>> {
       children: [
         if (setup != null) ...[
           Text(
-            tr('Scannez ce QR code avec une application d’authentification '
-                '(Google Authenticator, Aegis, 1Password…), puis entrez le '
-                'code qu’elle affiche.'),
+            tr(
+              'Scannez ce QR code avec une application d’authentification '
+              '(Google Authenticator, Aegis, 1Password…), puis entrez le '
+              'code qu’elle affiche.',
+            ),
             style: TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
@@ -230,10 +232,14 @@ class _OtpCodeDialogState<T> extends State<_OtpCodeDialog<T>> {
             padding: const EdgeInsets.only(bottom: 16),
             child: Text(
               widget.acceptsRecoveryCode
-                  ? tr('Entrez le code à six chiffres de votre application '
-                      'd’authentification, ou l’un de vos codes de secours.')
-                  : tr('Entrez le code à six chiffres de votre application '
-                      'd’authentification.'),
+                  ? tr(
+                      'Entrez le code à six chiffres de votre application '
+                      'd’authentification, ou l’un de vos codes de secours.',
+                    )
+                  : tr(
+                      'Entrez le code à six chiffres de votre application '
+                      'd’authentification.',
+                    ),
               style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),
@@ -310,9 +316,9 @@ class _SecretText extends StatelessWidget {
 
   /// Groupé par quatre, comme les applications l'affichent.
   String get _grouped => [
-        for (var i = 0; i < secret.length; i += 4)
-          secret.substring(i, i + 4 > secret.length ? secret.length : i + 4),
-      ].join(' ');
+    for (var i = 0; i < secret.length; i += 4)
+      secret.substring(i, i + 4 > secret.length ? secret.length : i + 4),
+  ].join(' ');
 
   @override
   Widget build(BuildContext context) {
@@ -352,9 +358,11 @@ class RecoveryCodesView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          tr('Chacun de ces codes remplace une fois le code de votre '
-              'application, si vous perdez votre téléphone. Gardez-les en '
-              'lieu sûr : ils ne seront plus affichés.'),
+          tr(
+            'Chacun de ces codes remplace une fois le code de votre '
+            'application, si vous perdez votre téléphone. Gardez-les en '
+            'lieu sûr : ils ne seront plus affichés.',
+          ),
           style: TextStyle(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 16),

@@ -1,64 +1,27 @@
-import 'dart:convert';
-
-import 'package:dio/dio.dart';
-import '../../tv/tv_deferred_keyboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/tr.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
-import '../../l10n/tr.dart';
-import '../../utils/password_policy.dart';
+import '../../widgets/global/onyx_dialog.dart';
+import 'widgets/admin_prompts.dart';
+import 'widgets/permissions_sheet.dart';
+import 'widgets/settings_ui.dart';
+import 'widgets/user_account_tile.dart';
 
-/// Human labels for the administration rights, in the order they are shown.
-const permissionLabels = <(String, String)>[
-  ('manage_settings', 'Gérer les paramètres du serveur'),
-  ('manage_library', 'Gérer la bibliothèque (scans, métadonnées)'),
-  ('manage_users', 'Gérer les utilisateurs'),
-  ('delete_media', 'Supprimer des médias'),
-  ('invite_users', 'Créer des invitations'),
-  ('request_media', 'Demander des médias'),
-  ('share_media', 'Partager des médias par lien public'),
-];
-
-bool readPermission(Permissions p, String key) => p.toJson()[key] == true;
-
-Permissions writePermission(Permissions p, String key, bool value) {
-  switch (key) {
-    case 'manage_settings':
-      return p.copyWith(manageSettings: value);
-    case 'manage_library':
-      return p.copyWith(manageLibrary: value);
-    case 'manage_users':
-      return p.copyWith(manageUsers: value);
-    case 'delete_media':
-      return p.copyWith(deleteMedia: value);
-    case 'invite_users':
-      return p.copyWith(inviteUsers: value);
-    case 'request_media':
-      return p.copyWith(requestMedia: value);
-    case 'share_media':
-      return p.copyWith(shareMedia: value);
-  }
-  return p;
-}
-
-String _summary(Permissions p) {
-  if (p.isAdmin) return tr('Administrateur');
-  final granted = permissionLabels
-      .where((entry) => readPermission(p, entry.$1))
-      .map((entry) => tr(entry.$2))
-      .toList();
-  if (granted.isEmpty) return tr('Aucun droit');
-  if (granted.length <= 2) return granted.join(' · ');
-  return '${granted.length} droits';
-}
+export 'widgets/admin_prompts.dart' show promptPassword;
+export 'widgets/user_rights.dart';
 
 /// Accounts list with their rights. Only rendered for holders of manage_users.
+///
+/// Rend son propre groupe : le compte du titre (« Comptes · 4 ») vient de la
+/// liste chargée.
 class UsersSection extends StatefulWidget {
   const UsersSection({super.key});
 
@@ -90,7 +53,7 @@ class _UsersSectionState extends State<UsersSection> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = _errorText(e);
+        _error = adminErrorText(e);
       });
       // Rights may have been taken away while this screen was open.
       context.read<AuthProvider>().refreshProfile();
@@ -102,13 +65,13 @@ class _UsersSectionState extends State<UsersSection> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.background,
-      builder: (_) => _PermissionsSheet(user: user),
+      builder: (_) => PermissionsSheet(user: user),
     );
     if (saved == true) _load();
   }
 
   Future<void> _resetPassword(User user) async {
-    final password = await _promptPassword(
+    final password = await promptNewPassword(
       context,
       title: tr('Réinitialiser le mot de passe de {0}', [user.username]),
       // Reset is a recovery, so it logs that account out everywhere.
@@ -120,348 +83,123 @@ class _UsersSectionState extends State<UsersSection> {
       if (!mounted) return;
       _toast(tr('Mot de passe réinitialisé.'));
     } catch (e) {
-      _toast(_errorText(e), error: true);
+      _toast(adminErrorText(e), error: true);
     }
   }
 
   /// Retire le code d'un compte qui a perdu son téléphone et ses codes de
   /// secours (ADR-0041).
   Future<void> _resetOtp(User user) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Réinitialiser la validation en deux étapes de {0} ?', [user.username])),
-        content: Text(
-          tr('Son mot de passe suffira à sa prochaine connexion. Si la '
-              'politique du serveur l’impose, il devra alors configurer un '
-              'nouveau code.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('Réinitialiser')),
-          ),
-        ],
-      ),
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: tr('Réinitialiser la validation en deux étapes de {0} ?',
+          [user.username]),
+      message: tr('Son mot de passe suffira à sa prochaine connexion. Si la '
+          'politique du serveur l’impose, il devra alors configurer un '
+          'nouveau code.'),
+      confirmLabel: tr('Réinitialiser'),
+      icon: AppIcons.reset,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
     try {
       await context.read<ApiClient>().resetUserOtp(user.id);
       if (!mounted) return;
       _toast(tr('Validation en deux étapes réinitialisée.'));
       _load();
     } catch (e) {
-      _toast(_errorText(e), error: true);
+      _toast(adminErrorText(e), error: true);
     }
   }
 
   Future<void> _delete(User user) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Supprimer {0} ?', [user.username])),
-        content: Text(
-          tr('Le compte et toutes ses données (progressions, sessions) '
-              'seront supprimés définitivement.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('Supprimer')),
-          ),
-        ],
-      ),
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: tr('Supprimer {0} ?', [user.username]),
+      message: tr('Le compte et toutes ses données (progressions, sessions) '
+          'seront supprimés définitivement.'),
+      confirmLabel: tr('Supprimer'),
+      destructive: true,
+      icon: AppIcons.delete,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
     try {
       await context.read<ApiClient>().deleteUser(user.id);
       _load();
     } catch (e) {
-      _toast(_errorText(e), error: true);
+      _toast(adminErrorText(e), error: true);
     }
   }
 
   Future<void> _transferOwnership(User user) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Transférer la propriété à {0} ?', [user.username])),
-        content: Text(
-          tr('Vous ne serez plus propriétaire : ce compte pourra alors '
-              'modifier vos droits, et vous ne pourrez plus modifier les '
-              'siens.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('Annuler')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('Transférer')),
-          ),
-        ],
-      ),
+    final confirmed = await showOnyxConfirm(
+      context,
+      title: tr('Transférer la propriété à {0} ?', [user.username]),
+      message: tr('Vous ne serez plus propriétaire : ce compte pourra alors '
+          'modifier vos droits, et vous ne pourrez plus modifier les '
+          'siens.'),
+      confirmLabel: tr('Transférer'),
+      icon: AppIcons.switchUser,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
     try {
       await context.read<ApiClient>().transferOwnership(user.id);
       if (!mounted) return;
       await context.read<AuthProvider>().refreshProfile();
       _load();
     } catch (e) {
-      _toast(_errorText(e), error: true);
+      _toast(adminErrorText(e), error: true);
     }
   }
 
   void _toast(String message, {bool error = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: error ? AppColors.error : null,
-    ));
+    showSettingsSnack(context, message, error: error);
   }
+
+  void _run(User user, UserAction action) => switch (action) {
+        UserAction.permissions => _editPermissions(user),
+        UserAction.password => _resetPassword(user),
+        UserAction.otp => _resetOtp(user),
+        UserAction.transfer => _transferOwnership(user),
+        UserAction.delete => _delete(user),
+      };
 
   @override
   Widget build(BuildContext context) {
+    final footer = tr('Le propriétaire ne peut pas être rétrogradé. '
+        'Réinitialiser un mot de passe déconnecte tous les '
+        'appareils du compte.');
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
+      return SettingsGroup(
+        title: tr('Comptes'),
+        footer: footer,
+        padded: true,
+        children: const [SettingsLoading()],
       );
     }
     if (_error != null) {
-      return Text(_error!, style: const TextStyle(color: AppColors.error));
+      return SettingsGroup(
+        title: tr('Comptes'),
+        padded: true,
+        children: [SettingsBanner(_error!, tone: BannerTone.error)],
+      );
     }
 
     final auth = context.watch<AuthProvider>();
-    final me = auth.currentUser;
+    final meId = auth.currentUser?.id;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return SettingsGroup(
+      title: tr('Comptes · {0}', [_users.length]),
+      footer: footer,
       children: [
         for (final user in _users)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-              child: Text(user.username.isEmpty
-                  ? '?'
-                  : user.username.substring(0, 1).toUpperCase()),
-            ),
-            title: Row(
-              children: [
-                Flexible(child: Text(user.username)),
-                if (user.isOwner) ...[
-                  const SizedBox(width: 8),
-                  _Chip(label: tr('Propriétaire')),
-                ],
-                if (user.id == me?.id) ...[
-                  const SizedBox(width: 8),
-                  _Chip(label: tr('Vous')),
-                ],
-              ],
-            ),
-            subtitle: Text(
-              [
-                _summary(user.permissions),
-                if (user.otpEnabled) tr('Validation en deux étapes'),
-              ].join(' · '),
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-            trailing: PopupMenuButton<String>(
-              onSelected: (value) {
-                switch (value) {
-                  case 'permissions':
-                    _editPermissions(user);
-                  case 'password':
-                    _resetPassword(user);
-                  case 'otp':
-                    _resetOtp(user);
-                  case 'delete':
-                    _delete(user);
-                  case 'transfer':
-                    _transferOwnership(user);
-                }
-              },
-              itemBuilder: (_) => [
-                // The owner is asymmetric: only the owner touches the owner.
-                if (!user.isOwner || auth.isOwner)
-                  PopupMenuItem(
-                    value: 'permissions',
-                    child: Text(tr('Modifier les droits')),
-                  ),
-                if (!user.isOwner || auth.isOwner)
-                  PopupMenuItem(
-                    value: 'password',
-                    child: Text(tr('Réinitialiser le mot de passe')),
-                  ),
-                if (user.otpEnabled && (!user.isOwner || auth.isOwner))
-                  PopupMenuItem(
-                    value: 'otp',
-                    child: Text(tr('Réinitialiser la validation en deux étapes')),
-                  ),
-                if (auth.isOwner && !user.isOwner)
-                  PopupMenuItem(
-                    value: 'transfer',
-                    child: Text(tr('Transférer la propriété')),
-                  ),
-                if (!user.isOwner && user.id != me?.id)
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text(tr('Supprimer le compte')),
-                  ),
-              ],
-            ),
+          UserAccountTile(
+            user: user,
+            isMe: user.id == meId,
+            viewerIsOwner: auth.isOwner,
+            onAction: (action) => _run(user, action),
           ),
       ],
-    );
-  }
-}
-
-/// Editor for one account's rights, plus the invitation template that goes with
-/// `invite_users`.
-class _PermissionsSheet extends StatefulWidget {
-  const _PermissionsSheet({required this.user});
-
-  final User user;
-
-  @override
-  State<_PermissionsSheet> createState() => _PermissionsSheetState();
-}
-
-class _PermissionsSheetState extends State<_PermissionsSheet> {
-  late Permissions _permissions = widget.user.permissions;
-  late Permissions _inviteGrants = widget.user.inviteGrants;
-  bool _saving = false;
-  String? _error;
-
-  Future<void> _save() async {
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      await context.read<ApiClient>().updateUserPermissions(
-            widget.user.id,
-            _permissions,
-            inviteGrants: _inviteGrants,
-          );
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = _errorText(e);
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-            20, 20, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(tr('Droits de {0}', [widget.user.username]),
-                  style: textTheme.titleMedium),
-              const SizedBox(height: 4),
-              Text(
-                tr('Le raccourci « Administrateur » coche tout.'),
-                style: textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(tr('Administrateur')),
-                value: _permissions.isAdmin,
-                onChanged: (value) => setState(() {
-                  _permissions = value
-                      ? Permissions.all
-                      : const Permissions(requestMedia: true);
-                  if (!value) _inviteGrants = const Permissions();
-                }),
-              ),
-              const Divider(),
-              for (final entry in permissionLabels)
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  title: Text(tr(entry.$2)),
-                  value: readPermission(_permissions, entry.$1),
-                  onChanged: (value) => setState(() {
-                    _permissions =
-                        writePermission(_permissions, entry.$1, value ?? false);
-                    if (entry.$1 == 'invite_users' && value != true) {
-                      _inviteGrants = const Permissions();
-                    }
-                  }),
-                ),
-              if (_permissions.inviteUsers) ...[
-                const SizedBox(height: 12),
-                Text(tr('Droits accordés par ses invitations'),
-                    style: textTheme.titleSmall),
-                const SizedBox(height: 4),
-                Text(
-                  tr('C’est vous qui décidez ce que ses liens accordent : '
-                      'la personne qui invite ne choisit rien, elle ne peut '
-                      'donc pas se fabriquer un compte administrateur.'),
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary),
-                ),
-                for (final entry in permissionLabels)
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(tr(entry.$2)),
-                    // An invitation that hands out manage_users would turn the
-                    // right to invite into the right to do everything.
-                    enabled: entry.$1 != 'manage_users',
-                    value: entry.$1 == 'manage_users'
-                        ? false
-                        : readPermission(_inviteGrants, entry.$1),
-                    onChanged: entry.$1 == 'manage_users'
-                        ? null
-                        : (value) => setState(() {
-                              _inviteGrants = writePermission(
-                                  _inviteGrants, entry.$1, value ?? false);
-                            }),
-                  ),
-              ],
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: AppColors.error)),
-              ],
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                child: Text(_saving ? tr('Enregistrement…') : tr('Enregistrer')),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -500,7 +238,7 @@ class _InvitationsSectionState extends State<InvitationsSection> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = _errorText(e);
+        _error = adminErrorText(e);
       });
       context.read<AuthProvider>().refreshProfile();
     }
@@ -517,7 +255,7 @@ class _InvitationsSectionState extends State<InvitationsSection> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _creating = false);
-      _toast(_errorText(e), error: true);
+      _toast(adminErrorText(e), error: true);
     }
   }
 
@@ -526,18 +264,19 @@ class _InvitationsSectionState extends State<InvitationsSection> {
   /// and on the native apps it is the only way in.
   void _showLink(Invitation invitation) {
     final link = context.read<ApiClient>().invitationLink(invitation);
-    showDialog<void>(
+    showOnyxDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(tr('Invitation créée')),
+      builder: (ctx) => OnyxDialog(
+        title: tr('Invitation créée'),
+        icon: AppIcons.link,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(tr('Lien (navigateur, même réseau que cette adresse) :')),
             const SizedBox(height: 4),
-            SelectableText(link, style: const TextStyle(fontSize: AppType.footnote)),
+            SelectableText(link,
+                style: const TextStyle(fontSize: AppType.footnote)),
             const SizedBox(height: 16),
             Text(tr('Code (à saisir dans l’app) :')),
             const SizedBox(height: 4),
@@ -546,26 +285,28 @@ class _InvitationsSectionState extends State<InvitationsSection> {
             const SizedBox(height: 16),
             Text(
               tr('Valable 7 jours, utilisable une seule fois.'),
-              style: TextStyle(color: AppColors.textSecondary, fontSize: AppType.footnote),
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: AppType.footnote),
             ),
           ],
         ),
         actions: [
-          TextButton(
+          OnyxDialogAction(
+            label: tr('Copier le code'),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: invitation.token));
               Navigator.of(ctx).pop();
               _toast(tr('Code copié.'));
             },
-            child: Text(tr('Copier le code')),
           ),
-          FilledButton(
+          OnyxDialogAction(
+            label: tr('Copier le lien'),
+            primary: true,
             onPressed: () {
               Clipboard.setData(ClipboardData(text: link));
               Navigator.of(ctx).pop();
               _toast(tr('Lien copié.'));
             },
-            child: Text(tr('Copier le lien')),
           ),
         ],
       ),
@@ -577,16 +318,13 @@ class _InvitationsSectionState extends State<InvitationsSection> {
       await context.read<ApiClient>().revokeInvitation(invitation.token);
       _load();
     } catch (e) {
-      _toast(_errorText(e), error: true);
+      _toast(adminErrorText(e), error: true);
     }
   }
 
   void _toast(String message, {bool error = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: error ? AppColors.error : null,
-    ));
+    showSettingsSnack(context, message, error: error);
   }
 
   String _statusLabel(Invitation invitation) {
@@ -603,195 +341,70 @@ class _InvitationsSectionState extends State<InvitationsSection> {
         final expires = invitation.expiresAt;
         if (expires == null) return tr('En attente');
         final days = expires.difference(DateTime.now()).inDays;
-        return days <= 0 ? tr('Expire aujourd’hui') : tr('Expire dans {0} j', [days]);
+        return days <= 0
+            ? tr('Expire aujourd’hui')
+            : tr('Expire dans {0} j', [days]);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final title = tr('Invitations');
+    final footer = tr('Liens à usage unique, valables 7 jours. Les droits '
+        'accordés sont fixés par un administrateur.');
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
+      return SettingsGroup(
+        title: title,
+        footer: footer,
+        padded: true,
+        children: const [SettingsLoading()],
       );
     }
 
     final isAdmin = context.watch<AuthProvider>().permissions.manageUsers;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return SettingsGroup(
+      title: title,
+      footer: footer,
+      trailing: TextButton(
+        onPressed: _creating ? null : _create,
+        child: Text(_creating ? tr('Création…') : tr('Générer une invitation')),
+      ),
       children: [
-        if (_error != null) ...[
-          Text(_error!, style: const TextStyle(color: AppColors.error)),
-          const SizedBox(height: 12),
-        ],
-        if (_invitations.isEmpty)
-          Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Text(
-              tr('Aucune invitation pour le moment.'),
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
+        if (_error != null)
+          SettingsBanner(_error!, tone: BannerTone.error)
+        else if (_invitations.isEmpty)
+          SettingsEmptyNote(tr('Aucune invitation pour le moment.'),
+              icon: AppIcons.link),
         for (final invitation in _invitations)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              invitation.token.length >= 8
-                  ? invitation.token.substring(0, 8).toUpperCase()
-                  : invitation.token.toUpperCase(),
-            ),
-            subtitle: Text(
-              isAdmin
-                  ? tr('{0} · créée par {1}', [_statusLabel(invitation), invitation.inviter])
-                  : _statusLabel(invitation),
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
+          SettingsTile(
+            icon: AppIcons.link,
+            title: invitation.token.length >= 8
+                ? invitation.token.substring(0, 8).toUpperCase()
+                : invitation.token.toUpperCase(),
+            subtitle: isAdmin
+                ? tr('{0} · créée par {1}',
+                    [_statusLabel(invitation), invitation.inviter])
+                : _statusLabel(invitation),
             trailing: invitation.isPending
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         tooltip: tr('Revoir le lien'),
-                        icon: const Icon(Icons.link_rounded),
+                        icon: const Icon(AppIcons.link),
                         onPressed: () => _showLink(invitation),
                       ),
                       IconButton(
                         tooltip: tr('Révoquer'),
-                        icon: const Icon(Icons.block_rounded),
+                        icon: const Icon(AppIcons.blocked),
                         onPressed: () => _revoke(invitation),
                       ),
                     ],
                   )
                 : null,
           ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.tonal(
-            onPressed: _creating ? null : _create,
-            child: Text(_creating ? tr('Création…') : tr('Générer une invitation')),
-          ),
-        ),
       ],
     );
   }
-}
-
-/// Small "Propriétaire" / "Vous" badge.
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(label,
-          style: const TextStyle(fontSize: AppType.caption, color: AppColors.textSecondary)),
-    );
-  }
-}
-
-/// Password prompt shared by the admin reset and the self-service change.
-/// [minLength] : [minNewPasswordLength] pour un mot de passe choisi, 4 pour
-/// en confirmer un existant, qui a pu être créé avec l'ancienne limite.
-Future<String?> promptPassword(
-  BuildContext context, {
-  required String title,
-  String? hint,
-  String label = 'Nouveau mot de passe',
-  int minLength = 4,
-}) =>
-    _promptPassword(context,
-        title: title, hint: hint, label: label, minLength: minLength);
-
-Future<String?> _promptPassword(BuildContext context,
-    {required String title,
-    String? hint,
-    String label = 'Nouveau mot de passe',
-    int minLength = minNewPasswordLength}) {
-  final controller = TextEditingController();
-  return showDialog<String>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.surface,
-      title: Text(title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (hint != null) ...[
-            Text(hint,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: AppType.footnote)),
-            const SizedBox(height: 12),
-          ],
-          TvDeferredKeyboard(
-            builder: (context, focusNode, canRequestFocus) => TextField(
-              focusNode: focusNode,
-              canRequestFocus: canRequestFocus,
-              controller: controller,
-              obscureText: true,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: tr(label),
-                helperText: minLength > 4
-                    ? tr('Au moins {0} caractères', ['$minLength'])
-                    : null,
-              ),
-                      ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: Text(tr('Annuler')),
-        ),
-        FilledButton(
-          onPressed: () {
-            final value = controller.text;
-            if (value.length < minLength) return;
-            Navigator.of(ctx).pop(value);
-          },
-          child: Text(tr('Valider')),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Surfaces the server's own message — notably "Droits insuffisants" — rather
-/// than a generic failure.
-///
-/// When there is no such message, it still says what happened. A bare "Action
-/// impossible." hid whether the server refused, answered something else (a
-/// proxy's error page), or could not be reached — which is the whole diagnosis.
-String _errorText(Object error) {
-  debugPrint('Users admin: $error');
-  if (error is DioException) {
-    final response = error.response;
-    var data = response?.data;
-    // Part of the server's errors are JSON sent as text/plain (Go's
-    // http.Error), which Dio leaves as a string.
-    if (data is String) {
-      try {
-        data = jsonDecode(data);
-      } on FormatException {
-        // Not JSON: an error page, most likely from a proxy.
-      }
-    }
-    if (data is Map && data['error'] != null) return data['error'].toString();
-    if (response == null) {
-      return tr('Serveur injoignable ({0}).', [error.type.name]);
-    }
-    return tr('Action impossible (HTTP {0}).', [response.statusCode]);
-  }
-  return tr('Action impossible : {0}', [error]);
 }

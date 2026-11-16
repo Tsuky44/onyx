@@ -4,20 +4,6 @@ import 'messages.g.dart' as pigeon show engineLog;
 export 'messages.g.dart'
     show
         OnyxApplePlaybackState,
-        OnyxAppleExternalSubtitle,
-        OnyxAppleLoadSubtitles,
-        OnyxAppleNativeAction,
-        OnyxAppleNativeChapter,
-        OnyxAppleNativeEvent,
-        OnyxAppleNativeEventKind,
-        OnyxAppleNativeMenu,
-        OnyxAppleNativeNextUp,
-        OnyxAppleNativeOption,
-        OnyxAppleNativePanel,
-        OnyxAppleNativePanelRow,
-        OnyxAppleNativePrompt,
-        OnyxAppleNativeReason,
-        OnyxAppleNativeSpec,
         OnyxApplePictureInPicture,
         OnyxApplePlaybackStats,
         OnyxApplePlayerErrorKind,
@@ -40,7 +26,6 @@ Stream<OnyxApplePlayerStatus>? _sharedStatuses;
 Stream<OnyxAppleSubtitleFrame>? _sharedSubtitles;
 Stream<OnyxApplePictureInPicture>? _sharedPictureInPicture;
 Stream<List<String>>? _sharedEngineLog;
-Stream<OnyxAppleNativeEvent>? _sharedNativeEvents;
 
 Stream<OnyxApplePlayerStatus> _nativeStatuses() =>
     _sharedStatuses ??= statusChanged().asBroadcastStream();
@@ -50,9 +35,6 @@ Stream<OnyxApplePictureInPicture> _nativePictureInPicture() =>
 
 Stream<OnyxAppleSubtitleFrame> _nativeSubtitles() =>
     _sharedSubtitles ??= subtitlesChanged().asBroadcastStream();
-
-Stream<OnyxAppleNativeEvent> _nativeEvents() =>
-    _sharedNativeEvents ??= nativeEvents().asBroadcastStream();
 
 /// Un lecteur AetherEngine, vu de Dart.
 ///
@@ -103,23 +85,6 @@ class OnyxApplePlayer {
   Stream<OnyxAppleSubtitleFrame> get subtitles =>
       _nativeSubtitles().where((frame) => frame.playerId == _id);
 
-  /// Les actions de l'utilisateur sur l'écran natif d'*ce* lecteur, et son
-  /// repli (`unavailable`).
-  Stream<OnyxAppleNativeEvent> get nativeEvents =>
-      _nativeEvents().where((event) => event.playerId == _id);
-
-  /// Présente l'écran natif (Apple TV) par-dessus Flutter. Si le natif ne
-  /// sait pas, [nativeEvents] émet `unavailable` : l'appelant garde alors
-  /// l'écran Flutter.
-  Future<void> presentNative(OnyxAppleNativeSpec spec) =>
-      _api.presentNative(_id, spec);
-
-  /// Remplace ce que l'écran natif affiche.
-  Future<void> updateNative(OnyxAppleNativeSpec spec) =>
-      _api.updateNative(_id, spec);
-
-  Future<void> dismissNative() => _api.dismissNative(_id);
-
   /// Charge [url] (fichier du serveur, chemin d'un téléchargement ou session
   /// HLS) en se plaçant à [startPosition] dans le même geste.
   Future<void> open(
@@ -150,11 +115,6 @@ class OnyxApplePlayer {
   /// session.
   Future<void> setPreferredAudioLanguages(List<String> priorities) =>
       _api.setPreferredAudioLanguages(_id, priorities);
-
-  /// Les sous-titres à déclarer au chargement, appliqués aux ouvertures
-  /// suivantes : AVKit ne voit que ceux-là.
-  Future<void> setLoadSubtitles(OnyxAppleLoadSubtitles subtitles) =>
-      _api.setLoadSubtitles(_id, subtitles);
 
   Future<void> selectAudioTrack(String trackId) =>
       _api.selectAudioTrack(_id, trackId);

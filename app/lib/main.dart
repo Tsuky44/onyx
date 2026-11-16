@@ -55,7 +55,6 @@ import 'tv/tv_touchpad.dart';
 import 'tv/tv_ui_scale.dart';
 import 'screens/player/display_frame_rate.dart';
 import 'screens/player/playback/auto_quality.dart';
-import 'screens/player/playback/native_tv_preference.dart';
 import 'services/picture_in_picture.dart';
 import 'screens/player/hardware_decoding.dart';
 import 'screens/player/playback_profile.dart';
@@ -210,7 +209,6 @@ void main() async {
     HardwareDecoding.initialize(),
     DisplayFrameRate.initialize(),
     AutoQualityPreference.initialize(),
-    NativeTvPlayerPreference.initialize(),
     // Si la souris qui s'attarde sur « Reprendre » en ouvre l'aperçu.
     HoverPreviewPreference.initialize(),
     // Les réglages de lecture que le player consulte sans attendre — le saut

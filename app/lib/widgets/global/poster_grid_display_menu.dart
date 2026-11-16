@@ -7,10 +7,11 @@ import '../../theme/app_type.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/poster_grid_zoom.dart';
 import '../../utils/responsive.dart';
+import 'onyx_menu.dart';
 
 /// Le bouton « Affichage » : un menu déroulant à quatre modes (4, 6, 8 ou 10
-/// affiches par ligne), le pendant, à la souris et au doigt, du Ctrl + molette
-/// de `PosterGridZoomRegion`.
+/// affiches par ligne), ou à trois (2, 3 ou 4) sur un téléphone, le pendant, à
+/// la souris et au doigt, du Ctrl + molette de `PosterGridZoomRegion`.
 ///
 /// Se pose en haut à droite d'une page en grille, sous une région de zoom : il
 /// lit et règle le même choix que la molette, et les grilles suivent.
@@ -27,27 +28,27 @@ class PosterGridDisplayMenu extends StatelessWidget {
   /// vide à la place du bouton.
   static bool availableIn(BuildContext context) => !TvScope.of(context);
 
-  /// Plus il y a d'affiches par ligne, plus l'icône du mode est dense.
-  static IconData _iconFor(int columns) =>
-      columns >= 8 ? AppIcons.postersSmall : AppIcons.postersLarge;
+  /// Plus il y a d'affiches par ligne, plus l'icône du mode est dense : à
+  /// partir de 8 sur grand écran, de 4 sur téléphone, où c'est le maximum.
+  static IconData _iconFor(int columns, {required bool phone}) =>
+      columns >= (phone ? 4 : 8) ? AppIcons.postersSmall : AppIcons.postersLarge;
 
   @override
   Widget build(BuildContext context) {
     if (!availableIn(context)) return const SizedBox.shrink();
     final zoom = PosterGridZoomScope.watch(context);
     final selected = zoom.selected;
-    return PopupMenuButton<int>(
+    final phone = AppLayout.isCompact(context);
+    return OnyxMenuButton<int>(
       tooltip: tr('Affichage'),
-      position: PopupMenuPosition.under,
-      offset: const Offset(0, 6),
-      padding: EdgeInsets.zero,
-      initialValue: selected,
       onSelected: zoom.select,
-      itemBuilder: (_) => [
-        for (final columns in PosterGridZoom.presets)
-          PopupMenuItem<int>(
+      items: [
+        for (final columns in PosterGridZoom.presetsFor(phone: phone))
+          OnyxMenuItem<int>(
             value: columns,
-            child: _ModeRow(columns: columns, selected: columns == selected),
+            icon: _iconFor(columns, phone: phone),
+            label: tr('{0} par ligne', [columns]),
+            checked: columns == selected,
           ),
       ],
       child: _Trigger(compact: compact),
@@ -97,44 +98,6 @@ class _Trigger extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _ModeRow extends StatelessWidget {
-  const _ModeRow({required this.columns, required this.selected});
-
-  final int columns;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          PosterGridDisplayMenu._iconFor(columns),
-          size: 18,
-          color: selected ? AppColors.accent : AppColors.textSecondary,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            tr('{0} par ligne', [columns]),
-            style: TextStyle(
-              color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        // La place du repère est réservée même quand il est absent : le texte
-        // des quatre lignes reste aligné.
-        Icon(
-          AppIcons.check,
-          size: 16,
-          color: selected ? AppColors.accent : Colors.transparent,
-        ),
-      ],
     );
   }
 }

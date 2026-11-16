@@ -32,6 +32,7 @@ import '../../tv/tv_touchpad.dart';
 import '../../utils/poster_url.dart';
 import 'hooks/use_episodes_panel.dart';
 import 'hooks/use_gesture_hints.dart';
+import 'hooks/use_landscape_side.dart';
 import 'hooks/use_playback_handoff.dart';
 import 'hooks/use_player_controller.dart';
 import 'hooks/use_episode_navigation.dart';
@@ -66,7 +67,6 @@ import 'widgets/tabs/player_stats_tab.dart';
 import 'widgets/tabs/player_watch_party_tab.dart';
 import 'widgets/watch_party_overlay.dart';
 import 'playback/live_subtitles.dart';
-import 'playback/native_tv_presenter.dart';
 import 'playback/relay_trigger.dart';
 import 'playback/remote_seek.dart';
 import 'playback/skip_segments.dart';
@@ -75,7 +75,6 @@ import 'playback/still_watching.dart';
 import 'pinch_zoom_fit.dart';
 import 'player_key_routing.dart';
 import 'player_media_info.dart';
-import 'player_menu_choices.dart';
 import 'subtitle_padding.dart';
 import 'player_playback_preferences.dart';
 import 'player_shortcuts.dart';
@@ -89,7 +88,6 @@ import '../../l10n/tr.dart';
 // des extensions sur cet état, une par sujet. Voir ADR-0052.
 part 'player_screen_chrome.dart';
 part 'player_screen_flow.dart';
-part 'player_screen_native_tv.dart';
 part 'player_screen_overlays.dart';
 part 'player_screen_remote.dart';
 part 'player_screen_startup.dart';
@@ -138,7 +136,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   late final PlaybackHandoffWatch _handoff;
   late final PlayerWatchParty _party;
   /// L'écran natif d'Apple TV, ou null là où l'interface Onyx reste seule.
-  NativeTvPresenter? _nativeTv;
   final GestureHints _hints = GestureHints();
   late final WindowFocusWatch _windowFocus =
       WindowFocusWatch(onRegained: _handlePlayerFocusChanged);
@@ -288,6 +285,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
   static bool get _ownsDeviceOrientation =>
       AppPlatform.isMobile && !TvMode.isTv;
 
+  /// Paysage forcé et retournement suivi à l'accéléromètre, sur un téléphone.
+  PlayerLandscapeLock? _landscapeLock;
+
   EdgeInsets? _lastSubtitlePadding;
 
   // Store the listener so we can properly remove it in dispose
@@ -344,10 +344,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _wantsPlayback = !widget.startPaused;
     _chosenDisplayMode = widget.initialDisplayMode;
     if (_ownsDeviceOrientation) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
+      _landscapeLock = PlayerLandscapeLock(
+        isSuspended: () => PictureInPicture.active.value,
+      )..start();
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     }
     if (AppPlatform.isWindows) {
@@ -367,7 +366,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
     StillWatching.instance.retain();
     SleepTimer.instance.addListener(_applySleepTimer);
     _playerController = PlayerController();
-    _nativeTv = _createNativeTv();
     _party = PlayerWatchParty(
       controller: _playerController,
       api: () => _apiClient,
@@ -453,7 +451,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
     SleepTimer.instance.release();
     StillWatching.instance.release();
     _party.dispose();
-    _nativeTv?.dispose();
     _keyboardFocusNode.dispose();
     _playPauseFocusNode.dispose();
     _progressFocusNode.dispose();
@@ -476,6 +473,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         });
       }
     }
+    _landscapeLock?.dispose();
     if (!_isEpisodeTransition && _ownsDeviceOrientation) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
@@ -500,7 +498,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final isTv = TvScope.of(context);
-    _scheduleNativeTvSync();
     return Focus(
       focusNode: _keyboardFocusNode,
       autofocus: true,
@@ -513,8 +510,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         },
         child: Scaffold(
           backgroundColor: Colors.black,
-          // Sous l'écran natif, rien : ni scène vidéo, ni chrome, ni gestes.
-          body: _nativeTvShown ? const SizedBox.expand() : MouseRegion(
+          body: MouseRegion(
             cursor:
                 _shouldHideCursor ? SystemMouseCursors.none : MouseCursor.defer,
             onHover: (event) => _handlePointerHover(),

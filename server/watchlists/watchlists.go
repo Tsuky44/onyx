@@ -9,9 +9,10 @@
 // se rattache à rien s'affiche sous l'instantané pris à l'ajout.
 //
 // Le propriétaire gère la liste et peut inviter d'autres comptes à la remplir
-// (ADR-0127) ; un invité ajoute et retire des titres, rien d'autre. Une liste
-// privée n'existe pas pour les autres : elle répond ErrNotFound, comme une
-// liste qui n'existe pas, sauf à ses invités.
+// (ADR-0127) ou seulement à la voir (ADR-0129) ; un invité qui remplit ajoute
+// et retire des titres, rien d'autre. Une liste privée n'existe pas pour les
+// autres : elle répond ErrNotFound, comme une liste qui n'existe pas, sauf à
+// ses invités.
 //
 // Le package ne connaît pas HTTP, ni les fiches telles que l'app les lit : le
 // handler traduit les erreurs en codes d'état et joint les fiches aux
@@ -267,14 +268,15 @@ func (s *Store) ownedKind(q querier, ownerID, listID int) (string, error) {
 }
 
 // editableKind renvoie la sorte d'une liste que le compte peut remplir : la
-// sienne, ou une liste où son propriétaire l'a invité (ADR-0127). Une autre
-// est ErrNotOwner si le compte la voit, ErrNotFound sinon.
+// sienne, ou une liste où son propriétaire l'a invité à la remplir (ADR-0127).
+// Une autre, ou celle où il n'est invité qu'à voir (ADR-0129), est
+// ErrNotOwner si le compte la voit, ErrNotFound sinon.
 func (s *Store) editableKind(q querier, viewerID, listID int) (string, error) {
 	a, err := s.access(q, viewerID, listID)
 	if err != nil {
 		return "", err
 	}
-	if !a.owner && !a.member {
+	if !a.owner && a.role != models.WatchListRoleEditor {
 		if a.visible() {
 			return "", ErrNotOwner
 		}
@@ -285,14 +287,18 @@ func (s *Store) editableKind(q querier, viewerID, listID int) (string, error) {
 
 // listAccess dit ce qu'un compte est pour une liste.
 type listAccess struct {
-	kind   string
-	owner  bool
-	member bool
+	kind  string
+	owner bool
+	// role est celui de l'invité, vide quand le compte n'est pas invité.
+	role   string
 	shared bool
 }
 
+// member : le compte est invité, à remplir la liste ou à la voir.
+func (a listAccess) member() bool { return a.role != "" }
+
 // visible : le compte peut lire la liste. Un invité la lit même privée.
-func (a listAccess) visible() bool { return a.owner || a.member || a.shared }
+func (a listAccess) visible() bool { return a.owner || a.member() || a.shared }
 
 // access lit la liste et le rôle du compte, en une requête.
 func (s *Store) access(q querier, viewerID, listID int) (listAccess, error) {
@@ -300,9 +306,9 @@ func (s *Store) access(q querier, viewerID, listID int) (listAccess, error) {
 	var owner int
 	err := q.QueryRow(`
 		SELECT w.owner_id, w.kind, w.is_shared,
-			EXISTS (SELECT 1 FROM watch_list_members m WHERE m.list_id = w.id AND m.user_id = ?)
+			COALESCE((SELECT m.role FROM watch_list_members m WHERE m.list_id = w.id AND m.user_id = ?), '')
 		FROM watch_lists w WHERE w.id = ?`, viewerID, listID).
-		Scan(&owner, &a.kind, &a.shared, &a.member)
+		Scan(&owner, &a.kind, &a.shared, &a.role)
 	if errors.Is(err, sql.ErrNoRows) {
 		return listAccess{}, ErrNotFound
 	}

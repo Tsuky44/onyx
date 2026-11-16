@@ -7,7 +7,7 @@ import '../models/watch_list.dart';
 import '../services/api_client.dart';
 
 /// Les listes du compte et celles que les autres partagent (ADR-0070), avec
-/// les comptes invités à les remplir (ADR-0127).
+/// les comptes invités à les remplir ou à les voir (ADR-0127, ADR-0129).
 ///
 /// Le serveur tient tout : ce qui est ici n'est que le dernier état reçu,
 /// relu après chaque écriture. Une liste ouverte garde son contenu en cache
@@ -20,6 +20,7 @@ class WatchListsProvider extends ChangeNotifier {
   /// Null tant que le serveur n'a pas dit s'il sait tenir des listes.
   bool? _supported;
   bool _supportsMembers = false;
+  bool _supportsMemberRoles = false;
   WatchListsOverview? _overview;
   bool _isLoading = false;
   String? _errorMessage;
@@ -37,6 +38,10 @@ class WatchListsProvider extends ChangeNotifier {
   /// Le serveur annonce `watch_list_members` : le bouton « Inviter » ne se
   /// montre qu'à cette condition.
   bool get supportsMembers => _supportsMembers;
+
+  /// Le serveur annonce `watch_list_member_roles` : la feuille de partage
+  /// propose d'inviter à voir seulement (ADR-0129).
+  bool get supportsMemberRoles => _supportsMemberRoles;
   bool get hasLoaded => _overview != null;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -72,6 +77,7 @@ class WatchListsProvider extends ChangeNotifier {
     }
     _supported = null;
     _supportsMembers = false;
+    _supportsMemberRoles = false;
     _overview = null;
     _isLoading = false;
     _errorMessage = null;
@@ -106,6 +112,9 @@ class WatchListsProvider extends ChangeNotifier {
       _supported = supported;
       _supportsMembers =
           supported && await apiClient.supportsWatchListMembers();
+      if (request != _overviewRequest) return;
+      _supportsMemberRoles =
+          _supportsMembers && await apiClient.supportsWatchListMemberRoles();
       if (request != _overviewRequest) return;
       _overview = supported
           ? await apiClient.getWatchLists()
@@ -235,10 +244,13 @@ class WatchListsProvider extends ChangeNotifier {
   /// Les autres comptes du serveur, pour choisir qui inviter.
   Future<List<WatchListMember>> people() => apiClient.getWatchListPeople();
 
-  /// Invite un compte à remplir la liste ; la liste ouverte montre aussitôt
-  /// les invités que le serveur renvoie.
-  Future<void> addMember(int listId, int userId) async {
-    final members = await apiClient.addWatchListMember(listId, userId);
+  /// Invite un compte à la liste, ou change son rôle ; la liste ouverte
+  /// montre aussitôt les invités que le serveur renvoie. Le rôle ne part
+  /// qu'à un serveur qui le comprend : un plus ancien fait remplir la liste.
+  Future<void> addMember(int listId, int userId,
+      {WatchListRole role = WatchListRole.editor}) async {
+    final members = await apiClient.addWatchListMember(listId, userId,
+        role: _supportsMemberRoles ? role : null);
     _setMembers(listId, members);
     unawaited(load(silent: true));
   }

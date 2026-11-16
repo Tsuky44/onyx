@@ -10,7 +10,10 @@ services:
     volumes:
       - ./data:/app/data
       # --- IMPORTANT : REMPLACEZ LES CHEMINS DE GAUCHE CI-DESSOUS ---
-      # Mettez les vrais chemins de votre serveur où sont stockés vos films et séries :
+      # Mettez les vrais chemins de votre serveur où sont stockés vos films et séries.
+      # « :ro » : Onyx n'écrit pas sur le disque. Le gestionnaire de stockage de
+      # MediaHub fait alors effacer les fichiers par sorraa (ou Radarr/Sonarr) ;
+      # retirez « :ro » pour qu'Onyx efface aussi un titre qu'aucun ne suit.
       - /chemin/physique/sur/serveur/Films:/media/Films:ro
       - /chemin/physique/sur/serveur/Series:/media/Series:ro
     environment:

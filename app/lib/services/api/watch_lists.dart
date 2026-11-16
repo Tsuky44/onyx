@@ -1,7 +1,8 @@
 part of '../api_client.dart';
 
 /// Les listes du compte : « À regarder plus tard » et les siennes, partagées
-/// ou non (ADR-0070), et les comptes invités à les remplir (ADR-0127).
+/// ou non (ADR-0070), et les comptes invités à les remplir ou à les voir
+/// (ADR-0127, ADR-0129).
 mixin _WatchListEndpoints {
   Dio get _dio;
   String get baseUrl;
@@ -30,6 +31,16 @@ mixin _WatchListEndpoints {
     final ping = await _dio.get('/api/ping');
     final info = ServerCapabilities.tryParse(ping.data);
     return info != null && info.supports(ServerCapabilities.watchListMembers);
+  }
+
+  /// Le serveur actif sait-il inviter à voir seulement (ADR-0129) ? Un
+  /// serveur plus ancien ignorerait le rôle et donnerait le droit d'écrire :
+  /// l'app ne propose « Voir » qu'à cette condition.
+  Future<bool> supportsWatchListMemberRoles() async {
+    final ping = await _dio.get('/api/ping');
+    final info = ServerCapabilities.tryParse(ping.data);
+    return info != null &&
+        info.supports(ServerCapabilities.watchListMemberRoles);
   }
 
   /// Les listes du compte et celles que les autres partagent. Avec
@@ -98,10 +109,13 @@ mixin _WatchListEndpoints {
     return _readMembers(response.data);
   }
 
-  /// Invite un compte à remplir la liste ; renvoie tous les invités.
-  Future<List<WatchListMember>> addWatchListMember(
-      int listId, int userId) async {
-    final response = await _dio.put('/api/lists/$listId/members/$userId');
+  /// Invite un compte à la liste, à la remplir ou à la voir, ou change son
+  /// rôle ; renvoie tous les invités. Sans [role], le corps reste vide, comme
+  /// le comprend un serveur d'avant les rôles.
+  Future<List<WatchListMember>> addWatchListMember(int listId, int userId,
+      {WatchListRole? role}) async {
+    final response = await _dio.put('/api/lists/$listId/members/$userId',
+        data: role == null ? null : {'role': role.wire});
     return _readMembers(response.data);
   }
 

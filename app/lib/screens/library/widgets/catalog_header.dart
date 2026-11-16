@@ -4,6 +4,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_icons.dart';
 import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
+import '../../../widgets/global/onyx_menu.dart';
 import '../../../widgets/global/poster_grid_display_menu.dart';
 
 /// L'en-tête d'un catalogue : le titre, le nombre de titres et le tri, sur une
@@ -76,17 +77,15 @@ class CatalogHeader<T> extends StatelessWidget {
             ],
           ),
         ),
-        PopupMenuButton<T>(
+        OnyxMenuButton<T>(
           tooltip: tr('Trier'),
-          initialValue: sort,
-          position: PopupMenuPosition.under,
           onSelected: onSortChanged,
-          itemBuilder: (_) => [
+          items: [
             for (final entry in sortOptions.entries)
-              CheckedPopupMenuItem<T>(
+              OnyxMenuItem<T>(
                 value: entry.key,
+                label: tr(entry.value),
                 checked: entry.key == sort,
-                child: Text(tr(entry.value)),
               ),
           ],
           child: Padding(

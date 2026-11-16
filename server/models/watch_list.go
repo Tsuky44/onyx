@@ -29,9 +29,14 @@ type WatchList struct {
 	IsShared    bool   `json:"is_shared"`
 	IsMine      bool   `json:"is_mine"`
 	// CanEdit : le compte qui lit peut y ajouter et en retirer des titres,
-	// parce qu'elle est à lui ou que son propriétaire l'y a invité (ADR-0127).
+	// parce qu'elle est à lui ou que son propriétaire l'y a invité à la
+	// remplir (ADR-0127, ADR-0129).
 	CanEdit bool `json:"can_edit"`
-	// MemberCount est le nombre de comptes invités à la modifier.
+	// IsMember : le compte qui lit y est invité, pour la remplir ou seulement
+	// pour la voir ; il peut la quitter (ADR-0129).
+	IsMember bool `json:"is_member"`
+	// MemberCount est le nombre de comptes invités, qu'ils la remplissent ou
+	// qu'ils la voient seulement.
 	MemberCount int            `json:"member_count"`
 	Owner       WatchListOwner `json:"owner"`
 	ItemCount   int            `json:"item_count"`
@@ -60,12 +65,23 @@ type WatchListItem struct {
 	Media *HomeMediaItem `json:"media,omitempty"`
 }
 
-// WatchListMember est un compte du serveur, tel qu'une liste le montre : ceux
-// qui peuvent la modifier, et ceux qu'on peut inviter.
+// Ce qu'un invité peut faire d'une liste (ADR-0129).
+const (
+	// WatchListRoleEditor : il y ajoute et en retire des titres.
+	WatchListRoleEditor = "editor"
+	// WatchListRoleViewer : il la voit, même privée, sans la modifier.
+	WatchListRoleViewer = "viewer"
+)
+
+// WatchListMember est un compte du serveur, tel qu'une liste le montre : ses
+// invités, et ceux qu'on peut inviter.
 type WatchListMember struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
 	Avatar   string `json:"avatar"`
+	// Role est WatchListRoleEditor ou WatchListRoleViewer pour un invité ;
+	// absent pour un compte qu'on peut inviter.
+	Role string `json:"role,omitempty"`
 }
 
 // WatchListDetail est une liste et son contenu, du plus récent ajout au plus

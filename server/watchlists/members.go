@@ -6,8 +6,9 @@ import (
 	"project-player/server/models"
 )
 
-// Les invités d'une liste (ADR-0127) : des comptes du serveur à qui le
-// propriétaire donne le droit d'y ajouter et d'y retirer des titres. Ils ne la
+// Les invités d'une liste (ADR-0127, ADR-0129) : des comptes du serveur à qui
+// le propriétaire donne le droit d'y ajouter et d'y retirer des titres
+// (« editor »), ou seulement de la voir, même privée (« viewer »). Ils ne la
 // renomment pas, ne la partagent pas, ne la suppriment pas, et n'invitent
 // personne : ces droits restent au propriétaire.
 
@@ -21,10 +22,11 @@ func scanMember(row interface{ Scan(...interface{}) error }) (models.WatchListMe
 	return m, err
 }
 
-// members renvoie les invités d'une liste, du plus ancien au plus récent.
+// members renvoie les invités d'une liste, avec leur rôle, du plus ancien au
+// plus récent.
 func (s *Store) members(listID int) ([]models.WatchListMember, error) {
 	rows, err := s.db.Query(`
-		SELECT `+memberColumns+`
+		SELECT `+memberColumns+`, m.role
 		FROM watch_list_members m JOIN users u ON u.id = m.user_id
 		WHERE m.list_id = ?
 		ORDER BY m.added_at, u.id`, listID)
@@ -34,7 +36,8 @@ func (s *Store) members(listID int) ([]models.WatchListMember, error) {
 	defer rows.Close()
 	out := []models.WatchListMember{}
 	for rows.Next() {
-		m, err := scanMember(rows)
+		var m models.WatchListMember
+		err := rows.Scan(&m.ID, &m.Username, &m.Avatar, &m.Role)
 		if err != nil {
 			return nil, fmt.Errorf("scan watch list member: %w", err)
 		}
@@ -65,15 +68,22 @@ func (s *Store) People(viewerID int) ([]models.WatchListMember, error) {
 	return out, rows.Err()
 }
 
-// AddMember invite un compte à remplir une liste du propriétaire. Inviter deux
-// fois ne change rien. La liste « à regarder plus tard » reste à son
-// propriétaire seul, et on ne s'invite pas soi-même.
-func (s *Store) AddMember(ownerID, listID, userID int) ([]models.WatchListMember, error) {
+// validRole dit si role est un rôle d'invité connu (ADR-0129).
+func validRole(role string) bool {
+	return role == models.WatchListRoleEditor || role == models.WatchListRoleViewer
+}
+
+// AddMember invite un compte à une liste du propriétaire, à la remplir
+// (models.WatchListRoleEditor) ou à la voir (models.WatchListRoleViewer).
+// Inviter un invité change son rôle ; l'inviter deux fois au même rôle ne
+// change rien. La liste « à regarder plus tard » reste à son propriétaire
+// seul, et on ne s'invite pas soi-même.
+func (s *Store) AddMember(ownerID, listID, userID int, role string) ([]models.WatchListMember, error) {
 	kind, err := s.ownedKind(s.db, ownerID, listID)
 	if err != nil {
 		return nil, err
 	}
-	if kind != models.WatchListKindCustom || userID <= 0 || userID == ownerID {
+	if kind != models.WatchListKindCustom || userID <= 0 || userID == ownerID || !validRole(role) {
 		return nil, ErrInvalid
 	}
 	var exists bool
@@ -84,25 +94,32 @@ func (s *Store) AddMember(ownerID, listID, userID int) ([]models.WatchListMember
 		return nil, ErrInvalid
 	}
 	var count int
-	var already bool
+	var current string
 	if err := s.db.QueryRow(`
-		SELECT COUNT(*), COALESCE(SUM(user_id = ?), 0) > 0
-		FROM watch_list_members WHERE list_id = ?`, userID, listID).Scan(&count, &already); err != nil {
+		SELECT COUNT(*), COALESCE(MAX(CASE WHEN user_id = ? THEN role END), '')
+		FROM watch_list_members WHERE list_id = ?`, userID, listID).Scan(&count, &current); err != nil {
 		return nil, fmt.Errorf("count watch list members: %w", err)
 	}
-	if !already {
+	if current == role {
+		return s.members(listID)
+	}
+	now := s.nowMillis()
+	if current == "" {
 		if count >= MaxMembersPerList {
 			return nil, ErrTooMany
 		}
-		now := s.nowMillis()
 		if _, err := s.db.Exec(`
-			INSERT OR IGNORE INTO watch_list_members (list_id, user_id, added_at) VALUES (?, ?, ?)`,
-			listID, userID, now); err != nil {
+			INSERT OR IGNORE INTO watch_list_members (list_id, user_id, added_at, role) VALUES (?, ?, ?, ?)`,
+			listID, userID, now, role); err != nil {
 			return nil, fmt.Errorf("insert watch list member: %w", err)
 		}
-		if _, err := s.db.Exec(`UPDATE watch_lists SET updated_at = ? WHERE id = ?`, now, listID); err != nil {
-			return nil, fmt.Errorf("touch watch list: %w", err)
-		}
+	} else if _, err := s.db.Exec(`
+		UPDATE watch_list_members SET role = ? WHERE list_id = ? AND user_id = ?`,
+		role, listID, userID); err != nil {
+		return nil, fmt.Errorf("update watch list member role: %w", err)
+	}
+	if _, err := s.db.Exec(`UPDATE watch_lists SET updated_at = ? WHERE id = ?`, now, listID); err != nil {
+		return nil, fmt.Errorf("touch watch list: %w", err)
 	}
 	return s.members(listID)
 }
@@ -116,7 +133,7 @@ func (s *Store) RemoveMember(actorID, listID, userID int) error {
 	}
 	switch {
 	case a.owner:
-	case a.member && actorID == userID:
+	case a.member() && actorID == userID:
 	case a.visible():
 		return ErrNotOwner
 	default:

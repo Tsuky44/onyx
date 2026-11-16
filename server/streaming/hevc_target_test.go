@@ -6,8 +6,9 @@ import (
 	"testing"
 )
 
-// Ce que déclare le lecteur natif d'Apple TV pour une source que sa puce ne
-// décode pas (ADR-0106).
+// Ce que déclarait l'écran natif d'Apple TV pour une source que sa puce ne
+// décodait pas (ADR-0106, retiré par l'ADR-0133). Le serveur sait toujours le
+// lire.
 func appleTVNativeCaps() Capabilities {
 	q, _ := url.ParseQuery("container=fmp4&vcodec=h264,hevc&acodec=aac,ac3,eac3&channels=8" +
 		"&bitdepth=10&hdr=1&encode=hevc&progressive=1&h264bitdepth=8")

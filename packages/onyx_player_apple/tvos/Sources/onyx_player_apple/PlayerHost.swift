@@ -12,13 +12,9 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   let subtitles = SubtitleStream()
   let pictureInPicture = PictureInPictureStream()
   let engineLog = EngineLogRelay()
-  let nativeEvents = NativeEventStream()
 
   private var players: [Int64: AetherPlayer] = [:]
   private var nextId: Int64 = 1
-  #if os(tvOS)
-    private var presenters: [Int64: NativePlayerPresenter] = [:]
-  #endif
 
   /// Le lecteur auquel une vue se rattache. Nil s'il a déjà été détruit : la
   /// vue reste noire plutôt que de faire tomber l'app.
@@ -56,40 +52,23 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   }
 
   func release(playerId: Int64) throws {
-    onMain {
-      #if os(tvOS)
-        presenters.removeValue(forKey: playerId)?.release()
-      #endif
-      players.removeValue(forKey: playerId)?.release()
-    }
+    onMain { players.removeValue(forKey: playerId)?.release() }
   }
 
   func open(playerId: Int64, url: String, startPositionMs: Int64, play: Bool) throws {
-    try onMain {
-      markHostCommand(playerId, playing: play)
-      try require(playerId).open(url, startMs: startPositionMs, play: play)
-    }
+    try onMain { try require(playerId).open(url, startMs: startPositionMs, play: play) }
   }
 
   func play(playerId: Int64) throws {
-    try onMain {
-      markHostCommand(playerId, playing: true)
-      try require(playerId).play()
-    }
+    try onMain { try require(playerId).play() }
   }
 
   func pause(playerId: Int64) throws {
-    try onMain {
-      markHostCommand(playerId, playing: false)
-      try require(playerId).pause()
-    }
+    try onMain { try require(playerId).pause() }
   }
 
   func seekTo(playerId: Int64, positionMs: Int64) throws {
-    try onMain {
-      markHostCommand(playerId, playing: nil)
-      try require(playerId).seek(toMs: positionMs)
-    }
+    try onMain { try require(playerId).seek(toMs: positionMs) }
   }
 
   func stop(playerId: Int64) throws {
@@ -101,28 +80,18 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   }
 
   func setRate(playerId: Int64, rate: Double) throws {
-    try onMain {
-      markHostCommand(playerId, playing: nil)
-      try require(playerId).engine.setRate(Float(rate))
-    }
+    try onMain { try require(playerId).engine.setRate(Float(rate)) }
   }
 
   func setVideoFit(playerId: Int64, fit: OnyxAppleVideoFit) throws {
     let gravity: AVLayerVideoGravity = fit == .cover ? .resizeAspectFill : .resizeAspect
     try onMain {
       try require(playerId).engine.videoGravity = gravity
-      #if os(tvOS)
-        presenters[playerId]?.setVideoGravity(gravity)
-      #endif
     }
   }
 
   func setPreferredAudioLanguages(playerId: Int64, priorities: [String]) throws {
     try onMain { try require(playerId).preferredAudioLanguages = priorities }
-  }
-
-  func setLoadSubtitles(playerId: Int64, subtitles: OnyxAppleLoadSubtitles) throws {
-    try onMain { try require(playerId).loadSubtitles = subtitles }
   }
 
   func selectAudioTrack(playerId: Int64, trackId: String) throws {
@@ -134,9 +103,7 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   }
 
   func setExternalSubtitle(playerId: Int64, vttContent: String?, language: String?, title: String?) throws {
-    try onMain {
-      try require(playerId).setExternalSubtitle(vttContent, language: language, title: title)
-    }
+    try onMain { try require(playerId).setExternalSubtitle(vttContent, language: language, title: title) }
   }
 
   func status(playerId: Int64) throws -> OnyxApplePlayerStatus {
@@ -154,63 +121,4 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
   func setPictureInPictureArmed(playerId: Int64, armed: Bool) throws {
     try onMain { try require(playerId).setPictureInPictureArmed(armed) }
   }
-
-  // Le lecteur natif n'existe que sur l'Apple TV. Ailleurs, et pour un
-  // lecteur inconnu, la réponse est un `unavailable`, jamais une erreur : Dart
-  // garde alors l'écran Flutter au lieu de rester sur un appel en échec.
-  func presentNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws {
-    #if os(tvOS)
-      onMain {
-        guard let presenter = presenter(playerId) else {
-          nativeEvents.send(
-            OnyxAppleNativeEvent(
-              playerId: playerId, kind: .unavailable, reason: .presentationFailed))
-          return
-        }
-        presenter.present(spec)
-      }
-    #else
-      nativeEvents.send(
-        OnyxAppleNativeEvent(
-          playerId: playerId, kind: .unavailable, reason: .unsupported))
-    #endif
-  }
-
-  func updateNative(playerId: Int64, spec: OnyxAppleNativeSpec) throws {
-    #if os(tvOS)
-      onMain { presenters[playerId]?.update(spec) }
-    #endif
-  }
-
-  func dismissNative(playerId: Int64) throws {
-    #if os(tvOS)
-      onMain { presenters[playerId]?.dismiss() }
-    #endif
-  }
-
-  /// Une commande de Dart change le débit de l'`AVPlayer` : l'écran natif ne
-  /// doit pas la lui renvoyer en `transport`, comme un geste de la
-  /// télécommande. [playing] est l'état demandé, nil s'il n'y en a pas.
-  @MainActor private func markHostCommand(_ id: Int64, playing: Bool?) {
-    #if os(tvOS)
-      presenters[id]?.noteHostCommand(playing: playing)
-    #endif
-  }
-
-  #if os(tvOS)
-    /// Créé au premier `presentNative`, et gardé avec son lecteur : l'affiche
-    /// téléchargée sert encore à l'épisode suivant s'il la partage.
-    @MainActor private func presenter(_ id: Int64) -> NativePlayerPresenter? {
-      if let presenter = presenters[id] { return presenter }
-      guard let player = players[id] else { return nil }
-      let events = nativeEvents
-      // Le panneau Stats lit le moteur par la même fonction que `stats()`.
-      let presenter = NativePlayerPresenter(
-        playerId: id, engine: player.engine, stats: { [weak player] in player?.stats() },
-        resume: { [weak player] in player?.resumeIfWanted() },
-        send: { events.send($0) })
-      presenters[id] = presenter
-      return presenter
-    }
-  #endif
 }

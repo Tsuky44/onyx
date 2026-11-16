@@ -6,6 +6,8 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_type.dart';
 import '../../../tv/tv_deferred_keyboard.dart';
 import 'settings_ui.dart';
+import '../../../widgets/global/onyx_dialog.dart';
+import '../../../theme/app_icons.dart';
 
 /// Ce qu'un administrateur a saisi pour une bibliothèque.
 typedef LibraryDraft = ({String name, LibraryKind kind, String path});
@@ -20,7 +22,7 @@ Future<bool> showLibraryEditor(
   MediaLibrary? library,
   required Future<void> Function(LibraryDraft draft) onSubmit,
 }) async {
-  final saved = await showDialog<bool>(
+  final saved = await showOnyxDialog<bool>(
     context: context,
     builder: (_) => _LibraryEditorDialog(library: library, onSubmit: onSubmit),
   );
@@ -57,7 +59,9 @@ class _LibraryEditorDialogState extends State<_LibraryEditorDialog> {
     final name = _name.text.trim();
     final path = _path.text.trim();
     if (name.isEmpty || path.isEmpty) {
-      setState(() => _error = tr('Donnez un nom et un dossier à la bibliothèque.'));
+      setState(
+        () => _error = tr('Donnez un nom et un dossier à la bibliothèque.'),
+      );
       return;
     }
     setState(() {
@@ -103,115 +107,125 @@ class _LibraryEditorDialogState extends State<_LibraryEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.surface,
-      title: Text(_editing
+    return OnyxDialog(
+      title: _editing
           ? tr('Modifier la bibliothèque')
-          : tr('Nouvelle bibliothèque')),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _field(
-                _name,
-                label: tr('Nom'),
-                hint: tr('Le nom affiché dans l’app'),
-                autofocus: !_editing,
-                // La limite du serveur : un nom s'affiche dans un onglet.
-                maxLength: 40,
-              ),
-              const SizedBox(height: 14),
-              _field(
-                _path,
-                label: tr('Dossier'),
-                hint: tr('Chemin complet sur le serveur'),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                tr('Le dossier tel que le serveur le voit (dans son conteneur). '
-                    'Un dossier ne sert qu’à une bibliothèque.'),
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: AppType.footnote,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                tr('Contenu du dossier'),
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: AppType.subhead,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<LibraryKind>(
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                      value: LibraryKind.movies, label: Text(tr('Films'))),
-                  ButtonSegment(
-                      value: LibraryKind.shows, label: Text(tr('Séries'))),
-                  ButtonSegment(
-                      value: LibraryKind.other, label: Text(tr('Autre'))),
-                ],
-                selected: {_kind},
-                // Des fiches lues comme des films ne deviennent pas des
-                // épisodes : le type se choisit à la création.
-                onSelectionChanged: _editing || _saving
-                    ? null
-                    : (choice) => setState(() => _kind = choice.first),
-              ),
-              const SizedBox(height: 8),
-              // Ce que le choix change, dit là où il se fait : le serveur va
-              // chercher des affiches pour les deux premiers, pas pour « Autre ».
-              Text(
-                switch (_kind) {
-                  LibraryKind.movies => tr('Chaque fichier est un film : le '
-                      'serveur cherche son affiche et sa fiche.'),
-                  LibraryKind.shows => tr('Les fichiers sont des épisodes, '
-                      'regroupés par série et par saison.'),
-                  LibraryKind.other => tr('Vidéos personnelles, concerts, '
-                      'cours… Chaque vidéo garde le nom de son fichier, sans '
-                      'recherche d’affiche ni de fiche.'),
-                },
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: AppType.footnote,
-                  height: 1.4,
-                ),
-              ),
-              if (_editing) ...[
-                const SizedBox(height: 6),
-                Text(
-                  tr('Le contenu ne se change pas : supprimez la bibliothèque '
-                      'et recréez-la.'),
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: AppType.footnote,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-              if (_error != null) ...[
-                const SizedBox(height: 14),
-                SettingsBanner(_error!, tone: BannerTone.error),
-              ],
-            ],
+          : tr('Nouvelle bibliothèque'),
+      icon: AppIcons.folder,
+      width: 440,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _field(
+            _name,
+            label: tr('Nom'),
+            hint: tr('Le nom affiché dans l’app'),
+            autofocus: !_editing,
+            // La limite du serveur : un nom s'affiche dans un onglet.
+            maxLength: 40,
           ),
-        ),
+          const SizedBox(height: 14),
+          _field(
+            _path,
+            label: tr('Dossier'),
+            hint: tr('Chemin complet sur le serveur'),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            tr(
+              'Le dossier tel que le serveur le voit (dans son conteneur). '
+              'Un dossier ne sert qu’à une bibliothèque.',
+            ),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: AppType.footnote,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            tr('Contenu du dossier'),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: AppType.subhead,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<LibraryKind>(
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: LibraryKind.movies,
+                label: Text(tr('Films')),
+              ),
+              ButtonSegment(
+                value: LibraryKind.shows,
+                label: Text(tr('Séries')),
+              ),
+              ButtonSegment(value: LibraryKind.other, label: Text(tr('Autre'))),
+            ],
+            selected: {_kind},
+            // Des fiches lues comme des films ne deviennent pas des
+            // épisodes : le type se choisit à la création.
+            onSelectionChanged: _editing || _saving
+                ? null
+                : (choice) => setState(() => _kind = choice.first),
+          ),
+          const SizedBox(height: 8),
+          // Ce que le choix change, dit là où il se fait : le serveur va
+          // chercher des affiches pour les deux premiers, pas pour « Autre ».
+          Text(
+            switch (_kind) {
+              LibraryKind.movies => tr(
+                'Chaque fichier est un film : le '
+                'serveur cherche son affiche et sa fiche.',
+              ),
+              LibraryKind.shows => tr(
+                'Les fichiers sont des épisodes, '
+                'regroupés par série et par saison.',
+              ),
+              LibraryKind.other => tr(
+                'Vidéos personnelles, concerts, '
+                'cours… Chaque vidéo garde le nom de son fichier, sans '
+                'recherche d’affiche ni de fiche.',
+              ),
+            },
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: AppType.footnote,
+              height: 1.4,
+            ),
+          ),
+          if (_editing) ...[
+            const SizedBox(height: 6),
+            Text(
+              tr(
+                'Le contenu ne se change pas : supprimez la bibliothèque '
+                'et recréez-la.',
+              ),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: AppType.footnote,
+                height: 1.4,
+              ),
+            ),
+          ],
+          if (_error != null) ...[
+            const SizedBox(height: 14),
+            SettingsBanner(_error!, tone: BannerTone.error),
+          ],
+        ],
       ),
       actions: [
-        TextButton(
+        OnyxDialogAction(
+          label: tr('Annuler'),
           onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: Text(tr('Annuler')),
         ),
-        FilledButton(
+        OnyxDialogAction(
+          label: _saving ? tr('Enregistrement…') : tr('Enregistrer'),
+          primary: true,
           onPressed: _saving ? null : _submit,
-          child: Text(_saving ? tr('Enregistrement…') : tr('Enregistrer')),
         ),
       ],
     );

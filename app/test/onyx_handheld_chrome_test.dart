@@ -11,7 +11,7 @@ import 'package:onyx/screens/player/widgets/onyx/onyx_tabs.dart';
 import 'package:onyx/screens/player/widgets/player_chrome_fade.dart';
 import 'package:onyx/utils/format.dart';
 
-/// Le chrome d'un écran tenu en main (ADR-0131) : l'arrangement d'un
+/// Le chrome d'un écran tenu en main (ADR-0136) : l'arrangement d'un
 /// téléviseur, adapté au doigt. Ces tests tiennent ce que la maquette validée
 /// promet — où sont les commandes, lesquelles ont un bouton — et ce qu'un
 /// doigt exige : des cibles de 44, rien qui déborde sur un petit téléphone.
