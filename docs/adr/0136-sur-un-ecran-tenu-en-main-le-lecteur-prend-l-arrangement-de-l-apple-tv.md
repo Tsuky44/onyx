@@ -44,8 +44,13 @@ l'arrangement d'un téléviseur, adapté au doigt.** L'ordinateur et le web à l
    milieu tombe à 42 % de la hauteur, et jamais sur une barre (`_OnyxChromeLayout.centre`). Les
    épisodes précédent et suivant n'y sont pas : sous le pouce, à cette taille, un épisode changé par
    erreur coûte plus cher que dix secondes.
-2. **Le titre en gras, l'épisode ou l'année dessous**, en bas à gauche : l'ordre d'un téléviseur.
-   Le logo du titre en haut, à côté du bouton Retour ; sans logo, rien.
+2. **Ce qu'on regarde, en une ligne, en bas à gauche** (`_buildIdentityLine`) : le nom de l'épisode
+   pour une série, le titre pour un film, dans le même dessin. Le logo du titre, en haut à côté du
+   bouton Retour, dit la série ; sans logo, ou le temps qu'il arrive, son nom en toutes lettres en
+   tient la place (`_buildTitleMark`). La maquette validée écrivait là le titre en gras et l'épisode
+   dessous, comme un téléviseur ; l'utilisateur l'a retiré en voyant la 1.1.54 sur son iPhone
+   (« supprime le titre, y'a déjà le logo en haut, et pour les films mets le titre comme le nom des
+   épisodes »).
 3. **À droite du titre, l'essentiel en boutons ronds de verre** : sous-titres et audio, chacun avec
    son menu (`OnyxSettingsMenu.standalone`, posé sur son bouton), **la roue crantée pour le reste**,
    entre l'épisode précédent et le suivant quand il y en a. Le disque fait 38 dans une cible de 44
@@ -90,6 +95,16 @@ l'arrangement d'un téléviseur, adapté au doigt.** L'ordinateur et le web à l
 - `onyx_controls_layer.dart` repasse à 669 lignes : son délégué de mise en page a son fichier.
 - Épinglé par `test/onyx_handheld_chrome_test.dart` (places, cibles de 44, menus, onglets, petits
   écrans, index de la roue crantée).
+
+## Corrigé après la 1.1.54, vue sur un iPhone
+
+- **Le verrou flottait au milieu du haut de l'écran** dès qu'un logo était là : un `Flexible` suivi
+  d'un `Spacer` laisse vide, à droite, ce que le logo ne prend pas de sa moitié de rangée. Le logo
+  remplit maintenant sa place, calé à gauche.
+- **L'image était à l'envers** : le verrou de paysage arrivé de `main` avec la 1.1.53
+  (`PlayerLandscapeLock`) demande au système le côté que lit l'accéléromètre, dans les mots
+  d'Android. iOS nomme les deux paysages à l'inverse (d'après le bouton principal, pas d'après le
+  haut du téléphone) : les deux s'échangent sur iPhone (`orientationFor`).
 
 ## À vérifier sur l'appareil
 

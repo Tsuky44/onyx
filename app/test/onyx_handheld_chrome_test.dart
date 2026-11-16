@@ -17,6 +17,7 @@ import 'package:onyx/utils/format.dart';
 /// doigt exige : des cibles de 44, rien qui déborde sur un petit téléphone.
 const _title = 'MobLand';
 const _episode = 'S2 · É9 · Nervous Breakdown';
+const _year = '2025';
 const _position = Duration(minutes: 18, seconds: 50);
 const _duration = Duration(minutes: 48, seconds: 29);
 
@@ -65,8 +66,9 @@ Future<void> _pump(
           duration: _duration,
           buffered: 0.5,
           title: _title,
-          overline: _episode,
+          overline: episode ? _episode : _year,
           logoUrl: logoUrl,
+          isEpisode: episode,
           volume: 70,
           onPlayPause: () {},
           onRewind: () {},
@@ -124,7 +126,7 @@ void main() {
     );
     expect(
       tester.getRect(_key('play-pause')).bottom,
-      lessThan(tester.getRect(find.text(_title)).top),
+      lessThan(tester.getRect(find.text(_episode)).top),
     );
   });
 
@@ -175,18 +177,62 @@ void main() {
     }
   });
 
-  testWidgets('le titre est au-dessus de la ligne de l’épisode, à gauche',
+  testWidgets('une série : en bas l’épisode seul, la série est dite en haut',
       (tester) async {
     await _pump(tester);
 
-    final title = tester.getRect(find.text(_title));
+    // Une ligne, à gauche des boutons ronds, au-dessus de la barre.
     final episode = tester.getRect(find.text(_episode));
-    expect(title.bottom, lessThanOrEqualTo(episode.top));
-    expect(title.left, closeTo(episode.left, 1));
-    // Sur la même rangée que les boutons ronds, à leur gauche.
-    expect(title.right, lessThan(tester.getRect(_key('subtitles')).left));
-    // Sans logo, le haut ne le répète pas.
-    expect(find.text(_title), findsOneWidget);
+    expect(episode.right, lessThan(tester.getRect(_key('subtitles')).left));
+    expect(
+      episode.bottom,
+      lessThanOrEqualTo(tester.getRect(find.byType(OnyxProgressBar)).center.dy),
+    );
+
+    // Le nom de la série n'est plus écrit en bas : sans logo, il tient la
+    // place du logo, à côté du bouton Retour, et nulle part ailleurs.
+    final show = find.text(_title);
+    expect(show, findsOneWidget);
+    expect(tester.getRect(show).left,
+        greaterThan(tester.getRect(_key('back')).right));
+    expect(tester.getRect(show).bottom,
+        lessThan(tester.getRect(_key('play-pause')).top));
+  });
+
+  testWidgets('un film : son titre en bas, dans le dessin d’un nom d’épisode',
+      (tester) async {
+    await _pump(tester);
+    final episodeStyle = tester.widget<Text>(find.text(_episode)).style!;
+
+    await _pump(tester, episode: false);
+    final title = find.text(_title);
+    // Une seule fois : en bas, rien en haut — un film sans logo n'a pas
+    // besoin qu'on répète son titre.
+    expect(title, findsOneWidget);
+    expect(tester.getRect(title).top,
+        greaterThan(tester.getRect(_key('play-pause')).bottom));
+    final style = tester.widget<Text>(title).style!;
+    expect(style.fontSize, episodeStyle.fontSize);
+    expect(style.fontWeight, episodeStyle.fontWeight);
+    expect(style.color, episodeStyle.color);
+    // L'année ne prend pas une seconde ligne.
+    expect(find.text(_year), findsNothing);
+  });
+
+  testWidgets('avec un logo, le verrou reste au bord droit', (tester) async {
+    // Le logo est plus étroit que la place qu'on lui offre : ce qu'il n'en
+    // prend pas ne doit pas rester vide à droite du verrou, qui flottait
+    // alors au milieu de l'écran (iPhone, 1.1.54).
+    await _pump(tester, logoUrl: 'https://example.invalid/logo.png');
+    final withLogo = tester.getRect(_key('lock'));
+    await _pump(tester);
+    final withoutLogo = tester.getRect(_key('lock'));
+
+    expect(withLogo.right, closeTo(_phone.width - 16, 1));
+    expect(withLogo, withoutLogo);
+    // Et le logo part bien du bouton Retour, pas du milieu.
+    await _pump(tester, logoUrl: 'https://example.invalid/logo.png');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('la barre garde la hauteur d’un doigt et porte les temps',
@@ -227,7 +273,7 @@ void main() {
     // Le texte du premier onglet s'aligne sur le titre.
     expect(
       tester.getRect(find.text('Infos')).left,
-      closeTo(tester.getRect(find.text(_title)).left, 1),
+      closeTo(tester.getRect(find.text(_episode)).left, 1),
     );
 
     await tester.tap(_key('tab-episodes'));
@@ -311,14 +357,14 @@ void main() {
     await _pump(tester, size: const Size(568, 320));
 
     expect(tester.takeException(), isNull);
-    // Encore sur une rangée : le titre à gauche des boutons.
+    // Encore sur une rangée : la ligne de l'épisode à gauche des boutons.
     expect(
-      tester.getCenter(find.text(_title)).dy,
+      tester.getCenter(find.text(_episode)).dy,
       closeTo(tester.getCenter(_key('settings')).dy, 24),
     );
     expect(
       tester.getRect(_key('play-pause')).bottom,
-      lessThan(tester.getRect(find.text(_title)).top),
+      lessThan(tester.getRect(find.text(_episode)).top),
     );
   });
 

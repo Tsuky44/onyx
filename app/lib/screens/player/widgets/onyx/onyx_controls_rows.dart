@@ -13,7 +13,7 @@ extension _OnyxControlsRows on OnyxControlsLayer {
   ///
   /// Rien au milieu de l'image ni de bouton Retour : OK met en pause, gauche
   /// et droite déplacent sur la barre, Retour quitte. En haut à gauche le logo
-  /// du titre ; en bas, le titre et l'essentiel en boutons ronds, la barre de
+  /// du titre ; en bas, ce qu'on regarde et l'essentiel en boutons ronds, la barre de
   /// lecture et ses temps, puis les onglets et leur volet (ADR-0130, ADR-0137).
   ///
   /// Des rangées parcourues en ligne droite ([TvRegion.controlRows]) : les
@@ -59,28 +59,33 @@ extension _OnyxControlsRows on OnyxControlsLayer {
     );
   }
 
-  /// Le logo du titre, en haut à gauche. Sans logo, rien : le titre est déjà
-  /// écrit au-dessus de la barre, et le répéter ici le dirait deux fois.
+  /// Le logo du titre, en haut à gauche. Voir [_buildTitleMark].
   Widget _buildTvTop(OnyxChromeMetrics m) {
-    final url = logoUrl;
     return OnyxScrim(
       gradient: OnyxChromeTheme.topScrim,
       child: Padding(
         padding: EdgeInsets.fromLTRB(m.gutter, m.topInset, m.gutter, 64),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: url == null || url.isEmpty
-              ? SizedBox(height: m.logoHeight)
-              : _buildTitleLogo(m, url),
+          child: _buildTitleMark(m),
         ),
       ),
     );
   }
 
-  /// Le logo du titre seul, sans texte pour tenir sa place : là où il se
-  /// pose (un téléviseur, un écran tenu en main), le titre est déjà écrit
-  /// au-dessus de la barre. Transparent aux touchers, comme le titre.
-  Widget _buildTitleLogo(OnyxChromeMetrics m, String url) {
+  /// Ce qui dit le titre, en haut à gauche d'un téléviseur et d'un écran tenu
+  /// en main : son logo.
+  ///
+  /// Sans logo, ou le temps qu'il arrive, le nom de la série en toutes
+  /// lettres pour un épisode : la ligne du bas ne dit plus que l'épisode
+  /// ([_buildIdentityLine]), et sans cela rien ne dirait la série. Rien pour
+  /// un film, dont le titre est écrit en bas. Transparent aux touchers.
+  Widget _buildTitleMark(OnyxChromeMetrics m) {
+    final Widget standIn = isEpisode
+        ? SizedBox(height: m.logoHeight, child: _brandText(m))
+        : SizedBox(height: m.logoHeight);
+    final url = logoUrl;
+    if (url == null || url.isEmpty) return IgnorePointer(child: standIn);
     return IgnorePointer(
       child: AppNetworkImage(
         url: url,
@@ -90,8 +95,8 @@ extension _OnyxControlsRows on OnyxControlsLayer {
         fadeInDuration: AppMotion.micro,
         // La même image décodée que l'en-tête de la fiche.
         decodeAtSourceSize: true,
-        placeholder: SizedBox(height: m.logoHeight),
-        errorWidget: SizedBox(height: m.logoHeight),
+        placeholder: standIn,
+        errorWidget: standIn,
       ),
     );
   }
@@ -117,7 +122,7 @@ extension _OnyxControlsRows on OnyxControlsLayer {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Expanded(child: _buildTvTitleBlock(m)),
+                      Expanded(child: _buildIdentityLine(m)),
                       const SizedBox(width: 24),
                       TvRegion.controls(child: _buildEssentialActions(m)),
                     ],
@@ -168,39 +173,27 @@ extension _OnyxControlsRows on OnyxControlsLayer {
     );
   }
 
-  /// Le titre en gras, l'épisode ou l'année dessous : l'ordre du lecteur
-  /// d'Apple, l'inverse des autres arrangements.
-  Widget _buildTvTitleBlock(OnyxChromeMetrics m) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title ?? '',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: OnyxChromeTheme.title,
-            fontSize: m.titleSize,
-            fontWeight: FontWeight.w700,
-            height: 1.15,
-            letterSpacing: -0.4,
-          ),
-        ),
-        if (overline != null && overline!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            overline!,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: OnyxChromeTheme.time,
-              fontSize: m.metaSize,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ],
+  /// Ce qu'on regarde, en une ligne, en bas à gauche : le nom de l'épisode
+  /// pour une série, le titre pour un film, dans le même dessin.
+  ///
+  /// L'ADR-0124 y écrivait le nom de la série en gras, l'épisode dessous. Le
+  /// logo, en haut, dit déjà la série ([_buildTitleMark]) : le répéter en
+  /// gros ici le disait deux fois sur le même écran (demande de
+  /// l'utilisateur, ADR-0137).
+  Widget _buildIdentityLine(OnyxChromeMetrics m) {
+    final episode = overline;
+    final line = isEpisode && episode != null && episode.isNotEmpty
+        ? episode
+        : (title ?? '');
+    return Text(
+      line,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: OnyxChromeTheme.time,
+        fontSize: m.metaSize,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 

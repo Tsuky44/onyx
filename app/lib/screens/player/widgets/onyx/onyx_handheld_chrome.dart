@@ -3,9 +3,9 @@ part of 'onyx_controls_layer.dart';
 /// Le chrome d'un écran tenu en main, téléphone ou tablette (ADR-0136) :
 /// l'arrangement d'un téléviseur ([_buildTvChrome], ADR-0124), adapté au doigt.
 ///
-/// Ce qu'il en garde : le logo en haut à gauche, le titre en gras et l'épisode
-/// dessous, des boutons ronds de verre à sa droite, la barre fine et son
-/// repère, les temps écoulé et restant, les onglets sous la barre.
+/// Ce qu'il en garde : le logo en haut à gauche, ce qu'on regarde en une
+/// ligne en bas à gauche, des boutons ronds de verre à sa droite, la barre
+/// fine et son repère, les temps écoulé et restant, les onglets sous la barre.
 ///
 /// Ce qui change, parce qu'il n'y a pas de télécommande :
 /// - lecture/pause et ±10 s sont au milieu de l'image. Sur un téléviseur ils
@@ -122,7 +122,6 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
   // --- Haut -----------------------------------------------------------------
 
   Widget _buildHandheldTop(OnyxChromeMetrics m) {
-    final url = logoUrl;
     return OnyxScrim(
       gradient: OnyxChromeTheme.topScrim,
       child: Padding(
@@ -143,10 +142,17 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
                 onPressed: onBack,
               ),
               const SizedBox(width: 8),
-              // Sans logo, rien : le titre est écrit au-dessus de la barre.
-              if (url != null && url.isNotEmpty)
-                Flexible(child: _buildTitleLogo(m, url)),
-              const Spacer(),
+              // Le logo prend toute la place jusqu'au verrou, calé à gauche.
+              // Un `Flexible` suivi d'un `Spacer` ne le fait pas : le second
+              // reçoit sa moitié de la rangée et pas un point de plus, et ce
+              // que le logo laissait de la sienne restait vide à droite — le
+              // verrou flottait au milieu de l'écran (iPhone, 1.1.54).
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _buildTitleMark(m),
+                ),
+              ),
               if (onLockScreen != null)
                 _handheldGlassButton(
                   m,
@@ -212,7 +218,7 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
   Widget _buildHandheldBottom(OnyxChromeMetrics m, double width) {
     // Transparent aux touchers, comme le titre des autres arrangements : un
     // toucher sur le titre range le chrome comme partout ailleurs sur l'image.
-    final title = IgnorePointer(child: _buildTvTitleBlock(m));
+    final title = IgnorePointer(child: _buildIdentityLine(m));
     final actions = _buildEssentialActions(m);
     return OnyxScrim(
       gradient: OnyxChromeTheme.bottomScrim,

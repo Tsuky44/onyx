@@ -1051,13 +1051,13 @@ void main() {
 
       final bar = tester.getRect(find.byType(OnyxProgressBar));
       final title = tester.getRect(find.text('Avatar : La Voie de l’eau'));
-      final overline = tester.getRect(find.text('2022'));
       final elapsed = tester.getRect(find.text('42:00'));
       final remaining = tester.getRect(find.text('-01:18:00'));
 
-      // Le titre en gras, sa ligne dessous, tous deux à gauche.
-      expect(title.bottom, lessThanOrEqualTo(overline.top));
-      expect(overline.bottom, lessThanOrEqualTo(bar.top));
+      // Un film : son titre en une ligne, à gauche, sans l'année dessous
+      // (ADR-0137).
+      expect(find.text('2022'), findsNothing);
+      expect(title.bottom, lessThanOrEqualTo(bar.top));
       expect(title.left, bar.left);
       // Les boutons ronds à droite, au-dessus de la barre.
       for (final icon in settingIcons) {
@@ -1214,16 +1214,16 @@ void main() {
     });
 
     testWidgets('drawn larger than the phone chrome', (tester) async {
-      double titleSize() => tester
-          .widgetList<Text>(find.text('Avatar : La Voie de l’eau'))
-          .map((text) => text.style!.fontSize!)
-          .reduce((a, b) => a > b ? a : b);
+      // Les heures : la seule ligne que les deux arrangements écrivent dans
+      // le même rôle, depuis que le téléviseur n'a plus de titre en gras.
+      double timeSize() =>
+          tester.widget<Text>(find.text('42:00')).style!.fontSize!;
 
       await pumpChrome(tester, width: 960, height: 540, isTv: true);
-      final tv = titleSize();
+      final tv = timeSize();
 
       await pumpChrome(tester, width: 700, height: 400, showVolume: false);
-      expect(tv, greaterThan(titleSize()));
+      expect(tv, greaterThan(timeSize()));
     });
 
     testWidgets('without a logo, nothing is drawn at the top left',

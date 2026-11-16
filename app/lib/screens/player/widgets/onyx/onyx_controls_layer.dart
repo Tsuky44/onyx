@@ -77,6 +77,12 @@ class OnyxControlsLayer extends StatelessWidget {
 
   final String? logoUrl;
 
+  /// Un épisode : [title] est le nom de la série, [overline] celui de
+  /// l'épisode. Sur un téléviseur et un écran tenu en main, le logo dit alors
+  /// la série et la ligne du bas l'épisode seul ; pour un film, cette ligne
+  /// est son titre. Voir [_buildIdentityLine].
+  final bool isEpisode;
+
   // --- Volume -------------------------------------------------------------
 
   /// 0.0 -> 100.0, matching media_kit.
@@ -270,6 +276,7 @@ class OnyxControlsLayer extends StatelessWidget {
     this.title,
     this.overline,
     this.logoUrl,
+    this.isEpisode = false,
     this.onSkipNext,
     this.onSkipPrevious,
     this.onOpenEpisodes,

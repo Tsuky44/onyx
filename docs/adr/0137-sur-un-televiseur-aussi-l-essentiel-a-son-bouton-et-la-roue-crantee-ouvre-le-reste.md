@@ -13,6 +13,9 @@
   (« sur un téléviseur, un bouton rond par réglage ») et son « pas d'index » pour la roue crantée,
   parce que l'utilisateur le demande maintenant. Le reste de l'ADR-0130 tient : les menus de verre,
   le menu d'un seul réglage pour les sous-titres et l'audio, le volet d'onglets, l'échelle.
+  Remplace aussi les points 2 et 6 de
+  l'[ADR-0124](0124-le-lecteur-onyx-d-un-televiseur-prend-l-arrangement-du-lecteur-d-apple.md) (le
+  titre en gras au-dessus de l'épisode ; rien en haut sans logo) : voir le point 6.
 
 ## Contexte
 
@@ -38,6 +41,13 @@ plu pour qu'il le demande sur le téléviseur.
    est ce qu'on voit, pas la place.
 5. **Le bouton reste allumé tant que son menu est ouvert**, la roue crantée comprise
    (`openMenu == OnyxMenuSection.root`).
+
+6. **Ce qu'on regarde tient en une ligne**, en bas à gauche, comme sur un écran tenu en main
+   (`_buildIdentityLine`, la même fonction) : le nom de l'épisode pour une série, le titre pour un
+   film. Le logo, en haut à gauche, dit la série ; sans logo, son nom en toutes lettres
+   (`_buildTitleMark`). Demandé pour le téléphone (« supprime le titre, y'a déjà le logo en haut »)
+   et appliqué aux deux, puisque l'utilisateur veut le même lecteur des deux côtés : c'est le point
+   à lui faire confirmer sur une Apple TV.
 
 ### Écarté
 
