@@ -130,13 +130,7 @@ func TmdbRequestCatalog(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 
 	var err error
 	if query != "" {
-		path := "/search/multi"
-		if mediaType == "movie" {
-			path = "/search/movie"
-		} else if mediaType == "tv" {
-			path = "/search/tv"
-		}
-		raw, err = searchCatalog(client, path, lang, page, query)
+		raw, err = searchCatalog(client, mediaType, lang, page, query)
 	} else if discover.active() {
 		if mediaType == "movie" || mediaType == "tv" {
 			raw, err = cachedTMDBCatalogPage(client, discoverURL(mediaType, lang, page, discover))

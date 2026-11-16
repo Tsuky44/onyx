@@ -152,8 +152,10 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   Capacité `mediahub_link_test` sur `/api/ping`.
 * `GET /api/requests/catalog?query=&type=&page=` (`request_media`, ADR-0134) — tendances,
   découverte ou recherche TMDB. Une recherche reclasse ensemble les trois premières pages de TMDB
-  (correspondance du titre traduit ou original, pondérée par la popularité et les votes) et les
-  découpe en pages 1 à 3 sans doublon ; les pages suivantes sont celles de TMDB.
+  (correspondance du titre traduit ou original, pondérée par la popularité et les votes), y ajoute
+  les titres connus qui commencent par la requête (index tiré de l'export quotidien de TMDB,
+  `title-index.db` à côté de la base, ADR-0135) et découpe le tout en pages 1 à 3 sans doublon ; les
+  pages suivantes sont celles de TMDB.
 * Le catalogue de demandes lit les disponibilités d'une page en un appel (`POST …/availability`,
   `{ "items": [{ "tmdbId", "mediaType" }] }`) ; un OnyxHub ancien qui répond `404`/`405` fait
   retomber sur l'appel par carte, et le lot n'est retenté qu'au bout de 10 minutes.

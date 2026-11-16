@@ -1,26 +1,29 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
 	"net/url"
 	"sort"
-	"strings"
 	"sync"
-	"unicode"
+	"time"
 
 	"project-player/server/safego"
+	"project-player/server/titleindex"
+	"project-player/server/ttlcache"
 )
 
-// La recherche du catalogue de demandes, rangée par pertinence (ADR-0134).
+// La recherche du catalogue de demandes, rangée par pertinence (ADR-0134) et
+// complétée par les titres connus qui commencent par la requête (ADR-0135).
 //
-// TMDB range une recherche surtout par la correspondance du texte : « bat »
-// sortait « Bat Masterson » (un mot exact) devant « Batman », qu'on cherche
-// presque toujours. On garde la liste de TMDB, mais on la reclasse : la
-// correspondance du titre (la même échelle que `searchMatchRank` dans l'app)
-// pèse, la notoriété du titre (popularité et nombre de votes) départage.
+// TMDB range une recherche surtout par la correspondance du texte, et sur des
+// mots entiers : « bat » sortait « Bat Masterson » et jamais Batman. On garde
+// la liste de TMDB, on y ajoute les titres connus de l'index (titleindex), et
+// on reclasse le tout : la correspondance du titre pèse, la notoriété
+// départage.
 
 // searchRankPoolPages est le nombre de pages TMDB reclassées ensemble. Trois
 // pages (60 titres) suffisent pour que le titre connu remonte même quand TMDB
@@ -29,19 +32,37 @@ import (
 // passent telles quelles : on ne cherche plus si loin le titre voulu.
 const searchRankPoolPages = 3
 
-// searchMatchWeights donne le poids de chaque rang de correspondance de
-// searchMatchRank, du titre exact (0) à la requête sans espaces (5).
-var searchMatchWeights = [...]float64{1.0, 0.85, 0.7, 0.6, 0.4, 0.35}
+// searchSuggestionLimit est le nombre de titres de l'index ajoutés à une
+// recherche : chacun coûte un appel de fiche TMDB (titre français, affiche),
+// en cache un jour.
+const searchSuggestionLimit = 10
 
-// searchNoMatchWeight vaut pour un titre que TMDB a trouvé par ailleurs (un
-// titre alternatif, une traduction) : il reste, mais derrière.
-const searchNoMatchWeight = 0.3
+// titleSuggester est l'index des titres connus, vu de la recherche.
+type titleSuggester interface {
+	Suggest(ctx context.Context, query, mediaType string, limit int) ([]titleindex.Hit, error)
+}
 
-// searchCatalog rend la page page de la recherche query sur path
-// (/search/multi, /search/movie ou /search/tv). Les pages 1 à
+// requestTitles est nil tant que main n'a pas ouvert l'index : la recherche
+// se fait alors avec TMDB seul.
+var requestTitles titleSuggester
+
+// UseTitleIndex branche l'index des titres connus sur la recherche du
+// catalogue de demandes. À appeler au démarrage, avant de servir.
+func UseTitleIndex(s titleSuggester) { requestTitles = s }
+
+// Les fiches des titres suggérés, un jour en cache : un titre et son affiche
+// ne bougent pas plus vite, et les mêmes reviennent à chaque lettre tapée.
+var tmdbTitleRows = ttlcache.New[tmdbCatalogRow](24*time.Hour, 2048)
+
+// searchCatalog rend la page page de la recherche query, sur les films
+// (kind "movie"), les séries ("tv") ou les deux (""). Les pages 1 à
 // searchRankPoolPages découpent les mêmes titres reclassés, sans doublon
 // entre elles ; les suivantes sont celles de TMDB.
-func searchCatalog(client *http.Client, path, lang string, page int, query string) (tmdbCatalogResponse, error) {
+func searchCatalog(client *http.Client, kind, lang string, page int, query string) (tmdbCatalogResponse, error) {
+	path := "/search/multi"
+	if kind == "movie" || kind == "tv" {
+		path = "/search/" + kind
+	}
 	pageURL := func(p int) string {
 		return fmt.Sprintf("%s?language=%s&page=%d&query=%s", path, lang, p, url.QueryEscape(query))
 	}
@@ -49,20 +70,35 @@ func searchCatalog(client *http.Client, path, lang string, page int, query strin
 		return cachedTMDBCatalogPage(client, pageURL(page))
 	}
 
-	// Les trois pages partent ensemble, sans attendre que la première dise
-	// combien il y en a : la page 1 attendait sinon deux allers-retours TMDB
-	// l'un après l'autre. Une page au-delà de la dernière revient vide de
-	// TMDB et n'est pas comptée.
+	// Les trois pages et les fiches des titres suggérés partent ensemble,
+	// sans attendre que la première page dise combien il y en a. Une page
+	// au-delà de la dernière revient vide de TMDB et n'est pas comptée.
 	pages := make([]tmdbCatalogResponse, searchRankPoolPages)
 	errs := make([]error, searchRankPoolPages)
+	hits := suggestTitles(query, kind)
+	suggested := make([]*tmdbCatalogRow, len(hits))
 	var wg sync.WaitGroup
 	for i := range pages {
 		wg.Add(1)
 		go func(i int) {
-			defer safego.Recover("handlers/request_search_rank.go:searchCatalog")
+			defer safego.Recover("handlers/request_search_rank.go:searchCatalog page")
 			defer wg.Done()
 			pages[i], errs[i] = cachedTMDBCatalogPage(client, pageURL(i+1))
 		}(i)
+	}
+	for i, hit := range hits {
+		wg.Add(1)
+		go func(i int, hit titleindex.Hit) {
+			defer safego.Recover("handlers/request_search_rank.go:searchCatalog fiche")
+			defer wg.Done()
+			row, err := cachedTMDBTitleRow(client, hit, lang)
+			if err != nil {
+				// Une fiche en échec retire seulement cette suggestion.
+				log.Printf("searchCatalog: fiche %s %d: %v", hit.MediaType, hit.ID, err)
+				return
+			}
+			suggested[i] = &row
+		}(i, hit)
 	}
 	wg.Wait()
 
@@ -81,23 +117,69 @@ func searchCatalog(client *http.Client, path, lang string, page int, query strin
 			log.Printf("searchCatalog: page %d de %q: %v", i+1, query, errs[i])
 			break
 		}
-		rows = append(rows, p.Results...)
+		for _, row := range p.Results {
+			// /search/movie et /search/tv ne disent pas le type : on le pose
+			// pour reconnaître le même titre venu de l'index.
+			if row.MediaType == "" && (kind == "movie" || kind == "tv") {
+				row.MediaType = kind
+			}
+			rows = append(rows, row)
+		}
 		fetched++
+	}
+	for _, row := range suggested {
+		if row != nil {
+			rows = append(rows, *row)
+		}
 	}
 
 	ranked := rankSearchRows(query, dedupeSearchRows(rows))
+	totalPages := max(first.TotalPages, 1)
 	if page > fetched {
-		return tmdbCatalogResponse{Page: page, TotalPages: first.TotalPages, Results: []tmdbCatalogRow{}}, nil
+		return tmdbCatalogResponse{Page: page, TotalPages: totalPages, Results: []tmdbCatalogRow{}}, nil
 	}
 	per := (len(ranked) + fetched - 1) / fetched
 	start := min((page-1)*per, len(ranked))
 	end := min(start+per, len(ranked))
-	return tmdbCatalogResponse{Page: page, TotalPages: first.TotalPages, Results: ranked[start:end]}, nil
+	return tmdbCatalogResponse{Page: page, TotalPages: totalPages, Results: ranked[start:end]}, nil
+}
+
+// suggestTitles rend les titres connus de l'index qui commencent par query,
+// ou rien sans index. Un index en panne ne prive pas de la recherche TMDB.
+func suggestTitles(query, kind string) []titleindex.Hit {
+	if requestTitles == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	hits, err := requestTitles.Suggest(ctx, query, kind, searchSuggestionLimit)
+	if err != nil {
+		log.Printf("searchCatalog: index des titres: %v", err)
+		return nil
+	}
+	return hits
+}
+
+// cachedTMDBTitleRow rend la fiche TMDB d'un titre suggéré, dans la langue
+// lang, sous la forme d'une ligne de recherche.
+func cachedTMDBTitleRow(client *http.Client, hit titleindex.Hit, lang string) (tmdbCatalogRow, error) {
+	key := fmt.Sprintf("/%s/%d?language=%s", hit.MediaType, hit.ID, lang)
+	if row, ok := tmdbTitleRows.Get(key); ok {
+		return row, nil
+	}
+	var row tmdbCatalogRow
+	if err := fetchTMDBCatalogPage(client, key, &row); err != nil {
+		return tmdbCatalogRow{}, err
+	}
+	row.MediaType = hit.MediaType
+	tmdbTitleRows.Put(key, row)
+	return row, nil
 }
 
 // dedupeSearchRows rend une copie de rows sans les personnes (que le
 // catalogue ne montre pas) ni les titres déjà vus : TMDB peut glisser un
-// titre d'une page à l'autre entre deux appels.
+// titre d'une page à l'autre entre deux appels, et l'index suggère souvent
+// un titre que TMDB a aussi trouvé.
 func dedupeSearchRows(rows []tmdbCatalogRow) []tmdbCatalogRow {
 	seen := make(map[string]bool, len(rows))
 	out := make([]tmdbCatalogRow, 0, len(rows))
@@ -115,11 +197,11 @@ func dedupeSearchRows(rows []tmdbCatalogRow) []tmdbCatalogRow {
 	return out
 }
 
-// rankSearchRows range rows (que la fonction réordonne) du plus pertinent
-// au moins pertinent pour query. À score égal, l'ordre de TMDB reste.
+// rankSearchRows range rows du plus pertinent au moins pertinent pour query,
+// dans une nouvelle liste. À score égal, l'ordre reçu reste.
 func rankSearchRows(query string, rows []tmdbCatalogRow) []tmdbCatalogRow {
-	q := foldSearchText(query)
-	scores := make(map[int]float64, len(rows))
+	q := titleindex.Fold(query)
+	scores := make([]float64, len(rows))
 	for i, row := range rows {
 		scores[i] = searchRowScore(q, row)
 	}
@@ -140,95 +222,11 @@ func rankSearchRows(query string, rows []tmdbCatalogRow) []tmdbCatalogRow {
 // un titre cent fois plus populaire ne gagne pas cent fois, et un titre
 // exact peu connu passe encore devant un titre connu qui ne correspond pas.
 // Les votes, qui s'accumulent sur des années, retiennent un classique que la
-// popularité du moment (une mesure de la semaine) a oublié.
+// popularité du moment (une mesure de la semaine) a oublié ; la popularité
+// d'une série est ramenée à l'échelle des films (titleindex).
 func searchRowScore(foldedQuery string, row tmdbCatalogRow) float64 {
-	weight := searchNoMatchWeight
-	for _, title := range []string{row.Title, row.Name, row.OriginalTitle, row.OriginalName} {
-		if rank, ok := searchMatchRank(foldSearchText(title), foldedQuery); ok {
-			weight = max(weight, searchMatchWeights[rank])
-		}
-	}
-	notoriety := math.Log1p(max(row.Popularity, 0)) + 0.3*math.Log1p(max(float64(row.VoteCount), 0))
+	weight := titleindex.MatchWeight(foldedQuery, row.Title, row.Name, row.OriginalTitle, row.OriginalName)
+	popularity := titleindex.NormalizedPopularity(row.MediaType, row.Popularity)
+	notoriety := math.Log1p(popularity) + 0.3*math.Log1p(max(float64(row.VoteCount), 0))
 	return weight * (1 + notoriety)
-}
-
-// searchMatchRank est le rang de la correspondance entre un titre et une
-// requête, tous deux passés par foldSearchText : plus petit, plus pertinent.
-// La même échelle que `searchMatchRank` de l'app (utils/search_match.dart).
-func searchMatchRank(t, q string) (int, bool) {
-	if q == "" || t == "" {
-		return 0, false
-	}
-	if t == q {
-		return 0, true
-	}
-	if strings.HasPrefix(t, q) {
-		return 1, true
-	}
-	if strings.Contains(" "+t, " "+q) {
-		return 2, true
-	}
-	titleWords := strings.Fields(t)
-	allWords := true
-	for _, word := range strings.Fields(q) {
-		found := false
-		for _, tw := range titleWords {
-			if strings.HasPrefix(tw, word) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			allWords = false
-			break
-		}
-	}
-	if allWords {
-		return 3, true
-	}
-	if strings.Contains(t, q) {
-		return 4, true
-	}
-	if strings.Contains(strings.ReplaceAll(t, " ", ""), strings.ReplaceAll(q, " ", "")) {
-		return 5, true
-	}
-	return 0, false
-}
-
-// searchFolds ramène les lettres accentuées et les ligatures à leur forme de
-// base, comme `_folds` de l'app : « amelie » trouve « Amélie ».
-var searchFolds = map[rune]string{
-	'à': "a", 'á': "a", 'â': "a", 'ã': "a", 'ä': "a", 'å': "a", 'ā': "a", 'æ': "ae",
-	'ç': "c", 'ć': "c", 'č': "c",
-	'è': "e", 'é': "e", 'ê': "e", 'ë': "e", 'ē': "e", 'ę': "e", 'ě': "e",
-	'ì': "i", 'í': "i", 'î': "i", 'ï': "i", 'ī': "i",
-	'ñ': "n", 'ń': "n", 'ň': "n",
-	'ò': "o", 'ó': "o", 'ô': "o", 'õ': "o", 'ö': "o", 'ø': "o", 'ō': "o", 'œ': "oe",
-	'ß': "ss", 'š': "s", 'ś': "s",
-	'ù': "u", 'ú': "u", 'û': "u", 'ü': "u", 'ū': "u", 'ů': "u",
-	'ý': "y", 'ÿ': "y", 'ž': "z", 'ź': "z", 'ż': "z", 'ł': "l",
-}
-
-// foldSearchText met text en minuscules, sans accents, la ponctuation
-// changée en espace et les espaces réduits à un seul, comme `foldForSearch`
-// de l'app : « L’Empire » se trouve par « empire ».
-func foldSearchText(text string) string {
-	var b strings.Builder
-	pendingSpace := false
-	for _, r := range strings.ToLower(text) {
-		folded, ok := searchFolds[r]
-		if !ok {
-			folded = string(r)
-		}
-		if unicode.IsLetter(r) || unicode.IsNumber(r) {
-			if pendingSpace && b.Len() > 0 {
-				b.WriteByte(' ')
-			}
-			pendingSpace = false
-			b.WriteString(folded)
-		} else {
-			pendingSpace = true
-		}
-	}
-	return b.String()
 }

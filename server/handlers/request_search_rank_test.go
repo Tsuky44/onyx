@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -8,6 +9,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"project-player/server/titleindex"
+	"project-player/server/ttlcache"
 )
 
 func titlesOf(rows []tmdbCatalogRow) []string {
@@ -43,8 +47,10 @@ func TestSearchRanksWellKnownTitlesAboveObscureWordMatches(t *testing.T) {
 			t.Fatalf("%q doit passer devant « Bat Masterson » : %v", batman, titlesOf(got))
 		}
 	}
-	if got[0].Title != "Batman" {
-		t.Fatalf("« Batman » commence par la requête et est connu : premier attendu, %v", titlesOf(got))
+	// L'article ne compte pas : « The Batman » commence par « bat » autant
+	// que « Batman », et les deux ouvrent la liste.
+	if top := titlesOf(got[:2]); !(indexOfTitle(got[:2], "Batman") >= 0 && indexOfTitle(got[:2], "The Batman") >= 0) {
+		t.Fatalf("les deux Batman doivent ouvrir la liste : %v", top)
 	}
 }
 
@@ -111,7 +117,7 @@ func TestSearchPagesServeEachPooledTitleOnceThenTMDBPages(t *testing.T) {
 	seen := map[int]int{}
 	var firstPage []tmdbCatalogRow
 	for page := 1; page <= searchRankPoolPages; page++ {
-		got, err := searchCatalog(client, "/search/multi", "fr-FR", page, "film")
+		got, err := searchCatalog(client, "", "fr-FR", page, "film")
 		if err != nil {
 			t.Fatalf("page %d : %v", page, err)
 		}
@@ -141,7 +147,7 @@ func TestSearchPagesServeEachPooledTitleOnceThenTMDBPages(t *testing.T) {
 		t.Fatalf("les titres connus de la page 3 de TMDB doivent ouvrir la page 1 : %v", titlesOf(firstPage))
 	}
 
-	fourth, err := searchCatalog(client, "/search/multi", "fr-FR", 4, "film")
+	fourth, err := searchCatalog(client, "", "fr-FR", 4, "film")
 	if err != nil {
 		t.Fatalf("page 4 : %v", err)
 	}
@@ -181,7 +187,7 @@ func TestSearchAsksTheThreePoolPagesAtOnce(t *testing.T) {
 	tmdbCatalogPages = newCatalogPageCacheForTest(t)
 	client := &http.Client{Transport: concurrentTMDB{others: make(chan struct{}, 2)}}
 
-	got, err := searchCatalog(client, "/search/multi", "fr-FR", 1, "seul")
+	got, err := searchCatalog(client, "", "fr-FR", 1, "seul")
 	if err != nil {
 		t.Fatalf("page 1 : %v", err)
 	}
@@ -190,17 +196,46 @@ func TestSearchAsksTheThreePoolPagesAtOnce(t *testing.T) {
 	}
 }
 
-func TestFoldSearchTextMatchesTheApp(t *testing.T) {
-	cases := map[string]string{
-		"L’Empire contre-attaque": "l empire contre attaque",
-		"Amélie":                  "amelie",
-		"WALL·E":                  "wall e",
-		"  Spider-Man  ":          "spider man",
-		"Œdipe":                   "oedipe",
+// fakeTitles est un index des titres connus qui rend toujours les mêmes.
+type fakeTitles []titleindex.Hit
+
+func (f fakeTitles) Suggest(_ context.Context, _, _ string, limit int) ([]titleindex.Hit, error) {
+	return f[:min(limit, len(f))], nil
+}
+
+// suggestingTMDB ne connaît, pour « bat », que des titres au mot exact, et
+// rend la fiche de Batman quand on la demande.
+type suggestingTMDB struct{}
+
+func (suggestingTMDB) RoundTrip(r *http.Request) (*http.Response, error) {
+	body := `{"page":1,"total_pages":1,"results":[` +
+		`{"id":1,"media_type":"tv","name":"Bat Masterson","popularity":17.9,"vote_count":30},` +
+		`{"id":2,"media_type":"movie","title":"Bat","popularity":0.6,"vote_count":1}]}`
+	if r.URL.Path == "/3/movie/268" || strings.HasSuffix(r.URL.Path, "/movie/268") {
+		body = `{"id":268,"title":"Batman","original_title":"Batman","popularity":11.4,"vote_count":8000,"poster_path":"/batman.jpg"}`
 	}
-	for in, want := range cases {
-		if got := foldSearchText(in); got != want {
-			t.Errorf("foldSearchText(%q) = %q, attendu %q", in, got, want)
-		}
+	return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header), Request: r}, nil
+}
+
+// La recherche de TMDB cherche des mots entiers : « bat » ne lui fait pas
+// trouver Batman. L'index des titres connus l'ajoute, et le classement le met
+// devant les titres au mot exact.
+func TestSearchAddsKnownTitlesThatStartWithTheQuery(t *testing.T) {
+	t.Setenv("TMDB_API_KEY", "test-key")
+	tmdbCatalogPages = newCatalogPageCacheForTest(t)
+	tmdbTitleRows = ttlcache.New[tmdbCatalogRow](time.Hour, 16)
+	UseTitleIndex(fakeTitles{{ID: 268, MediaType: "movie", Title: "Batman", Popularity: 11.4}})
+	t.Cleanup(func() { UseTitleIndex(nil) })
+	client := &http.Client{Transport: suggestingTMDB{}}
+
+	got, err := searchCatalog(client, "", "fr-FR", 1, "bat")
+	if err != nil {
+		t.Fatalf("page 1 : %v", err)
+	}
+	if len(got.Results) != 3 || got.Results[0].ID != 268 || got.Results[0].MediaType != "movie" {
+		t.Fatalf("Batman, suggéré par l'index, doit ouvrir la page : %v", titlesOf(got.Results))
+	}
+	if got.Results[0].PosterPath == nil || *got.Results[0].PosterPath != "/batman.jpg" {
+		t.Fatalf("la suggestion doit porter la fiche TMDB (affiche) : %+v", got.Results[0])
 	}
 }

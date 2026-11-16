@@ -92,6 +92,8 @@ func main() {
 	go safego.Forever("handlers.RunEmbySync", func() { handlers.RunEmbySync(playbackContext) })
 	go safego.Forever("handlers.RunPlaybackActivity", func() { handlers.RunPlaybackActivity(playbackContext) })
 	go safego.Forever("handlers.RunWatchParties", func() { handlers.RunWatchParties(playbackContext) })
+	// Les titres connus de TMDB, pour compléter la recherche des demandes (ADR-0135).
+	handlers.StartRequestTitleIndex(playbackContext, filepath.Dir(absDbPath))
 
 	// Initialize router
 	router := httprouter.New()
