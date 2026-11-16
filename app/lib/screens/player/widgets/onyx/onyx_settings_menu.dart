@@ -69,6 +69,12 @@ class OnyxSettingsMenu extends StatefulWidget {
   /// nomme le réglage au lieu de ramener à l'index, et Retour ferme le menu.
   final bool standalone;
 
+  /// Les réglages que l'index ne liste pas, parce que le chrome les porte
+  /// déjà : sur un écran tenu en main, les sous-titres et l'audio ont leur
+  /// bouton et les chapitres leur onglet (ADR-0131). L'index n'y est plus que
+  /// « le reste », et tient sans défiler dans la hauteur d'un téléphone couché.
+  final Set<OnyxMenuSection> indexOmits;
+
   final VoidCallback onClose;
 
   const OnyxSettingsMenu({
@@ -85,6 +91,7 @@ class OnyxSettingsMenu extends StatefulWidget {
     this.onSeekToAbsolute,
     this.initialSection = OnyxMenuSection.root,
     this.standalone = false,
+    this.indexOmits = const <OnyxMenuSection>{},
   }) : assert(
           !standalone || initialSection != OnyxMenuSection.root,
           'un menu seul montre un réglage, pas l’index',
@@ -224,7 +231,11 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
   /// The index row the remote lands on.
   OnyxMenuSection get _rootEntry =>
       _returnedFrom ??
-      (_hasQuality ? OnyxMenuSection.quality : OnyxMenuSection.audio);
+      (_hasQuality
+          ? OnyxMenuSection.quality
+          : widget.indexOmits.contains(OnyxMenuSection.audio)
+              ? OnyxMenuSection.speed
+              : OnyxMenuSection.audio);
 
   /// Back and left go up one level instead of closing everything.
   ///
@@ -314,25 +325,28 @@ class _OnyxSettingsMenuState extends State<OnyxSettingsMenu> {
     }
 
     final style = OnyxMenuStyle.current;
+    final sections = <(OnyxMenuSection, String, String)>[
+      if (_hasQuality) (OnyxMenuSection.quality, tr('Qualité'), _qualityValue),
+      (OnyxMenuSection.audio, tr('Audio'), _audioValue),
+      (OnyxMenuSection.subtitles, tr('Sous-titres'), _subtitlesValue),
+      (OnyxMenuSection.speed, tr('Vitesse de lecture'), _speedValue),
+      (OnyxMenuSection.display, tr('Format d’image'), _displayValue),
+      (OnyxMenuSection.sleep, tr('Minuterie de veille'), _sleepValue),
+      if (_hasChapters)
+        (
+          OnyxMenuSection.chapters,
+          tr('Chapitres'),
+          '${widget.episodeNav!.chapters.length}',
+        ),
+    ];
     return ListView(
       shrinkWrap: true,
       padding: EdgeInsets.symmetric(
         horizontal: style.padding - style.overhang,
       ),
       children: [
-        if (_hasQuality)
-          row(OnyxMenuSection.quality, tr('Qualité'), _qualityValue),
-        row(OnyxMenuSection.audio, tr('Audio'), _audioValue),
-        row(OnyxMenuSection.subtitles, tr('Sous-titres'), _subtitlesValue),
-        row(OnyxMenuSection.speed, tr('Vitesse de lecture'), _speedValue),
-        row(OnyxMenuSection.display, tr('Format d’image'), _displayValue),
-        row(OnyxMenuSection.sleep, tr('Minuterie de veille'), _sleepValue),
-        if (_hasChapters)
-          row(
-            OnyxMenuSection.chapters,
-            tr('Chapitres'),
-            '${widget.episodeNav!.chapters.length}',
-          ),
+        for (final (section, label, value) in sections)
+          if (!widget.indexOmits.contains(section)) row(section, label, value),
       ],
     );
   }

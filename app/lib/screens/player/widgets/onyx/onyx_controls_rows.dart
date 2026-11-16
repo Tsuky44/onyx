@@ -71,20 +71,27 @@ extension _OnyxControlsRows on OnyxControlsLayer {
           alignment: Alignment.centerLeft,
           child: url == null || url.isEmpty
               ? SizedBox(height: m.logoHeight)
-              : IgnorePointer(
-                  child: AppNetworkImage(
-                    url: url,
-                    height: m.logoHeight,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.centerLeft,
-                    fadeInDuration: const Duration(milliseconds: 120),
-                    // La même image décodée que l'en-tête de la fiche.
-                    decodeAtSourceSize: true,
-                    placeholder: SizedBox(height: m.logoHeight),
-                    errorWidget: SizedBox(height: m.logoHeight),
-                  ),
-                ),
+              : _buildTitleLogo(m, url),
         ),
+      ),
+    );
+  }
+
+  /// Le logo du titre seul, sans texte pour tenir sa place : là où il se
+  /// pose (un téléviseur, un écran tenu en main), le titre est déjà écrit
+  /// au-dessus de la barre. Transparent aux touchers, comme le titre.
+  Widget _buildTitleLogo(OnyxChromeMetrics m, String url) {
+    return IgnorePointer(
+      child: AppNetworkImage(
+        url: url,
+        height: m.logoHeight,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        fadeInDuration: AppMotion.micro,
+        // La même image décodée que l'en-tête de la fiche.
+        decodeAtSourceSize: true,
+        placeholder: SizedBox(height: m.logoHeight),
+        errorWidget: SizedBox(height: m.logoHeight),
       ),
     );
   }

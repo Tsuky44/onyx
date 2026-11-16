@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../l10n/tr.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_motion.dart';
 import '../../../../theme/focus_fill.dart';
 import '../../../../tv/tv_focus.dart';
 import '../../../../widgets/global/app_slider.dart';
@@ -45,8 +46,18 @@ class OnyxIconButton extends StatefulWidget {
   final bool glass;
 
   /// Le menu que ce bouton ouvre est à l'écran : il reste allumé tant que le
-  /// menu tient la télécommande, pour dire d'où il vient (ADR-0130).
+  /// menu est là, pour dire d'où il vient (ADR-0130).
   final bool lit;
+
+  /// Le diamètre du disque de verre quand il est plus petit que sa cible : sur
+  /// un écran tenu en main, le doigt garde [glassSize] et l'œil voit
+  /// [handheldDisc] (ADR-0131). Nul, le disque remplit la cible.
+  final double? discSize;
+
+  /// Posé sur l'image elle-même, sans dégradé derrière lui : l'icône porte
+  /// alors sa propre ombre, sans quoi elle disparaît sur un plan clair. Les
+  /// commandes de lecture au milieu de l'écran (ADR-0131).
+  final bool onPicture;
 
   const OnyxIconButton({
     super.key,
@@ -61,11 +72,26 @@ class OnyxIconButton extends StatefulWidget {
     this.prominent = false,
     this.glass = false,
     this.lit = false,
+    this.discSize,
+    this.onPicture = false,
   });
 
   /// Le diamètre d'un bouton de verre, et la taille de son icône.
   static const double glassSize = 44;
   static const double _glassIcon = 22;
+
+  /// Le disque d'un bouton de verre sur un écran tenu en main : « un poil »
+  /// plus petit que sa cible, à la demande de l'utilisateur (ADR-0131).
+  static const double handheldDisc = 38;
+
+  /// L'ombre d'une icône posée sur l'image. Voir [onPicture].
+  static const List<Shadow> _pictureShadow = [
+    Shadow(
+      color: OnyxChromeTheme.glassShadow,
+      blurRadius: 14,
+      offset: Offset(0, 2),
+    ),
+  ];
 
   @override
   State<OnyxIconButton> createState() => _OnyxIconButtonState();
@@ -130,40 +156,54 @@ class _OnyxIconButtonState extends State<OnyxIconButton> {
               builder: (context, _) {
                 final focused = _node.hasFocus;
                 final active = _hovered || focused;
-                final filled = widget.isTv && (focused || widget.lit);
+                // Sous la télécommande, ou tant que son menu est ouvert.
+                final filled = (widget.isTv && focused) || widget.lit;
                 final Color? disc = filled
                     ? (glass ? FocusFill.fill : AppColors.accent)
                     : widget.prominent || glass
                         ? Colors.white.withValues(alpha: glass ? 0.18 : 0.16)
                         : null;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 140),
-                  curve: Curves.easeOut,
+                // La cible garde sa taille ; seul le disque rétrécit.
+                final drawn = glass ? (widget.discSize ?? box) : box;
+                return SizedBox(
                   width: box,
                   height: box,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: disc ?? Colors.transparent,
-                    boxShadow: filled
-                        ? [
-                            BoxShadow(
-                              color: glass
-                                  ? const Color(0x59000000)
-                                  : AppColors.accent.withValues(alpha: 0.45),
-                              blurRadius: glass ? 14 : 18,
-                              offset: glass ? const Offset(0, 4) : Offset.zero,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Icon(
-                    widget.icon,
-                    size: iconSize,
-                    color: filled && glass
-                        ? FocusFill.ink
-                        : active
-                            ? OnyxChromeTheme.iconActive
-                            : OnyxChromeTheme.icon,
+                  child: Center(
+                    child: AnimatedContainer(
+                      duration: AppMotion.focus,
+                      curve: AppMotion.curve,
+                      width: drawn,
+                      height: drawn,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: disc ?? Colors.transparent,
+                        boxShadow: filled
+                            ? [
+                                BoxShadow(
+                                  color: glass
+                                      ? const Color(0x59000000)
+                                      : AppColors.accent
+                                          .withValues(alpha: 0.45),
+                                  blurRadius: glass ? 14 : 18,
+                                  offset:
+                                      glass ? const Offset(0, 4) : Offset.zero,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        size: iconSize,
+                        shadows: widget.onPicture
+                            ? OnyxIconButton._pictureShadow
+                            : null,
+                        color: filled && glass
+                            ? FocusFill.ink
+                            : active
+                                ? OnyxChromeTheme.iconActive
+                                : OnyxChromeTheme.icon,
+                      ),
+                    ),
                   ),
                 );
               },

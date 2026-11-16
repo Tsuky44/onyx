@@ -13,6 +13,12 @@ abstract final class OnyxChromeTheme {
   /// row, which needs roughly 700px of content before it starts colliding.
   static const double compactBreakpoint = 800;
 
+  /// À partir de cette largeur, un écran tenu en main est une tablette : son
+  /// chrome garde les tailles d'un doigt mais s'écarte davantage des bords,
+  /// que rien n'y protège (un téléphone couché a ses zones sûres). Le plus
+  /// large des téléphones couchés fait 956.
+  static const double tabletBreakpoint = 1000;
+
   // --- Colour -------------------------------------------------------------
 
   /// Icons at rest. They go to [iconActive] on hover/focus.
@@ -83,15 +89,23 @@ abstract final class OnyxChromeTheme {
   ///
   /// A television ignores the width: it always gets the phone's arrangement,
   /// drawn at [OnyxChromeMetrics.tv] sizes. See [OnyxChromeMetrics.tv].
+  ///
+  /// Un écran tenu en main l'ignore aussi : son arrangement n'a qu'un jeu de
+  /// tailles, celles d'un doigt. Voir [OnyxChromeMetrics.handheld].
   static OnyxChromeMetrics metricsFor(
     double width, {
     double scale = 1,
     bool tv = false,
+    bool handheld = false,
   }) {
     if (tv) return const OnyxChromeMetrics.tv();
-    final base = width < compactBreakpoint
-        ? const OnyxChromeMetrics.compact()
-        : const OnyxChromeMetrics.wide();
+    final base = handheld
+        ? (width < tabletBreakpoint
+            ? const OnyxChromeMetrics.handheld()
+            : const OnyxChromeMetrics.handheld(gutter: 28))
+        : width < compactBreakpoint
+            ? const OnyxChromeMetrics.compact()
+            : const OnyxChromeMetrics.wide();
     return scale == 1 ? base : base.scaledBy(scale);
   }
 }
@@ -178,6 +192,35 @@ class OnyxChromeMetrics {
         bottomInset = 16,
         topInset = 12,
         skipIntroTextSize = 13,
+        previewWidth = 208;
+
+  /// Les tailles d'un écran tenu en main, pour l'arrangement de l'ADR-0131 :
+  /// le titre et les boutons ronds sur une rangée, la barre fine, les onglets
+  /// dessous, lecture et ±10 s au milieu de l'image.
+  ///
+  /// Un seul jeu, téléphone ou tablette : la largeur ne change pas la taille
+  /// d'un doigt, seulement la marge ([OnyxChromeTheme.tabletBreakpoint]). Une
+  /// cible fait 44, et ce qui s'y dessine est plus petit — le disque d'un
+  /// bouton de verre fait `OnyxIconButton.handheldDisc`. La barre est fine
+  /// parce qu'un repère dit la position ; sa rangée garde la hauteur d'un
+  /// doigt.
+  const OnyxChromeMetrics.handheld({this.gutter = 16})
+      : hitSize = 44,
+        iconSize = 21,
+        playIconSize = 60,
+        titleSize = 22,
+        metaSize = 14,
+        timeSize = 13,
+        barThickness = 3,
+        barThicknessActive = 5,
+        handleSize = 13,
+        clusterGap = 4,
+        isCompact = true,
+        logoHeight = 28,
+        brandTextSize = 15,
+        bottomInset = 10,
+        topInset = 12,
+        skipIntroTextSize = 14,
         previewWidth = 208;
 
   /// Television sizes, for a screen three metres away.

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../player_chrome_fade.dart';
 
 import '../../../../desktop_window.dart';
+import '../../../../theme/app_motion.dart';
+import '../../../../theme/app_type.dart';
 import '../../../../tv/nav/tv_region.dart';
 import '../../../../utils/format.dart';
 import '../../../../widgets/global/app_network_image.dart';
@@ -20,7 +22,9 @@ import 'onyx_tabs.dart';
 import 'onyx_tv_tabs.dart';
 import '../../../../l10n/tr.dart';
 
+part 'onyx_chrome_layout.dart';
 part 'onyx_controls_rows.dart';
+part 'onyx_handheld_chrome.dart';
 
 /// Chrome Onyx: the hand-written player chrome, the only one the app has.
 ///
@@ -31,7 +35,8 @@ part 'onyx_controls_rows.dart';
 /// wide puts the title block and the utility cluster on one row above the
 /// scrubber, compact stacks them so nothing collides at phone widths. A
 /// television gets its own, built for the remote on the model of Apple's
-/// player — see [_buildTvChrome].
+/// player — see [_buildTvChrome]. Un écran tenu en main prend le même, adapté
+/// au doigt — voir [_buildHandheldChrome].
 class OnyxControlsLayer extends StatelessWidget {
   final bool visible;
 
@@ -147,14 +152,16 @@ class OnyxControlsLayer extends StatelessWidget {
   // --- Television ---------------------------------------------------------
 
   /// Sur un téléviseur, chaque réglage a son bouton rond : il ouvre le menu de
-  /// [section], posé au-dessus de [anchor], le bouton lui-même (ADR-0130).
+  /// [section], posé au-dessus de [anchor], le bouton lui-même (ADR-0130). Sur
+  /// un écran tenu en main, les sous-titres et l'audio font de même (ADR-0131).
   final void Function(OnyxMenuSection section, BuildContext anchor)? onOpenMenu;
 
   /// Le menu ouvert par l'un de ces boutons, qui reste allumé tant qu'il l'est.
+  /// [OnyxMenuSection.root] pour l'index de la roue crantée.
   final OnyxMenuSection? openMenu;
 
-  /// Les onglets sous la barre d'un téléviseur, et celui dont le volet est
-  /// ouvert. Voir [OnyxTvTabs].
+  /// Les onglets sous la barre d'un téléviseur ou d'un écran tenu en main, et
+  /// celui dont le volet est ouvert. Voir [OnyxTvTabs].
   final List<OnyxTabEntry> tabs;
   final OnyxTab? openTab;
   final ValueChanged<OnyxTab?>? onTabChanged;
@@ -186,6 +193,12 @@ class OnyxControlsLayer extends StatelessWidget {
   /// button (the rate is in the settings menu). The scrubber becomes a focus
   /// stop that seeks with left and right.
   final bool isTv;
+
+  /// Un écran tenu en main, téléphone ou tablette : le chrome prend
+  /// l'arrangement d'un téléviseur adapté au doigt ([_buildHandheldChrome],
+  /// ADR-0131). Passé plutôt que lu de la plateforme, comme [showVolume] : un
+  /// test dessine ce chrome loin de tout appareil.
+  final bool handheld;
 
   /// Where the remote lands when it enters the control bar. Play/pause is the
   /// button a hand reaches for first, and every other control is one or two
@@ -273,6 +286,7 @@ class OnyxControlsLayer extends StatelessWidget {
     this.settingsButtonKey,
     this.subtitlesButtonKey,
     this.isTv = false,
+    this.handheld = false,
     this.playPauseFocusNode,
     this.progressFocusNode,
     this.cutouts = const <Rect>[],
@@ -316,8 +330,14 @@ class OnyxControlsLayer extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final m = OnyxChromeTheme.metricsFor(width, scale: scale, tv: isTv);
+        final m = OnyxChromeTheme.metricsFor(
+          width,
+          scale: scale,
+          tv: isTv,
+          handheld: handheld,
+        );
         if (isTv) return _buildTvChrome(m);
+        if (handheld) return _buildHandheldChrome(m, width);
         final hasBrightness = brightness != null && onBrightnessChanged != null;
         // Not a Stack.
         //
@@ -350,28 +370,7 @@ class OnyxControlsLayer extends StatelessWidget {
             if (hasBrightness)
               LayoutId(
                 id: _OnyxChromeLayout.brightness,
-                // A full-width row holding one right-aligned control, rather
-                // than a box pinned to the right edge: that is the shape the
-                // cutout dodge reasons about, and it is what lets a camera on
-                // this edge push the bar in without moving anything else.
-                child: _dodgeCutouts(
-                  Padding(
-                    padding: EdgeInsets.only(right: m.gutter - 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        _fadeWithChrome(
-                          OnyxBrightnessSlider(
-                            value: brightness!,
-                            onChanged: onBrightnessChanged!,
-                            onDraggingChanged: onBrightnessDraggingChanged,
-                            metrics: m,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                child: _buildBrightnessBand(m),
               ),
             LayoutId(
               id: _OnyxChromeLayout.bottom,
@@ -404,6 +403,33 @@ class OnyxControlsLayer extends StatelessWidget {
   /// hit-testing while it is invisible, so a hidden control cannot be clicked.
   Widget _fadeWithChrome(Widget child) =>
       PlayerChromeFade(visible: visible, child: child);
+
+  /// La barre de luminosité, dans la bande que les deux barres lui laissent.
+  ///
+  /// A full-width row holding one right-aligned control, rather than a box
+  /// pinned to the right edge: that is the shape the cutout dodge reasons
+  /// about, and it is what lets a camera on this edge push the bar in without
+  /// moving anything else.
+  Widget _buildBrightnessBand(OnyxChromeMetrics m) {
+    return _dodgeCutouts(
+      Padding(
+        padding: EdgeInsets.only(right: m.gutter - 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _fadeWithChrome(
+              OnyxBrightnessSlider(
+                value: brightness!,
+                onChanged: onBrightnessChanged!,
+                onDraggingChanged: onBrightnessDraggingChanged,
+                metrics: m,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   // --- Top ----------------------------------------------------------------
 
@@ -641,74 +667,4 @@ class OnyxControlsLayer extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Lays the chrome out as three bands: the top bar, the bottom cluster, and
-/// whatever is left between them.
-///
-/// The middle band is the brightness bar's, and it is the whole point of doing
-/// this by hand. The two bars are laid out first and *measured*; the bar is
-/// then given the space that actually remains, so it can neither be drawn over
-/// the buttons nor — worse, because it is invisible — catch fingers where they
-/// belong to the buttons. A [Stack] could only have guessed at those heights.
-class _OnyxChromeLayout extends MultiChildLayoutDelegate {
-  _OnyxChromeLayout({required this.topLead, required this.bottomLead});
-
-  /// How far the band may reach back into each bar — their empty scrim
-  /// margins, which draw nothing and catch nothing.
-  final double topLead;
-  final double bottomLead;
-
-  static const String top = 'top';
-  static const String bottom = 'bottom';
-  static const String brightness = 'brightness';
-
-  @override
-  void performLayout(Size size) {
-    // Full width, and **unbounded** height: the bars are asked how tall they
-    // want to be, not told how tall they may be. A bounded height is not the
-    // same question — several widgets in these bars, an [Align] around the
-    // title among them, answer "as tall as you'll let me" and would take the
-    // whole screen. It is the constraint a [Positioned] pinned to one edge
-    // gives, which is what these bars were written against.
-    final natural = BoxConstraints(minWidth: size.width, maxWidth: size.width);
-
-    var topHeight = 0.0;
-    if (hasChild(top)) {
-      topHeight = layoutChild(top, natural).height;
-      positionChild(top, Offset.zero);
-    }
-
-    var bottomHeight = 0.0;
-    if (hasChild(bottom)) {
-      bottomHeight = layoutChild(bottom, natural).height;
-      positionChild(bottom, Offset(0, size.height - bottomHeight));
-    }
-
-    if (hasChild(brightness)) {
-      // What is left between the two bars, plus the empty margin each of them
-      // offers back. Never less than nothing: on a short window the bars can
-      // take the whole height, and the control answers a band too small to use
-      // by drawing nothing at all.
-      final bandTop = (topHeight - topLead).clamp(0.0, size.height);
-      final bandBottom = (size.height - bottomHeight + bottomLead).clamp(
-        0.0,
-        size.height,
-      );
-      final band = (bandBottom - bandTop).clamp(0.0, size.height);
-      layoutChild(
-        brightness,
-        BoxConstraints(
-          minWidth: size.width,
-          maxWidth: size.width,
-          maxHeight: band,
-        ),
-      );
-      positionChild(brightness, Offset(0, bandTop));
-    }
-  }
-
-  @override
-  bool shouldRelayout(_OnyxChromeLayout oldDelegate) =>
-      oldDelegate.topLead != topLead || oldDelegate.bottomLead != bottomLead;
 }

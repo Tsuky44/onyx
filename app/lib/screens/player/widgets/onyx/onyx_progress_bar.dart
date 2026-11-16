@@ -85,6 +85,7 @@ class OnyxProgressBar extends StatefulWidget {
     this.previews,
     this.previewAtProgress = false,
     this.marker = false,
+    this.rowHeight,
   });
 
   /// L'arrangement d'un téléviseur, celui du lecteur d'Apple (ADR-0124) : la
@@ -92,6 +93,11 @@ class OnyxProgressBar extends StatefulWidget {
   /// repère vertical, toujours visible, qui s'allonge et s'éclaire au focus.
   /// La rangée est plus basse : elle n'a pas de doigt à recevoir.
   final bool marker;
+
+  /// La hauteur de la rangée, quand elle n'est pas celle que [marker] décide.
+  /// Un écran tenu en main prend le repère d'un téléviseur mais garde une
+  /// rangée à la taille d'un doigt (ADR-0131).
+  final double? rowHeight;
 
   @override
   State<OnyxProgressBar> createState() => _OnyxProgressBarState();
@@ -154,7 +160,8 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
     final m = widget.metrics;
     // The row is taller than the bar so there is something to aim at: a 4px
     // bar is not a target, on a mouse or a finger.
-    final rowHeight = widget.marker ? _markerRowHeight : m.hitSize;
+    final rowHeight =
+        widget.rowHeight ?? (widget.marker ? _markerRowHeight : m.hitSize);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -199,7 +206,7 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
                 children: [
                   _buildBar(width),
                   if (widget.marker)
-                    _buildMarker(width)
+                    _buildMarker(width, rowHeight)
                   else if (_active)
                     _buildHandle(width),
                   if (_previewFraction != null &&
@@ -262,15 +269,16 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
   static const double _markerRowHeight = 30;
 
   /// Le repère de position du lecteur d'Apple : un trait vertical, plus haut
-  /// et lumineux quand la barre a la télécommande.
-  Widget _buildMarker(double width) {
+  /// et lumineux quand la barre a la télécommande, plus haut aussi sous le
+  /// doigt qui la déplace.
+  Widget _buildMarker(double width, double rowHeight) {
     const thickness = 4.0;
-    final height = _focused ? 26.0 : 16.0;
+    final height = _focused || _dragFraction != null ? 26.0 : 16.0;
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 120),
       curve: Curves.easeOut,
       left: (_shownFraction * width) - thickness / 2,
-      top: (_markerRowHeight - height) / 2,
+      top: (rowHeight - height) / 2,
       width: thickness,
       height: height,
       child: DecoratedBox(

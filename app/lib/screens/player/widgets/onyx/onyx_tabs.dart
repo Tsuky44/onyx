@@ -45,6 +45,8 @@ class OnyxChromeTab extends StatefulWidget {
     this.active = false,
     this.selected = false,
     this.focusNode,
+    this.hitHeight,
+    this.fontSize = AppType.headline,
   });
 
   final String label;
@@ -65,6 +67,16 @@ class OnyxChromeTab extends StatefulWidget {
 
   /// Fourni quand le volet doit pouvoir rendre la télécommande à l'onglet.
   final FocusNode? focusNode;
+
+  /// La hauteur que prend le doigt, quand elle dépasse celle de la capsule :
+  /// sous la barre d'un écran tenu en main, l'onglet se dessine à [height] et
+  /// se touche sur 44 (ADR-0131). Nulle, la cible est la capsule.
+  final double? hitHeight;
+
+  /// La taille du nom. Celle d'un titre de rangée par défaut ; plus petite
+  /// sous la barre d'un écran tenu en main, où l'onglet est à côté du titre
+  /// du film et ne doit pas lui disputer la place.
+  final double fontSize;
 
   static const double height = 36;
 
@@ -115,7 +127,7 @@ class _OnyxChromeTabState extends State<OnyxChromeTab> {
             builder: (context, _) {
               final lit = tv && _node.hasFocus;
               final clear = widget.selected || widget.active || _hovered;
-              return AnimatedContainer(
+              final capsule = AnimatedContainer(
                 duration: AppMotion.move(context, AppMotion.focus),
                 curve: AppMotion.curve,
                 height: OnyxChromeTab.height,
@@ -140,11 +152,17 @@ class _OnyxChromeTabState extends State<OnyxChromeTab> {
                         : clear
                             ? OnyxChromeTheme.title
                             : OnyxChromeTheme.meta,
-                    fontSize: AppType.headline,
+                    fontSize: widget.fontSize,
                     fontWeight:
                         lit || clear ? FontWeight.w700 : FontWeight.w600,
                   ),
                 ),
+              );
+              final hitHeight = widget.hitHeight;
+              if (hitHeight == null) return capsule;
+              return SizedBox(
+                height: hitHeight,
+                child: Align(widthFactor: 1, child: capsule),
               );
             },
           ),
