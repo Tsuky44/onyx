@@ -324,7 +324,12 @@ class _MainShellState extends State<MainShell> {
     required Widget tabs,
     required bool isWide,
   }) {
-    final media = MediaQuery.of(context);
+    // Le clavier est déjà retiré par le Scaffold de la coquille, qui rétrécit
+    // son corps : le laisser dans ces données le ferait retirer une seconde
+    // fois par le Scaffold de l'onglet, et la page se viderait en noir
+    // au-dessus du clavier.
+    final media =
+        MediaQuery.of(context).removeViewInsets(removeBottom: true);
     Widget navigator = Navigator(
       key: shellNavigatorKey,
       pages: [

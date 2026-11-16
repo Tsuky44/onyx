@@ -32,6 +32,7 @@ import '../../tv/tv_touchpad.dart';
 import '../../utils/poster_url.dart';
 import 'hooks/use_episodes_panel.dart';
 import 'hooks/use_gesture_hints.dart';
+import 'hooks/use_landscape_side.dart';
 import 'hooks/use_playback_handoff.dart';
 import 'hooks/use_player_controller.dart';
 import 'hooks/use_episode_navigation.dart';
@@ -284,6 +285,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
   static bool get _ownsDeviceOrientation =>
       AppPlatform.isMobile && !TvMode.isTv;
 
+  /// Paysage forcé et retournement suivi à l'accéléromètre, sur un téléphone.
+  PlayerLandscapeLock? _landscapeLock;
+
   EdgeInsets? _lastSubtitlePadding;
 
   // Store the listener so we can properly remove it in dispose
@@ -340,10 +344,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _wantsPlayback = !widget.startPaused;
     _chosenDisplayMode = widget.initialDisplayMode;
     if (_ownsDeviceOrientation) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
+      _landscapeLock = PlayerLandscapeLock(
+        isSuspended: () => PictureInPicture.active.value,
+      )..start();
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     }
     if (AppPlatform.isWindows) {
@@ -470,6 +473,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         });
       }
     }
+    _landscapeLock?.dispose();
     if (!_isEpisodeTransition && _ownsDeviceOrientation) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,

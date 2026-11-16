@@ -14,8 +14,9 @@ void main() {
     PosterGridZoom.instance.resetForTest();
   });
 
-  Future<void> pumpPage(WidgetTester tester) {
-    tester.view.physicalSize = const Size(1200, 800);
+  Future<void> pumpPage(WidgetTester tester,
+      {Size size = const Size(1200, 800)}) {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     return tester.pumpWidget(
@@ -79,6 +80,46 @@ void main() {
       expect(PosterGridZoom.instance.selected, preset);
     });
   }
+
+  const phone = Size(390, 800);
+
+  testWidgets('sur téléphone, le menu ne propose que 2, 3 et 4 par ligne',
+      (tester) async {
+    await pumpPage(tester, size: phone);
+    await openMenu(tester);
+
+    for (final columns in [2, 3, 4]) {
+      expect(find.text('$columns par ligne'), findsOneWidget);
+    }
+    for (final columns in [6, 8, 10]) {
+      expect(find.text('$columns par ligne'), findsNothing);
+    }
+    expect(PosterGridZoom.phonePresets, [2, 3, 4]);
+  });
+
+  for (final preset in [2, 3, 4]) {
+    testWidgets('sur téléphone, « $preset par ligne » règle la grille',
+        (tester) async {
+      await pumpPage(tester, size: phone);
+      await openMenu(tester);
+
+      await tester.tap(find.text('$preset par ligne'));
+      await tester.pumpAndSettle();
+
+      expect(columns(tester), preset);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('poster_grid_columns'), preset);
+    });
+  }
+
+  testWidgets('un 10 enregistré ne s\'applique pas sur téléphone',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'poster_grid_columns': 10});
+    await pumpPage(tester, size: phone);
+    await tester.pumpAndSettle();
+
+    expect(columns(tester), lessThanOrEqualTo(4));
+  });
 
   testWidgets('le choix est enregistré pour la prochaine séance',
       (tester) async {

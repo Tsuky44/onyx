@@ -99,7 +99,10 @@ abstract final class AppLayout {
         compact ? posterGridCompactCrossSpacing : posterGridCrossSpacing;
     final zoom = PosterGridZoomScope.watch(context);
     return SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: zoom.apply(posterGridCount(contentWidth, spacing: cross)),
+      crossAxisCount: zoom.apply(
+        posterGridCount(contentWidth, spacing: cross),
+        phone: isCompact(context),
+      ),
       crossAxisSpacing: cross,
       // Sans ligne de titre à séparer de la rangée suivante, l'écart vertical
       // reprend l'horizontal : une trame régulière, comme sur OnyxHub.

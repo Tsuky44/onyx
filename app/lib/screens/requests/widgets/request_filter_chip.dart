@@ -22,7 +22,12 @@ class RequestFilterChip extends StatefulWidget {
     this.active = false,
     this.onTap,
     this.onClear,
+    this.chevron = true,
   });
+
+  /// Le chevron d'une capsule qui ouvre un menu. Faux pour une capsule qui
+  /// se coche sur place (la feuille des filtres) : rien ne s'ouvre.
+  final bool chevron;
 
   final String label;
   final bool active;
@@ -54,7 +59,11 @@ class _RequestFilterChipState extends State<RequestFilterChip> {
       duration: AppMotion.fade(context, AppMotion.micro),
       curve: AppMotion.curve,
       height: RequestFilterChip.height,
-      padding: EdgeInsets.only(left: 14, right: clear == null ? 12 : 4),
+      padding: EdgeInsets.only(left: 14, right: clear != null
+              ? 4
+              : widget.chevron
+                  ? 12
+                  : 14),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(999),
@@ -75,11 +84,13 @@ class _RequestFilterChipState extends State<RequestFilterChip> {
               fontWeight: active ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
-          const SizedBox(width: 6),
-          if (clear == null)
-            Icon(AppIcons.expand, size: 14, color: foreground)
-          else
+          if (clear != null) ...[
+            const SizedBox(width: 6),
             _ClearButton(color: foreground, onPressed: clear),
+          ] else if (widget.chevron) ...[
+            const SizedBox(width: 6),
+            Icon(AppIcons.expand, size: 14, color: foreground),
+          ],
         ],
       ),
     );

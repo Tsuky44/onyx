@@ -49,3 +49,6 @@ __pycache__/
 # aperçus) : propres à la machine, jamais versionnées.
 server/data/
 .mediahub/
+
+# Flutter build output (generated)
+prototypes/**/windows/flutter/ephemeral/

@@ -150,6 +150,10 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   rend toujours `200` `{ "ok", "message", "service"?: "onyxhub"|"mediahub", "version"?, "notes"? }`.
   `notes` : compte de l'administrateur absent de MediaHub, `ONYX_WEBHOOK_URL` non réglé.
   Capacité `mediahub_link_test` sur `/api/ping`.
+* `GET /api/requests/catalog?query=&type=&page=` (`request_media`, ADR-0134) — tendances,
+  découverte ou recherche TMDB. Une recherche reclasse ensemble les trois premières pages de TMDB
+  (correspondance du titre traduit ou original, pondérée par la popularité et les votes) et les
+  découpe en pages 1 à 3 sans doublon ; les pages suivantes sont celles de TMDB.
 * Le catalogue de demandes lit les disponibilités d'une page en un appel (`POST …/availability`,
   `{ "items": [{ "tmdbId", "mediaType" }] }`) ; un OnyxHub ancien qui répond `404`/`405` fait
   retomber sur l'appel par carte, et le lot n'est retenté qu'au bout de 10 minutes.

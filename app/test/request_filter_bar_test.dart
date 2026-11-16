@@ -78,11 +78,10 @@ void main() {
     TvMode.enabled.value = false;
   });
 
-  testWidgets('les capsules remplacent le bouton flottant hors TV',
+  testWidgets('sur grand écran, les capsules sont là, au repos',
       (tester) async {
     await _pumpScreen(tester);
 
-    expect(find.byType(FloatingActionButton), findsNothing);
     for (final label in ['Genres', 'Période', 'Langue', 'Streaming', 'Durée']) {
       expect(_chip(label), findsOneWidget, reason: label);
       expect(_chipWidget(tester, label).active, isFalse, reason: label);

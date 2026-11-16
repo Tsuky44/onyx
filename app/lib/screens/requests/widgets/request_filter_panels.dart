@@ -7,11 +7,11 @@ import '../../../services/api_client.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_icons.dart';
 import '../../../theme/app_type.dart';
-import '../../../widgets/global/app_network_image.dart';
 import '../../../widgets/global/onyx_menu.dart';
 import '../../../widgets/global/onyx_menu_panel.dart';
 import 'request_filter_fields.dart';
 import 'request_filter_popover.dart';
+import 'request_provider_logo.dart';
 
 /// Les panneaux qu'ouvrent les capsules de filtres. Chacun tient sa copie
 /// de la sélection (la route ne se reconstruit pas avec l'écran) et rend
@@ -230,7 +230,7 @@ class _RequestStreamingPanelState extends State<RequestStreamingPanel> {
           OnyxMenuItem(
             value: p.providerId,
             label: p.providerName,
-            leading: _ProviderLogo(url: p.logoUrl),
+            leading: RequestProviderLogo(url: p.logoUrl),
             checked: _selected.contains(p.providerId),
           ),
       ];
@@ -252,33 +252,6 @@ class _RequestStreamingPanelState extends State<RequestStreamingPanel> {
           setState(() => _selected = _toggled(_selected, id));
           widget.onChanged(_region, _selected);
         },
-      ),
-    );
-  }
-}
-
-class _ProviderLogo extends StatelessWidget {
-  const _ProviderLogo({required this.url});
-
-  final String? url;
-
-  @override
-  Widget build(BuildContext context) {
-    const size = 20.0;
-    final url = this.url;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(5),
-      child: SizedBox.square(
-        dimension: size,
-        child: url == null
-            ? const ColoredBox(color: AppColors.surface)
-            : AppNetworkImage(
-                url: url,
-                width: size,
-                height: size,
-                placeholder: const ColoredBox(color: AppColors.surface),
-                errorWidget: const ColoredBox(color: AppColors.surface),
-              ),
       ),
     );
   }

@@ -340,19 +340,13 @@ func TmdbRequestWatchProviders(w http.ResponseWriter, r *http.Request, _ httprou
 	lang := languageOf(r).tmdbLocale()
 	client := httpx.Catalog
 
-	type providerRow struct {
-		ProviderID   int    `json:"provider_id"`
-		ProviderName string `json:"provider_name"`
-		LogoPath     string `json:"logo_path"`
-	}
-
-	fetchProviders := func(t string) ([]providerRow, error) {
+	fetchProviders := func(t string) ([]tmdbWatchProvider, error) {
 		u := fmt.Sprintf(
 			"/watch/providers/%s?language=%s&watch_region=%s",
 			t, lang, url.QueryEscape(region),
 		)
 		var raw struct {
-			Results []providerRow `json:"results"`
+			Results []tmdbWatchProvider `json:"results"`
 		}
 		if err := fetchTMDBCatalogPage(client, u, &raw); err != nil {
 			return nil, err
@@ -360,22 +354,15 @@ func TmdbRequestWatchProviders(w http.ResponseWriter, r *http.Request, _ httprou
 		return raw.Results, nil
 	}
 
-	var providers []providerRow
+	var lists [][]tmdbWatchProvider
 	switch mediaType {
-	case "movie":
-		var err error
-		providers, err = fetchProviders("movie")
+	case "movie", "tv":
+		p, err := fetchProviders(mediaType)
 		if err != nil {
 			writeJSONError(w, http.StatusBadGateway, "Failed to fetch providers")
 			return
 		}
-	case "tv":
-		var err error
-		providers, err = fetchProviders("tv")
-		if err != nil {
-			writeJSONError(w, http.StatusBadGateway, "Failed to fetch providers")
-			return
-		}
+		lists = append(lists, p)
 	default:
 		movieP, errM := fetchProviders("movie")
 		tvP, errT := fetchProviders("tv")
@@ -383,23 +370,11 @@ func TmdbRequestWatchProviders(w http.ResponseWriter, r *http.Request, _ httprou
 			writeJSONError(w, http.StatusBadGateway, "Failed to fetch providers")
 			return
 		}
-		byID := map[int]providerRow{}
-		for _, p := range movieP {
-			byID[p.ProviderID] = p
-		}
-		for _, p := range tvP {
-			byID[p.ProviderID] = p
-		}
-		providers = make([]providerRow, 0, len(byID))
-		for _, p := range byID {
-			providers = append(providers, p)
-		}
-		sort.Slice(providers, func(i, j int) bool {
-			return providers[i].ProviderName < providers[j].ProviderName
-		})
+		lists = append(lists, movieP, tvP)
 	}
+	providers := rankWatchProviders(region, lists...)
 
 	json.NewEncoder(w).Encode(struct {
-		Providers []providerRow `json:"providers"`
+		Providers []watchProviderRow `json:"providers"`
 	}{providers})
 }

@@ -10,8 +10,8 @@ import '../../utils/responsive.dart';
 import 'onyx_menu.dart';
 
 /// Le bouton « Affichage » : un menu déroulant à quatre modes (4, 6, 8 ou 10
-/// affiches par ligne), le pendant, à la souris et au doigt, du Ctrl + molette
-/// de `PosterGridZoomRegion`.
+/// affiches par ligne), ou à trois (2, 3 ou 4) sur un téléphone, le pendant, à
+/// la souris et au doigt, du Ctrl + molette de `PosterGridZoomRegion`.
 ///
 /// Se pose en haut à droite d'une page en grille, sous une région de zoom : il
 /// lit et règle le même choix que la molette, et les grilles suivent.
@@ -28,23 +28,25 @@ class PosterGridDisplayMenu extends StatelessWidget {
   /// vide à la place du bouton.
   static bool availableIn(BuildContext context) => !TvScope.of(context);
 
-  /// Plus il y a d'affiches par ligne, plus l'icône du mode est dense.
-  static IconData _iconFor(int columns) =>
-      columns >= 8 ? AppIcons.postersSmall : AppIcons.postersLarge;
+  /// Plus il y a d'affiches par ligne, plus l'icône du mode est dense : à
+  /// partir de 8 sur grand écran, de 4 sur téléphone, où c'est le maximum.
+  static IconData _iconFor(int columns, {required bool phone}) =>
+      columns >= (phone ? 4 : 8) ? AppIcons.postersSmall : AppIcons.postersLarge;
 
   @override
   Widget build(BuildContext context) {
     if (!availableIn(context)) return const SizedBox.shrink();
     final zoom = PosterGridZoomScope.watch(context);
     final selected = zoom.selected;
+    final phone = AppLayout.isCompact(context);
     return OnyxMenuButton<int>(
       tooltip: tr('Affichage'),
       onSelected: zoom.select,
       items: [
-        for (final columns in PosterGridZoom.presets)
+        for (final columns in PosterGridZoom.presetsFor(phone: phone))
           OnyxMenuItem<int>(
             value: columns,
-            icon: _iconFor(columns),
+            icon: _iconFor(columns, phone: phone),
             label: tr('{0} par ligne', [columns]),
             checked: columns == selected,
           ),

@@ -1,6 +1,7 @@
 # ADR-0131 — Les filtres des demandes sont des capsules au-dessus de la grille
 
-- **Statut :** accepté. Maquette « 9 · Filtres des demandes » validée par l'utilisateur (2026-11-14) ;
+- **Statut :** accepté, amendé par l'[ADR-0132](0132-un-bouton-filtres-flottant-et-sa-feuille-sur-les-demandes.md)
+  (bouton flottant et feuille du bas ; capsules sur grand écran seulement). Maquette « 9 · Filtres des demandes » validée par l'utilisateur (2026-11-14) ;
   vérifié par les tests de widget, pas encore vu sur appareil.
 - **Date :** 2026-11-14
 - **Portée :** `screens/requests/requests_screen.dart`, `screens/requests/widgets/request_filter_bar.dart`,

@@ -3731,4 +3731,24 @@ const Map<String, String> kEnglish = <String, String>{
       'Pause download',
   'Supprimer le téléchargement':
       'Delete download',
+  'Filtres':
+      'Filters',
+  'Filtres · {0}':
+      'Filters · {0}',
+  'Langue d’origine':
+      'Original language',
+  'Disponible sur':
+      'Available on',
+  'Tous les services':
+      'All services',
+  '{0} choisis':
+      '{0} selected',
+  'Du':
+      'From',
+  'Au':
+      'To',
+  'Min (minutes)':
+      'Min (minutes)',
+  'Max (minutes)':
+      'Max (minutes)',
 };

@@ -19,6 +19,8 @@ import '../../widgets/global/staggered_entrance.dart';
 import '../../services/api_client.dart';
 import 'my_requests_screen.dart';
 import 'widgets/request_filter_bar.dart';
+import 'widgets/request_filters_bottom_sheet.dart';
+import 'widgets/request_filters_fab.dart';
 import 'widgets/request_filters_sheet.dart';
 import 'widgets/request_media_card.dart';
 import 'widgets/request_type_switch.dart';
@@ -191,6 +193,17 @@ class _RequestsScreenState extends State<RequestsScreen> {
     );
   }
 
+  /// La feuille du bouton flottant (hors TV) : chaque changement passe par
+  /// le même [_onFiltersChanged] que les capsules.
+  void _openFiltersSheet() {
+    RequestFiltersBottomSheet.show(
+      context,
+      initial: _draftFilters,
+      mediaType: _draftType,
+      onChanged: _onFiltersChanged,
+    );
+  }
+
   /// Le titre dit ce que montre la grille, comme sur OnyxHub.
   String _title(MediaRequestsProvider provider) {
     if (provider.query.isNotEmpty) {
@@ -335,6 +348,14 @@ class _RequestsScreenState extends State<RequestsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: TvMode.isTv
+          ? null
+          : RequestFiltersFab(
+              activeCount:
+                  RequestFiltersBottomSheet.activeCount(_draftFilters),
+              onPressed: _openFiltersSheet,
+            ),
       body: PosterGridZoomRegion(
         child: CustomScrollView(
           scrollCacheExtent: AppLayout.imageCacheExtent(context),
@@ -380,13 +401,18 @@ class _RequestsScreenState extends State<RequestsScreen> {
                         style: TextStyle(color: AppColors.textSecondary)),
                     const SizedBox(height: 20),
                     _buildSearchAndTypeRow(),
+                    // Sur téléphone, la rangée passait sur trois lignes et
+                    // partait au défilement : le bouton flottant et sa
+                    // feuille la remplacent (ADR-0132).
                     if (!TvMode.isTv) ...[
-                      const SizedBox(height: 16),
-                      RequestFilterBar(
-                        filters: _draftFilters,
-                        mediaType: _draftType,
-                        onChanged: _onFiltersChanged,
-                      ),
+                      if (!compact) ...[
+                        const SizedBox(height: 16),
+                        RequestFilterBar(
+                          filters: _draftFilters,
+                          mediaType: _draftType,
+                          onChanged: _onFiltersChanged,
+                        ),
+                      ],
                     ] else if (!provider.filters.isDefault) ...[
                       const SizedBox(height: 8),
                       Wrap(
@@ -429,7 +455,8 @@ class _RequestsScreenState extends State<RequestsScreen> {
             else
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
-                    horizontalPadding, 8, horizontalPadding, 36),
+                    // Le bas dégage la dernière rangée du bouton flottant.
+                    horizontalPadding, 8, horizontalPadding, 96),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
                     final grid = AppLayout.posterGridDelegate(

@@ -202,6 +202,12 @@ const Map<String, (int, String)> _ownBack = {
     'NavigatorPopHandler des fiches hors téléviseur (sur téléviseur, pas de '
         'navigateur imbriqué) ; TvBack l’atteindrait par maybePop',
   ),
+  'lib/screens/requests/widgets/request_filters_bottom_sheet.dart': (
+    1,
+    'feuille des filtres hors téléviseur (ADR-0132) : Retour d’un détail '
+        'ramène à l’index ; jamais montée sous dpad, TvBack l’atteindrait '
+        'par maybePop',
+  ),
   'lib/screens/shared_link/shared_link_guest.dart': (
     1,
     'PopScope du navigateur imbriqué d’un lien partagé : TvBack l’atteint par '
