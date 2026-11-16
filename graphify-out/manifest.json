@@ -1649,9 +1649,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_chrome.dart": {
-    "mtime": 1794850332.105621,
-    "seen": 1794851644.43395,
-    "ast_hash": "d1c34724cb92a1d77dc142c94d25aef2",
+    "mtime": 1794853489.326854,
+    "seen": 1794854403.9480672,
+    "ast_hash": "f52aa8ba0633d2bfc648c448c4cffb45",
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_flow.dart": {
@@ -1751,27 +1751,27 @@
     "semantic_hash": "e31b3d8e1231048be63135f15bb9d915"
   },
   "app/lib/screens/player/widgets/onyx/onyx_chrome_buttons.dart": {
-    "mtime": 1794850332.1111555,
-    "seen": 1794851644.4339783,
-    "ast_hash": "39b9c371e6b0e15cfca32e90e0339441",
+    "mtime": 1794853331.6374447,
+    "seen": 1794854403.9480987,
+    "ast_hash": "78105a9ddf1b2dc21d56fbd733083e86",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_chrome_theme.dart": {
-    "mtime": 1794850332.1111555,
-    "seen": 1794851644.4339793,
-    "ast_hash": "bcca370f707d3b22fcab299e540bea9c",
+    "mtime": 1794853866.153755,
+    "seen": 1794854403.9481027,
+    "ast_hash": "012f713d0e7c18f0feb12bb9ea8875d8",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_controls_layer.dart": {
-    "mtime": 1794850332.1111555,
-    "seen": 1794851644.4339805,
-    "ast_hash": "ebeb76365691da3753c9eb6174c260b1",
+    "mtime": 1794853805.569586,
+    "seen": 1794854403.9481041,
+    "ast_hash": "7457e6545dbbc2dfdea2057268f345c4",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_progress_bar.dart": {
-    "mtime": 1794850332.1111555,
-    "seen": 1794851644.43399,
-    "ast_hash": "2505d784554c8852f8b769b23ace65a7",
+    "mtime": 1794853331.638672,
+    "seen": 1794854403.948117,
+    "ast_hash": "eeb1933ce21282971907f7f606052765",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_scrim.dart": {
@@ -1781,9 +1781,9 @@
     "semantic_hash": "6847e4a8da67e9dc15171374a2139261"
   },
   "app/lib/screens/player/widgets/onyx/onyx_settings_menu.dart": {
-    "mtime": 1794850332.1111555,
-    "seen": 1794851644.4339921,
-    "ast_hash": "fec7afbf562beb227e5bf8dc5d989259",
+    "mtime": 1794853489.3261979,
+    "seen": 1794854403.94812,
+    "ast_hash": "2cf7b3b9bd523e7197302943fcc086a2",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_settings_menu_rows.dart": {
@@ -9958,9 +9958,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/onyx-engineering/ui.md": {
-    "mtime": 1794850332.0729368,
-    "seen": 1794851644.4362075,
-    "ast_hash": "ada85c4b4f9ccdf644363a602449432b",
+    "mtime": 1794853972.1411257,
+    "seen": 1794854403.950815,
+    "ast_hash": "9f04496b5f3266bb062dfa5e3e5a0e47",
     "semantic_hash": ""
   },
   ".github/pull_request_template.md": {
@@ -12688,9 +12688,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_controls_rows.dart": {
-    "mtime": 1794850332.1111555,
-    "seen": 1794851644.4339826,
-    "ast_hash": "cdd53556f807c7862cdeca6dfa678ddd",
+    "mtime": 1794853410.4633555,
+    "seen": 1794854403.9481072,
+    "ast_hash": "71dc51ddf2381020074862b7c5b7b2c0",
     "semantic_hash": ""
   },
   "app/lib/tv/nav/tv_control_rows.dart": {
@@ -13600,9 +13600,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_tabs.dart": {
-    "mtime": 1794850332.1111555,
-    "seen": 1794851644.4339979,
-    "ast_hash": "ee5e7caa97a6334f3547e7242d088cbb",
+    "mtime": 1794853805.5701299,
+    "seen": 1794854403.948127,
+    "ast_hash": "161cade5e072f6af58a241f1f5fe97ae",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/player_question_window.dart": {
@@ -13693,6 +13693,30 @@
     "mtime": 1794850984.4164062,
     "seen": 1794851644.4348743,
     "ast_hash": "4d9780b7849aab14d30b746f96ec3c94",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/player/widgets/onyx/onyx_chrome_layout.dart": {
+    "mtime": 1794853695.2754233,
+    "seen": 1794854403.9481003,
+    "ast_hash": "98109a11acfb8dc59d1cd314fabafd9e",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/player/widgets/onyx/onyx_handheld_chrome.dart": {
+    "mtime": 1794854001.430703,
+    "seen": 1794854403.9481106,
+    "ast_hash": "4c569c1b57340fdd5a2506201e971b30",
+    "semantic_hash": ""
+  },
+  "app/test/onyx_handheld_chrome_test.dart": {
+    "mtime": 1794853591.2256284,
+    "seen": 1794854403.9490526,
+    "ast_hash": "70de281e5abe4d7eb4712e3506b14582",
+    "semantic_hash": ""
+  },
+  "docs/adr/0131-sur-un-ecran-tenu-en-main-le-lecteur-prend-l-arrangement-de-l-apple-tv.md": {
+    "mtime": 1794853955.27365,
+    "seen": 1794854403.9510639,
+    "ast_hash": "7798a43303dcbf05a56ac20f1780bf86",
     "semantic_hash": ""
   }
 }
