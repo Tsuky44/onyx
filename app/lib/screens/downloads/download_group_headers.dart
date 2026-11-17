@@ -155,7 +155,7 @@ class _DownloadShowHeaderState extends State<DownloadShowHeader> {
   String _metaLine(MediaDetails? details) {
     final count = widget.entries.length;
     final parts = <String>[
-      '$count ${count > 1 ? 'éléments' : 'élément'}',
+      trPlural(count, '{0} élément', '{0} éléments'),
     ];
     if (details != null) {
       final year = extractYear(details.releaseDate);

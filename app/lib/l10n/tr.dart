@@ -21,4 +21,17 @@ String tr(String fr, [List<Object?> args = const []]) {
   });
 }
 
+/// Choisit entre [one] et [other] selon [n], puis passe par [tr] avec `{0}` = [n]
+/// (les [args] suivants prennent `{1}`, `{2}`…). Chaque forme est une clé de
+/// [kEnglish] : « {0} lecture » / « {0} lectures ».
+///
+/// Le français met 0 au singulier (« 0 lecture »), l'anglais au pluriel
+/// (« 0 plays ») : la règle suit la langue de l'app, pas celle de la clé.
+String trPlural(int n, String one, String other,
+    [List<Object?> args = const []]) {
+  final singular =
+      AppLanguage.current == AppLanguage.english ? n == 1 : n.abs() <= 1;
+  return tr(singular ? one : other, [n, ...args]);
+}
+
 final RegExp _placeholder = RegExp(r'\{(\d+)\}');

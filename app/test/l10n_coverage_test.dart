@@ -7,39 +7,62 @@ import 'package:onyx/l10n/en.dart';
 import 'package:onyx/l10n/tr.dart';
 import 'package:onyx/models/models.dart';
 import 'package:onyx/screens/settings/widgets/about_group.dart';
+import 'package:onyx/widgets/global/detail_info_table.dart';
+import 'package:onyx/widgets/global/media_countdown.dart';
 
-/// Les clés littérales passées à `tr(...)` dans [source] : un ou plusieurs
-/// littéraux entre apostrophes, collés par simple juxtaposition. Un `tr(x)`
-/// sur une variable n'a pas de clé lisible ici, et n'est pas contrôlé.
+/// Lit à partir de [start] un ou plusieurs littéraux entre apostrophes collés
+/// par juxtaposition. Renvoie la clé et l'index qui suit, ou `null` s'il n'y a
+/// pas de littéral (un `tr(x)` sur une variable n'est pas contrôlé).
+(String, int)? _literalAt(String source, int start) {
+  var i = start;
+  final key = StringBuffer();
+  var found = false;
+  while (i < source.length && source[i] == "'") {
+    found = true;
+    i++;
+    while (source[i] != "'") {
+      if (source[i] == r'\') {
+        i++;
+        key.write(switch (source[i]) {
+          'n' => '\n',
+          't' => '\t',
+          'r' => '\r',
+          final other => other,
+        });
+      } else {
+        key.write(source[i]);
+      }
+      i++;
+    }
+    i++;
+    while (i < source.length && ' \t\r\n'.contains(source[i])) {
+      i++;
+    }
+  }
+  return found ? (key.toString(), i) : null;
+}
+
+/// Les clés littérales passées à `tr(...)` dans [source], et les deux formes
+/// d'un `trPlural(n, one, other)`.
 Iterable<String> _keysIn(String source) sync* {
   final call = RegExp(r'(?<![A-Za-z0-9_.])tr\(\s*');
   for (final match in call.allMatches(source)) {
-    var i = match.end;
-    final key = StringBuffer();
-    var found = false;
-    while (i < source.length && source[i] == "'") {
-      found = true;
+    final literal = _literalAt(source, match.end);
+    if (literal != null) yield literal.$1;
+  }
+  final plural = RegExp(r'(?<![A-Za-z0-9_.])trPlural\(\s*[^,]+,\s*');
+  for (final match in plural.allMatches(source)) {
+    final one = _literalAt(source, match.end);
+    if (one == null) continue;
+    yield one.$1;
+    var i = one.$2;
+    if (i >= source.length || source[i] != ',') continue;
+    i++;
+    while (i < source.length && ' \t\r\n'.contains(source[i])) {
       i++;
-      while (source[i] != "'") {
-        if (source[i] == r'\') {
-          i++;
-          key.write(switch (source[i]) {
-            'n' => '\n',
-            't' => '\t',
-            'r' => '\r',
-            final other => other,
-          });
-        } else {
-          key.write(source[i]);
-        }
-        i++;
-      }
-      i++;
-      while (i < source.length && ' \t\r\n'.contains(source[i])) {
-        i++;
-      }
     }
-    if (found) yield key.toString();
+    final other = _literalAt(source, i);
+    if (other != null) yield other.$1;
   }
 }
 
@@ -89,6 +112,17 @@ void main() {
     expect(tr('Texte absent du dictionnaire'), 'Texte absent du dictionnaire');
   });
 
+  test('trPlural suit la règle de la langue : 0 est singulier en français',
+      () {
+    expect(trPlural(0, '{0} lecture', '{0} lectures'), '0 lecture');
+    expect(trPlural(2, '{0} lecture', '{0} lectures'), '2 lectures');
+
+    AppLanguage.notifier.value = AppLanguage.english;
+    expect(trPlural(0, '{0} lecture', '{0} lectures'), '0 plays');
+    expect(trPlural(1, '{0} lecture', '{0} lectures'), '1 play');
+    expect(trPlural(5, '{0} lecture', '{0} lectures'), '5 plays');
+  });
+
   // Les tables constantes (langues, mois, libellés d'énumérations) ne peuvent
   // pas appeler tr() : c'est leur point d'affichage qui traduit.
   test('une table constante est traduite à l’affichage', () {
@@ -96,6 +130,35 @@ void main() {
 
     expect(languageName('fra'), 'French');
     expect(languageName('xx'), 'XX');
+  });
+
+  test('les libellés de langue et de pays du cartel se rendent en anglais', () {
+    expect(formatLanguage('ja'), 'Japonais');
+    expect(formatCountry('KR'), 'Corée du Sud');
+
+    AppLanguage.notifier.value = AppLanguage.english;
+    expect(formatLanguage('ja'), 'Japanese');
+    expect(formatCountry('KR'), 'South Korea');
+    expect(formatCountry('XX'), 'XX');
+  });
+
+  test('le modèle du compte à rebours se rend en anglais', () {
+    AppLanguage.notifier.value = AppLanguage.english;
+    final model = CountdownModel.forShow(
+      nextEpisode: const EpisodeAirRef(
+          seasonNumber: 2, episodeNumber: 9, airDate: '2030-01-10'),
+      now: DateTime(2030, 1, 1),
+    )!;
+    expect(model.label, 'Next episode');
+    expect(model.caption, 'Season 2 · Episode 9');
+    expect(
+        CountdownModel.episodeCaption(const EpisodeAirRef(
+            seasonNumber: 0, episodeNumber: 0, airDate: '2030-01-10')),
+        'New episode');
+    expect(
+        CountdownModel.forMovie(releaseDate: '2030-01-10', now: DateTime(2030))!
+            .caption,
+        'Upcoming movie');
   });
 
   testWidgets('un écran construit en anglais affiche l’anglais',
@@ -110,6 +173,30 @@ void main() {
     expect(find.text('About'), findsOneWidget);
     expect(find.text('Privacy policy'), findsOneWidget);
     expect(find.text('À propos'), findsNothing);
+  });
+
+  testWidgets('le compte à rebours affiche l’anglais', (tester) async {
+    AppLanguage.notifier.value = AppLanguage.english;
+    final model = CountdownModel.forShow(
+      nextEpisode: const EpisodeAirRef(
+          seasonNumber: 2, episodeNumber: 9, airDate: '2030-01-10'),
+      now: DateTime(2030, 1, 1),
+    )!;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: MediaCountdown(model: model, now: DateTime(2030, 1, 1)),
+      ),
+    ));
+
+    expect(find.text('NEXT EPISODE'), findsOneWidget);
+    expect(find.text('D-9'), findsOneWidget);
+    expect(find.text('Thursday'), findsOneWidget);
+    expect(find.text('January 10'), findsOneWidget);
+    expect(find.text('Season 2 · Episode 9'), findsOneWidget);
+    expect(find.text('PROCHAIN ÉPISODE'), findsNothing);
+
+    // Le point pulse en boucle : on démonte pour que le test se termine.
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   test('un appareil qui n’est pas en français reçoit l’anglais', () {

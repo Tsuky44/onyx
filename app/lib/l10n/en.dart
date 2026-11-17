@@ -180,14 +180,24 @@ const Map<String, String> kEnglish = <String, String>{
       'Wait for Wi-Fi',
   'Aucun genre.':
       'No genres.',
+  'Brésil':
+      'Brazil',
   'Chacun la rejoint':
       'Everyone joins',
+  'Chine':
+      'China',
   'Choisir une date':
       'Pick a date',
   'Comment ça marche':
       'How it works',
+  'Corée du Sud':
+      'South Korea',
+  'Danemark':
+      'Denmark',
   'Depuis ce panneau, pendant la lecture.':
       'From this panel, during playback.',
+  'Dernier épisode':
+      'Last episode',
   'Dès {0}':
       'From {0}',
   'Démarrez la séance':
@@ -692,6 +702,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Request',
   'Cochez les saisons à ajouter.':
       'Tick the seasons to add.',
+  'Film à venir':
+      'Upcoming movie',
+  'Fin':
+      'End',
   'Genres · {0}':
       'Genres · {0}',
   'Cochez les saisons à demander.':
@@ -702,14 +716,30 @@ const Map<String, String> kEnglish = <String, String>{
       'Could not load genres.',
   'Impossible de charger les services.':
       'Could not load services.',
+  'Inde':
+      'India',
+  'J-{0}':
+      'D-{0}',
+  'Japon':
+      'Japan',
+  'Jour J':
+      'D-Day',
   'Jusqu’à {0}':
       'Up to {0}',
   'Lecture, pauses et déplacements sont partagés entre tous, chacun sur son appareil.':
       'Playback, pauses and seeks are shared by everyone, each on their own device.',
   'Menu du compte › Rejoindre une séance.':
       'Account menu › Join a session.',
+  'Mexique':
+      'Mexico',
+  'Norvège':
+      'Norway',
   'Partagez le code':
       'Share the code',
+  'Pays-Bas':
+      'Netherlands',
+  'Prochain épisode':
+      'Next episode',
   'Regardez à plusieurs':
       'Watch with others',
   'Retirer le filtre':
@@ -718,6 +748,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Region: {0}',
   'Streaming · {0}':
       'Streaming · {0}',
+  'Suède':
+      'Sweden',
   'Tout cocher':
       'Select all',
   'Tout décocher':
@@ -726,6 +758,44 @@ const Map<String, String> kEnglish = <String, String>{
       'Clear all',
   'Trier : {0}':
       'Sort: {0}',
+  'demain':
+      'tomorrow',
+  'diffusé le':
+      'aired on',
+  '{0} : {1}, {2} {3}, {4}':
+      '{0}: {1}, {2} {3}, {4}',
+  '{0} dans ta bibliothèque':
+      '{0} in your library',
+  '{0} film':
+      '{0} movie',
+  '{0} films':
+      '{0} movies',
+  '{0} lecture':
+      '{0} play',
+  '{0} lectures':
+      '{0} plays',
+  '{0} saison':
+      '{0} season',
+  '{0} saisons':
+      '{0} seasons',
+  '{0} sur {1} téléchargés':
+      '{0} of {1} downloaded',
+  '{0} téléchargés':
+      '{0} downloaded',
+  '{0} {1}':
+      '{1} {0}',
+  '{0} {1} {2}':
+      '{1} {0}, {2}',
+  '{0} élément':
+      '{0} item',
+  '{0} élément supprimé':
+      '{0} item deleted',
+  '{0} éléments':
+      '{0} items',
+  '{0} éléments supprimés':
+      '{0} items deleted',
+  '{0} épisode':
+      '{0} episode',
   '{0} épisodes sur {1} déjà là':
       '{0} of {1} episodes already here',
   'Demander ({0})':

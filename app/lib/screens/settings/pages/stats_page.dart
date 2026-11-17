@@ -226,7 +226,7 @@ class _StatsPageState extends State<StatsPage> {
                   _BarRow(
                     leading: UserAvatar(user.label, size: 30),
                     label: user.label,
-                    detail: '${user.plays} lecture${user.plays > 1 ? 's' : ''}',
+                    detail: trPlural(user.plays, '{0} lecture', '{0} lectures'),
                     value: user.watchedSeconds,
                     max: stats.topUsers.first.watchedSeconds,
                   ),
@@ -245,7 +245,7 @@ class _StatsPageState extends State<StatsPage> {
                           SettingsIcon(deviceIconFor(client.label), size: 30),
                       label: client.label,
                       detail:
-                          '${client.plays} lecture${client.plays > 1 ? 's' : ''}',
+                          trPlural(client.plays, '{0} lecture', '{0} lectures'),
                       value: client.watchedSeconds,
                       max: stats.clients.first.watchedSeconds,
                     ),
@@ -311,7 +311,7 @@ class _DailyChartState extends State<_DailyChart> {
             Text(
               focus == null
                   ? tr('sur la période')
-                  : '${formatFrenchDay(focus.date)} · ${focus.plays} lecture${focus.plays > 1 ? 's' : ''}',
+                  : '${formatFrenchDay(focus.date)} · ${trPlural(focus.plays, '{0} lecture', '{0} lectures')}',
               style: const TextStyle(
                   color: AppColors.textSecondary, fontSize: AppType.subhead),
             ),
@@ -496,7 +496,7 @@ class _RankedMedia extends StatelessWidget {
       label: media.label,
       detail: [
         if (media.secondary.isNotEmpty) media.secondary,
-        '${media.plays} lecture${media.plays > 1 ? 's' : ''}',
+        trPlural(media.plays, '{0} lecture', '{0} lectures'),
       ].join(' · '),
       value: media.watchedSeconds,
       max: max,
@@ -639,7 +639,7 @@ class _MethodsBreakdown extends StatelessWidget {
                 SizedBox(
                   width: 70,
                   child: Text(
-                    '$plays lecture${plays > 1 ? 's' : ''}',
+                    trPlural(plays, '{0} lecture', '{0} lectures'),
                     textAlign: TextAlign.right,
                     style: const TextStyle(
                         color: AppColors.textMuted, fontSize: AppType.footnote),

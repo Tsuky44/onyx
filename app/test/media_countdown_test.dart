@@ -170,7 +170,7 @@ void main() {
       );
 
       expect(find.text('Jour J'), findsOneWidget);
-      expect(find.text("aujourd'hui"), findsOneWidget);
+      expect(find.text('aujourd’hui'), findsOneWidget);
       expect(find.text('7 novembre'), findsOneWidget);
     });
 

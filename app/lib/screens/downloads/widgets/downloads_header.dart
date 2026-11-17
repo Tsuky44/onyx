@@ -69,7 +69,7 @@ class DownloadsHeader extends StatelessWidget {
         if (itemCount > 0) ...[
           const SizedBox(height: 4),
           Text(
-            '$itemCount ${itemCount > 1 ? 'éléments' : 'élément'} · ${formatBytes(bytes)}',
+            '${trPlural(itemCount, '{0} élément', '{0} éléments')} · ${formatBytes(bytes)}',
             style: const TextStyle(
               color: AppColors.textMuted,
               fontSize: AppType.subhead,
@@ -143,8 +143,8 @@ class DownloadsHeader extends StatelessWidget {
     if (!confirmed) return;
     final deleted = await manager.deleteWatched();
     messenger.showSnackBar(SnackBar(
-      content: Text(
-          '$deleted ${deleted > 1 ? 'éléments supprimés' : 'élément supprimé'}'),
+      content: Text(trPlural(
+          deleted, '{0} élément supprimé', '{0} éléments supprimés')),
     ));
   }
 }

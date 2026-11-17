@@ -72,7 +72,8 @@ String formatLanguage(String? code) {
     'tr': 'Turc',
   };
   final lower = code.toLowerCase();
-  return languages[lower] ?? code.toUpperCase();
+  final name = languages[lower];
+  return name == null ? code.toUpperCase() : tr(name);
 }
 
 /// Nom de pays en français pour le cartel.
@@ -101,7 +102,8 @@ String formatCountry(String? code) {
     'MX': 'Mexique',
   };
   final upper = code.toUpperCase();
-  return countries[upper] ?? code;
+  final name = countries[upper];
+  return name == null ? code : tr(name);
 }
 
 /// Formate un montant en dollars (ex. « 190 M $US »).
@@ -203,7 +205,11 @@ class DetailInfoTable extends StatelessWidget {
           icon: AppIcons.collection,
           label: tr('Saisons'),
           value:
-              '$seasons saison${seasons > 1 ? 's' : ''}${episodes > 0 ? ', $episodes épisodes' : ''}',
+              [
+            trPlural(seasons, '{0} saison', '{0} saisons'),
+            if (episodes > 0)
+              trPlural(episodes, '{0} épisode', '{0} épisodes'),
+          ].join(', '),
         ),
       if (rating > 0)
         CartelFact(
