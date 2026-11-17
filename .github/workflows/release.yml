@@ -86,7 +86,7 @@ env:
   # Epinglee : une montee de version de Flutter doit etre un changement
   # deliberat et teste, pas une surprise au milieu d'une publication.
   FLUTTER_VERSION: "3.44.2"
-  IMAGE_NAME: onyx-serveur
+  IMAGE_NAME: onyx-server
 
 jobs:
   # ---------------------------------------------------------------------------

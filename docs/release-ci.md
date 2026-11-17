@@ -14,7 +14,7 @@
   développeur — voir l'ADR-0076 et [`docs/webos.md`](webos.md) ; il est joint à la Release
   mais n'apparaît pas sur `/api/downloads`, qui ne connaît pas l'extension `.ipk`)
 - le bundle Flutter Web, embarqué dans le binaire Go
-- l'image `ghcr.io/tsuky44/onyx-serveur` taguée `latest`, `v<version>`, `v<majeur.mineur>`
+- l'image `ghcr.io/tsuky44/onyx-server` taguée `latest`, `v<version>`, `v<majeur.mineur>`
 - une GitHub Release portant tous les installateurs
 
 Les installateurs ne sont plus embarqués dans l'image (ADR-0062) : ils ne vivent
