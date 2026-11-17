@@ -1,7 +1,7 @@
 # Graph Report - onyx  (2026-11-17)
 
 ## Corpus Check
-- 2133 files · ~5,058,917 words
+- 2133 files · ~5,058,953 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 164 file(s) not represented in the graph (top: (none) 33, .csv 24, .xml 18)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `85dbe479`
+- Built from commit: `ea9dc260`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

@@ -2070,9 +2070,9 @@
     "semantic_hash": "86ec5db2a8ad024f48bba8f561b63e99"
   },
   "app/lib/screens/settings/pages/integrations_page.dart": {
-    "mtime": 1794921706.3405554,
-    "seen": 1794922504.9798355,
-    "ast_hash": "a731cd203720b0fdf833a8573ce2cfd8",
+    "mtime": 1794922707.589184,
+    "seen": 1794923270.9753106,
+    "ast_hash": "ffada27d533475d0c56d07f6fb942be8",
     "semantic_hash": ""
   },
   "app/lib/screens/settings/pages/library_page.dart": {
