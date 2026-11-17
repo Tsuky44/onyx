@@ -100,7 +100,7 @@ func main() {
 	router := httprouter.New()
 
 	// Global middleware: CORS on the outside, then the language of the error
-	// messages (ADR-0137), the body limit, and gzip for the JSON API.
+	// messages (ADR-0138), the body limit, and gzip for the JSON API.
 	handler := i18n.Middleware(middleware.LimitBodies(middleware.Gzip(router)))
 	corsRouter := setupCORS(handler)
 

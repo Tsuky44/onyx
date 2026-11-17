@@ -202,7 +202,7 @@ func playerUsername(userID int) (string, error) {
 }
 
 // writeMediaHubError : même contrat que writeJSONError, pour les routes
-// MediaHub (phrase française, {0} pour les valeurs, ADR-0137).
+// MediaHub (phrase française, {0} pour les valeurs, ADR-0138).
 func writeMediaHubError(w http.ResponseWriter, status int, message string, args ...any) {
 	text := i18n.Respond(w, message, args...)
 	w.Header().Set("Content-Type", "application/json")

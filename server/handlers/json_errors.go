@@ -17,7 +17,7 @@ import (
 // au lieu du message du serveur. Toutes les erreurs JSON passent par ici.
 //
 // message est la phrase en français, traduite dans la langue de la requête
-// (ADR-0137) ; les valeurs variables s'y écrivent {0}, {1}… et se passent en
+// (ADR-0138) ; les valeurs variables s'y écrivent {0}, {1}… et se passent en
 // args. Une erreur technique d'un service externe se passe aussi en argument :
 // elle reste brute, derrière une phrase traduite.
 func writeJSONError(w http.ResponseWriter, status int, message string, args ...any) {

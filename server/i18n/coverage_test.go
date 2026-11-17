@@ -173,7 +173,7 @@ func scanServer(t *testing.T) []finding {
 	return out
 }
 
-// TestEveryServerMessageHasItsEnglishEntry est le garde-fou de l'ADR-0137 :
+// TestEveryServerMessageHasItsEnglishEntry est le garde-fou de l'ADR-0138 :
 // un message écrit en français et envoyé à l'app doit avoir sa traduction
 // dans chaque dictionnaire, sinon une personne qui a réglé l'app en anglais
 // lit du français au milieu d'une erreur.

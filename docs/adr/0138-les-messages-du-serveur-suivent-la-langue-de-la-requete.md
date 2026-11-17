@@ -1,4 +1,4 @@
-# ADR-0137 — Les messages du serveur suivent la langue de la requête
+# ADR-0138 — Les messages du serveur suivent la langue de la requête
 
 - **Statut :** accepté. Le Go est testé (`server/i18n`, `handlers/json_errors_language_test.go`) ;
   **rien n'a été essayé avec une app réglée en anglais contre un vrai serveur**.

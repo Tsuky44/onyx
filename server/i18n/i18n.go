@@ -8,7 +8,7 @@
 // arguments, pour que la traduction place la valeur où sa grammaire la veut.
 //
 // Ajouter une langue : un fichier `<code>.go` qui déclare sa map, puis une
-// ligne dans dictionaries. Voir ADR-0137.
+// ligne dans dictionaries. Voir ADR-0138.
 package i18n
 
 import (

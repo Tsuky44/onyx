@@ -563,7 +563,7 @@ Le champ `error` des réponses JSON (et le `message` du test de liaison MediaHub
 `Accept-Language`, parmi les langues que le paquet `server/i18n` connaît (`fr`, `en`). Le serveur pose
 `Content-Language` sur les réponses `/api/` pour dire dans quelle langue le corps est écrit. Sans
 en-tête, ou avec une langue inconnue, les messages restent en français, quelle que soit la « langue
-des métadonnées » (ADR-0137).
+des métadonnées » (ADR-0138).
 
 #### 📚 Bibliothèques
 Une bibliothèque est un dossier du serveur, le nom que son administrateur lui donne et la façon de
