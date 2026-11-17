@@ -149,7 +149,7 @@ class _ActivityPageState extends State<ActivityPage> {
     final diff = today.difference(day).inDays;
     if (diff == 0) return tr('Aujourd’hui');
     if (diff == 1) return tr('Hier');
-    return formatFrenchDay(day, capitalize: true);
+    return formatDay(day, capitalize: true);
   }
 
   @override

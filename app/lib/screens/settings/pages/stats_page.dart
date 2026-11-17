@@ -311,7 +311,7 @@ class _DailyChartState extends State<_DailyChart> {
             Text(
               focus == null
                   ? tr('sur la période')
-                  : '${formatFrenchDay(focus.date)} · ${focus.plays} lecture${focus.plays > 1 ? 's' : ''}',
+                  : '${formatDay(focus.date)} · ${focus.plays} lecture${focus.plays > 1 ? 's' : ''}',
               style: const TextStyle(
                   color: AppColors.textSecondary, fontSize: AppType.subhead),
             ),
@@ -394,10 +394,10 @@ class _DailyChartState extends State<_DailyChart> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(formatShortFrenchDate(daily.first.date),
+            Text(formatShortDate(daily.first.date),
                 style:
                     const TextStyle(color: AppColors.textMuted, fontSize: AppType.caption)),
-            Text(formatShortFrenchDate(daily.last.date),
+            Text(formatShortDate(daily.last.date),
                 style:
                     const TextStyle(color: AppColors.textMuted, fontSize: AppType.caption)),
           ],

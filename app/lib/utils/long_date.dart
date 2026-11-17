@@ -1,21 +1,4 @@
-import '../l10n/tr.dart';
+import '../l10n/locale_formats.dart';
 
-const _months = [
-  'janvier',
-  'février',
-  'mars',
-  'avril',
-  'mai',
-  'juin',
-  'juillet',
-  'août',
-  'septembre',
-  'octobre',
-  'novembre',
-  'décembre'
-];
-
-/// « 20 octobre 2026 », le mois traduit. L'app n'initialise pas les locales
-/// d'intl, et une date longue ne justifie pas de le faire.
-String formatLongDate(DateTime date) =>
-    '${date.day} ${tr(_months[date.month - 1])} ${date.year}';
+/// « 20 octobre 2026 » / « October 20, 2026 », selon la langue de l'app.
+String formatLongDate(DateTime date) => LocaleFormats.longDate(date);
