@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_motion.dart';
+import '../../../../theme/app_type.dart';
 import '../../../../tv/nav/tv_region.dart';
 import 'onyx_chrome_theme.dart';
 import 'onyx_glass_panel.dart';
@@ -27,9 +28,16 @@ class OnyxTvTabs extends StatefulWidget {
     required this.tabs,
     required this.open,
     required this.onChanged,
+    this.pointer = false,
   });
 
   final OnyxChromeMetrics metrics;
+
+  /// Sous une souris (ADR-0139) : un onglet s'ouvre d'un clic et se referme
+  /// d'un second, au lieu de suivre le focus d'une télécommande. Le volet
+  /// reste ouvert quand le pointeur le quitte : rien ne dit qu'on a fini de
+  /// lire.
+  final bool pointer;
 
   /// Le chrome est à l'écran. Quand il se cache, le volet se replie : le
   /// chrome revient toujours dans son état de repos.
@@ -87,7 +95,7 @@ class _OnyxTvTabsState extends State<OnyxTvTabs> {
   /// La télécommande a quitté les onglets et leur volet.
   void _handleFocusChange(bool hasFocus) {
     final open = widget.open;
-    if (hasFocus || open == null || !mounted) return;
+    if (widget.pointer || hasFocus || open == null || !mounted) return;
     final primary = FocusManager.instance.primaryFocus;
     // Le focus n'est allé nulle part : la commande qui le tenait a disparu
     // (« Démarrer une séance », remplacé par le code de la séance). Le volet
@@ -125,31 +133,54 @@ class _OnyxTvTabsState extends State<OnyxTvTabs> {
         left: m.gutter - OnyxChromeTab.inset,
         right: m.gutter,
       ),
-      child: TvRegion.controls(
-        preferredFocus: entryTab == null ? null : _nodeFor(entryTab),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final entry in widget.tabs)
-              OnyxChromeTab(
-                key: ValueKey('onyx-tab-${entry.tab.name}'),
-                label: entry.label,
-                focusNode: _nodeFor(entry.tab),
-                active: entry.marked,
-                selected: entry.tab == widget.open,
-                onFocused: () => widget.onChanged(entry.tab),
-                onPressed: () => widget.onChanged(entry.tab),
+      child: widget.pointer
+          ? Align(
+              alignment: Alignment.centerLeft,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final entry in widget.tabs)
+                      OnyxChromeTab(
+                        key: ValueKey('onyx-tab-${entry.tab.name}'),
+                        label: entry.label,
+                        active: entry.marked,
+                        selected: entry.tab == widget.open,
+                        fontSize: AppType.callout,
+                        onPressed: () => widget.onChanged(
+                          entry.tab == widget.open ? null : entry.tab,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-          ],
-        ),
-      ),
+            )
+          : TvRegion.controls(
+              preferredFocus: entryTab == null ? null : _nodeFor(entryTab),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final entry in widget.tabs)
+                    OnyxChromeTab(
+                      key: ValueKey('onyx-tab-${entry.tab.name}'),
+                      label: entry.label,
+                      focusNode: _nodeFor(entry.tab),
+                      active: entry.marked,
+                      selected: entry.tab == widget.open,
+                      onFocused: () => widget.onChanged(entry.tab),
+                      onPressed: () => widget.onChanged(entry.tab),
+                    ),
+                ],
+              ),
+            ),
     );
 
     final panel = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(height: isOpen ? 20 : 8),
+        SizedBox(height: isOpen ? (widget.pointer ? 12 : 20) : (widget.pointer ? 0 : 8)),
         Stack(
           children: [
             // Toujours là, vide quand le volet est fermé : la rangée

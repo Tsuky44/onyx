@@ -704,6 +704,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Tick the seasons to add.',
   'Film à venir':
       'Upcoming movie',
+  'Fin à {0}':
+      'Ends at {0}',
   'Fin':
       'End',
   'Genres · {0}':

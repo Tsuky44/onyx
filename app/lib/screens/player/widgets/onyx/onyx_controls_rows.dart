@@ -1,8 +1,8 @@
 part of 'onyx_controls_layer.dart';
 
 /// Les rangées du Chrome Onyx : le chrome télé entier (celui du lecteur
-/// d'Apple, ADR-0124), puis la rangée de transport et le groupe des
-/// utilitaires des arrangements à souris et à doigt.
+/// d'Apple, ADR-0124), et ce que les trois arrangements partagent : le logo,
+/// la ligne de ce qu'on regarde, la rangée de l'essentiel, les temps.
 ///
 /// Sortis de `onyx_controls_layer.dart` à la phase 7 de l'ADR-0110, quand les
 /// rangées télé sont passées de `TvFocusRows` à `TvRegion.controls`.
@@ -207,7 +207,13 @@ extension _OnyxControlsRows on OnyxControlsLayer {
   /// ADR-0137). L'ADR-0130 donnait à un téléviseur un bouton par réglage :
   /// huit disques contre le titre, dont quatre qu'on ne touche presque jamais
   /// en cours de film.
-  Widget _buildEssentialActions(OnyxChromeMetrics m) {
+  ///
+  /// [tabsButton] : le chrome ne porte pas les onglets sous sa barre (un écran
+  /// tenu en main, une fenêtre étroite). Un bouton les ouvre alors, entre
+  /// l'épisode précédent et les sous-titres : « Épisodes » pour une série,
+  /// « Infos » pour un film, et la feuille qu'il ouvre porte tous les autres
+  /// (ADR-0139).
+  Widget _buildEssentialActions(OnyxChromeMetrics m, {bool tabsButton = false}) {
     Widget plain(
       String id,
       IconData icon,
@@ -257,6 +263,20 @@ extension _OnyxControlsRows on OnyxControlsLayer {
           Icons.skip_previous_rounded,
           tr('Épisode précédent'),
           onSkipPrevious!,
+        ),
+      if (tabsButton && onOpenEpisodes != null)
+        plain(
+          'episodes',
+          Icons.playlist_play_rounded,
+          tr('Épisodes'),
+          onOpenEpisodes!,
+        )
+      else if (tabsButton && onOpenInfo != null)
+        plain(
+          'info',
+          Icons.info_outline_rounded,
+          tr('Infos'),
+          onOpenInfo!,
         ),
       menu(
         OnyxMenuSection.subtitles,
@@ -316,179 +336,6 @@ extension _OnyxControlsRows on OnyxControlsLayer {
         Text(formatPlaybackTime(position.inSeconds), style: style),
         if (duration.inSeconds > 0)
           Text('-${formatPlaybackTime(_remainingSeconds)}', style: style),
-      ],
-    );
-  }
-
-  Widget _buildUtilities(OnyxChromeMetrics m) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Series only: a movie has no episode list to browse.
-        if (onOpenEpisodes != null) ...[
-          OnyxIconButton(
-            key: const ValueKey('onyx-episodes'),
-            icon: Icons.playlist_play_rounded,
-            tooltip: tr('Épisodes suivants'),
-            metrics: m,
-            isTv: isTv,
-            onPressed: onOpenEpisodes!,
-          ),
-          SizedBox(width: m.clusterGap),
-        ] else if (onOpenInfo != null) ...[
-          // Un film n'a pas d'épisodes, mais il a un résumé, des chapitres et
-          // des statistiques : le même emplacement ouvre le même volet.
-          OnyxIconButton(
-            key: const ValueKey('onyx-info'),
-            icon: Icons.info_outline_rounded,
-            tooltip: tr('Infos'),
-            metrics: m,
-            isTv: isTv,
-            onPressed: onOpenInfo!,
-          ),
-          SizedBox(width: m.clusterGap),
-        ],
-        OnyxIconButton(
-          key: const ValueKey('onyx-subtitles'),
-          buttonKey: subtitlesButtonKey,
-          icon: Icons.closed_caption_rounded,
-          tooltip: tr('Sous-titres'),
-          metrics: m,
-          isTv: isTv,
-          onPressed: onToggleSubtitles,
-        ),
-        SizedBox(width: m.clusterGap),
-        OnyxIconButton(
-          key: const ValueKey('onyx-audio'),
-          icon: Icons.graphic_eq_rounded,
-          tooltip: tr('Pistes audio'),
-          metrics: m,
-          isTv: isTv,
-          onPressed: onOpenAudio,
-        ),
-        // Not on a television: the rate lives in the settings menu, and one
-        // button fewer is one press fewer to reach the settings.
-        if (!isTv) ...[
-          SizedBox(width: m.clusterGap),
-          OnyxIconButton(
-            key: const ValueKey('onyx-speed'),
-            icon: Icons.speed_rounded,
-            // The current rate is the whole point of the control, so it goes
-            // in the tooltip rather than making the user open a menu to read it.
-            tooltip: tr('Vitesse ×{0}', [_formatRate(playbackRate)]),
-            metrics: m,
-            onPressed: onCycleSpeed,
-          ),
-        ],
-        if (onOpenWatchParty != null) ...[
-          SizedBox(width: m.clusterGap),
-          OnyxIconButton(
-            key: const ValueKey('onyx-watch-party'),
-            icon: watchPartyActive
-                ? Icons.groups_rounded
-                : Icons.group_add_outlined,
-            tooltip: watchPartyActive
-                ? tr('Séance en cours')
-                : tr('Regarder ensemble'),
-            metrics: m,
-            isTv: isTv,
-            onPressed: onOpenWatchParty!,
-          ),
-        ],
-        SizedBox(width: m.clusterGap),
-        OnyxIconButton(
-          key: const ValueKey('onyx-settings'),
-          buttonKey: settingsButtonKey,
-          icon: Icons.settings_rounded,
-          tooltip: tr('Réglages'),
-          metrics: m,
-          isTv: isTv,
-          onPressed: onOpenSettings,
-        ),
-        // A television has no window to fill: the buttons would do nothing.
-        if (!isTv)
-          ...onyxWindowButtons(
-            metrics: m,
-            onToggleFullscreen: onToggleFullscreen,
-            onTogglePictureInPicture: onTogglePictureInPicture,
-          ),
-      ],
-    );
-  }
-
-  static String _formatRate(double rate) {
-    final asInt = rate.round();
-    return rate == asInt ? '$asInt' : rate.toStringAsFixed(2);
-  }
-
-  Widget _buildTransport(OnyxChromeMetrics m) {
-    // Keyed, because the episode buttons come and go — the neighbours load
-    // after playback starts — and without keys every button after them would
-    // inherit the state, and the focus, of the one that used to sit there.
-    //
-    // On a television the seek buttons are drawn larger: they sit alone in the
-    // middle of the picture, next to a play button that is larger still.
-    final sideSize = isTv ? m.iconSize + 8 : null;
-    final gap = SizedBox(width: m.clusterGap + (isTv ? 16 : 4));
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Same rule as the next button: only when there is somewhere to go.
-        if (onSkipPrevious != null) ...[
-          OnyxIconButton(
-            key: const ValueKey('onyx-previous'),
-            icon: Icons.skip_previous_rounded,
-            tooltip: tr('Épisode précédent'),
-            metrics: m,
-            isTv: isTv,
-            onPressed: onSkipPrevious!,
-          ),
-          gap,
-        ],
-        OnyxIconButton(
-          key: const ValueKey('onyx-rewind'),
-          icon: Icons.replay_10_rounded,
-          tooltip: tr('Reculer de 10 s'),
-          metrics: m,
-          size: sideSize,
-          isTv: isTv,
-          onPressed: onRewind,
-        ),
-        gap,
-        OnyxIconButton(
-          key: const ValueKey('onyx-play-pause'),
-          icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          tooltip: isPlaying ? tr('Pause') : tr('Lecture'),
-          metrics: m,
-          size: m.playIconSize,
-          focusNode: playPauseFocusNode,
-          isTv: isTv,
-          prominent: isTv,
-          onPressed: onPlayPause,
-        ),
-        gap,
-        OnyxIconButton(
-          key: const ValueKey('onyx-forward'),
-          icon: Icons.forward_10_rounded,
-          tooltip: tr('Avancer de 10 s'),
-          metrics: m,
-          size: sideSize,
-          isTv: isTv,
-          onPressed: onForward,
-        ),
-        // Series only: on a movie, or at the end of a season, there is nothing
-        // to go to and the button would sit there doing nothing.
-        if (onSkipNext != null) ...[
-          gap,
-          OnyxIconButton(
-            key: const ValueKey('onyx-next'),
-            icon: Icons.skip_next_rounded,
-            tooltip: tr('Épisode suivant'),
-            metrics: m,
-            isTv: isTv,
-            onPressed: onSkipNext!,
-          ),
-        ],
       ],
     );
   }

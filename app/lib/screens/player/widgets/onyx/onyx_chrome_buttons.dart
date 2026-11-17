@@ -223,12 +223,17 @@ class OnyxVolumeControl extends StatefulWidget {
   /// False on narrow chromes, where only the mute button is shown.
   final bool showSlider;
 
+  /// La capsule de verre du chrome d'une souris (ADR-0139) : le bouton muet
+  /// et son curseur dans une même pastille, à la hauteur d'un disque de verre.
+  final bool glass;
+
   const OnyxVolumeControl({
     super.key,
     required this.volume,
     required this.onChanged,
     required this.metrics,
     required this.showSlider,
+    this.glass = false,
   });
 
   @override
@@ -264,15 +269,21 @@ class _OnyxVolumeControlState extends State<OnyxVolumeControl> {
     final m = widget.metrics;
     final volume = _shown.resolve(widget.volume);
 
-    return Row(
+    final mute = OnyxIconButton(
+      key: const ValueKey('onyx-mute'),
+      icon: _icon(volume),
+      tooltip: volume <= 0 ? tr('Rétablir le son') : tr('Couper le son'),
+      metrics: m,
+      // Seul, c'est un disque de verre comme ses voisins ; avec son curseur,
+      // la capsule est le verre des deux.
+      glass: widget.glass && !widget.showSlider,
+      size: widget.glass && widget.showSlider ? 20 : null,
+      onPressed: () => _toggleMute(volume),
+    );
+    final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        OnyxIconButton(
-          icon: _icon(volume),
-          tooltip: volume <= 0 ? tr('Rétablir le son') : tr('Couper le son'),
-          metrics: m,
-          onPressed: () => _toggleMute(volume),
-        ),
+        mute,
         if (widget.showSlider)
           SizedBox(
             width: m.isCompact ? 90 : 130,
@@ -299,6 +310,23 @@ class _OnyxVolumeControlState extends State<OnyxVolumeControl> {
           ),
       ],
     );
+    if (!widget.glass || !widget.showSlider) return row;
+    return SizedBox(
+      height: OnyxIconButton.glassSize,
+      child: Center(
+        child: Container(
+          height: OnyxIconButton.glassDisc,
+          padding: const EdgeInsets.only(right: 6),
+          decoration: const BoxDecoration(
+            color: OnyxChromeTheme.glassControl,
+            borderRadius: BorderRadius.all(
+              Radius.circular(OnyxIconButton.glassDisc / 2),
+            ),
+          ),
+          child: row,
+        ),
+      ),
+    );
   }
 }
 
@@ -309,6 +337,7 @@ List<Widget> onyxWindowButtons({
   required OnyxChromeMetrics metrics,
   required VoidCallback onToggleFullscreen,
   VoidCallback? onTogglePictureInPicture,
+  bool glass = false,
 }) {
   return [
     if (onTogglePictureInPicture != null) ...[
@@ -318,6 +347,7 @@ List<Widget> onyxWindowButtons({
         icon: Icons.picture_in_picture_alt_rounded,
         tooltip: tr('Image dans l’image'),
         metrics: metrics,
+        glass: glass,
         onPressed: onTogglePictureInPicture,
       ),
     ],
@@ -327,6 +357,7 @@ List<Widget> onyxWindowButtons({
       icon: Icons.fullscreen_rounded,
       tooltip: tr('Plein écran'),
       metrics: metrics,
+      glass: glass,
       onPressed: onToggleFullscreen,
     ),
   ];

@@ -296,7 +296,6 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
   Widget _buildBar(double width) {
     final m = widget.metrics;
     final thickness = _active ? m.barThicknessActive : m.barThickness;
-    final radius = BorderRadius.circular(thickness);
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -305,53 +304,14 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
         curve: Curves.easeOut,
         height: thickness,
         width: width,
-        decoration: BoxDecoration(
-          color: OnyxChromeTheme.progressTrack,
-          borderRadius: radius,
+        child: CustomPaint(
+          painter: OnyxSegmentedBarPainter(
+            cuts: OnyxSegmentedBarPainter.cutsFor(widget.chapterMarks, width),
+            buffered: widget.buffered.clamp(0.0, 1.0),
+            played: _shownFraction,
+            playedColor: _playedColor,
+          ),
         ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            _fill(
-              width: widget.buffered.clamp(0.0, 1.0) * width,
-              color: OnyxChromeTheme.progressBuffered,
-              radius: radius,
-            ),
-            _fill(
-              width: _shownFraction * width,
-              color: _playedColor,
-              radius: radius,
-            ),
-            // Ticks sit on top of the fills, so a chapter boundary stays
-            // readable in the part of the bar that has already played.
-            for (final mark in widget.chapterMarks)
-              if (mark > 0.001 && mark < 0.999)
-                Positioned(
-                  left: mark * width,
-                  top: 0,
-                  bottom: 0,
-                  width: 2,
-                  child: const ColoredBox(color: OnyxChromeTheme.chapterMark),
-                ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// One coloured segment of the bar, anchored to its left edge.
-  Widget _fill({
-    required double width,
-    required Color color,
-    required BorderRadius radius,
-  }) {
-    return Positioned(
-      left: 0,
-      top: 0,
-      bottom: 0,
-      width: width.clamp(0.0, double.infinity),
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: color, borderRadius: radius),
       ),
     );
   }
@@ -498,5 +458,96 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
         ),
       ),
     );
+  }
+}
+
+/// La barre, coupée à chaque chapitre (ADR-0139) : un petit vide entre deux
+/// tronçons aux bouts ronds, au lieu du trait posé sur une barre continue.
+/// Le vide laisse voir l'image, ce qu'un trait ne faisait pas sur la partie
+/// déjà lue, blanche comme lui.
+class OnyxSegmentedBarPainter extends CustomPainter {
+  const OnyxSegmentedBarPainter({
+    required this.cuts,
+    required this.buffered,
+    required this.played,
+    required this.playedColor,
+  });
+
+  /// Le vide entre deux chapitres.
+  static const double gap = 4;
+
+  /// Sous cette largeur un tronçon ne se lit plus : sa coupure est ignorée.
+  static const double minSegment = 8;
+
+  /// Où couper, en points depuis la gauche, dans l'ordre.
+  final List<double> cuts;
+  final double buffered;
+  final double played;
+  final Color playedColor;
+
+  /// Les coupures que [marks] (des fractions) donnent sur [width] : ni au
+  /// bord, ni à moins de [minSegment] de la précédente.
+  static List<double> cutsFor(List<double> marks, double width) {
+    final sorted = [...marks]..sort();
+    final cuts = <double>[];
+    var last = 0.0;
+    for (final mark in sorted) {
+      final x = mark * width;
+      if (x - last < minSegment || width - x < minSegment) continue;
+      cuts.add(x);
+      last = x;
+    }
+    return cuts;
+  }
+
+  /// Les tronçons, de gauche à droite, sur [width].
+  List<(double, double)> segments(double width) {
+    final out = <(double, double)>[];
+    var start = 0.0;
+    for (final cut in cuts) {
+      out.add((start, cut - gap / 2));
+      start = cut + gap / 2;
+    }
+    out.add((start, width));
+    return out;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = Radius.circular(size.height);
+    final track = Paint()..color = OnyxChromeTheme.progressTrack;
+    final ahead = Paint()..color = OnyxChromeTheme.progressBuffered;
+    final done = Paint()..color = playedColor;
+    final bufferedX = buffered * size.width;
+    final playedX = played * size.width;
+
+    for (final (start, end) in segments(size.width)) {
+      final segment = RRect.fromLTRBR(start, 0, end, size.height, radius);
+      canvas.drawRRect(segment, track);
+      canvas.save();
+      canvas.clipRRect(segment);
+      if (bufferedX > start) {
+        canvas.drawRect(Rect.fromLTRB(start, 0, bufferedX, size.height), ahead);
+      }
+      if (playedX > start) {
+        canvas.drawRect(Rect.fromLTRB(start, 0, playedX, size.height), done);
+      }
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(OnyxSegmentedBarPainter old) =>
+      old.buffered != buffered ||
+      old.played != played ||
+      old.playedColor != playedColor ||
+      !_sameCuts(old.cuts);
+
+  bool _sameCuts(List<double> other) {
+    if (other.length != cuts.length) return false;
+    for (var i = 0; i < cuts.length; i++) {
+      if (cuts[i] != other[i]) return false;
+    }
+    return true;
   }
 }

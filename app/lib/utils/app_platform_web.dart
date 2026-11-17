@@ -26,6 +26,13 @@ abstract final class AppPlatform {
   static const bool isDesktop = false;
   static const bool isMobile = false;
 
+  /// Un navigateur piloté au doigt, téléphone ou tablette : son pointeur
+  /// principal est « grossier ». Le lecteur y prend le chrome d'un écran tenu
+  /// en main (ADR-0139). Jamais un téléviseur LG, dont la télécommande est
+  /// aussi un pointeur grossier.
+  static final bool isTouchBrowser =
+      !isWebOS && web.window.matchMedia('(pointer: coarse)').matches;
+
   /// Un navigateur ne dit pas combien de processeurs il a : 0, « inconnu ».
   static const int processorCount = 0;
 

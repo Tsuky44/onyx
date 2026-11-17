@@ -160,6 +160,14 @@ extension _PlayerChrome on _PlayerScreenState {
       return;
     }
 
+    // Sous une souris, le volet des onglets reste ouvert tant qu'on ne le
+    // referme pas : un clic sur l'image le fait, avant de toucher à la
+    // lecture.
+    if (_pointerCarriesTabs && _tabs.isOpen) {
+      _tabs.close();
+      return;
+    }
+
     if (togglePlayback) {
       _togglePlayPause();
       _showControlsTransient();
@@ -174,7 +182,23 @@ extension _PlayerChrome on _PlayerScreenState {
   /// all, and what "original" framing means — because all three are answers to
   /// the same fact: the screen is small, close, and touched. A remote drives
   /// the chrome with its own keys and never produces a tap.
-  bool get _handheld => AppPlatform.isMobile && !TvMode.isTv;
+  ///
+  /// Un navigateur piloté au doigt en est un aussi (ADR-0139) : même écran,
+  /// même main, il lui manque seulement la luminosité et les touches de
+  /// volume que la page ne pilote pas.
+  bool get _handheld =>
+      (AppPlatform.isMobile || AppPlatform.isTouchBrowser) && !TvMode.isTv;
+
+  /// Le chrome d'une souris porte les onglets sous sa barre, avec leur volet,
+  /// quand la fenêtre en a la place ; sinon un bouton ouvre la feuille du bas.
+  bool get _pointerCarriesTabs =>
+      !_handheld &&
+      !TvMode.isTv &&
+      OnyxChromeTheme.pointerCarriesTabs(MediaQuery.sizeOf(context));
+
+  /// Les onglets sont dans le chrome (un téléviseur, une grande fenêtre) :
+  /// l'écran ne pose pas la feuille du bas.
+  bool get _chromeCarriesTabs => TvMode.isTv || _pointerCarriesTabs;
 
   /// A window to move: see [_startWindowDrag].
   bool get _windowDragEnabled => AppPlatform.isDesktop;
@@ -459,14 +483,9 @@ extension _PlayerChrome on _PlayerScreenState {
     }
   }
 
-  /// Le chrome porte l'essentiel lui-même — un bouton pour les sous-titres,
-  /// un pour l'audio, les onglets sous la barre — et la roue crantée n'ouvre
-  /// que le reste : un écran tenu en main (ADR-0136), un téléviseur
-  /// (ADR-0137). À la souris, la roue crantée garde son index complet.
-  bool get _chromeCarriesEssentials => _handheld || TvMode.isTv;
-
-  /// Ce que l'index de la roue crantée ne répète pas alors : les sous-titres
-  /// et l'audio ont leur bouton, les chapitres leur onglet.
+  /// Ce que l'index de la roue crantée ne répète pas : dans tous les
+  /// arrangements, les sous-titres et l'audio ont leur bouton, les chapitres
+  /// leur onglet (ADR-0136, ADR-0137, ADR-0139).
   static const Set<OnyxMenuSection> _essentialsOffIndex = {
     OnyxMenuSection.subtitles,
     OnyxMenuSection.audio,
@@ -501,14 +520,12 @@ extension _PlayerChrome on _PlayerScreenState {
           currentMode: _displayMode,
           onModeChanged: _updateDisplayMode,
           playbackRate: _playbackRate,
-          playbackRates: _PlayerScreenState._playbackRates,
+              playbackRates: _PlayerScreenState._playbackRates,
           onRateChanged: _setPlaybackRate,
           onSeekToAbsolute: _seekTo,
           initialSection: section,
           standalone: standalone,
-          indexOmits: _chromeCarriesEssentials
-              ? _PlayerChrome._essentialsOffIndex
-              : const <OnyxMenuSection>{},
+          indexOmits: _PlayerChrome._essentialsOffIndex,
           onClose: dismiss,
         ),
       ),
@@ -517,9 +534,7 @@ extension _PlayerChrome on _PlayerScreenState {
     // son bouton en partant. La roue crantée s'allume comme les autres, et
     // sur un écran tenu en main tout menu ouvert efface les commandes du
     // milieu.
-    if (standalone || _chromeCarriesEssentials) {
-      _update(() => _openMenu = section);
-    }
+    _update(() => _openMenu = section);
   }
 
   /// L'onglet « Regarder ensemble » existe partout où un serveur peut héberger
@@ -536,17 +551,6 @@ extension _PlayerChrome on _PlayerScreenState {
     _playerController.playbackSpeed = rate;
     if (!mounted) return;
     _update(() => _playbackRate = rate);
-    _showControlsTransient();
-  }
-
-  Future<void> _cyclePlaybackRate() async {
-    const rates = _PlayerScreenState._playbackRates;
-    final idx = rates.indexOf(_playbackRate);
-    final next = rates[(idx < 0 ? 0 : idx + 1) % rates.length];
-    await _playerController.session.setRate(next * _party.rateFactor);
-    _playerController.playbackSpeed = next;
-    if (!mounted) return;
-    _update(() => _playbackRate = next);
     _showControlsTransient();
   }
 
@@ -614,7 +618,6 @@ extension _PlayerChrome on _PlayerScreenState {
         section: OnyxMenuSection.audio,
         anchor: _subtitlesButtonKey.currentContext,
       ),
-      onCycleSpeed: _cyclePlaybackRate,
       onOpenSettings: () => _showOnyxSettingsMenu(
         anchor: _settingsButtonKey.currentContext,
       ),
@@ -625,20 +628,17 @@ extension _PlayerChrome on _PlayerScreenState {
         standalone: section != OnyxMenuSection.root,
       ),
       openMenu: _openMenu,
-      // Sur un téléviseur les onglets sont dans le chrome, avec leur volet.
-      // Sur un écran tenu en main ils y sont aussi, et ouvrent la feuille du
-      // bas ; ailleurs la même liste alimente cette feuille, ouverte par un
-      // bouton de la barre (`_buildOverChrome`).
-      tabs: isTv || _handheld ? _tabEntries : const <OnyxTabEntry>[],
+      // Sur un téléviseur et dans une grande fenêtre, les onglets sont dans
+      // le chrome, avec leur volet. Ailleurs la même liste alimente la
+      // feuille du bas, ouverte par un bouton de la rangée
+      // (`_buildOverChrome`).
+      tabs: _chromeCarriesTabs ? _tabEntries : const <OnyxTabEntry>[],
       openTab: _tabs.open,
       onTabChanged: _tabs.show,
-      onOpenWatchParty: _watchPartyAction,
-      watchPartyActive: _party.party != null,
       onToggleFullscreen: _toggleFullscreen,
       onTogglePictureInPicture: DesktopPictureInPicture.supported
           ? _toggleDesktopPictureInPicture
           : null,
-      playbackRate: _playbackRate,
       onLockScreen: _handheld ? _lockScreen : null,
       onSkipNext: nav?.nextEpisode != null ? _goToNextEpisode : null,
       onSkipPrevious: _episodesPanel.previousEpisode != null
@@ -657,6 +657,7 @@ extension _PlayerChrome on _PlayerScreenState {
       subtitlesButtonKey: _subtitlesButtonKey,
       isTv: isTv,
       handheld: _handheld,
+      handheldFullscreen: _handheld && AppPlatform.isTouchBrowser,
       playPauseFocusNode: _playPauseFocusNode,
       progressFocusNode: _progressFocusNode,
       // Row by row, and only the rows the camera is actually

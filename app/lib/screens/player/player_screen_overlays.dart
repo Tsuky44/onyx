@@ -287,9 +287,10 @@ extension _PlayerOverlays on _PlayerScreenState {
           onPlayNext: nav.isSeasonLookahead ? _goToNextEpisode : null,
           videoInset: videoInset,
         )),
-      // Hors téléviseur, les onglets sont une feuille qui monte du bas ; sur
-      // un téléviseur, ils sont dans le chrome, sous la barre.
-      if (!isTv && _tabs.isOpen)
+      // Là où le chrome ne les porte pas sous sa barre (un écran tenu en
+      // main, une fenêtre étroite), les onglets sont une feuille qui monte du
+      // bas.
+      if (!_chromeCarriesTabs && _tabs.isOpen)
         PlayerTabSheet(
           tabs: _tabEntries,
           open: _tabs.open!,

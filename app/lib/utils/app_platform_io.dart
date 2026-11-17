@@ -37,6 +37,9 @@ abstract final class AppPlatform {
 
   static bool get isMobile => isAndroid || isIOS;
 
+  /// Voir `app_platform_web.dart` : hors d'un navigateur, jamais.
+  static const bool isTouchBrowser = false;
+
   /// Le nombre de processeurs logiques. Lu par le mode léger pour reconnaître
   /// un ordinateur trop modeste pour l'interface complète (ADR-0101).
   static int get processorCount => io.Platform.numberOfProcessors;

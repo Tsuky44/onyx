@@ -23,6 +23,10 @@ L'[ADR-0137](0137-sur-un-televiseur-aussi-l-essentiel-a-son-bouton-et-la-roue-cr
 ramène ensuite cette rangée de boutons sur le téléviseur : les deux arrangements la partagent
 (`_buildEssentialActions`).
 
+L'[ADR-0139](0139-un-seul-arrangement-du-lecteur-sur-tous-les-ecrans.md) remplace son point 6 (les
+onglets passent derrière un bouton de la rangée), agrandit ±10 s et donne le même arrangement à la
+souris.
+
 ## Contexte
 
 Le lecteur avait deux chromes : celui d'un téléviseur, refait sur le modèle du lecteur d'Apple

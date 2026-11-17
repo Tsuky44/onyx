@@ -49,6 +49,7 @@ import 'widgets/next_episode_page.dart';
 import 'widgets/next_season_overlay.dart';
 import 'widgets/language_gap_overlay.dart';
 import 'widgets/upcoming_episode_overlay.dart';
+import 'widgets/onyx/onyx_chrome_theme.dart';
 import 'widgets/onyx/onyx_controls_layer.dart';
 import 'widgets/onyx/onyx_settings_menu.dart';
 import 'widgets/onyx/onyx_tabs.dart';

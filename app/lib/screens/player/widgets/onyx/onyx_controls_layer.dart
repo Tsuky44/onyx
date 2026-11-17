@@ -4,7 +4,6 @@ import '../player_chrome_fade.dart';
 
 import '../../../../desktop_window.dart';
 import '../../../../theme/app_motion.dart';
-import '../../../../theme/app_type.dart';
 import '../../../../tv/nav/tv_region.dart';
 import '../../../../utils/format.dart';
 import '../../../../widgets/global/app_network_image.dart';
@@ -25,18 +24,18 @@ import '../../../../l10n/tr.dart';
 part 'onyx_chrome_layout.dart';
 part 'onyx_controls_rows.dart';
 part 'onyx_handheld_chrome.dart';
+part 'onyx_pointer_chrome.dart';
 
 /// Chrome Onyx: the hand-written player chrome, the only one the app has.
 ///
 /// Nothing here is placed by the user: the arrangement is code, not data,
 /// which is what lets it be laid out in real pixels and stay faithful.
 ///
-/// Two arrangements, one breakpoint ([OnyxChromeTheme.compactBreakpoint]):
-/// wide puts the title block and the utility cluster on one row above the
-/// scrubber, compact stacks them so nothing collides at phone widths. A
-/// television gets its own, built for the remote on the model of Apple's
-/// player — see [_buildTvChrome]. Un écran tenu en main prend le même, adapté
-/// au doigt — voir [_buildHandheldChrome].
+/// Un seul arrangement, celui du lecteur d'Apple, décliné selon ce qui
+/// pilote l'écran (ADR-0139) : la télécommande ([_buildTvChrome], ADR-0124),
+/// le doigt ([_buildHandheldChrome], ADR-0136), la souris
+/// ([_buildPointerChrome]). Le logo en haut à gauche, ce qu'on regarde en une
+/// ligne, l'essentiel en boutons ronds de verre, la barre fine à repère.
 class OnyxControlsLayer extends StatelessWidget {
   final bool visible;
 
@@ -104,13 +103,11 @@ class OnyxControlsLayer extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onToggleSubtitles;
   final VoidCallback onOpenAudio;
-  final VoidCallback onCycleSpeed;
   final VoidCallback onOpenSettings;
   final VoidCallback onToggleFullscreen;
 
   /// Image dans l'image d'ordinateur ; null là où elle n'existe pas.
   final VoidCallback? onTogglePictureInPicture;
-  final double playbackRate;
 
   /// Verrouille l'écran contre les touchers — voir [PlayerScreenLock]. Null
   /// hors d'un appareil tenu en main : une souris ou une télécommande ne
@@ -125,11 +122,12 @@ class OnyxControlsLayer extends StatelessWidget {
   /// Series only — null on a movie or on the first episode of a season.
   final VoidCallback? onSkipPrevious;
 
-  /// Opens the episode browser. Series only — null on a movie.
+  /// Ouvre la feuille des onglets sur « Épisodes ». Une série seulement.
   final VoidCallback? onOpenEpisodes;
 
-  /// Hors téléviseur, sur un film : ouvre le volet des onglets sur « Infos ».
-  /// Une série y entre par [onOpenEpisodes], dans le même emplacement.
+  /// Sur un film : ouvre la même feuille sur « Infos ». Les deux servent le
+  /// bouton des onglets ([_buildEssentialActions]), là où le chrome ne porte
+  /// pas les onglets lui-même : un écran tenu en main, une fenêtre étroite.
   final VoidCallback? onOpenInfo;
 
   /// Only while an intro chapter is playing.
@@ -141,13 +139,6 @@ class OnyxControlsLayer extends StatelessWidget {
 
   /// Le passage que [onSkipIntro] saute : le récap ou l'intro.
   final SkipSegment skipSegment;
-
-  /// Opens the « Regarder ensemble » panel. Null where no server can host a
-  /// session (offline playback).
-  final VoidCallback? onOpenWatchParty;
-
-  /// A session is running: the button says so.
-  final bool watchPartyActive;
 
   /// Chapter starts as fractions, for the scrubber ticks.
   final List<double> chapterMarks;
@@ -182,7 +173,7 @@ class OnyxControlsLayer extends StatelessWidget {
   /// chrome away from any device.
   final double scale;
 
-  /// Whether the top bar carries a volume control.
+  /// Whether the top bar carries a volume control (le chrome d'une souris).
   ///
   /// False on a phone: the handset has volume keys under the fingers already
   /// holding it, and a second control for the same thing costs a slot in a row
@@ -205,6 +196,11 @@ class OnyxControlsLayer extends StatelessWidget {
   /// ADR-0136). Passé plutôt que lu de la plateforme, comme [showVolume] : un
   /// test dessine ce chrome loin de tout appareil.
   final bool handheld;
+
+  /// Un écran tenu en main dans un navigateur : le bouton « Plein écran »
+  /// rejoint le verrou, parce que la page a sa barre d'adresse à faire sortir.
+  /// Une app installée occupe déjà tout l'écran.
+  final bool handheldFullscreen;
 
   /// Where the remote lands when it enters the control bar. Play/pause is the
   /// button a hand reaches for first, and every other control is one or two
@@ -260,13 +256,9 @@ class OnyxControlsLayer extends StatelessWidget {
     required this.onBack,
     required this.onToggleSubtitles,
     required this.onOpenAudio,
-    required this.onCycleSpeed,
     required this.onOpenSettings,
-    this.onOpenWatchParty,
-    this.watchPartyActive = false,
     required this.onToggleFullscreen,
     this.onTogglePictureInPicture,
-    this.playbackRate = 1.0,
     this.onLockScreen,
     this.timelineAnchorKey,
     this.onScrubbingChanged,
@@ -294,6 +286,7 @@ class OnyxControlsLayer extends StatelessWidget {
     this.subtitlesButtonKey,
     this.isTv = false,
     this.handheld = false,
+    this.handheldFullscreen = false,
     this.playPauseFocusNode,
     this.progressFocusNode,
     this.cutouts = const <Rect>[],
@@ -345,63 +338,7 @@ class OnyxControlsLayer extends StatelessWidget {
         );
         if (isTv) return _buildTvChrome(m);
         if (handheld) return _buildHandheldChrome(m, width);
-        final hasBrightness = brightness != null && onBrightnessChanged != null;
-        // Not a Stack.
-        //
-        // The brightness bar shares the right edge with the utilities cluster
-        // — subtitles, audio, speed, settings, fullscreen — and in a Stack the
-        // two only stayed apart by arithmetic: guess the height of the top bar,
-        // guess the height of the bottom one, hope the bar fits between them.
-        // Where they did overlap, the buttons are hit-tested first, so the
-        // lower part of the bar quietly stopped answering — it looked like a
-        // control that only worked at the top.
-        //
-        // This lays the two bars out first, measures them, and gives the bar
-        // the band that is actually left. It cannot overlap either of them,
-        // and the band being known means the whole of it can catch a finger.
-        return CustomMultiChildLayout(
-          delegate: _OnyxChromeLayout(
-            topLead: _topBarTail,
-            // The skip-intro button sits in that strip when there is one, and
-            // it is a button: the bar has to stay off it.
-            bottomLead: onSkipIntro == null ? _bottomBarLead : 0,
-          ),
-          children: [
-            LayoutId(
-              id: _OnyxChromeLayout.top,
-              child: _fadeWithChrome(_buildTop(m, width)),
-            ),
-            // It rides the same fade as the chrome: a bar floating alone over
-            // a film nobody is touching is exactly the clutter the auto-hide
-            // exists to remove.
-            if (hasBrightness)
-              LayoutId(
-                id: _OnyxChromeLayout.brightness,
-                child: _buildBrightnessBand(m),
-              ),
-            LayoutId(
-              id: _OnyxChromeLayout.bottom,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Outside the fade on purpose: the intro offer is
-                  // time-limited, and a user who simply is not moving the mouse
-                  // would watch it expire behind hidden chrome. It keeps its
-                  // slot above the bottom bar, so revealing the chrome does not
-                  // move it.
-                  if (onSkipIntro != null)
-                    OnyxSkipIntroSlot(
-                      onPressed: onSkipIntro!,
-                      metrics: m,
-                      autoSkipIn: skipIntroCountdown,
-                      segment: skipSegment,
-                    ),
-                  _fadeWithChrome(_buildBottom(m)),
-                ],
-              ),
-            ),
-          ],
-        );
+        return _buildPointerChrome(m, constraints.biggest);
       },
     );
   }
@@ -450,97 +387,6 @@ class OnyxControlsLayer extends StatelessWidget {
     );
   }
 
-  // --- Top ----------------------------------------------------------------
-
-  Widget _buildTop(OnyxChromeMetrics m, double width) {
-    // Le dégradé ne prend pas les clics : voir [OnyxScrim].
-    return OnyxScrim(
-      gradient: OnyxChromeTheme.topScrim,
-      child: Padding(
-        // The macOS traffic lights live in this strip, so the row starts below
-        // them instead of underneath.
-        padding: EdgeInsets.fromLTRB(
-          m.gutter,
-          macOSWindowControlsTopInset + m.topInset,
-          m.gutter,
-          _topBarTail,
-        ),
-        child: _dodgeCutouts(
-          Row(
-            children: [
-              OnyxIconButton(
-                icon: Icons.arrow_back_ios_new_rounded,
-                tooltip: tr('Retour'),
-                metrics: m,
-                onPressed: onBack,
-              ),
-              const SizedBox(width: 8),
-              // Un texte et une image répondent au test de clic : sans ça, le
-              // titre aussi empêchait de déplacer la fenêtre.
-              Flexible(child: IgnorePointer(child: _buildBrand(m))),
-              const Spacer(),
-              // Left out entirely on a television: the set and its remote own the
-              // volume, so the slider would do a job that is already done — and,
-              // being the one focusable widget up here, it would collect the
-              // remote's focus and hold it. Same conclusion on a phone, for the
-              // same reason with different hardware — see [showVolume].
-              if (!isTv && showVolume)
-                OnyxVolumeControl(
-                  volume: volume,
-                  onChanged: onVolumeChanged,
-                  metrics: m,
-                  // Below this the slider squeezes the title out of the top row.
-                  // The mute button alone still leaves the volume reachable, and
-                  // the settings sheet carries the fine control.
-                  showSlider: width >= 560,
-                ),
-              // En haut à droite plutôt que dans la rangée d'utilitaires : sur
-              // un téléphone celle-ci est déjà pleine, et ce coin est libre
-              // puisque le volume n'y est pas.
-              if (!isTv && onLockScreen != null)
-                OnyxIconButton(
-                  key: const ValueKey('onyx-lock'),
-                  icon: Icons.lock_open_rounded,
-                  tooltip: tr('Verrouiller l’écran'),
-                  metrics: m,
-                  onPressed: onLockScreen!,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// TMDB logo when we have one, the title otherwise — never both, and never
-  /// an empty gap while the logo request is still in flight.
-  Widget _buildBrand(OnyxChromeMetrics m) {
-    final url = logoUrl;
-    if (url != null && url.isNotEmpty) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        // The detail pages render this exact URL — same normalised TMDB size —
-        // through the same store, so by the time playback starts the bytes are
-        // cached and the decoded frame is still in memory.
-        child: AppNetworkImage(
-          url: url,
-          height: m.logoHeight,
-          fit: BoxFit.contain,
-          fadeInDuration: const Duration(milliseconds: 120),
-          // Shared decode with the detail header rather than one sized to this
-          // 38 px slot — logos are small enough that the full frame is cheaper
-          // than a second entry.
-          decodeAtSourceSize: true,
-          // No spinner and no gap: the title holds the slot until the logo is
-          // ready, so the top row never jumps.
-          placeholder: _brandText(m),
-          errorWidget: _brandText(m),
-        ),
-      );
-    }
-    return _brandText(m);
-  }
-
   Widget _brandText(OnyxChromeMetrics m) {
     return Align(
       alignment: Alignment.centerLeft,
@@ -554,136 +400,6 @@ class OnyxControlsLayer extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-    );
-  }
-
-  // --- Bottom -------------------------------------------------------------
-
-  Widget _buildBottom(OnyxChromeMetrics m) {
-    // The scrim does not take touches — see [OnyxScrim]. This bar is two
-    // thirds of a phone's height held sideways, and a scrim that swallowed
-    // touches is what stopped the brightness bar answering in its lower half.
-    return OnyxScrim(
-      gradient: OnyxChromeTheme.bottomScrim,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          m.gutter,
-          _bottomBarLead,
-          m.gutter,
-          m.bottomInset,
-        ),
-        child: _buildBottomRows(m),
-      ),
-    );
-  }
-
-  Widget _buildBottomRows(OnyxChromeMetrics m) {
-    // Every row dodges the camera on its own: on a phone held sideways this
-    // bar is half the height of the screen, so a bubble on the edge lands on
-    // one of these rows and not on the others.
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (m.isCompact) ...[
-          _dodgeCutouts(_buildTitleBlock(m)),
-          const SizedBox(height: 10),
-        ] else
-          _dodgeCutouts(
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(child: _buildTitleBlock(m)),
-                const SizedBox(width: 24),
-                _buildUtilities(m),
-              ],
-            ),
-          ),
-        const SizedBox(height: 6),
-        _dodgeCutouts(
-          KeyedSubtree(
-            key: timelineAnchorKey,
-            child: OnyxProgressBar(
-              progress: _progressFraction,
-              buffered: buffered,
-              duration: duration,
-              chapterMarks: chapterMarks,
-              metrics: m,
-              onSeek: onSeekFraction,
-              onScrubbingChanged: onScrubbingChanged,
-              previews: previews,
-            ),
-          ),
-        ),
-        _dodgeCutouts(_buildTimes(m)),
-        const SizedBox(height: 4),
-        // Compact gives the utilities their own centred row: side by side
-        // with the transport they need ~414px, which does not fit a phone.
-        if (m.isCompact) ...[
-          _dodgeCutouts(Center(child: _buildTransport(m))),
-          const SizedBox(height: 2),
-          _dodgeCutouts(Center(child: _buildUtilities(m))),
-        ] else
-          _dodgeCutouts(_buildTransport(m)),
-      ],
-    );
-  }
-
-  /// Transparent aux clics, comme le titre du haut : voir [_buildTop].
-  Widget _buildTitleBlock(OnyxChromeMetrics m) {
-    return IgnorePointer(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (overline != null && overline!.isNotEmpty)
-            Text(
-              overline!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: OnyxChromeTheme.meta,
-                fontSize: m.metaSize,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          const SizedBox(height: 2),
-          Text(
-            title ?? '',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: OnyxChromeTheme.title,
-              fontSize: m.titleSize,
-              fontWeight: FontWeight.w600,
-              height: 1.15,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimes(OnyxChromeMetrics m) {
-    final style = TextStyle(
-      color: OnyxChromeTheme.time,
-      fontSize: m.timeSize,
-      fontWeight: FontWeight.w500,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
-    final hasDuration = duration.inSeconds > 0;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(formatPlaybackTime(position.inSeconds), style: style),
-        if (hasDuration)
-          Text(
-            '-${formatPlaybackTime(_remainingSeconds)}'
-            '  /  ${formatEndClock(_remainingSeconds)}',
-            style: style,
-          ),
-      ],
     );
   }
 }

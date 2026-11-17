@@ -50,6 +50,9 @@ Future<void> _pump(
   OnyxMenuSection? openMenu,
   void Function(OnyxMenuSection section, BuildContext anchor)? onOpenMenu,
   ValueChanged<OnyxTab?>? onTabChanged,
+  VoidCallback? onOpenEpisodes,
+  VoidCallback? onOpenInfo,
+  bool handheldFullscreen = false,
 }) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = size;
@@ -84,16 +87,14 @@ Future<void> _pump(
           onLockScreen: () {},
           onToggleSubtitles: () {},
           onOpenAudio: () {},
-          onCycleSpeed: () {},
           onOpenSettings: () {},
           onToggleFullscreen: () {},
           onSkipPrevious: episode ? () {} : null,
           onSkipNext: episode ? () {} : null,
-          onOpenEpisodes: episode ? () {} : null,
-          onOpenInfo: () {},
-          onOpenWatchParty: () {},
+          onOpenEpisodes: episode ? (onOpenEpisodes ?? () {}) : null,
+          onOpenInfo: onOpenInfo ?? () {},
+          handheldFullscreen: handheldFullscreen,
           onSkipIntro: onSkipIntro,
-          tabs: _tabs,
           onTabChanged: onTabChanged ?? (_) {},
           onOpenMenu: onOpenMenu,
           openMenu: openMenu,
@@ -139,8 +140,17 @@ void main() {
       (tester) async {
     await _pump(tester);
 
+    // Le bouton des onglets est entre l'épisode précédent et les sous-titres
+    // (ADR-0139, demandé sur la maquette).
     final row = [
-      for (final id in ['previous', 'subtitles', 'audio', 'settings', 'next'])
+      for (final id in [
+        'previous',
+        'episodes',
+        'subtitles',
+        'audio',
+        'settings',
+        'next',
+      ])
         tester.getCenter(_key(id)),
     ];
     for (var i = 1; i < row.length; i++) {
@@ -149,11 +159,32 @@ void main() {
     }
 
     // Ce que la rangée d'avant portait et qui a changé de place : la vitesse
-    // et le plein écran dans la roue crantée ou nulle part, les épisodes et la
-    // séance dans les onglets.
-    for (final gone in ['speed', 'fullscreen', 'episodes', 'watch-party']) {
+    // dans la roue crantée, la séance dans les onglets, le plein écran nulle
+    // part dans une app installée.
+    for (final gone in ['speed', 'fullscreen', 'watch-party']) {
       expect(_key(gone), findsNothing, reason: gone);
     }
+  });
+
+  testWidgets('±10 s sont à peine plus petits que lecture/pause',
+      (tester) async {
+    await _pump(tester);
+
+    double glyph(String id) => tester
+        .widget<Icon>(find.descendant(of: _key(id), matching: find.byType(Icon)))
+        .size!;
+    expect(glyph('rewind'), closeTo(glyph('play-pause') * 0.8, 0.5));
+    expect(glyph('forward'), glyph('rewind'));
+  });
+
+  testWidgets('dans un navigateur, le plein écran rejoint le verrou',
+      (tester) async {
+    await _pump(tester, handheldFullscreen: true);
+
+    final fullscreen = tester.getCenter(_key('fullscreen'));
+    final lock = tester.getCenter(_key('lock'));
+    expect(fullscreen.dx, lessThan(lock.dx));
+    expect(fullscreen.dy, closeTo(lock.dy, 1));
   });
 
   testWidgets('un film n’a ni épisode précédent ni suivant', (tester) async {
@@ -287,27 +318,33 @@ void main() {
     expect(tester.getRect(elapsed).bottom, lessThanOrEqualTo(bar.bottom + 8));
   });
 
-  testWidgets('les onglets sont sous la barre, et en toucher un le demande',
+  testWidgets('pas d’onglets sous la barre : un bouton ouvre la feuille',
       (tester) async {
-    OnyxTab? asked;
-    await _pump(tester, onTabChanged: (tab) => asked = tab);
+    var episodes = 0;
+    await _pump(tester, onOpenEpisodes: () => episodes++);
 
-    final bar = tester.getRect(find.byType(OnyxProgressBar));
+    // La rangée d'onglets coûtait 44 points à un écran qui en a 390.
     for (final entry in _tabs) {
-      final tab = _key('tab-${entry.tab.name}');
-      expect(tester.getRect(tab).top, greaterThanOrEqualTo(bar.bottom),
-          reason: entry.label);
-      expect(tester.getSize(tab).height, greaterThanOrEqualTo(44),
-          reason: 'cible de ${entry.label}');
+      expect(_key('tab-${entry.tab.name}'), findsNothing, reason: entry.label);
     }
-    // Le texte du premier onglet s'aligne sur le titre.
-    expect(
-      tester.getRect(find.text('Infos')).left,
-      closeTo(tester.getRect(find.text(_episode)).left, 1),
-    );
+    final bar = tester.getRect(find.byType(OnyxProgressBar));
+    expect(_phone.height - bar.bottom, lessThan(44));
 
-    await tester.tap(_key('tab-episodes'));
-    expect(asked, OnyxTab.episodes);
+    await tester.tap(_key('episodes'));
+    expect(episodes, 1);
+  });
+
+  testWidgets('sur un film, le même bouton ouvre « Infos »', (tester) async {
+    var info = 0;
+    await _pump(tester, episode: false, onOpenInfo: () => info++);
+
+    expect(_key('episodes'), findsNothing);
+    await tester.tap(_key('info'));
+    expect(info, 1);
+    expect(
+      tester.getCenter(_key('info')).dx,
+      lessThan(tester.getCenter(_key('subtitles')).dx),
+    );
   });
 
   testWidgets('chaque bouton ouvre son menu, posé sur lui', (tester) async {
