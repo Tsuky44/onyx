@@ -68,7 +68,7 @@ jobs:
     steps:
       # Historique complet : sans les tags, impossible de trouver la derniere
       # version publiee.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
