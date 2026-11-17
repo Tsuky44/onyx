@@ -4,7 +4,12 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleDevelopmentRegion</key>
-  <string>$(DEVELOPMENT_LANGUAGE)</string>
+  <string>en</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>fr</string>
+  </array>
   <key>CFBundleDisplayName</key>
   <string>Onyx</string>
   <key>CFBundleExecutable</key>
@@ -55,7 +60,7 @@
     silence.
   -->
   <key>NSLocalNetworkUsageDescription</key>
-  <string>Onyx cherche votre serveur média sur le réseau local, lit vos fichiers depuis celui-ci et reçoit la connexion envoyée par votre téléphone.</string>
+  <string>Onyx looks for your media server on the local network, reads your files from it and receives the sign-in sent by your phone.</string>
   <key>UIBackgroundModes</key>
   <array>
     <string>audio</string>

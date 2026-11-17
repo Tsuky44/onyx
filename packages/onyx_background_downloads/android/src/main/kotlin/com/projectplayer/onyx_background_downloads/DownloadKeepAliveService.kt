@@ -191,8 +191,12 @@ class DownloadKeepAliveService : Service() {
             val manager = context.getSystemService(NotificationManager::class.java) ?: return
             if (manager.getNotificationChannel(CHANNEL_ID) != null) return
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Téléchargements", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Progression des téléchargements hors ligne"
+                NotificationChannel(
+                    CHANNEL_ID,
+                    context.getString(R.string.onyx_downloads_channel_name),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = context.getString(R.string.onyx_downloads_channel_description)
                     setShowBadge(false)
                 },
             )

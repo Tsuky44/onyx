@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "The camera is used to scan the QR code shown on your TV to pair it.";
+"NSPhotoLibraryUsageDescription" = "Onyx opens the device file picker so you can choose an app installer to send to your server.";
+"NSMotionUsageDescription" = "Onyx reads the phone's tilt to flip the video when you turn the phone over.";
+"NSLocalNetworkUsageDescription" = "Onyx looks for your media server on the local network and reads your files from it.";

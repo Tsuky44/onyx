@@ -17,6 +17,7 @@
 		97C1470B1CF9000082B4168D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000082B4168E /* LaunchScreen.storyboard */; };
 		97C1470F1CF9000082B4168C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000082B4168C /* Assets.xcassets */; };
 		AAF20000000000000000F00D /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = AAF30000000000000000F00D /* FlutterGeneratedPluginSwiftPackage */; };
+		AAF2000000000000000000A4 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AAF2000000000000000000A3 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,8 @@
 		97C146FF1CF9000082B4168E /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A08123A448BE30AB5008DFAA /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		AAA000000000000000000003 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
+		AAF2000000000000000000A1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AAF2000000000000000000A2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +89,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				97C146FD1CF9000082B4168C /* Assets.xcassets */,
 				97C146FE1CF9000082B4168C /* Info.plist */,
+				AAF2000000000000000000A3 /* InfoPlist.strings */,
 				97C146FF1CF9000082B4168D /* Main.storyboard */,
 				97C146FF1CF9000082B4168E /* LaunchScreen.storyboard */,
 			);
@@ -171,6 +175,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				fr,
 				Base,
 			);
 			mainGroup = 97C146E51CF9000082B4168C;
@@ -186,6 +191,18 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXVariantGroup section */
+		AAF2000000000000000000A3 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AAF2000000000000000000A1 /* en */,
+				AAF2000000000000000000A2 /* fr */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin PBXResourcesBuildPhase section */
 		97C146EC1CF9000082B4168C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
@@ -194,6 +211,7 @@
 				97C1470F1CF9000082B4168C /* Assets.xcassets in Resources */,
 				97C1470A1CF9000082B4168D /* Main.storyboard in Resources */,
 				97C1470B1CF9000082B4168D /* LaunchScreen.storyboard in Resources */,
+				AAF2000000000000000000A4 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

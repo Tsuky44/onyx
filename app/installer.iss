@@ -25,7 +25,7 @@ SolidCompression=yes
 PrivilegesRequired=admin
 UninstallDisplayIcon={app}\app.exe
 SetupIconFile=windows\runner\resources\app_icon.ico
-VersionInfoDescription=Installation d'Onyx
+VersionInfoDescription=Onyx Setup
 VersionInfoProductName=Onyx
 
 ; Habillage : voir brand/installer-background.svg et
@@ -45,7 +45,33 @@ DisableProgramGroupPage=yes
 DisableReadyPage=yes
 
 [Languages]
+; L'anglais est la langue de repli : Inno prend la langue de l'interface de
+; Windows si elle est listee, sinon la premiere. Ajouter une langue = une
+; ligne ici et ses entrees dans [CustomMessages].
+Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "fr"; MessagesFile: "compiler:Languages\French.isl"
+
+[CustomMessages]
+en.UpgradeWelcome=A new version of Onyx is ready to be installed.
+en.InstallWelcome=Onyx will be installed on this computer.
+en.Change=Change
+en.ChooseFolder=Choose the folder to install Onyx in.
+en.Installing=Installing Onyx…
+en.UpToDate=Onyx is up to date.
+en.Installed=Onyx is installed.
+en.Update=Update
+en.Install=Install
+en.LaunchOnyx=Launch Onyx
+fr.UpgradeWelcome=Une nouvelle version d'Onyx est prête à être installée.
+fr.InstallWelcome=Onyx va être installé sur cet ordinateur.
+fr.Change=Modifier
+fr.ChooseFolder=Choisissez le dossier dans lequel installer Onyx.
+fr.Installing=Installation d'Onyx…
+fr.UpToDate=Onyx est à jour.
+fr.Installed=Onyx est installé.
+fr.Update=Mettre à jour
+fr.Install=Installer
+fr.LaunchOnyx=Lancer Onyx
 
 [Messages]
 SetupWindowTitle=Onyx
@@ -62,7 +88,7 @@ Name: "{commondesktop}\Onyx"; Filename: "{app}\app.exe"
 ; l'installation pour que les mises a jour n'en demandent plus jamais.
 ; Relance a chaque installation pour remettre sa configuration d'aplomb.
 Filename: "{app}\onyx-updater.exe"; Parameters: "install-service"; Flags: runhidden waituntilterminated
-Filename: "{app}\app.exe"; Description: "Lancer Onyx"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\app.exe"; Description: "{cm:LaunchOnyx}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 Filename: "{app}\onyx-updater.exe"; Parameters: "uninstall-service"; Flags: runhidden waituntilterminated; RunOnceId: "OnyxUpdaterService"
@@ -139,7 +165,7 @@ var
   LinkWidth, Gap, Total: Integer;
 begin
   DirText.Caption := MinimizePathName(WizardDirValue, DirText.Font, ScaleX(360));
-  LinkWidth := MeasureText('Modifier', DirLink.Font) + ScaleX(2);
+  LinkWidth := MeasureText(CustomMessage('Change'), DirLink.Font) + ScaleX(2);
   Gap := ScaleX(12);
   Total := DirText.Width + Gap + LinkWidth;
   DirText.Left := (WizardForm.WelcomePage.Width - Total) div 2;
@@ -151,7 +177,7 @@ var
   Dir: String;
 begin
   Dir := WizardDirValue;
-  if BrowseForFolder('Choisissez le dossier dans lequel installer Onyx.', Dir, True) then
+  if BrowseForFolder(CustomMessage('ChooseFolder'), Dir, True) then
   begin
     { Comme le bouton Parcourir d'origine : choisir "D:\Apps" installe dans
       "D:\Apps\Onyx", pas en vrac dans le dossier choisi. }
@@ -187,11 +213,11 @@ begin
 
   if IsUpgrade then
     CreateCenteredText(WizardForm.WelcomePage, ScaleY(ContentTop + 8), PageWidth, 10,
-      TextColor, 'Une nouvelle version d''Onyx est prête à être installée.')
+      TextColor, CustomMessage('UpgradeWelcome'))
   else
   begin
     CreateCenteredText(WizardForm.WelcomePage, ScaleY(ContentTop + 8), PageWidth, 10,
-      TextColor, 'Onyx va être installé sur cet ordinateur.');
+      TextColor, CustomMessage('InstallWelcome'));
 
     { Pas de page "Dossier de destination" : l'emplacement reste modifiable
       depuis l'accueil, pour ceux qui le veulent. Masque en mise a jour, ou
@@ -205,13 +231,13 @@ begin
     DirLink := TNewLinkLabel.Create(WizardForm);
     DirLink.Parent := WizardForm.WelcomePage;
     DirLink.AutoSize := False;
-    DirLink.Caption := '<a id="browse">Modifier</a>';
+    DirLink.Caption := '<a id="browse">' + CustomMessage('Change') + '</a>';
     DirLink.OnLinkClick := @DirLinkClick;
     UpdateDirLink;
   end;
 
   CreateCenteredText(WizardForm.InstallingPage, ScaleY(8), InnerWidth, 10,
-    TextColor, 'Installation d''Onyx…');
+    TextColor, CustomMessage('Installing'));
   WizardForm.StatusLabel.Visible := False;
   WizardForm.FilenameLabel.Visible := False;
 
@@ -228,10 +254,10 @@ begin
 
   if IsUpgrade then
     CreateCenteredText(WizardForm.FinishedPage, ScaleY(ContentTop + 8), PageWidth, 10,
-      TextColor, 'Onyx est à jour.')
+      TextColor, CustomMessage('UpToDate'))
   else
     CreateCenteredText(WizardForm.FinishedPage, ScaleY(ContentTop + 8), PageWidth, 10,
-      TextColor, 'Onyx est installé.');
+      TextColor, CustomMessage('Installed'));
 end;
 
 procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
@@ -283,9 +309,9 @@ begin
   if CurPageID = wpWelcome then
   begin
     if IsUpgrade then
-      WizardForm.NextButton.Caption := 'Mettre à jour'
+      WizardForm.NextButton.Caption := CustomMessage('Update')
     else
-      WizardForm.NextButton.Caption := 'Installer';
+      WizardForm.NextButton.Caption := CustomMessage('Install');
   end
   else if (CurPageID = wpFinished) and (WizardForm.RunList.Items.Count > 0) then
   begin
