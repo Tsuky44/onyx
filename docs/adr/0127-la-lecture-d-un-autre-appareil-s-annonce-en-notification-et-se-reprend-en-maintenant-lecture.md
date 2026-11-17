@@ -4,6 +4,7 @@
   vraiment bien »), puis étendue le même jour : « mets-le sur tout sauf téléphone », et une forme à
   elle pour le téléphone (« la 1 bis est parfaite »). Rendu vérifié sur des captures de l'app ; pas
   encore vu sur un appareil, et **l'appui maintenu n'a pas été essayé avec une vraie télécommande**.
+  Hors Apple TV, modifié par l'ADR-0136 (bouton « Reprendre ici » dans la barre du haut, appui court).
 - **Date :** 2026-11-13
 - **Portée :** `widgets/global/remote_playback_notice.dart` (`RemotePlaybackNotice`),
   `widgets/global/remote_playback_banner.dart` (`RemotePlaybackBanner.notice`, `_onHoldKey`),

@@ -1030,6 +1030,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Keep holding…',
   'Maintenir pour reprendre ici':
       'Hold to resume here',
+  'Appuyez pour reprendre ici':
+      'Press to resume here',
   'En lecture sur {0} : {1}. Reprendre ici.':
       'Playing on {0}: {1}. Resume here.',
   'OK pour reprendre ici':
@@ -3821,4 +3823,27 @@ const Map<String, String> kEnglish = <String, String>{
       'Min (minutes)',
   'Max (minutes)':
       'Max (minutes)',
+  // Écran « Vous regardez » d'un film en pause (ADR-0137).
+  'Vous regardez':
+      'You are watching',
+  'Fin vers {0}':
+      'Ends at {0}',
+  'pour reprendre la lecture':
+      'to resume playback',
+  'Espace':
+      'Space',
+  'OK':
+      'OK',
+  'Avec':
+      'Starring',
+  'Rechercher ({0})':
+      'Search ({0})',
+  'Fermer la recherche':
+      'Close search',
+  'Recherches récentes':
+      'Recent searches',
+  'Ajoutés récemment':
+      'Recently added',
+  'Revenir à {0}':
+      'Back to {0}',
 };

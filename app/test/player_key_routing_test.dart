@@ -29,6 +29,7 @@ void main() {
     bool browsingControls = false,
     bool chromeVisible = false,
     bool skipIntroShown = false,
+    bool pauseInfoShown = false,
   }) =>
       routePlayerKey(
         event,
@@ -36,6 +37,7 @@ void main() {
         browsingControls: browsingControls,
         chromeVisible: chromeVisible,
         skipIntroShown: skipIntroShown,
+        pauseInfoShown: pauseInfoShown,
       );
 
   group('sur un téléviseur', () {
@@ -59,6 +61,20 @@ void main() {
         () {
       expect(route(_down(LogicalKeyboardKey.select), isTv: true),
           isA<PlayerKeyEnterControlBar>());
+    });
+
+    test('devant l’écran de pause, OK relance la lecture (ADR-0137)', () {
+      expect(
+        route(_down(LogicalKeyboardKey.select),
+            isTv: true, pauseInfoShown: true),
+        isA<PlayerKeyTogglePlayback>(),
+      );
+      // Même si la télécommande était restée sur un bouton de la barre.
+      expect(
+        route(_down(LogicalKeyboardKey.select),
+            isTv: true, pauseInfoShown: true, browsingControls: true),
+        isA<PlayerKeyTogglePlayback>(),
+      );
     });
 
     test('OK presse « Passer l’intro » quand il est seul à l’écran', () {

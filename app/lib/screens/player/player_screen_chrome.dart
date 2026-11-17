@@ -146,7 +146,7 @@ extension _PlayerChrome on _PlayerScreenState {
     _keyboardFocusNode.requestFocus();
     // A finger on the picture counts as being there, exactly like a mouse move:
     // no countdown gets to act on a player someone is holding.
-    _episodeNav?.onUserActivity();
+    _noteUserActivity();
 
     // Touch: one rule for all three zones, so the middle of the screen is not
     // a different player from its edges — and that rule is only ever about the
@@ -257,7 +257,7 @@ extension _PlayerChrome on _PlayerScreenState {
   /// image 4K. Le compte à rebours dure quatre secondes — le décaler de deux
   /// dixièmes ne se voit pas, et c'est tout ce que coûte ce filtre.
   void _handlePointerHover() {
-    _episodeNav?.onUserActivity();
+    _noteUserActivity();
     if (_showControls) {
       final now = DateTime.now();
       final last = _lastHoverRearm;
@@ -300,7 +300,7 @@ extension _PlayerChrome on _PlayerScreenState {
     // The first frame is one, and it used to count: an intro that opens the
     // episode had its countdown frozen before anyone could see it run, so the
     // intro never skipped itself.
-    if (byUser) _episodeNav?.onUserActivity();
+    if (byUser) _noteUserActivity();
     // The end card owns the screen: waking the HUD on every mouse move would
     // stack a progress bar and a play button over it.
     if (_pageOverImage || _stillWatchingAsked) return;

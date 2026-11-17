@@ -71,6 +71,24 @@ abstract final class OnyxChromeTheme {
     stops: [0.0, 0.45, 1.0],
   );
 
+  /// Le voile de l'écran « Vous regardez » d'un film en pause (ADR-0137) :
+  /// dense à gauche, où se lit le résumé, il laisse la droite de l'image
+  /// visible. Plat, sans flou, comme le reste du chrome.
+  static const LinearGradient pauseInfoSideScrim = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xE0000000), Color(0x9E000000), Color(0x00000000)],
+    stops: [0.0, 0.42, 0.75],
+  );
+
+  /// Le même écran, en bas : la ligne du temps restant y garde son contraste
+  /// sur une image claire.
+  static const LinearGradient pauseInfoBottomScrim = LinearGradient(
+    begin: Alignment.bottomCenter,
+    end: Alignment.topCenter,
+    colors: [Color(0xD9000000), Color(0x00000000)],
+  );
+
   // --- Metrics ------------------------------------------------------------
 
   /// Sizes are split in two fixed sets rather than scaled continuously: at

@@ -20,13 +20,16 @@ import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 
-/// La recherche du catalogue dans la barre de navigation.
+/// La recherche du catalogue dans la barre du téléphone et du téléviseur.
 ///
 /// Dès le premier caractère tapé, la page de résultats s'ouvre
-/// ([SearchResultsScreen]) : une grille d'affiches en pleine page, mise à jour
-/// à chaque frappe. La liste déroulante sous le champ a disparu — elle montrait
-/// huit titres dans une fenêtre étroite, et il fallait un clic de plus pour
-/// voir le reste.
+/// ([SearchResultsScreen]) : une grille d'affiches en pleine page, avec son
+/// propre champ, où la frappe continue. La liste déroulante sous le champ a
+/// disparu — elle montrait huit titres dans une fenêtre étroite, et il
+/// fallait un clic de plus pour voir le reste.
+///
+/// Le bureau a la sienne, dans son en-tête (`DesktopHeaderSearch`,
+/// ADR-0139).
 class GlassCatalogSearch extends StatefulWidget {
   final bool expandInline;
   final double collapsedWidth;
@@ -39,14 +42,6 @@ class GlassCatalogSearch extends StatefulWidget {
   /// ([TvTabBarItem]), à côté d'eux et dans le même dessin (ADR-0117).
   final bool tabBarTrigger;
 
-  /// Vrai quand ce champ reste à l'écran au-dessus des pages que la coquille
-  /// ouvre — la barre de verre du grand écran. Il reste alors le seul champ :
-  /// on continue d'y taper, et la page de résultats le suit.
-  ///
-  /// Faux pour la barre du téléphone, que la coquille retire dès qu'une page
-  /// s'ouvre : la frappe passe au champ de la page de résultats.
-  final bool staysAbovePages;
-
   const GlassCatalogSearch({
     super.key,
     this.expandInline = true,
@@ -54,7 +49,6 @@ class GlassCatalogSearch extends StatefulWidget {
     this.expandedWidth = 300,
     this.compactTrigger = false,
     this.tabBarTrigger = false,
-    this.staysAbovePages = false,
   });
 
   @override
@@ -98,19 +92,7 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
   }
 
   void _onQueryChanged(String value) {
-    if (widget.staysAbovePages) {
-      context.read<SearchProvider>().setQuery(value);
-    }
-    if (value.trim().isNotEmpty) {
-      _openResults(value);
-    } else if (widget.staysAbovePages) {
-      // Le champ vidé à la main rend la page d'avant. Le focus reste dans le
-      // champ : on efface souvent pour retaper autre chose. La page rendue le
-      // réclame en revenant au premier plan ; le redemander dans la même
-      // frame l'emporte, sans que le champ se replie puis se rouvre.
-      _closeResults();
-      _focusNode.requestFocus();
-    }
+    if (value.trim().isNotEmpty) _openResults(value);
   }
 
   /// Ouvre la page de résultats, ou y ramène si elle est déjà dans la pile.
@@ -124,15 +106,12 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
       return;
     }
 
-    final followsHeader = widget.staysAbovePages;
-    if (!followsHeader) {
-      // La frappe passe au champ de la page. Celui-ci se vide avant : un
-      // caractère arrivé avant que la page ne prenne le focus y resterait, et
-      // on le retrouverait au retour. Le clavier, lui, reste ouvert — le
-      // refermer ici le ferait clignoter sous le doigt.
-      _controller.clear();
-      context.read<SearchProvider>().clear();
-    }
+    // La frappe passe au champ de la page. Celui-ci se vide avant : un
+    // caractère arrivé avant que la page ne prenne le focus y resterait, et
+    // on le retrouverait au retour. Le clavier, lui, reste ouvert — le
+    // refermer ici le ferait clignoter sous le doigt.
+    _controller.clear();
+    context.read<SearchProvider>().clear();
 
     // Un prédicat vrai d'emblée ne retire rien : il donne la page du dessus.
     navigator.popUntil((route) {
@@ -141,25 +120,17 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
     });
 
     final route = SearchResultsRoute<void>(
-      // Sous la barre de verre, la page ne prend pas le focus en s'ouvrant :
-      // il reste dans ce champ, où l'on est en train de taper.
-      requestFocus: followsHeader ? false : null,
-      builder: (_) => followsHeader
-          ? const SearchResultsScreen.followingHeader()
-          : SearchResultsScreen(
-              query: typed,
-              autofocusField: true,
-              closesWhenEmptied: true,
-            ),
+      builder: (_) => SearchResultsScreen(
+        query: typed,
+        autofocusField: true,
+        closesWhenEmptied: true,
+      ),
     );
     _resultsRoute = route;
     navigator.push(route).whenComplete(() {
       if (!identical(_resultsRoute, route)) return;
       _resultsRoute = null;
       _routeBeforeResults = null;
-      // La page s'est refermée sans que le champ se vide (Retour, un onglet
-      // de la barre) : la recherche se referme avec elle.
-      if (followsHeader && mounted) _resetField();
     });
   }
 

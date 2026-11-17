@@ -30,6 +30,18 @@ func MatchWeight(foldedQuery string, titles ...string) float64 {
 	return weight
 }
 
+// IsExactTitle dit si l'un des titles, passé par Fold, est exactement
+// foldedQuery (passée par Fold), article de tête ignoré : « batman » est le
+// titre exact de « The Batman ».
+func IsExactTitle(foldedQuery string, titles ...string) bool {
+	for _, title := range titles {
+		if rank, ok := MatchRank(Fold(title), foldedQuery); ok && rank == 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // leadingArticles sont ignorés en tête d'un titre pour juger s'il commence
 // par la requête : « The Batman » commence par « bat » autant que
 // « Batman », comme le rangement A → Z de l'app ignore ces articles.

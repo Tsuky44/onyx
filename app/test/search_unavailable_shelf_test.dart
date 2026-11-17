@@ -30,8 +30,8 @@ import 'support/search_catalog_fakes.dart';
 import 'support/tv_nav_harness.dart';
 
 /// Les titres que le serveur n'a pas, dans les recherches dessinées par
-/// Flutter (ADR-0129) : celle d'un téléviseur et celle du téléphone et du
-/// bureau. Ils portent le signe que l'app leur donne partout, l'affiche
+/// Flutter (ADR-0129) : celle d'un téléviseur et celle du téléphone. Celle
+/// du bureau est éprouvée par `desktop_search_test.dart`. Ils portent le signe que l'app leur donne partout, l'affiche
 /// voilée sous la pastille « Indispo », dans un rayon à eux sous ceux de la
 /// bibliothèque, et ouvrent leur fiche de demande.
 ///
@@ -241,7 +241,7 @@ void main() {
     });
   });
 
-  group('sur le bureau et le téléphone', () {
+  group('sur le téléphone', () {
     Future<void> pump(WidgetTester tester, {bool canRequest = true}) async {
       final api = _server();
       final auth = FakeAuth(api, Permissions(requestMedia: canRequest));
@@ -255,7 +255,7 @@ void main() {
           home: Scaffold(
             body: Column(
               children: [
-                const GlassCatalogSearch(staysAbovePages: true),
+                const GlassCatalogSearch(),
                 Expanded(
                   child: Navigator(
                     key: shellNavigatorKey,
@@ -333,7 +333,8 @@ void main() {
       expect(find.text('Pas sur le serveur'), findsNothing);
       expect(find.byType(RequestMediaCard), findsNothing);
 
-      await tester.enterText(find.byType(TextField), 'arrival');
+      // La frappe continue dans le champ de la page de résultats.
+      await tester.enterText(find.byType(TextField).last, 'arrival');
       await _catalogAnswers(tester);
       expect(find.text('Aucun résultat'), findsOneWidget);
     });

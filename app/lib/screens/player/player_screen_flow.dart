@@ -124,6 +124,7 @@ extension _PlayerFlow on _PlayerScreenState {
           _playerController.isPlaying, _playerController.position));
     }
     _hideControlsWithDelay();
+    _notePlaybackChoiceForPauseInfo();
   }
 
   /// La minuterie de veille est arrivée à son terme : la lecture s'arrête ici.

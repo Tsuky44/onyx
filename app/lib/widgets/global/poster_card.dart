@@ -69,6 +69,11 @@ class PosterCard extends StatefulWidget {
   /// bibliothèque cale sa rangée focalisée en haut (ADR-0125).
   final double scrollAlignment;
 
+  /// Mise en avant venue d'ailleurs que le pointeur et le focus : la
+  /// sélection au clavier de la recherche du bureau, qui reste dans son
+  /// champ pendant que les flèches parcourent la grille (ADR-0139).
+  final PosterHighlight highlight;
+
   const PosterCard({
     super.key,
     required this.posterUrl,
@@ -85,6 +90,7 @@ class PosterCard extends StatefulWidget {
     this.autofocus = false,
     this.onPrefetch,
     this.scrollAlignment = 0.5,
+    this.highlight = PosterHighlight.none,
   });
 
   static const double radius = 12;
@@ -130,7 +136,8 @@ class _PosterCardState extends State<PosterCard> {
   /// Hover and D-pad focus are the same state as far as this card is concerned:
   /// "the user is pointing at me". One flag drives one highlight, so the mouse
   /// and the remote never disagree about which card is live.
-  bool get _active => _hovered || _focused;
+  bool get _active =>
+      _hovered || _focused || widget.highlight != PosterHighlight.none;
 
   Timer? _prefetchTimer;
 
@@ -154,6 +161,20 @@ class _PosterCardState extends State<PosterCard> {
   void _prefetchNow() {
     _cancelPrefetch();
     if (mounted) widget.onPrefetch?.call();
+  }
+
+  @override
+  void didUpdateWidget(PosterCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Une sélection au clavier qui s'arrête ici annonce l'ouverture comme le
+    // survol : Entrée trouve la fiche déjà chaude.
+    final was = oldWidget.highlight != PosterHighlight.none;
+    final is_ = widget.highlight != PosterHighlight.none;
+    if (!was && is_) {
+      _schedulePrefetch();
+    } else if (was && !is_ && !_hovered && !_focused) {
+      _cancelPrefetch();
+    }
   }
 
   @override
@@ -215,7 +236,8 @@ class _PosterCardState extends State<PosterCard> {
                         ),
                         PosterHoverOverlay(
                           active: _active,
-                          focused: _focused,
+                          focused: _focused ||
+                              widget.highlight == PosterHighlight.ringed,
                           showPlay: false,
                         ),
                         if (widget.hoverDetails != null)
@@ -322,6 +344,18 @@ class _PosterCardState extends State<PosterCard> {
       ),
     );
   }
+}
+
+/// Comment une affiche se montre quand elle est sélectionnée sans avoir le
+/// focus ([PosterCard.highlight]).
+enum PosterHighlight {
+  none,
+
+  /// Soulevée comme sous le pointeur : ce qu'Entrée ouvrirait.
+  lifted,
+
+  /// Soulevée et cerclée du blanc du focus : les flèches la déplacent.
+  ringed,
 }
 
 /// Durée commune aux animations de survol des affiches. Coupée net quand le

@@ -70,6 +70,47 @@ func TestSearchKeepsExactTitleFirstAmongComparablyKnownTitles(t *testing.T) {
 	}
 }
 
+// Le cas qui a ajouté le palier : « ava » sortait la saga Avatar avant Ava,
+// moins connu mais titre exact. Un titre exact assez connu passe en tête,
+// même devant bien plus populaire que lui.
+func TestSearchPutsKnownExactTitleFirstEvenAboveMorePopularTitles(t *testing.T) {
+	rows := []tmdbCatalogRow{
+		{ID: 1, MediaType: "movie", Title: "Avatar", Popularity: 60, VoteCount: 32000},
+		{ID: 2, MediaType: "movie", Title: "Avatar : La Voie de l'eau", Popularity: 90, VoteCount: 12000},
+		{ID: 3, MediaType: "movie", Title: "Ava", Popularity: 12, VoteCount: 2000},
+		{ID: 4, MediaType: "tv", Name: "Avatar, le dernier maître de l'air", Popularity: 150, VoteCount: 4000},
+	}
+	got := rankSearchRows("ava", rows)
+	if got[0].ID != 3 {
+		t.Fatalf("« Ava » doit ouvrir la liste : %v", titlesOf(got))
+	}
+}
+
+// Le seuil protège du titre exact obscur : sans votes ni popularité, il reste
+// rangé par score, derrière les titres connus qui commencent par la requête.
+func TestSearchKeepsObscureExactTitleBehindKnownTitles(t *testing.T) {
+	rows := []tmdbCatalogRow{
+		{ID: 1, MediaType: "movie", Title: "Avatar", Popularity: 60, VoteCount: 32000},
+		{ID: 2, MediaType: "movie", Title: "Ava", Popularity: 0.5, VoteCount: 3},
+	}
+	got := rankSearchRows("ava", rows)
+	if got[0].ID != 1 {
+		t.Fatalf("un « Ava » sans notoriété ne doit pas passer en tête : %v", titlesOf(got))
+	}
+}
+
+// Un titre qui sort n'a pas encore de votes : sa popularité suffit à passer
+// le seuil.
+func TestSearchLetsPopularUnreleasedExactTitleLead(t *testing.T) {
+	rows := []tmdbCatalogRow{
+		{ID: 1, MediaType: "movie", Title: "Avatar", Popularity: 60, VoteCount: 32000},
+		{ID: 2, MediaType: "movie", Title: "Ava", Popularity: 25, VoteCount: 0},
+	}
+	if got := rankSearchRows("ava", rows); got[0].ID != 2 {
+		t.Fatalf("un « Ava » populaire sans votes doit passer en tête : %v", titlesOf(got))
+	}
+}
+
 // Le titre est traduit (language=fr-FR) : on cherche aussi dans le titre
 // original, et sans accents.
 func TestSearchMatchesOriginalTitleAndIgnoresAccents(t *testing.T) {
