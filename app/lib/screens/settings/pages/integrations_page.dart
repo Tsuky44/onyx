@@ -141,8 +141,11 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
           );
       if (!mounted) return;
       setState(() => _apply(updated));
-      showSettingsSnack(context,
-          clearKey ? tr('Clé Fanart.tv effacée.') : tr('Fanart.tv enregistré.'));
+      showSettingsSnack(
+          context,
+          clearKey
+              ? tr('Clé Fanart.tv effacée.')
+              : tr('Fanart.tv enregistré.'));
     } catch (e) {
       if (mounted) {
         showSettingsSnack(
@@ -192,8 +195,11 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
       });
       // L'onglet Demandes paraît ou disparaît avec le compagnon.
       unawaited(context.read<MediaRequestsProvider>().recheckCompanion());
-      showSettingsSnack(context,
-          clearKey ? tr('Clé effacée.') : tr('{0} enregistré.', [service.label]));
+      showSettingsSnack(
+          context,
+          clearKey
+              ? tr('Clé effacée.')
+              : tr('{0} enregistré.', [service.label]));
     } catch (e) {
       if (mounted) {
         showSettingsSnack(
@@ -216,8 +222,7 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
           );
       if (!mounted) return;
       if (result == null) {
-        showSettingsSnack(
-            context,
+        showSettingsSnack(context,
             tr('Ce serveur est trop ancien pour cette fonction. Mettez-le à jour.'),
             error: true);
       } else {
@@ -257,10 +262,9 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
           SettingsGroup(
             title: tr('The Movie Database (TMDB)'),
             trailing: _status(settings.tmdbApiKeySet),
-            footer:
-                tr('Sert à identifier les fichiers, récupérer affiches, '
-                    'résumés et distribution, et alimenter le catalogue des '
-                    'demandes.'),
+            footer: tr('Sert à identifier les fichiers, récupérer affiches, '
+                'résumés et distribution, et alimenter le catalogue des '
+                'demandes.'),
             padded: true,
             children: [
               Column(
@@ -332,84 +336,93 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
             trailing: _status(
                 settings.mediaHubUrl.isNotEmpty && settings.mediaHubApiKeySet),
             footer: _service.isSeerr
-                ? tr('Les demandes faites depuis l’onglet Demander sont '
+                ? tr(
+                    'Les demandes faites depuis l’onglet Demander sont '
                     'transmises à {0}, qui les confie à Radarr et Sonarr. La '
                     'clé API se lit dans {0}, sous Paramètres → Général. Un '
                     'compte Onyx y agit comme le compte du même nom ; sans '
                     'homonyme, il passe par le compte de la clé.',
                     [_service.label])
-                : tr('Les demandes faites depuis l’onglet Demander sont '
+                : tr(
+                    'Les demandes faites depuis l’onglet Demander sont '
                     'transmises à MediaHub pour être téléchargées. La clé est '
                     'PLAYER_INTEGRATION_API_KEY de MediaHub. Pour que MediaHub '
                     'prévienne Onyx des imports, réglez-y ONYX_WEBHOOK_URL sur '
-                    '{0}/api/integrations/mediahub/events.', [
-                    context.read<ApiClient>().baseUrl
-                  ]),
+                    '{0}/api/integrations/mediahub/events.',
+                    [context.read<ApiClient>().baseUrl]),
             children: [
-              if (_canChooseService)
-                SettingsChoiceTile<RequestService>(
-                  title: tr('Service'),
-                  subtitle: tr('Celui qui reçoit les demandes et les fait '
-                      'télécharger.'),
-                  value: _service,
-                  options: [
-                    for (final service in RequestService.values)
-                      (service, service.label),
-                  ],
-                  // Les réserves du dernier test parlaient de l'autre service.
-                  onChanged: (service) => setState(() {
-                    _service = service;
-                    _linkNotes = const [];
-                  }),
-                ),
-              Padding(
-                // Le retrait de 16 de la rangée du choix, juste au-dessus.
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TvDeferredKeyboard(
-                      builder: (context, focusNode, canRequestFocus) =>
-                          TextField(
-                        focusNode: focusNode,
-                        canRequestFocus: canRequestFocus,
-                        controller: _mediaHubUrl,
-                        keyboardType: TextInputType.url,
-                        decoration: InputDecoration(
-                          labelText: tr('Adresse de {0}', [_service.label]),
-                          hintText: _service.urlExample,
-                          prefixIcon: const Icon(Icons.link_rounded),
+              // Une seule rangée pour le groupe : le choix et son formulaire
+              // vont ensemble, sans le filet qui sépare deux réglages.
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_canChooseService)
+                    SettingsChoiceTile<RequestService>(
+                      title: tr('Service'),
+                      subtitle: tr('Celui qui reçoit les demandes et les fait '
+                          'télécharger.'),
+                      value: _service,
+                      options: [
+                        for (final service in RequestService.values)
+                          (service, service.label),
+                      ],
+                      // Les réserves du dernier test parlaient de l'autre service.
+                      onChanged: (service) => setState(() {
+                        _service = service;
+                        _linkNotes = const [];
+                      }),
+                    ),
+                  Padding(
+                    // Le retrait de 16 de la rangée du choix, juste au-dessus.
+                    padding: EdgeInsets.fromLTRB(
+                        16, _canChooseService ? 2 : 14, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TvDeferredKeyboard(
+                          builder: (context, focusNode, canRequestFocus) =>
+                              TextField(
+                            focusNode: focusNode,
+                            canRequestFocus: canRequestFocus,
+                            controller: _mediaHubUrl,
+                            keyboardType: TextInputType.url,
+                            decoration: InputDecoration(
+                              labelText: tr('Adresse de {0}', [_service.label]),
+                              hintText: _service.urlExample,
+                              prefixIcon: const Icon(Icons.link_rounded),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        _KeyField(
+                          controller: _mediaHubKey,
+                          label: _service.isSeerr
+                              ? tr('Clé API {0}', [_service.label])
+                              : tr('Clé d’intégration MediaHub'),
+                          // La clé enregistrée est celle du service des réglages :
+                          // un autre choisi, il n'y en a pas encore pour lui.
+                          configured:
+                              settings.mediaHubApiKeySet && !_serviceChanged,
+                          hint: settings.mediaHubApiKeyHint,
+                        ),
+                        const SizedBox(height: 14),
+                        for (final note in _linkNotes) ...[
+                          SettingsBanner(note),
+                          const SizedBox(height: 10),
+                        ],
+                        _Actions(
+                          saving: _savingMediaHub || _testingMediaHub,
+                          onTest: _testMediaHub,
+                          testing: _testingMediaHub,
+                          onSave: () => _saveMediaHub(),
+                          onClear: settings.mediaHubApiKeySet
+                              ? () => _saveMediaHub(clearKey: true)
+                              : null,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    _KeyField(
-                      controller: _mediaHubKey,
-                      label: _service.isSeerr
-                          ? tr('Clé API {0}', [_service.label])
-                          : tr('Clé d’intégration MediaHub'),
-                      // La clé enregistrée est celle du service des réglages :
-                      // un autre choisi, il n'y en a pas encore pour lui.
-                      configured:
-                          settings.mediaHubApiKeySet && !_serviceChanged,
-                      hint: settings.mediaHubApiKeyHint,
-                    ),
-                    const SizedBox(height: 14),
-                    for (final note in _linkNotes) ...[
-                      SettingsBanner(note),
-                      const SizedBox(height: 10),
-                    ],
-                    _Actions(
-                      saving: _savingMediaHub || _testingMediaHub,
-                      onTest: _testMediaHub,
-                      testing: _testingMediaHub,
-                      onSave: () => _saveMediaHub(),
-                      onClear: settings.mediaHubApiKeySet
-                          ? () => _saveMediaHub(clearKey: true)
-                          : null,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -450,7 +463,8 @@ class _KeyFieldState extends State<_KeyField> {
         decoration: InputDecoration(
           labelText: widget.label,
           hintText: widget.configured
-              ? tr('Clé active {0} — laisser vide pour la garder', [widget.hint ?? '••••'])
+              ? tr('Clé active {0} — laisser vide pour la garder',
+                  [widget.hint ?? '••••'])
               : tr('Coller la clé'),
           prefixIcon: const Icon(Icons.key_rounded),
           suffixIcon: IconButton(
@@ -504,9 +518,8 @@ class _Actions extends StatelessWidget {
           ),
         FilledButton(
           onPressed: saving ? null : onSave,
-          child: Text(saving && !testing
-              ? tr('Enregistrement…')
-              : tr('Enregistrer')),
+          child: Text(
+              saving && !testing ? tr('Enregistrement…') : tr('Enregistrer')),
         ),
       ],
     );
