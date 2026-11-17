@@ -52,3 +52,7 @@ server/data/
 
 # Flutter build output (generated)
 prototypes/**/windows/flutter/ephemeral/
+
+# Préférences Claude perso (une par dev, recréées par le setup script de
+# chaque environnement cloud). Jamais versionnées, donc jamais mergées.
+CLAUDE.local.md
