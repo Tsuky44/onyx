@@ -9,12 +9,14 @@ import (
 	"sync"
 
 	"project-player/server/database"
+	"project-player/server/mediahub"
 	"project-player/server/otp"
 )
 
 const (
 	KeyMediaHubURL          = "mediahub_url"
 	KeyMediaHubAPIKey       = "mediahub_api_key"
+	KeyRequestService       = "request_service"
 	KeyTMDBAPIKey           = "tmdb_api_key"
 	KeyTMDBLanguage         = "tmdb_language"
 	KeyFanartAPIKey         = "fanart_api_key"
@@ -116,6 +118,20 @@ func MediaHubAPIKey() string {
 	return strings.TrimSpace(os.Getenv("MEDIAHUB_API_KEY"))
 }
 
+// RequestService dit quel compagnon de demandes est à l'adresse réglée
+// (ADR-0136) : réglage, puis REQUEST_SERVICE, sinon MediaHub. mediahub_url et
+// mediahub_api_key gardent leur nom d'avant le choix du service, que MediaHub
+// et les apps déjà installées écrivent encore.
+func RequestService() mediahub.Service {
+	if v, ok := getStored(KeyRequestService); ok {
+		if service, valid := mediahub.ParseService(v); valid {
+			return service
+		}
+	}
+	service, _ := mediahub.ParseService(os.Getenv("REQUEST_SERVICE"))
+	return service
+}
+
 func isPlaceholderTMDBKey(key string) bool {
 	return key == "" ||
 		key == "your_tmdb_api_key_here" ||
@@ -203,9 +219,11 @@ func OTPPolicy() otp.Policy {
 
 // PublicSettings is the safe API payload (secrets never returned in clear).
 type PublicSettings struct {
-	MediaHubURL          string `json:"mediahub_url"`
-	MediaHubAPIKeySet    bool   `json:"mediahub_api_key_set"`
-	MediaHubAPIKeyHint   string `json:"mediahub_api_key_hint,omitempty"`
+	MediaHubURL        string `json:"mediahub_url"`
+	MediaHubAPIKeySet  bool   `json:"mediahub_api_key_set"`
+	MediaHubAPIKeyHint string `json:"mediahub_api_key_hint,omitempty"`
+	// RequestService : "mediahub", "overseerr" ou "jellyseerr" (ADR-0136).
+	RequestService       string `json:"request_service"`
 	TMDBAPIKeySet        bool   `json:"tmdb_api_key_set"`
 	TMDBAPIKeyHint       string `json:"tmdb_api_key_hint,omitempty"`
 	TMDBLanguage         string `json:"tmdb_language"`
@@ -236,6 +254,7 @@ func Snapshot() PublicSettings {
 		MediaHubURL:          MediaHubURL(),
 		MediaHubAPIKeySet:    mhKey != "",
 		MediaHubAPIKeyHint:   maskSecret(mhKey),
+		RequestService:       string(RequestService()),
 		TMDBAPIKeySet:        tmdbKey != "",
 		TMDBAPIKeyHint:       maskSecret(tmdbKey),
 		TMDBLanguage:         TMDBLanguage(),
@@ -249,9 +268,12 @@ func Snapshot() PublicSettings {
 
 // UpdateRequest is the PUT /api/settings body. Omitted/blank secrets keep current values.
 type UpdateRequest struct {
-	MediaHubURL          *string `json:"mediahub_url"`
-	MediaHubAPIKey       *string `json:"mediahub_api_key"`
-	ClearMediaHubAPIKey  bool    `json:"clear_mediahub_api_key"`
+	MediaHubURL         *string `json:"mediahub_url"`
+	MediaHubAPIKey      *string `json:"mediahub_api_key"`
+	ClearMediaHubAPIKey bool    `json:"clear_mediahub_api_key"`
+	// RequestService : une des valeurs de mediahub.Service. Une autre est
+	// refusée avant toute écriture.
+	RequestService       *string `json:"request_service"`
 	TMDBAPIKey           *string `json:"tmdb_api_key"`
 	ClearTMDBAPIKey      bool    `json:"clear_tmdb_api_key"`
 	TMDBLanguage         *string `json:"tmdb_language"`
@@ -276,6 +298,19 @@ func ApplyUpdate(req UpdateRequest) (PublicSettings, error) {
 		}
 	}
 
+	var service mediahub.Service
+	if req.RequestService != nil {
+		var ok bool
+		if service, ok = mediahub.ParseService(*req.RequestService); !ok {
+			return PublicSettings{}, ErrInvalidRequestService
+		}
+	}
+
+	if req.RequestService != nil {
+		if err := setStored(KeyRequestService, string(service)); err != nil {
+			return PublicSettings{}, err
+		}
+	}
 	if req.MediaHubURL != nil {
 		if err := setStored(KeyMediaHubURL, strings.TrimRight(strings.TrimSpace(*req.MediaHubURL), "/")); err != nil {
 			return PublicSettings{}, err
@@ -346,6 +381,9 @@ func ApplyUpdate(req UpdateRequest) (PublicSettings, error) {
 
 	return Snapshot(), nil
 }
+
+// ErrInvalidRequestService : le service de demandes demandé n'existe pas.
+var ErrInvalidRequestService = errors.New("config: invalid request service")
 
 // ErrInvalidOTPPolicy : la politique demandée n'existe pas.
 var ErrInvalidOTPPolicy = errors.New("config: invalid otp policy")

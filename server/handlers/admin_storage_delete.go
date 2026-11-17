@@ -125,7 +125,7 @@ func forgetInMediaHub(parent context.Context, userID int, target storageTarget) 
 // de MediaHub tel quel, que l'app prendrait pour une session expirée.
 func writeForgetFailure(w http.ResponseWriter, err error) {
 	var status *mediahub.StatusError
-	message := "MediaHub ne répond pas : rien n'a été supprimé."
+	message := companionLabel() + " ne répond pas : rien n'a été supprimé."
 	switch {
 	case errors.As(err, &status) && status.Status == http.StatusNotFound:
 		message = "MediaHub est trop ancien pour retirer le titre de sorraa ou de Radarr/Sonarr : mettez-le à jour. Rien n'a été supprimé."

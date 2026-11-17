@@ -119,11 +119,13 @@ mixin _LibraryAdminEndpoints {
     return ServerSettings.fromJson(response.data as Map<String, dynamic>);
   }
 
-  /// Le serveur tente de joindre OnyxHub avec l'adresse et la clé données, ou
-  /// celles enregistrées quand elles sont vides (ADR-0072). Null pour un
-  /// serveur qui ne sait pas encore le faire.
+  /// Le serveur tente de joindre le compagnon de demandes avec l'adresse et la
+  /// clé données, ou celles enregistrées quand elles sont vides (ADR-0072).
+  /// [service] est celui du formulaire, pas encore enregistré ; sans lui, le
+  /// serveur teste celui de ses réglages. Null pour un serveur qui ne sait pas
+  /// encore tester.
   Future<MediaHubLinkTest?> testMediaHubLink(
-      {String? url, String? apiKey}) async {
+      {String? url, String? apiKey, RequestService? service}) async {
     final ping = await _dio.get('/api/ping');
     final info = ServerCapabilities.tryParse(ping.data);
     if (info == null || !info.supports(ServerCapabilities.mediaHubLinkTest)) {
@@ -132,6 +134,7 @@ mixin _LibraryAdminEndpoints {
     final response = await _dio.post('/api/settings/mediahub/test', data: {
       if (url != null && url.isNotEmpty) 'mediahub_url': url,
       if (apiKey != null && apiKey.isNotEmpty) 'mediahub_api_key': apiKey,
+      if (service != null) 'request_service': service.wire,
     });
     return MediaHubLinkTest.fromJson(response.data as Map<String, dynamic>);
   }
@@ -140,6 +143,7 @@ mixin _LibraryAdminEndpoints {
     String? mediaHubUrl,
     String? mediaHubApiKey,
     bool clearMediaHubApiKey = false,
+    RequestService? requestService,
     String? tmdbApiKey,
     bool clearTmdbApiKey = false,
     String? tmdbLanguage,
@@ -153,6 +157,7 @@ mixin _LibraryAdminEndpoints {
       if (mediaHubUrl != null) 'mediahub_url': mediaHubUrl,
       if (mediaHubApiKey != null) 'mediahub_api_key': mediaHubApiKey,
       if (clearMediaHubApiKey) 'clear_mediahub_api_key': true,
+      if (requestService != null) 'request_service': requestService.wire,
       if (tmdbApiKey != null) 'tmdb_api_key': tmdbApiKey,
       if (clearTmdbApiKey) 'clear_tmdb_api_key': true,
       if (tmdbLanguage != null) 'tmdb_language': tmdbLanguage,

@@ -16,7 +16,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// Le test de la liaison avec le compagnon de demandes (ADR-0072, 0087).
+// Le test de la liaison avec le compagnon de demandes (ADR-0072, 0087, 0136).
 //
 // Seul le serveur peut dire s'il joint OnyxHub : l'app ou le navigateur de
 // l'admin ne sont pas sur le même réseau, et une adresse qui marche depuis un
@@ -29,17 +29,20 @@ type mediaHubLinkRequest struct {
 	// celles des réglages.
 	MediaHubURL    *string `json:"mediahub_url"`
 	MediaHubAPIKey *string `json:"mediahub_api_key"`
+	// RequestService : le service choisi dans le formulaire (ADR-0136).
+	RequestService *string `json:"request_service"`
 }
 
 type mediaHubLinkResult struct {
 	OK      bool   `json:"ok"`
 	Message string `json:"message"`
-	// Service vaut "onyxhub" ou "mediahub" quand l'adresse a répondu comme l'un d'eux.
+	// Service vaut "onyxhub", "mediahub", "overseerr" ou "jellyseerr" quand
+	// l'adresse a répondu comme l'un d'eux.
 	Service string `json:"service,omitempty"`
 	Version string `json:"version,omitempty"`
 	// Notes sont les réserves d'une liaison qui marche, prêtes à afficher :
-	// le compte de l'administrateur absent de MediaHub, ses notifications
-	// sans adresse (MediaHub v1 seulement).
+	// le compte de l'administrateur absent du compagnon, les notifications
+	// de MediaHub sans adresse.
 	Notes []string `json:"notes,omitempty"`
 }
 
@@ -132,10 +135,55 @@ func probeOnyxHub(baseURL, apiKey string, client *http.Client) mediaHubLinkResul
 		if err == nil && legacy == http.StatusOK {
 			return mediaHubLinkResult{OK: true, Message: "MediaHub répond (il ne permet pas de vérifier la clé).", Service: "mediahub"}
 		}
+		// Le service choisi n'est pas le bon : le dire évite de chercher la
+		// panne du côté de l'adresse ou de la clé.
+		seerr := mediahub.Client{BaseURL: baseURL, APIKey: apiKey, HTTP: client}
+		if _, ok, err := seerr.IsSeerr(context.Background()); err == nil && ok {
+			return mediaHubLinkResult{Message: "Cette adresse répond comme Overseerr ou Jellyseerr : choisissez ce service, puis testez à nouveau."}
+		}
 		return mediaHubLinkResult{Message: "Cette adresse répond, mais ni comme OnyxHub ni comme MediaHub."}
 	default:
 		return mediaHubLinkResult{Message: fmt.Sprintf("Réponse inattendue de cette adresse (HTTP %d).", status)}
 	}
+}
+
+// probeSeerr teste Overseerr ou Jellyseerr : l'adresse par leur GET /status,
+// public, puis la clé par le compte qu'elle ouvre. La réserve dit comment le
+// compte de l'administrateur y agira (ADR-0136).
+func probeSeerr(baseURL, apiKey string, service mediahub.Service, as mediahub.Account, client *http.Client) mediaHubLinkResult {
+	label := service.Label()
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	apiKey = strings.TrimSpace(apiKey)
+	if baseURL == "" {
+		return mediaHubLinkResult{Message: fmt.Sprintf("Aucune adresse %s n'est enregistrée.", label)}
+	}
+	if apiKey == "" {
+		return mediaHubLinkResult{Message: "Aucune clé API n'est enregistrée."}
+	}
+
+	seerr := mediahub.Client{BaseURL: baseURL, APIKey: apiKey, HTTP: client, Service: service}
+	link, err := seerr.ProbeSeerr(context.Background(), as)
+	switch {
+	case err != nil:
+		return mediaHubLinkResult{Message: "Le serveur ne joint pas cette adresse."}
+	case !link.Answered:
+		return mediaHubLinkResult{Message: fmt.Sprintf("Cette adresse répond, mais pas comme %s.", label)}
+	case !link.KeyAccepted:
+		return mediaHubLinkResult{Message: fmt.Sprintf("%s répond, mais refuse cette clé.", label), Service: string(service), Version: link.Version}
+	}
+
+	result := mediaHubLinkResult{
+		OK:      true,
+		Message: fmt.Sprintf("%s %s répond et accepte la clé.", label, link.Version),
+		Service: string(service),
+		Version: link.Version,
+	}
+	if as.Username != "" && !link.Linked {
+		result.Notes = append(result.Notes, fmt.Sprintf("Aucun compte %s ne s'appelle « %s » : ce compte, comme tout compte "+
+			"d'Onyx sans homonyme, agit par le compte de la clé (« %s »), dont il partage les demandes et les droits.",
+			label, as.Username, link.KeyAccount))
+	}
+	return result
 }
 
 func getWithKey(client *http.Client, target, apiKey string) (int, []byte, error) {
@@ -176,8 +224,21 @@ func TestMediaHubLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		apiKey = *req.MediaHubAPIKey
 	}
 
+	service := config.RequestService()
+	if req.RequestService != nil {
+		var ok bool
+		if service, ok = mediahub.ParseService(*req.RequestService); !ok {
+			writeJSONError(w, http.StatusBadRequest, "Service de demandes inconnu")
+			return
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	// Sans compte lisible, le test vaut quand même pour l'adresse et la clé.
 	account, _ := mediaHubAccount(userID)
+	if service.Seerr() {
+		_ = json.NewEncoder(w).Encode(probeSeerr(baseURL, apiKey, service, account, httpx.Standard))
+		return
+	}
 	_ = json.NewEncoder(w).Encode(probeMediaHub(baseURL, apiKey, account, httpx.Standard))
 }

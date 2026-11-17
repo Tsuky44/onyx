@@ -32,7 +32,7 @@ import (
 // nom de n'importe quel compte : lire sa progression n'ouvre rien de plus.
 func RequireMediaHubKey(next AuthenticatedHandle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		if err := mediahub.VerifyKey(r.Header, config.MediaHubAPIKey()); err != nil {
+		if err := mediahub.VerifyKey(r.Header, mediaHubInboundKey()); err != nil {
 			writeJSONError(w, http.StatusUnauthorized, "Clé d'intégration invalide")
 			return
 		}

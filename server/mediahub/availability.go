@@ -19,6 +19,9 @@ func (c Client) Availability(ctx context.Context, tmdbID int, mediaType string) 
 	if err != nil {
 		return nil, err
 	}
+	if dialect == DialectSeerr {
+		return c.seerrAvailability(ctx, tmdbID, mediaType)
+	}
 	path := "/api/media/availability/" + strconv.Itoa(tmdbID)
 	if dialect == DialectV1 {
 		path = V1Path + "/availability/" + strconv.Itoa(tmdbID)
@@ -61,6 +64,9 @@ func (c Client) AvailabilityBatch(ctx context.Context, items []BatchItem) (map[s
 	dialect, err := c.dialect(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if dialect == DialectSeerr {
+		return c.seerrAvailabilityBatch(ctx, items)
 	}
 	path := V1Path + "/availability"
 	if dialect == DialectOnyxHub {

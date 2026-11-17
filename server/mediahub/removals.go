@@ -30,6 +30,9 @@ func (c Client) ForgetMedia(ctx context.Context, as Account, tmdbID int, mediaTy
 	if err != nil {
 		return Removal{}, err
 	}
+	if dialect == DialectSeerr {
+		return c.seerrForget(ctx, as, tmdbID, mediaType, season)
+	}
 	if dialect != DialectV1 {
 		return Removal{}, ErrUnsupported
 	}

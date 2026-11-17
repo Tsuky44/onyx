@@ -1444,10 +1444,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Requests service',
   'MediaHub':
       'MediaHub',
-  'MediaHub enregistré.':
-      'MediaHub saved.',
-  'Adresse de MediaHub':
-      'MediaHub address',
+  '{0} enregistré.':
+      '{0} saved.',
+  'Adresse de {0}':
+      '{0} address',
   'Clé API MediaHub':
       'MediaHub API key',
   'Clé effacée.':
@@ -3250,16 +3250,16 @@ const Map<String, String> kEnglish = <String, String>{
       'On.',
   'Inactif.':
       'Off.',
-  'Demande envoyée à MediaHub.':
-      'Request sent to MediaHub.',
+  'Demande envoyée.':
+      'Request sent.',
   'Demande approuvée.':
       'Request approved.',
   'Demande refusée.':
       'Request declined.',
   'Demande supprimée.':
       'Request deleted.',
-  'MediaHub n’a pas pris la décision.':
-      'MediaHub did not take the decision.',
+  'Le service de demandes n’a pas pris la décision.':
+      'The request service did not take the decision.',
   'Toutes les demandes':
       'All requests',
   'Les miennes':
@@ -3296,6 +3296,20 @@ const Map<String, String> kEnglish = <String, String>{
       'Requests made from the Request tab are sent to MediaHub to be downloaded. The key is MediaHub’s PLAYER_INTEGRATION_API_KEY. For MediaHub to tell Onyx about imports, set its ONYX_WEBHOOK_URL to {0}/api/integrations/mediahub/events.',
   'Clé d’intégration MediaHub':
       'MediaHub integration key',
+  'Service':
+      'Service',
+  'Celui qui reçoit les demandes et les fait télécharger.':
+      'The one that receives requests and gets them downloaded.',
+  'Clé API {0}':
+      '{0} API key',
+  'Collez la clé de {0} : celle de {1} ne lui sert pas.':
+      'Paste the {0} key: the {1} one is of no use to it.',
+  'Les demandes faites depuis l’onglet Demander sont transmises à {0}, qui les confie à Radarr et Sonarr. La clé API se lit dans {0}, sous Paramètres → Général. Un compte Onyx y agit comme le compte du même nom ; sans homonyme, il passe par le compte de la clé.':
+      'Requests made from the Request tab are sent to {0}, which hands them to Radarr and Sonarr. The API key is in {0}, under Settings → General. An Onyx account acts there as the account with the same name; without one, it goes through the key’s account.',
+  'MediaHub, Overseerr ou Jellyseerr':
+      'MediaHub, Overseerr or Jellyseerr',
+  '{0} n’a pas de compte à votre nom : vos demandes passent par le compte de sa clé, avec celles des autres comptes sans homonyme.':
+      '{0} has no account under your name: your requests go through its key’s account, along with those of the other accounts without a namesake.',
   'Films populaires':
       'Popular movies',
   'Type de média':
@@ -3520,8 +3534,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Unwatched for 6 months',
   '{0} titre(s)':
       '{0} title(s)',
-  'MediaHub n’a pas répondu : les demandes ne s’affichent pas.':
-      'MediaHub didn\'t respond: requests aren\'t shown.',
+  'Le service de demandes n’a pas répondu : les demandes ne s’affichent pas.':
+      'The request service didn\'t respond: requests aren\'t shown.',
   'Type':
       'Type',
   'Pas regardé depuis':

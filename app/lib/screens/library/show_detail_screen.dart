@@ -242,7 +242,7 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
       await library.requestSeasons(show: _show, seasonNumbers: seasonNumbers);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr('Demande envoyée à MediaHub.'))),
+        SnackBar(content: Text(tr('Demande envoyée.'))),
       );
     } catch (_) {
       if (!mounted) return;

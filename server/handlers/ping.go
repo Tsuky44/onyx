@@ -77,6 +77,9 @@ const (
 	// GET /api/integrations/mediahub/storage, GET|DELETE …/storage/:id : le
 	// gestionnaire de stockage de MediaHub sur Onyx (ADR-0114).
 	CapabilityMediaHubStorage = "mediahub_storage"
+	// Le compagnon de demandes se choisit : MediaHub, Overseerr ou Jellyseerr
+	// (request_service dans les réglages et le test de liaison, ADR-0136).
+	CapabilityRequestServices = "request_services"
 )
 
 type pingResponse struct {
@@ -117,6 +120,7 @@ func pingPayload() pingResponse {
 			CapabilityMediaHubSSO,
 			CapabilityMediaHubDirectory,
 			CapabilityMediaHubStorage,
+			CapabilityRequestServices,
 		},
 	}
 }

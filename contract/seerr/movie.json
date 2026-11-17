@@ -1,0 +1,18 @@
+{
+  "id": 603,
+  "title": "Matrix",
+  "originalTitle": "The Matrix",
+  "posterPath": "/matrix.jpg",
+  "releaseDate": "1999-03-31",
+  "mediaInfo": {
+    "id": 29, "mediaType": "movie", "tmdbId": 603, "status": 3, "status4k": 1,
+    "seasons": [],
+    "requests": [
+      { "id": 12, "status": 2, "type": "movie", "is4k": false, "seasons": [] }
+    ],
+    "downloadStatus": [
+      { "mediaType": "movie", "externalId": 7, "size": 8589934592, "sizeLeft": 2147483648, "status": "downloading", "timeLeft": "00:12:34", "title": "The.Matrix.1999.1080p.BluRay", "downloadId": "abc" }
+    ],
+    "downloadStatus4k": []
+  }
+}

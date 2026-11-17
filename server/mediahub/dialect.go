@@ -19,6 +19,8 @@ const (
 	DialectOnyxHub
 	// DialectV1 : MediaHub et son API d'intégration v1.
 	DialectV1
+	// DialectSeerr : Overseerr ou Jellyseerr, par leur API /api/v1 (ADR-0136).
+	DialectSeerr
 )
 
 func (d Dialect) String() string {
@@ -27,6 +29,8 @@ func (d Dialect) String() string {
 		return "mediahub"
 	case DialectOnyxHub:
 		return "onyxhub"
+	case DialectSeerr:
+		return "seerr"
 	default:
 		return ""
 	}
@@ -53,7 +57,13 @@ var dialects = struct {
 // Dialect rend le dialecte du compagnon, reconnu par GET {V1Path}/ping : une
 // réponse de MediaHub (200, ou 401/403 sur une mauvaise clé) dit la v1, un 404
 // dit une route absente, donc OnyxHub.
+//
+// Overseerr et Jellyseerr ne se sondent pas : le réglage dit qui est en face,
+// et une adresse muette se dira à l'appel.
 func (c Client) Dialect(ctx context.Context) Dialect {
+	if c.Service.Seerr() {
+		return DialectSeerr
+	}
 	base := c.base()
 	dialects.Lock()
 	entry, ok := dialects.byBase[base]
@@ -101,15 +111,16 @@ func remember(base string, dialect Dialect) {
 // Remember retient le dialecte qu'un test de liaison vient de constater.
 func (c Client) Remember(dialect Dialect) { remember(c.base(), dialect) }
 
-// Reset oublie les dialectes, le délai de grâce du lot et les livraisons
-// déjà vues : les tests montent un faux compagnon par test, à des adresses
-// qui se réutilisent.
+// Reset oublie les dialectes, le délai de grâce du lot, les livraisons déjà
+// vues et ce qu'on retient d'un Seerr : les tests montent un faux compagnon
+// par test, à des adresses qui se réutilisent.
 func Reset() {
 	dialects.Lock()
 	dialects.byBase = map[string]dialectEntry{}
 	dialects.Unlock()
 	batchUnsupportedUntil.Store(0)
 	deliveries = newDeliveries()
+	resetSeerr()
 }
 
 // dialect rend le dialecte, ou ErrUnreachable quand on ne le connaît pas.

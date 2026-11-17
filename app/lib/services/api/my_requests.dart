@@ -1,7 +1,7 @@
 part of '../api_client.dart';
 
-/// Les demandes du compte, lues chez MediaHub (ou OnyxHub) à travers le
-/// serveur (ADR-0073, ADR-0089).
+/// Les demandes du compte, lues chez le compagnon du serveur (MediaHub,
+/// OnyxHub, Overseerr ou Jellyseerr) à travers lui (ADR-0073, 0089, 0136).
 mixin _MyRequestEndpoints {
   Dio get _dio;
   String get baseUrl;
@@ -27,6 +27,11 @@ mixin _MyRequestEndpoints {
 
   Future<bool> supportsMediaHubSso() =>
       _serverSupports(ServerCapabilities.mediaHubSso);
+
+  /// Le serveur sait brancher Overseerr et Jellyseerr : l'écran de réglages
+  /// propose alors le choix du service.
+  Future<bool> supportsRequestServices() =>
+      _serverSupports(ServerCapabilities.requestServices);
 
   /// Tire l'adresse qui ouvre MediaHub au nom du compte (ADR-0090). Lève
   /// l'erreur du serveur (503 sans MediaHub, 501 chez OnyxHub).

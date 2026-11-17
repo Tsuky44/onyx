@@ -28,11 +28,17 @@ func MediaHubRequestAccess(w http.ResponseWriter, r *http.Request, _ httprouter.
 		writeMediaHubFailure(w, "MediaHubRequestAccess", err)
 		return
 	}
-	// La recherche interactive déclenche un téléchargement : Onyx la réserve à
-	// manage_settings (main.go), l'app ne la propose donc qu'à qui l'a (ADR-0098).
-	if access.Can.InteractiveSearch {
+	// Lire toutes les demandes, les modérer et choisir une release passent
+	// par des routes qu'Onyx réserve à manage_settings (main.go) : l'app ne les
+	// propose qu'à qui l'a (ADR-0098). Avec Overseerr ou Jellyseerr, un compte
+	// sans homonyme hérite des droits du compte de la clé : sans cette borne,
+	// l'app lui montrerait des boutons qu'Onyx refuse (ADR-0136).
+	if access.Can.ReadAllRequests || access.Can.Moderate || access.Can.Delete || access.Can.InteractiveSearch {
 		user, err := LoadUser(userID)
-		access.Can.InteractiveSearch = err == nil && user.Permissions.Has(models.PermManageSettings)
+		if err != nil || !user.Permissions.Has(models.PermManageSettings) {
+			access.Can.ReadAllRequests, access.Can.Moderate = false, false
+			access.Can.Delete, access.Can.InteractiveSearch = false, false
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(access)

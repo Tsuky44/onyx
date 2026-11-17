@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/tr.dart';
 import '../../models/my_request.dart';
+import '../../models/request_service.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
@@ -150,8 +151,8 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
     } catch (error) {
       debugPrint('MyRequestsScreen: modération refusée ($error)');
       messenger.showSnackBar(SnackBar(
-          content: Text(
-              _errorText(error, tr('MediaHub n’a pas pris la décision.')))));
+          content: Text(_errorText(
+              error, tr('Le service de demandes n’a pas pris la décision.')))));
     } finally {
       if (mounted) setState(() => _moderating = null);
     }
@@ -217,8 +218,7 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
             Padding(
               padding: EdgeInsets.fromLTRB(padding, 12, padding, 0),
               child: Text(
-                tr('MediaHub n’a pas de compte à votre nom : vos demandes '
-                    'partent, mais ne se retrouvent pas ici.'),
+                _unlinkedText(RequestService.parse(_access.service)),
                 style: const TextStyle(color: AppColors.textMuted),
               ),
             ),
@@ -227,6 +227,16 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
       ),
     );
   }
+
+  /// Ce que vaut un compte sans homonyme chez le compagnon : MediaHub ne
+  /// retrouve pas ses demandes, Overseerr et Jellyseerr les rangent avec
+  /// celles du compte de la clé (ADR-0136).
+  String _unlinkedText(RequestService service) => service.isSeerr
+      ? tr('{0} n’a pas de compte à votre nom : vos demandes passent par le '
+          'compte de sa clé, avec celles des autres comptes sans homonyme.',
+          [service.label])
+      : tr('MediaHub n’a pas de compte à votre nom : vos demandes '
+          'partent, mais ne se retrouvent pas ici.');
 
   Widget _list(double padding) {
     return FutureBuilder<List<MyRequest>>(
