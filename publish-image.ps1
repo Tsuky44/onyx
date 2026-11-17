@@ -9,7 +9,7 @@
 # préférer `gh workflow run release.yml`.
 # =============================================================================
 $GitHubUser = "tsuky44" # Doit être en minuscules pour ghcr.io
-$ImageName = "playeur-server"
+$ImageName = "onyx-server"
 
 # TENTATIVE DE CORRECTION AUTOMATIQUE DU PATH DOCKER
 if (-not (Get-Command "docker" -ErrorAction SilentlyContinue)) {

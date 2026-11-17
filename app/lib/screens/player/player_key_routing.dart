@@ -68,13 +68,15 @@ const double _volumeStep = 5.0;
 ///
 /// [browsingControls] : la télécommande parcourt les boutons du chrome au lieu
 /// de piloter la lecture. [chromeVisible] et [skipIntroShown] décident de ce
-/// que fait OK sur un téléviseur.
+/// que fait OK sur un téléviseur. [pauseInfoShown] : l'écran « Vous
+/// regardez » d'un film en pause est à l'image.
 PlayerKeyAction routePlayerKey(
   KeyEvent event, {
   required bool isTv,
   required bool browsingControls,
   required bool chromeVisible,
   required bool skipIntroShown,
+  bool pauseInfoShown = false,
 }) {
   final key = event.logicalKey;
 
@@ -85,6 +87,9 @@ PlayerKeyAction routePlayerKey(
       key == LogicalKeyboardKey.enter ||
       key == LogicalKeyboardKey.numpadEnter) {
     if (event is KeyRepeatEvent) return const PlayerKeyConsumed();
+    // L'écran de pause est à l'image : OK relance la lecture, partout. La
+    // télécommande a quitté la barre en le levant (ADR-0137).
+    if (pauseInfoShown) return const PlayerKeyTogglePlayback();
     // A focused button answers for itself — the app-wide shortcut turns this
     // very key into its activation.
     if (browsingControls) return const PlayerKeyIgnored();

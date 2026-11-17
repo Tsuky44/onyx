@@ -25,8 +25,10 @@ import 'glass_chrome.dart';
 ///   L'anneau autour de la touche se remplit pendant l'appui, et le texte dit
 ///   de ne pas lâcher. Sur Apple TV c'est le seul geste, et la notification ne
 ///   prend pas le focus ;
-/// - **une télécommande sans cette touche** ([selectable]) : la notification
-///   prend aussi le focus, et OK reprend ;
+/// - **une télécommande sans cette touche, ou qui ne sait pas la tenir**
+///   ([selectable], tout sauf Apple TV) : la notification prend aussi le
+///   focus, et OK reprend. Un appui court sur lecture/pause l'y amène, d'où
+///   « Appuyez pour reprendre ici » tant qu'elle ne l'a pas (ADR-0136) ;
 /// - **une souris ou un doigt** ([onResume] sans [hold]) : un clic reprend,
 ///   la croix ([onDismiss]) l'écarte.
 ///
@@ -42,6 +44,8 @@ class RemotePlaybackNotice extends StatefulWidget {
     this.onDismiss,
     this.selectable = false,
     this.compact = false,
+    this.focusNode,
+    this.headerFocused,
   });
 
   final RemotePlayback play;
@@ -67,6 +71,16 @@ class RemotePlaybackNotice extends StatefulWidget {
   /// bouton lecture à droite du titre et pas de ligne de texte dessous
   /// (maquette « 1 bis », validée le 2026-11-13).
   final bool compact;
+
+  /// Le focus de la notification [selectable] : le bandeau le lui donne
+  /// quand elle arrive, ou sur un appui court de lecture/pause.
+  final FocusNode? focusNode;
+
+  /// Hors Apple TV, dans la coquille : le bouton « Reprendre ici » de la
+  /// barre du haut a-t-il le focus ? Vrai, elle s'éclaire comme si elle
+  /// l'avait et dit « OK pour reprendre ici » ; faux, « Appuyez pour
+  /// reprendre ici ». Nul quand il n'y a pas de tel bouton (ADR-0136).
+  final bool? headerFocused;
 
   /// La largeur de la notification, en pixels de la page.
   static const double width = 388;
@@ -94,9 +108,13 @@ class _RemotePlaybackNoticeState extends State<RemotePlaybackNotice> {
   /// Ce que la dernière ligne dit de faire.
   String _hint(double held) {
     if (widget.hold == null) return tr('Reprendre ici');
-    if (_focused) return tr('OK pour reprendre ici');
-    return held > 0
-        ? tr('Continuez d\'appuyer…')
+    final header = widget.headerFocused;
+    if (_focused || header == true) return tr('OK pour reprendre ici');
+    if (held > 0) return tr('Continuez d\'appuyer…');
+    // Hors Apple TV, un appui court suffit à amener le focus ici, ou sur le
+    // bouton de la barre.
+    return widget.selectable || header != null
+        ? tr('Appuyez pour reprendre ici')
         : tr('Maintenir pour reprendre ici');
   }
 
@@ -305,8 +323,10 @@ class _RemotePlaybackNoticeState extends State<RemotePlaybackNotice> {
           decoration: BoxDecoration(
             borderRadius: _radius,
             // Sous la souris ou le focus, le verre s'éclaircit.
-            color:
-                Colors.white.withValues(alpha: _hovered || _focused ? 0.07 : 0),
+            color: Colors.white.withValues(
+                alpha: _hovered || _focused || widget.headerFocused == true
+                    ? 0.07
+                    : 0),
           ),
           child: body,
         ),
@@ -328,6 +348,7 @@ class _RemotePlaybackNoticeState extends State<RemotePlaybackNotice> {
     final onResume = widget.onResume;
     if (widget.selectable) {
       notice = TvFocusable(
+        focusNode: widget.focusNode,
         onSelect: onResume,
         onFocusChange: (focused) => setState(() => _focused = focused),
         borderRadius: _radius,

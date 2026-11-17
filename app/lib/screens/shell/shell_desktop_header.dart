@@ -1,17 +1,25 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../desktop_window.dart';
 import '../../l10n/tr.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
+import '../../providers/search_provider.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_icons.dart';
+import '../../theme/app_motion.dart';
+import '../../theme/app_type.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/window_controls.dart';
 import '../../widgets/global/account_menu.dart';
 import '../../widgets/global/app_download_button.dart';
-import '../../widgets/global/glass_catalog_search.dart';
 import '../../widgets/global/glass_chrome.dart';
 import '../../widgets/global/interface_tour/tour_anchor.dart';
+import 'desktop_header_search.dart';
 import 'shell_indexer_status.dart';
 import 'shell_tabs.dart';
 
@@ -60,8 +68,59 @@ class ShellDesktopHeader extends StatelessWidget {
         onTap: () => onTabSelected(tab),
       );
 
+  /// Le nom de l'onglet affiché, que rappelle le retour de la recherche.
+  String _labelOf(String tab) {
+    for (final library in libraries) {
+      if (ShellTabs.library(library) == tab) return ShellTabs.label(library);
+    }
+    return switch (tab) {
+      ShellTabs.requests => tr('Demandes'),
+      ShellTabs.lists => tr('Listes'),
+      ShellTabs.downloads => tr('Téléchargements'),
+      _ => tr('Accueil'),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Le nombre de bibliothèques n'est pas borné : au-delà de la place
+    // disponible leurs onglets défilent, sans pousser la recherche ni le
+    // compte hors de l'en-tête.
+    final tabs = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TourTarget(
+            anchor: TourAnchor.library,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _tab(ShellTabs.home, tr('Accueil')),
+                for (final library in libraries)
+                  _tab(ShellTabs.library(library), ShellTabs.label(library)),
+              ],
+            ),
+          ),
+          // The whole request catalog sits behind request_media
+          // server-side, and asks MediaHub for every request: an account
+          // without the right, or a server without a companion, gets no
+          // entry point either.
+          if (canRequestMedia)
+            TourTarget(
+              anchor: TourAnchor.requests,
+              child: _tab(ShellTabs.requests, tr('Demandes')),
+            ),
+          if (canUseLists) _tab(ShellTabs.lists, tr('Listes')),
+          if (canDownload)
+            TourTarget(
+              anchor: TourAnchor.downloads,
+              child: _tab(ShellTabs.downloads, tr('Téléchargements')),
+            ),
+        ],
+      ),
+    );
+
     final header = SafeArea(
       bottom: false,
       child: Padding(
@@ -76,57 +135,14 @@ class ShellDesktopHeader extends StatelessWidget {
           children: [
             GlassBrand(onTap: () => onTabSelected(ShellTabs.home)),
             const SizedBox(width: 20),
-            // Le nombre de bibliothèques n'est pas borné : au-delà de la
-            // place disponible leurs onglets défilent, sans pousser la
-            // recherche ni le compte hors de l'en-tête.
+            // Les onglets et la recherche se partagent le milieu de
+            // l'en-tête : quand la recherche s'ouvre, les onglets s'effacent
+            // et le champ glisse au centre (ADR-0139).
             Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TourTarget(
-                      anchor: TourAnchor.library,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _tab(ShellTabs.home, tr('Accueil')),
-                          for (final library in libraries)
-                            _tab(ShellTabs.library(library),
-                                ShellTabs.label(library)),
-                        ],
-                      ),
-                    ),
-                    // The whole request catalog sits behind request_media
-                    // server-side, and asks MediaHub for every request: an
-                    // account without the right, or a server without a
-                    // companion, gets no entry point either.
-                    if (canRequestMedia)
-                      TourTarget(
-                        anchor: TourAnchor.requests,
-                        child: _tab(ShellTabs.requests, tr('Demandes')),
-                      ),
-                    if (canUseLists) _tab(ShellTabs.lists, tr('Listes')),
-                    if (canDownload)
-                      TourTarget(
-                        anchor: TourAnchor.downloads,
-                        child:
-                            _tab(ShellTabs.downloads, tr('Téléchargements')),
-                      ),
-                  ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const TourTarget(
-              anchor: TourAnchor.search,
-              child: GlassCatalogSearch(
-                collapsedWidth: 200,
-                expandedWidth: 280,
-                staysAbovePages: true,
+              child: _SearchAndTabs(
+                tabs: tabs,
+                selectedLabel: _labelOf(selected),
+                onBack: () => onTabSelected(selected),
               ),
             ),
             const SizedBox(width: 12),
@@ -151,6 +167,171 @@ class ShellDesktopHeader extends StatelessWidget {
               ],
             )
           : header,
+    );
+  }
+}
+
+/// Le milieu de l'en-tête : les onglets au repos, la recherche ouverte.
+///
+/// Au repos, le champ attend à droite des onglets et montre son raccourci.
+/// Ouvert, il glisse au centre en s'élargissant ; les onglets s'effacent, et
+/// un rappel de la page quittée (« ‹ Accueil ») prend leur place à gauche
+/// pour y revenir d'un clic.
+class _SearchAndTabs extends StatelessWidget {
+  const _SearchAndTabs({
+    required this.tabs,
+    required this.selectedLabel,
+    required this.onBack,
+  });
+
+  final Widget tabs;
+  final String selectedLabel;
+  final VoidCallback onBack;
+
+  /// Le champ au repos : « Rechercher » et son raccourci y tiennent.
+  static const double idleWidth = 230;
+
+  /// Le champ ouvert, au plus : une recherche de titre n'a pas besoin de
+  /// plus, et le centre de l'en-tête reste aéré.
+  static const double openWidth = 620;
+
+  /// La place du rappel de la page quittée, de part et d'autre du champ
+  /// centré.
+  static const double backWidth = 150;
+
+  /// La hauteur de la rangée de l'en-tête (`shellHeaderHeight`).
+  static const double rowHeight = 44;
+
+  @override
+  Widget build(BuildContext context) {
+    final open = context.select<SearchProvider, bool>((s) => s.isExpanded);
+    final move = AppMotion.move(context);
+    final fade = AppMotion.fade(context);
+
+    return LayoutBuilder(
+      builder: (context, box) {
+        final width = open
+            ? math.max(
+                idleWidth,
+                math.min(openWidth, box.maxWidth - 2 * backWidth),
+              )
+            : math.min(idleWidth, box.maxWidth);
+        return SizedBox(
+          height: rowHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                right: idleWidth + 16,
+                child: AnimatedOpacity(
+                  opacity: open ? 0 : 1,
+                  duration: fade,
+                  curve: AppMotion.curve,
+                  child: IgnorePointer(
+                    ignoring: open,
+                    child: ExcludeFocus(
+                      excluding: open,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: tabs,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: backWidth,
+                child: AnimatedOpacity(
+                  opacity: open ? 1 : 0,
+                  duration: fade,
+                  curve: AppMotion.curve,
+                  child: IgnorePointer(
+                    ignoring: !open,
+                    child: _BackToPage(label: selectedLabel, onTap: onBack),
+                  ),
+                ),
+              ),
+              AnimatedAlign(
+                alignment: open ? Alignment.center : Alignment.centerRight,
+                duration: move,
+                curve: AppMotion.curve,
+                child: TourTarget(
+                  anchor: TourAnchor.search,
+                  child: DesktopHeaderSearch(width: width),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// « ‹ Accueil » : referme la recherche et rend la page qu'on regardait.
+class _BackToPage extends StatefulWidget {
+  const _BackToPage({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_BackToPage> createState() => _BackToPageState();
+}
+
+class _BackToPageState extends State<_BackToPage> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = _hovered ? AppColors.textPrimary : AppColors.textSecondary;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Tooltip(
+        message: tr('Fermer la recherche'),
+        child: Semantics(
+          button: true,
+          label: tr('Revenir à {0}', [widget.label]),
+          excludeSemantics: true,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hovered = true),
+            onExit: (_) => setState(() => _hovered = false),
+            child: GestureDetector(
+              onTap: widget.onTap,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(AppIcons.back, size: 16, color: ink),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        widget.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: ink,
+                          fontSize: AppType.body,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

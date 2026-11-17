@@ -9,7 +9,9 @@ import 'package:onyx/providers/home_provider.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/tv/nav/tv_focusable.dart';
 import 'package:onyx/widgets/global/remote_playback_banner.dart';
+import 'package:onyx/widgets/global/remote_playback_header_button.dart';
 import 'package:onyx/widgets/global/remote_playback_notice.dart';
+import 'package:onyx/widgets/global/remote_playback_slot.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,7 +27,8 @@ import 'support/tv_nav_harness.dart';
 ///
 /// - Apple TV : elle ne prend pas le focus, on maintient lecture/pause ;
 /// - un autre téléviseur : le même geste, et OK sur la notification pour les
-///   télécommandes qui n'ont pas cette touche ;
+///   télécommandes qui n'ont pas cette touche ou ne savent pas la tenir. Elle
+///   prend le focus en arrivant, et un appui court l'y amène (ADR-0136) ;
 /// - une souris : un clic reprend, la croix l'écarte ;
 /// - un téléphone : la même, ramassée en bas de l'écran (maquette « 1 bis »).
 
@@ -38,6 +41,9 @@ class _Api extends ApiClient {
   /// s'arrête à « la reprise vient d'être demandée », sans ouvrir le lecteur.
   bool holdNext = false;
 
+  /// L'autre appareil s'est arrêté : plus rien à reprendre.
+  bool stopped = false;
+
   @override
   String get baseUrl => 'http://localhost:8080';
 
@@ -45,6 +51,7 @@ class _Api extends ApiClient {
   Future<List<RemotePlayback>> getMyRemotePlaybacks() async {
     fetches++;
     if (holdNext) return Completer<List<RemotePlayback>>().future;
+    if (stopped) return const [];
     return [
       RemotePlayback.tryParse({
         'session_id': 's1',
@@ -96,6 +103,68 @@ Widget _otherTv(_Api api, FocusNode account) => _providers(
               child: RemotePlaybackBanner.notice(hold: true, selectable: true),
             ),
           ],
+        ),
+      ),
+    );
+
+/// L'accueil d'un autre téléviseur dans sa coquille : la barre du haut (un
+/// onglet au centre, « Reprendre ici » et le compte à droite), le bouton
+/// lecture du bandeau, et la notification sous le compte (ADR-0136).
+Widget _tvShell(
+  _Api api,
+  RemotePlaybackSlot slot, {
+  required FocusNode tab,
+  required FocusNode account,
+  required FocusNode hero,
+}) =>
+    _providers(
+      api,
+      RemotePlaybackSlotScope(
+        slot: slot,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              Positioned(
+                left: 540,
+                top: 22,
+                child: TvFocusable(
+                  focusNode: tab,
+                  onSelect: () {},
+                  child: const TvTestTile('Accueil', width: 120, height: 40),
+                ),
+              ),
+              Positioned(
+                right: 48,
+                top: 22,
+                child: Row(
+                  children: [
+                    const RemotePlaybackHeaderButton(),
+                    TvFocusable(
+                      focusNode: account,
+                      onSelect: () {},
+                      child: const TvTestTile('Compte', width: 40, height: 40),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                left: 48,
+                top: 400,
+                child: TvFocusable(
+                  focusNode: hero,
+                  autofocus: true,
+                  onSelect: () {},
+                  child: const TvTestTile('Lecture'),
+                ),
+              ),
+              const Positioned(
+                top: 84,
+                right: 48,
+                child:
+                    RemotePlaybackBanner.notice(hold: true, selectable: true),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -403,33 +472,225 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets(
-        'sur un autre téléviseur, la notification prend aussi le focus et '
-        'OK reprend', (tester) async {
+    /// L'accueil d'un autre téléviseur, la notification arrivée.
+    Future<TvNavHarness> openOtherTv(
+        WidgetTester tester, FocusNode account) async {
       api = _Api();
-      final account = FocusNode();
-      addTearDown(account.dispose);
       final nav = await TvNavHarness.pump(tester, _otherTv(api, account),
-          engine: engine);
+          engine: engine, android: true);
       tester.view.physicalSize = const Size(1280, 720);
       await tester.pumpAndSettle();
-      expect(account.hasFocus, isTrue);
-      // Le geste d'abord : toutes les télécommandes n'ont pas la touche.
-      expect(find.text('Maintenir pour reprendre ici'), findsOneWidget);
+      expect(find.byType(RemotePlaybackNotice), findsOneWidget);
+      return nav;
+    }
 
-      await nav.press(TraversalDirection.down);
-      expect(
+    bool noticeFocused() =>
         FocusManager.instance.primaryFocus?.context
-            ?.findAncestorWidgetOfExactType<RemotePlaybackNotice>(),
-        isNotNull,
-        reason: 'bas depuis le compte mène à la notification',
-      );
+            ?.findAncestorWidgetOfExactType<RemotePlaybackNotice>() !=
+        null;
+
+    // ADR-0136. Demande de l'utilisateur : « j'ai un bouton pause play sur la
+    // télécommande Hisense mais ça marche pas quand je reste appuyé, et la
+    // télécommande Fire Stick n'a juste pas de play pause ».
+    testWidgets(
+        'sur un autre téléviseur, la notification prend le focus en '
+        'arrivant, et OK reprend', (tester) async {
+      final account = FocusNode();
+      addTearDown(account.dispose);
+      final nav = await openOtherTv(tester, account);
+
+      expect(noticeFocused(), isTrue,
+          reason: 'une télécommande sans lecture/pause n\'a que OK');
       expect(find.text('OK pour reprendre ici'), findsOneWidget);
 
       final polled = api.fetches;
       api.holdNext = true;
       await nav.select();
       expect(api.fetches, polled + 1);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('bas depuis le compte y mène toujours', (tester) async {
+      final account = FocusNode();
+      addTearDown(account.dispose);
+      final nav = await openOtherTv(tester, account);
+      account.requestFocus();
+      await tester.pumpAndSettle();
+      expect(find.text('Appuyez pour reprendre ici'), findsOneWidget);
+
+      await nav.press(TraversalDirection.down);
+      expect(noticeFocused(), isTrue);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets(
+        'un sondage ne lui rend pas le focus pendant que l\'on parcourt '
+        'l\'accueil', (tester) async {
+      final account = FocusNode();
+      addTearDown(account.dispose);
+      await openOtherTv(tester, account);
+      account.requestFocus();
+      await tester.pumpAndSettle();
+      final polled = api.fetches;
+
+      await tester.pump(const Duration(seconds: 11));
+      await tester.pumpAndSettle();
+      expect(api.fetches, greaterThan(polled), reason: 'le sondage a tourné');
+      expect(account.hasFocus, isTrue);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    for (final key in RemotePlaybackBanner.playKeys) {
+      testWidgets(
+          'un appui court sur ${key.keyLabel} y amène le focus, un second '
+          'reprend (télécommande HDMI-CEC)', (tester) async {
+        final account = FocusNode();
+        addTearDown(account.dispose);
+        await openOtherTv(tester, account);
+        account.requestFocus();
+        await tester.pumpAndSettle();
+        final polled = api.fetches;
+        api.holdNext = true;
+
+        await tester.sendKeyDownEvent(key);
+        await wait(tester, const Duration(milliseconds: 60));
+        await tester.sendKeyUpEvent(key);
+        await wait(tester, const Duration(milliseconds: 300));
+        expect(noticeFocused(), isTrue);
+        expect(api.fetches, polled, reason: 'un seul appui ne reprend rien');
+        expect(find.text('OK pour reprendre ici'), findsOneWidget);
+
+        await tester.sendKeyDownEvent(key);
+        await tester.pump();
+        expect(api.fetches, polled + 1);
+        await tester.sendKeyUpEvent(key);
+        await tester.pumpWidget(const SizedBox());
+      });
+    }
+
+    group('avec la barre du haut', () {
+      late RemotePlaybackSlot slot;
+      late FocusNode tab;
+      late FocusNode account;
+      late FocusNode hero;
+
+      Future<TvNavHarness> openShell(WidgetTester tester) async {
+        api = _Api();
+        slot = RemotePlaybackSlot();
+        tab = FocusNode();
+        account = FocusNode();
+        hero = FocusNode();
+        addTearDown(() {
+          slot.dispose();
+          tab.dispose();
+          account.dispose();
+          hero.dispose();
+        });
+        final nav = await TvNavHarness.pump(
+            tester,
+            _tvShell(api, slot, tab: tab, account: account, hero: hero),
+            engine: engine,
+            android: true);
+        tester.view.physicalSize = const Size(1280, 720);
+        await tester.pumpAndSettle();
+        expect(find.byType(RemotePlaybackNotice), findsOneWidget);
+        return nav;
+      }
+
+      Finder headerTarget() => find.descendant(
+            of: find.byType(RemotePlaybackHeaderButton),
+            matching: find.byType(TvFocusable),
+          );
+
+      // Demande de l'utilisateur : « un widget qui serait au même niveau que
+      // la barre qui est en haut pour naviguer entre les onglets ».
+      testWidgets(
+          'le focus va au bouton « Reprendre ici » de la barre, et OK '
+          'reprend', (tester) async {
+        final nav = await openShell(tester);
+
+        expect(headerTarget(), findsOneWidget);
+        expect(slot.focus.hasFocus, isTrue);
+        // La notification s'éclaire et dit quoi faire, sans prendre le focus.
+        expect(find.text('OK pour reprendre ici'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(RemotePlaybackNotice),
+            matching: find.byType(TvFocusable),
+          ),
+          findsNothing,
+        );
+
+        final polled = api.fetches;
+        api.holdNext = true;
+        await nav.select();
+        expect(api.fetches, polled + 1);
+        await tester.pumpWidget(const SizedBox());
+      });
+
+      testWidgets(
+          'on y revient comme à un onglet : Haut depuis l\'accueil, puis '
+          'Droite', (tester) async {
+        final nav = await openShell(tester);
+        hero.requestFocus();
+        await tester.pumpAndSettle();
+        expect(find.text('Appuyez pour reprendre ici'), findsOneWidget);
+
+        await nav.press(TraversalDirection.up);
+        expect(tab.hasFocus, isTrue);
+        await nav.press(TraversalDirection.right);
+        expect(slot.focus.hasFocus, isTrue);
+        expect(find.text('OK pour reprendre ici'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      });
+
+      testWidgets('un appui court sur pause y amène le focus, un second reprend',
+          (tester) async {
+        await openShell(tester);
+        hero.requestFocus();
+        await tester.pumpAndSettle();
+        final polled = api.fetches;
+        api.holdNext = true;
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.mediaPause);
+        await wait(tester, const Duration(milliseconds: 60));
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.mediaPause);
+        await wait(tester, const Duration(milliseconds: 300));
+        expect(slot.focus.hasFocus, isTrue);
+        expect(api.fetches, polled);
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.mediaPause);
+        await tester.pump();
+        expect(api.fetches, polled + 1);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.mediaPause);
+        await tester.pumpWidget(const SizedBox());
+      });
+
+      testWidgets('le bouton disparaît quand l\'autre appareil s\'arrête',
+          (tester) async {
+        await openShell(tester);
+        hero.requestFocus();
+        await tester.pumpAndSettle();
+        api.stopped = true;
+
+        await tester.pump(const Duration(seconds: 11));
+        await tester.pumpAndSettle();
+        expect(headerTarget(), findsNothing);
+        expect(slot.play, isNull);
+        await tester.pumpWidget(const SizedBox());
+      });
+    });
+
+    testWidgets('sur Apple TV, pause seule se maintient aussi', (tester) async {
+      await open(tester);
+      final polled = api.fetches;
+      api.holdNext = true;
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.mediaPause);
+      await wait(tester,
+          RemotePlaybackBanner.holdDuration + const Duration(milliseconds: 60));
+      expect(api.fetches, polled + 1);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.mediaPause);
       await tester.pumpWidget(const SizedBox());
     });
 

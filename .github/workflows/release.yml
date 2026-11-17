@@ -10,10 +10,15 @@ name: Release
 # propre runner, donc chaque publication repart d'artefacts frais.
 #
 # Declenchement :
-#   - Actions -> Release -> Run workflow, en choisissant patch / minor / major :
+#   - Actions -> Release -> Run workflow, en choisissant le niveau :
+#       test  -> x.y.Z  version legere pour tester ; branches beta ou personnelles
+#       prod  -> x.Y.0  mise en production validee ; master uniquement
+#       major -> X.0.0  changement structurel profond ; master uniquement
+#     Le niveau est verrouille par la branche : master n'accepte que prod et
+#     major, toute autre branche n'accepte que test.
 #     la version est calculee a partir du dernier tag vX.Y.Z, et le tag est cree
 #     par la GitHub Release. Rien a taper, rien a retenir.
-#   - en ligne de commande : `gh workflow run release.yml -f bump=patch`
+#   - en ligne de commande : `gh workflow run release.yml -f bump=test`
 #   - ou, comme avant, `git tag v1.0.1 && git push origin v1.0.1`
 #
 # Lance a la main, chaque plateforme se coche ou se decoche : un correctif qui
@@ -30,13 +35,13 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: "Increment par rapport au dernier tag"
+        description: "Niveau : test (x.y.Z) / prod (x.Y.0) / major (X.0.0)"
         required: true
-        default: patch
+        default: test
         type: choice
         options:
-          - patch
-          - minor
+          - test
+          - prod
           - major
       version:
         description: "Version explicite, sans le v (optionnel, ignore le bump)"
@@ -81,7 +86,7 @@ env:
   # Epinglee : une montee de version de Flutter doit etre un changement
   # deliberat et teste, pas une surprise au milieu d'une publication.
   FLUTTER_VERSION: "3.44.2"
-  IMAGE_NAME: playeur-server
+  IMAGE_NAME: onyx-server
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -100,7 +105,7 @@ jobs:
     steps:
       # Historique complet : sans les tags, impossible de trouver la derniere
       # version publiee.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -130,6 +135,20 @@ jobs:
           LATEST="${LATEST#v}"
           echo "Dernier tag : ${LATEST:-aucun}"
 
+          # Le niveau suit la branche : master publie en production (prod ou
+          # major), toute autre branche (beta, personnelles) ne fait que du test.
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$REF_NAME" = "master" ]; then
+              if [ "$BUMP_INPUT" = "test" ]; then
+                echo "::error::Depuis master, seuls les niveaux prod et major sont permis. Le niveau test se lance depuis beta ou une branche personnelle."
+                exit 1
+              fi
+            elif [ "$BUMP_INPUT" != "test" ]; then
+              echo "::error::Le niveau $BUMP_INPUT est reserve a master. Depuis '$REF_NAME', seul le niveau test est permis."
+              exit 1
+            fi
+          fi
+
           if [ "$EVENT_NAME" = "push" ]; then
             VERSION="${REF_NAME#v}"
           elif [ -n "${VERSION_INPUT// /}" ]; then
@@ -138,8 +157,8 @@ jobs:
             IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST:-0.0.0}"
             case "$BUMP_INPUT" in
               major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-              minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
-              *)     PATCH=$((PATCH + 1)) ;;
+              prod)  MINOR=$((MINOR + 1)); PATCH=0 ;;
+              *)     PATCH=$((PATCH + 1)) ;; # test
             esac
             VERSION="$MAJOR.$MINOR.$PATCH"
           fi
@@ -152,7 +171,7 @@ jobs:
           # Lance a la main, le tag ne doit pas encore exister : sinon la Release
           # ecraserait silencieusement les installateurs d'une version publiee.
           if [ "$EVENT_NAME" != "push" ] && git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
-            echo "::error::Le tag v$VERSION existe deja. Choisissez un autre bump ou une version explicite."
+            echo "::error::Le tag v$VERSION existe deja. Choisissez un autre niveau ou une version explicite."
             exit 1
           fi
 
@@ -195,9 +214,9 @@ jobs:
       # Au niveau du job : un `if` d'etape ne lit pas directement les secrets.
       PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
@@ -254,7 +273,7 @@ jobs:
              "out/Onyx-${VERSION}-android.apk"
           ls -lh out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-android
           path: out/*.apk
@@ -274,7 +293,7 @@ jobs:
             --build-name="${{ needs.prepare.outputs.version }}" \
             --build-number="${{ github.run_number }}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: store-android
           path: app/build/app/outputs/bundle/release/app-release.aab
@@ -303,7 +322,7 @@ jobs:
     if: contains(fromJSON(needs.prepare.outputs.builds), 'macos')
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -364,7 +383,7 @@ jobs:
           rm -rf "$STAGE"
           ls -lh out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-macos
           path: out/*.dmg
@@ -391,7 +410,7 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -439,7 +458,7 @@ jobs:
           rm -rf "$STAGE"
           ls -lh out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-ios
           path: out/*.ipa
@@ -499,7 +518,7 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Le SDK tvOS n'est pas toujours installe avec Xcode sur les images
       # GitHub : sans lui, xcodebuild ne trouve aucune destination.
@@ -568,7 +587,7 @@ jobs:
           rm -rf "$STAGE"
           ls -lh out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-tvos
           path: out/*.ipa
@@ -624,7 +643,7 @@ jobs:
       - name: Autoriser les chemins longs
         run: git config --global core.longpaths true
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -695,7 +714,7 @@ jobs:
             -Zip "out\Onyx-$env:VERSION-windows-portable.zip" `
             -Version $env:VERSION
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-windows
           path: |
@@ -719,9 +738,9 @@ jobs:
     if: contains(fromJSON(needs.prepare.outputs.builds), 'webos')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
@@ -734,7 +753,7 @@ jobs:
           ONYX_VERSION: ${{ needs.prepare.outputs.version }}
         run: bash scripts/build-webos.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-webos
           path: app/build/webos/*.ipk
@@ -763,7 +782,7 @@ jobs:
       && contains(fromJSON('["success","skipped"]'), needs.build-webos.result)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
@@ -776,7 +795,7 @@ jobs:
       # (server/releasedl).
       - name: Recuperer les installateurs
         if: needs.prepare.outputs.builds != '[]'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: installer-*
           merge-multiple: true
@@ -855,18 +874,18 @@ jobs:
       - name: Build du client Web
         run: bash scripts/build-web.sh
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       # Le GITHUB_TOKEN du run suffit pour ghcr.io grace a `packages: write` —
       # aucun PAT a creer ni a saisir, contrairement au script local.
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push de l'image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./server
           platforms: linux/amd64
@@ -885,11 +904,11 @@ jobs:
       # La Release est l'unique entrepot des installateurs : elle les sert a qui
       # n'a pas encore de serveur, et chaque serveur y prend ceux de sa version.
       - name: GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.prepare.outputs.version_tag }}
           # Lance a la main, le tag n'existe pas encore : la Release le cree sur
-          # le commit exact qui a ete construit, pas sur la tete de main.
+          # le commit exact qui a ete construit, pas sur la tete de master.
           target_commitish: ${{ github.sha }}
           name: Onyx ${{ needs.prepare.outputs.version }}
           generate_release_notes: true

@@ -27,6 +27,15 @@ tomber en deuxième ou troisième page.
   alternatif) pèse 0,3. Le logarithme tasse les écarts : la notoriété départage des correspondances
   proches, elle n'écrase pas un titre exact. Les votes retiennent un classique que la popularité de
   la semaine a oublié.
+- **Le titre exact connu passe en tête** (ajout du 2026-11-17). Le score ne donne au titre exact
+  que 15 % de plus qu'un début de titre, et un titre deux ou trois fois plus connu effaçait cet
+  écart : « ava » sortait toute la saga Avatar avant Ava. Les titres dont le titre traduit ou
+  original est exactement la requête (article de tête ignoré) forment donc un premier palier, à
+  condition de passer un seuil de notoriété : au moins 100 votes, ou une popularité (ramenée à
+  l'échelle des films) d'au moins 10 pour un titre qui sort sans votes. Sous le seuil, le titre
+  exact reste rangé par score : le film « Bat » (1 vote) ne repasse pas devant Batman. Dans chaque
+  palier, l'ordre est celui du score. Un poids plus fort pour le titre exact a été écarté : il
+  serait resté un rapport de forces qu'un titre assez populaire renverse.
 - **Une seule source pour le texte.** `foldSearchText` et `searchMatchRank` reprennent
   `foldForSearch` et `searchMatchRank` de l'app (minuscules, accents, ponctuation) ; un changement
   d'un côté se reporte de l'autre.

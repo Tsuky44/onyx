@@ -43,6 +43,9 @@ class MediaCard extends StatelessWidget {
   /// Voir [PosterCard.scrollAlignment].
   final double scrollAlignment;
 
+  /// Voir [PosterCard.highlight].
+  final PosterHighlight highlight;
+
   const MediaCard({
     super.key,
     required this.media,
@@ -54,6 +57,7 @@ class MediaCard extends StatelessWidget {
     this.autofocus = false,
     this.showDetails = true,
     this.scrollAlignment = 0.5,
+    this.highlight = PosterHighlight.none,
   });
 
   @override
@@ -77,6 +81,7 @@ class MediaCard extends StatelessWidget {
       compact: compact,
       autofocus: autofocus,
       scrollAlignment: scrollAlignment,
+      highlight: highlight,
       placeholderIcon: isShow ? AppIcons.series : AppIcons.movie,
       hoverDetails: showDetails
           ? PosterCardDetails(

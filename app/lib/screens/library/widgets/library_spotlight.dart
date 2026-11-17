@@ -36,6 +36,7 @@ class LibrarySpotlight extends StatefulWidget {
     required this.media,
     required this.eyebrow,
     required this.textWidth,
+    this.backdropUrl,
   });
 
   /// Le titre présenté.
@@ -47,6 +48,11 @@ class LibrarySpotlight extends StatefulWidget {
   /// La largeur laissée au texte, depuis la gouttière de la page. L'image de
   /// fond, elle, remplit tout le widget et se fond vers la grille.
   final double textWidth;
+
+  /// Une image de fond déjà connue, pour un titre qui n'a pas de fiche dans
+  /// la bibliothèque : un titre du catalogue de demandes, dans la recherche
+  /// du bureau (ADR-0139). Nul ailleurs : l'image vient de la fiche.
+  final String? backdropUrl;
 
   /// Le temps que le focus doit rester sur une affiche avant que sa fiche soit
   /// demandée. Un peu plus que les 120 ms du préchargement d'une carte
@@ -104,7 +110,10 @@ class _LibrarySpotlightState extends State<LibrarySpotlight> {
   @override
   void didUpdateWidget(LibrarySpotlight oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.media.id != widget.media.id) _follow();
+    if (oldWidget.media.id != widget.media.id ||
+        oldWidget.backdropUrl != widget.backdropUrl) {
+      _follow();
+    }
   }
 
   @override
@@ -126,6 +135,11 @@ class _LibrarySpotlightState extends State<LibrarySpotlight> {
     // Une fiche déjà vue a son logo en mémoire : il se pose sans attendre.
     _logo = logoImageUrl(cached?.logoUrl, serverBaseUrl: api.baseUrl);
     if (cached != null) unawaited(_showBackdrop(cached, turn));
+    final known = widget.backdropUrl;
+    if (known != null) {
+      unawaited(_showBackdropUrl(known, turn));
+      return;
+    }
     if (id <= 0 || MediaDetailsCache.isFresh(id)) return;
     _settle = Timer(LibrarySpotlight.settle, () async {
       try {
@@ -170,6 +184,12 @@ class _LibrarySpotlightState extends State<LibrarySpotlight> {
     final baseUrl = Provider.of<ApiClient>(context, listen: false).baseUrl;
     final backdrop =
         detailBackdropUrl(details.backdropUrl, serverBaseUrl: baseUrl);
+    await _showBackdropUrl(backdrop, turn);
+  }
+
+  /// Pose [backdrop] une fois décodée.
+  Future<void> _showBackdropUrl(String? backdrop, int turn) async {
+    if (!mounted) return;
     await AppNetworkImage.precache(
       backdrop,
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),

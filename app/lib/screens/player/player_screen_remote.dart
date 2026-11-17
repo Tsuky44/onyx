@@ -186,10 +186,14 @@ extension _PlayerRemote on _PlayerScreenState {
       return KeyEventResult.ignored;
     }
 
+    // Lu avant le geste, qui le retire : OK et Retour n'y font pas ce
+    // qu'ils font ailleurs (ADR-0137).
+    final pauseInfoShown = _pauseInfoShown;
+
     // Whatever the key turns out to do — even nothing at all — pressing one
     // means someone is watching, so the intro and the next episode stop
     // counting down.
-    _episodeNav?.onUserActivity();
+    _noteUserActivity();
 
     final mediaResult = _mediaKeys.handleKeyboardEvent(event);
     if (mediaResult != null) return mediaResult;
@@ -207,6 +211,7 @@ extension _PlayerRemote on _PlayerScreenState {
       browsingControls: browsingControls,
       chromeVisible: _showControls,
       skipIntroShown: _episodeNav?.showSkipIntro ?? false,
+      pauseInfoShown: pauseInfoShown,
     );
     switch (action) {
       case PlayerKeyIgnored():
@@ -233,6 +238,11 @@ extension _PlayerRemote on _PlayerScreenState {
         // (l'Apple TV peut envoyer les deux) : avalée, sans quoi un appui
         // défait deux couches. Voir [TvBack.claimKey].
         if (!TvBack.claimKey(context)) break;
+        // Retour devant l'écran de pause le retire, et rend le chrome.
+        if (pauseInfoShown) {
+          _showControlsTransient();
+          break;
+        }
         // Innermost first: a menu opened from the chrome, then the tab
         // panel, then the next-episode page, then the control bar, and only
         // then the player itself.
@@ -267,6 +277,11 @@ extension _PlayerRemote on _PlayerScreenState {
     // montre le cadenas, comme un appui sur l'image.
     if (_screenLocked) {
       _screenLockKey.currentState?.reveal();
+      return;
+    }
+    // Retour devant l'écran de pause le retire, sans quitter le film.
+    if (_pauseInfoShown) {
+      _showControlsTransient();
       return;
     }
     // The remote's Back arrives here, not as a key event — and it has to

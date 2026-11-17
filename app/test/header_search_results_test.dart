@@ -12,6 +12,9 @@ import 'package:onyx/widgets/global/search_results_route.dart';
 import 'package:onyx/widgets/global/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 
+/// La page de résultats qu'ouvre la frappe dans la barre du téléphone
+/// (`GlassCatalogSearch`, `SearchResultsRoute`). Le bureau a sa propre
+/// recherche, dans son en-tête : voir `desktop_search_test.dart`.
 class _FakeApiClient extends ApiClient {
   _FakeApiClient([this.movies = 1]);
 
@@ -35,8 +38,8 @@ class _FakeApiClient extends ApiClient {
   Future<List<Media>> getShows() async => [];
 }
 
-/// La barre de verre du grand écran au-dessus du navigateur de la coquille,
-/// comme dans `MainShell`.
+/// La barre au-dessus du navigateur de la coquille. La surface est large :
+/// la cascade doit couvrir tout un premier écran, dernière ligne comprise.
 Future<void> _pumpShell(WidgetTester tester, {int movies = 1}) async {
   final api = _FakeApiClient(movies);
   await tester.binding.setSurfaceSize(const Size(1400, 900));
@@ -53,7 +56,7 @@ Future<void> _pumpShell(WidgetTester tester, {int movies = 1}) async {
         home: Scaffold(
           body: Column(
             children: [
-              const GlassCatalogSearch(staysAbovePages: true),
+              const GlassCatalogSearch(),
               Expanded(
                 child: Navigator(
                   key: shellNavigatorKey,
@@ -71,11 +74,15 @@ Future<void> _pumpShell(WidgetTester tester, {int movies = 1}) async {
   await tester.pumpAndSettle();
 }
 
-bool _fieldHasFocus(WidgetTester tester) =>
-    tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus;
+/// Le champ de la page de résultats, ouverte par-dessus la barre.
+Finder get _pageField => find.descendant(
+      of: find.byType(SearchResultsScreen),
+      matching: find.byType(TextField),
+    );
 
 void main() {
-  testWidgets('taper dans la barre ouvre la vue de résultats en pleine page',
+  testWidgets(
+      'taper dans la barre ouvre la vue de résultats, où la frappe continue',
       (tester) async {
     await _pumpShell(tester);
 
@@ -84,8 +91,11 @@ void main() {
 
     expect(find.byType(SearchResultsScreen), findsOneWidget);
     expect(find.text('Résultats pour « Du »'), findsOneWidget);
-    expect(_fieldHasFocus(tester), isTrue,
-        reason: 'la frappe continue dans la barre pendant que la vue s’ouvre');
+    expect(
+      tester.widget<TextField>(_pageField).focusNode!.hasFocus,
+      isTrue,
+      reason: 'la frappe passe au champ de la page',
+    );
   });
 
   testWidgets(
@@ -167,7 +177,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('vider la barre rend la page d’avant et garde le focus du champ',
+  testWidgets('vider le champ de la page la referme et rend la page d’avant',
       (tester) async {
     await _pumpShell(tester);
 
@@ -175,37 +185,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SearchResultsScreen), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), '');
+    await tester.enterText(_pageField, '');
     await tester.pumpAndSettle();
 
-    expect(find.byType(SearchResultsScreen), findsNothing);
-    expect(find.text('Accueil'), findsOneWidget);
-    expect(_fieldHasFocus(tester), isTrue,
-        reason: 'on efface souvent pour retaper autre chose');
-
-    // Retaper rouvre la vue.
-    await tester.enterText(find.byType(TextField), 'Dune');
-    await tester.pumpAndSettle();
-    expect(find.text('Résultats pour « Dune »'), findsOneWidget);
-  });
-
-  testWidgets(
-      'vider la barre depuis une fiche ouverte des résultats rend la page d’avant',
-      (tester) async {
-    await _pumpShell(tester);
-
-    await tester.enterText(find.byType(TextField), 'Du');
-    await tester.pumpAndSettle();
-    shellNavigatorKey.currentState!.push(MaterialPageRoute<void>(
-      builder: (_) => const Scaffold(body: Text('Fiche')),
-    ));
-    await tester.pumpAndSettle();
-    expect(find.text('Fiche'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), '');
-    await tester.pumpAndSettle();
-
-    expect(find.text('Fiche'), findsNothing);
     expect(find.byType(SearchResultsScreen), findsNothing);
     expect(find.text('Accueil'), findsOneWidget);
   });

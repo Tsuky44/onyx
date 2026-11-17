@@ -29,12 +29,21 @@ class RequestMediaCard extends StatelessWidget {
   /// Voir [PosterCard.scrollAlignment].
   final double scrollAlignment;
 
+  /// Faux quand l'écran présente déjà le titre pointé ailleurs (l'aperçu de
+  /// la recherche du bureau) : le cartouche le dirait deux fois.
+  final bool showDetails;
+
+  /// Voir [PosterCard.highlight].
+  final PosterHighlight highlight;
+
   const RequestMediaCard({
     super.key,
     required this.item,
     this.onTap,
     this.marksUnavailable = false,
     this.scrollAlignment = 0.5,
+    this.showDetails = true,
+    this.highlight = PosterHighlight.none,
   });
 
   @override
@@ -45,6 +54,7 @@ class RequestMediaCard extends StatelessWidget {
       showMeta: false,
       dimmed: marksUnavailable,
       scrollAlignment: scrollAlignment,
+      highlight: highlight,
       onTap: onTap ?? () => openRequestDetail(context, item),
       onPrefetch: onTap != null
           ? null
@@ -54,17 +64,19 @@ class RequestMediaCard extends StatelessWidget {
                 posterWidth: context.size?.width ?? 0,
                 backdropUrl: detailBackdropUrl(item.backdropUrl),
               ),
-      hoverDetails: PosterCardDetails(
-        title: item.title,
-        typeLabel: item.mediaType == RequestMediaType.movie
-            ? tr('Film')
-            : tr('Série'),
-        facts: [
-          if (item.year != null) item.year!,
-          if (item.rating > 0) '★ ${item.rating.toStringAsFixed(1)}',
-        ].join('  ·  '),
-        overview: item.overview,
-      ),
+      hoverDetails: showDetails
+          ? PosterCardDetails(
+              title: item.title,
+              typeLabel: item.mediaType == RequestMediaType.movie
+                  ? tr('Film')
+                  : tr('Série'),
+              facts: [
+                if (item.year != null) item.year!,
+                if (item.rating > 0) '★ ${item.rating.toStringAsFixed(1)}',
+              ].join('  ·  '),
+              overview: item.overview,
+            )
+          : null,
       overlays: [
         if (marksUnavailable)
           Positioned(

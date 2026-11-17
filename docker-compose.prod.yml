@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: ghcr.io/tsuky44/playeur-server:latest
+    image: ghcr.io/tsuky44/onyx-server:latest
     platform: linux/amd64
     container_name: onyx-server
     ports:

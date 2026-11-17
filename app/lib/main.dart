@@ -35,6 +35,7 @@ import 'providers/watch_lists_provider.dart';
 import 'providers/search_provider.dart';
 import 'navigation/new_episode_opener.dart';
 import 'navigation/search_route_observer.dart';
+import 'screens/search/desktop/desktop_search_hotkey.dart';
 import 'screens/shared_link/shared_link_app.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/server_choice_screen.dart';
@@ -544,18 +545,28 @@ class OnyxApp extends StatelessWidget {
                     // bindings Flutter already has for Enter. Everything that was
                     // keyboard-activatable becomes remote-activatable, app-wide,
                     // without a single widget knowing about it.
+                    // Ctrl K et « / » ouvrent la recherche du bureau
+                    // (ADR-0139) ; ailleurs, l'action se tait.
                     shortcuts: dpad
-                        ? TvNavRoot.shortcuts
+                        ? <ShortcutActivator, Intent>{
+                            ...TvNavRoot.shortcuts,
+                            ...DesktopSearchHotkey.bindings,
+                          }
                         : <ShortcutActivator, Intent>{
                             ...WidgetsApp.defaultShortcuts,
                             ...tvSelectShortcuts,
+                            ...DesktopSearchHotkey.bindings,
                           },
                     // Les flèches maintenues sont régulées, sans quoi le focus
                     // dépasse les cartes qu'une rangée n'a pas encore construites.
                     actions: dpad
-                        ? TvNavRoot.actions
+                        ? <Type, Action<Intent>>{
+                            ...TvNavRoot.actions,
+                            OpenSearchIntent: DesktopSearchHotkey.action,
+                          }
                         : <Type, Action<Intent>>{
                             ...WidgetsApp.defaultActions,
+                            OpenSearchIntent: DesktopSearchHotkey.action,
                             DirectionalFocusIntent: TvDirectionalFocusAction(),
                             // Retour à la télécommande hors Android — voir
                             // [TvBackAction].

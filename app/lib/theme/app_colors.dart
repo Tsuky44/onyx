@@ -49,6 +49,16 @@ abstract final class AppColors {
   /// un seul gris pour dire « pas là » partout.
   static const unavailableTint = Color(0x73000000);
 
+  /// Le voile de la recherche du bureau, posé sur la page floutée : assez
+  /// dense pour que les affiches des résultats ne se mêlent pas à celles de
+  /// dessous, assez léger pour qu'on reconnaisse encore la page qu'on a
+  /// quittée.
+  static const searchVeil = Color(0xC70A0A0A);
+
+  /// Le même voile sans flou (mode léger) : presque opaque, sans quoi les
+  /// deux couches d'affiches se lisaient en même temps.
+  static const searchVeilLite = Color(0xF50A0A0A);
+
   /// Les pastilles de « Qui regarde ? » : une teinte par personne, pour la
   /// reconnaître de loin avant d'avoir lu son nom. Assourdies, pour que le
   /// focus bleu reste la seule chose qui ressorte.

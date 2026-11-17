@@ -41,6 +41,7 @@ import 'hooks/use_player_popup.dart';
 import 'hooks/use_player_stats.dart';
 import 'hooks/use_player_tabs.dart';
 import 'hooks/use_player_watch_party.dart';
+import 'hooks/use_pause_info.dart';
 import 'hooks/use_window_focus.dart';
 import 'widgets/desktop_pip_overlay.dart';
 import 'widgets/seek_feedback_overlay.dart';
@@ -61,6 +62,7 @@ import 'widgets/player_status_panels.dart';
 import 'widgets/player_tap_zones.dart';
 import 'widgets/player_video_stage.dart';
 import 'widgets/still_watching_prompt.dart';
+import 'widgets/pause_info_overlay.dart';
 import 'widgets/tabs/player_chapters_tab.dart';
 import 'widgets/tabs/player_episodes_tab.dart';
 import 'widgets/tabs/player_info_tab.dart';
@@ -76,6 +78,7 @@ import 'playback/still_watching.dart';
 import 'pinch_zoom_fit.dart';
 import 'player_key_routing.dart';
 import 'player_media_info.dart';
+import 'pause_info_content.dart';
 import 'subtitle_padding.dart';
 import 'player_playback_preferences.dart';
 import 'player_shortcuts.dart';
@@ -90,6 +93,7 @@ import '../../l10n/tr.dart';
 part 'player_screen_chrome.dart';
 part 'player_screen_flow.dart';
 part 'player_screen_overlays.dart';
+part 'player_screen_pause_info.dart';
 part 'player_screen_remote.dart';
 part 'player_screen_startup.dart';
 
@@ -136,6 +140,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _nextEpisodePageWasVisible = false;
   late final PlaybackHandoffWatch _handoff;
   late final PlayerWatchParty _party;
+  late final PauseInfoWatch _pauseInfo = _createPauseInfo();
   /// L'écran natif d'Apple TV, ou null là où l'interface Onyx reste seule.
   final GestureHints _hints = GestureHints();
   late final WindowFocusWatch _windowFocus =
@@ -459,6 +464,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _startupWatchdog?.cancel();
     _relayTimer?.cancel();
     _handoff.dispose();
+    _pauseInfo.dispose();
     _hints.dispose();
     _tabs.dispose();
     _stats.dispose();
@@ -612,6 +618,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     ),
                   ),
                 PlayerTvScale.layer(isTv: isTv, child: _buildChrome(isTv)),
+                if (_buildPauseInfo(isTv) case final pauseInfo?) pauseInfo,
                 ..._buildOverChrome(isTv),
                 // Start-up spinner. IgnorePointer like the one below: loading is
                 // exactly when the user may want to go back, so the cover must

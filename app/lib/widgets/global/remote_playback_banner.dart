@@ -14,6 +14,7 @@ import '../../utils/on_screen.dart';
 import '../../utils/poster_url.dart';
 import '../../tv/tv_mode.dart';
 import 'remote_playback_notice.dart';
+import 'remote_playback_slot.dart';
 
 /// « Lecture en cours sur un autre appareil » : ce que le compte lit ailleurs,
 /// avec de quoi le reprendre ici là où il en est.
@@ -26,7 +27,10 @@ import 'remote_playback_notice.dart';
 /// - partout sauf sur un téléphone, une notification de verre en haut à
 ///   droite de l'accueil ([RemotePlaybackBanner.notice],
 ///   [RemotePlaybackNotice]). Avec une télécommande ([hold]), on reprend en
-///   maintenant la touche lecture/pause ;
+///   maintenant la touche lecture/pause. Hors Apple TV ([selectable]), OK
+///   reprend aussi : depuis le bouton « Reprendre ici » de la barre du haut
+///   ([RemotePlaybackSlot]), ou depuis la notification elle-même hors de la
+///   coquille (ADR-0136) ;
 /// - sur un téléphone, la même en plus ramassé, en bas de l'écran : toucher
 ///   reprend, la croix l'écarte.
 class RemotePlaybackBanner extends StatefulWidget {
@@ -39,8 +43,11 @@ class RemotePlaybackBanner extends StatefulWidget {
   final bool hold;
 
   /// Vrai sur un téléviseur dont la télécommande peut ne pas avoir de touche
-  /// lecture/pause (tout sauf la Siri Remote) : la notification prend aussi
-  /// le focus, et OK reprend.
+  /// lecture/pause, ou ne pas savoir la maintenir (tout sauf la Siri
+  /// Remote) : OK reprend aussi, depuis le bouton de la barre du haut
+  /// ([RemotePlaybackSlot]) ou, sans barre, depuis la notification. Le focus
+  /// y va de lui-même quand la notification arrive avec l'accueil, et un
+  /// appui court sur lecture/pause l'y amène (ADR-0136).
   final bool selectable;
 
   const RemotePlaybackBanner({super.key})
@@ -64,6 +71,17 @@ class RemotePlaybackBanner extends StatefulWidget {
   /// tenu en « enfoncé, relâché, ré-enfoncé » (voir `TvFocusable`).
   static const Duration holdBounce = Duration(milliseconds: 40);
 
+  /// Les touches qui valent lecture/pause. Une télécommande de téléviseur
+  /// passée par HDMI-CEC (celle d'un Hisense qui pilote un Fire TV) envoie
+  /// souvent « lecture » et « pause » séparément, et non la touche
+  /// combinée : seules celle-ci et « lecture » étaient écoutées, et « pause »
+  /// ne faisait rien.
+  static final Set<LogicalKeyboardKey> playKeys = {
+    LogicalKeyboardKey.mediaPlayPause,
+    LogicalKeyboardKey.mediaPlay,
+    LogicalKeyboardKey.mediaPause,
+  };
+
   @override
   State<RemotePlaybackBanner> createState() => _RemotePlaybackBannerState();
 }
@@ -76,6 +94,23 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
   RemotePlayback? _current;
   final Set<String> _dismissed = {};
   bool _opening = false;
+
+  /// Les lectures déjà montrées : la notification ne prend le focus d'elle-
+  /// même qu'à la première fois ([RemotePlaybackBanner.selectable]).
+  final Set<String> _announced = {};
+
+  /// Le focus de la notification, hors Apple TV et hors de la coquille.
+  final FocusNode _noticeFocus =
+      FocusNode(debugLabel: 'Lecture sur un autre appareil');
+
+  /// Le bouton « Reprendre ici » de la barre du haut, hors Apple TV : c'est
+  /// lui qui prend le focus, au même niveau que les onglets, et non la
+  /// notification, posée sur le chemin d'aucune rangée (ADR-0136).
+  RemotePlaybackSlot? _slot;
+
+  /// Là où va le focus qui reprend : le bouton de la barre, ou la
+  /// notification sans barre.
+  FocusNode get _target => _slot?.focus ?? _noticeFocus;
 
   /// L'appui en cours sur lecture/pause ([RemotePlaybackBanner.hold]) :
   /// il avance tant que la touche est tenue, et la lecture reprend au bout.
@@ -94,6 +129,34 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
       duration: RemotePlaybackBanner.holdDuration,
       reverseDuration: const Duration(milliseconds: 180),
     )..addStatusListener(_onHoldStatus);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final slot = widget.selectable
+        ? RemotePlaybackSlotScope.maybeOf(context, listen: false)
+        : null;
+    if (identical(slot, _slot)) return;
+    _slot?.focus.removeListener(_onSlotFocus);
+    _slot = slot;
+    slot?.focus.addListener(_onSlotFocus);
+  }
+
+  /// La notification s'éclaire quand le bouton de la barre a le focus.
+  void _onSlotFocus() {
+    if (mounted) setState(() {});
+  }
+
+  /// Retire le bouton de la barre. Après l'image : ceci arrive aussi dans
+  /// `didChangeOnScreen` et `dispose`, quand la barre ne peut pas se
+  /// reconstruire.
+  void _withdraw() {
+    final slot = _slot;
+    if (slot == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !isOnScreen) slot.offer(null, null);
+    });
   }
 
   void _onHoldStatus(AnimationStatus status) {
@@ -116,9 +179,15 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
     _timer?.cancel();
     _timer = null;
     HardwareKeyboard.instance.removeHandler(_onMediaKey);
-    if (!onScreen) return;
+    if (!onScreen) {
+      // Le bouton ne vaut que pour l'accueil : un autre onglet, une fiche ou
+      // le lecteur par-dessus le retirent de la barre.
+      _withdraw();
+      return;
+    }
     HardwareKeyboard.instance.addHandler(_onMediaKey);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _refresh(arriving: true));
     _timer = Timer.periodic(_pollInterval, (_) => _refresh());
   }
 
@@ -127,7 +196,10 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
     _timer?.cancel();
     _release?.cancel();
     HardwareKeyboard.instance.removeHandler(_onMediaKey);
+    _slot?.focus.removeListener(_onSlotFocus);
+    _withdraw();
     _hold.dispose();
+    _noticeFocus.dispose();
     super.dispose();
   }
 
@@ -140,9 +212,7 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
   /// fiche, la touche garde son sens habituel.
   bool _onMediaKey(KeyEvent event) {
     if (!TvMode.isTv) return false;
-    final key = event.logicalKey;
-    if (key != LogicalKeyboardKey.mediaPlayPause &&
-        key != LogicalKeyboardKey.mediaPlay) {
+    if (!RemotePlaybackBanner.playKeys.contains(event.logicalKey)) {
       return false;
     }
     return widget.hold && _onHoldKey(event);
@@ -151,6 +221,13 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
   /// Il faut maintenir la touche : un appui court ne reprend rien, pour
   /// qu'une lecture ne parte pas d'un geste machinal. L'appui avance [_hold],
   /// le relâchement le ramène à zéro.
+  ///
+  /// Hors Apple TV ([RemotePlaybackBanner.selectable]), beaucoup de
+  /// télécommandes ne savent pas tenir la touche : par HDMI-CEC, un appui
+  /// maintenu arrive en « enfoncé, relâché » répétés, et l'anneau ne se
+  /// remplissait jamais. Un appui court y amène donc le focus, et un second
+  /// appui (ou OK) reprend : deux gestes voulus, jamais un seul machinal
+  /// (ADR-0136).
   bool _onHoldKey(KeyEvent event) {
     if (event is KeyUpEvent) {
       // Toujours entendu, même une fois le lecteur ouvert par-dessus : sans
@@ -159,12 +236,24 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
       _release?.cancel();
       _release = Timer(RemotePlaybackBanner.holdBounce, () {
         _release = null;
-        if (mounted && !_opening) _hold.reverse();
+        if (!mounted || _opening) return;
+        if (widget.selectable &&
+            _current != null &&
+            _hold.status != AnimationStatus.completed) {
+          _target.requestFocus();
+        }
+        _hold.reverse();
       });
       return true;
     }
     if (_current == null || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       return false;
+    }
+    if (event is KeyDownEvent && widget.selectable && _target.hasFocus) {
+      // La notification a déjà le focus : l'appui court qui l'y a amenée
+      // était le premier geste, celui-ci est le second.
+      unawaited(_resume());
+      return true;
     }
     if (event is KeyDownEvent && !_opening) {
       _release?.cancel();
@@ -184,12 +273,20 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
     }
   }
 
-  Future<void> _refresh() async {
+  /// [arriving] : l'accueil vient d'apparaître (ouverture de l'app, retour au
+  /// premier plan, retour d'une autre page). C'est le moment où l'on prend
+  /// la télécommande pour reprendre ce que le téléphone lisait : hors Apple
+  /// TV, la notification prend alors le focus, une fois par lecture, et OK
+  /// suffit. Pendant que l'on parcourt l'accueil, un sondage ne le vole
+  /// jamais.
+  Future<void> _refresh({bool arriving = false}) async {
     if (!mounted || _opening) return;
     // Rien à proposer pendant que le lecteur de cet appareil est ouvert.
     if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
     final plays = await _fetch();
-    if (!mounted) return;
+    // Parti ailleurs pendant la requête : le bouton de la barre a été retiré,
+    // il ne doit pas revenir.
+    if (!mounted || !isOnScreen) return;
     final next =
         plays.where((p) => !_dismissed.contains(_dismissKey(p))).firstOrNull;
     // L'autre appareil a changé d'épisode ou s'est arrêté : la rangée
@@ -200,6 +297,14 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
           .loadHome(silent: true));
     }
     setState(() => _current = next);
+    _slot?.offer(next, _resume);
+    if (next == null || !_announced.add(_dismissKey(next))) return;
+    if (!arriving || !widget.selectable) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _current == null || _opening) return;
+      if (!(ModalRoute.of(context)?.isCurrent ?? false)) return;
+      _target.requestFocus();
+    });
   }
 
   String _dismissKey(RemotePlayback p) =>
@@ -216,6 +321,7 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
         shown;
     if (!mounted) return;
     setState(() => _current = null);
+    _slot?.offer(null, null);
     await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
       settings: const RouteSettings(name: SearchRouteObserver.playerRouteName),
       builder: (_) => PlayerScreen(
@@ -292,7 +398,11 @@ class _RemotePlaybackBannerState extends State<RemotePlaybackBanner>
       play: play,
       posterUrl: cardPosterUrl(play.session.posterUrl, serverBaseUrl: baseUrl),
       hold: widget.hold ? _hold : null,
-      selectable: widget.selectable,
+      // Avec la barre, c'est son bouton qui prend le focus : la notification
+      // s'éclaire seulement.
+      selectable: widget.selectable && _slot == null,
+      focusNode: widget.selectable && _slot == null ? _noticeFocus : null,
+      headerFocused: _slot?.focus.hasFocus,
       compact: !widget.notice,
       onResume: direct && !_opening ? _resume : null,
       onDismiss: widget.hold ? null : () => _dismiss(play),

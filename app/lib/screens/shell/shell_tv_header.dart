@@ -12,13 +12,15 @@ import '../../widgets/global/app_download_button.dart';
 import '../../widgets/global/glass_catalog_search.dart';
 import '../../widgets/global/glass_chrome.dart';
 import '../../widgets/global/interface_tour/tour_anchor.dart';
+import '../../widgets/global/remote_playback_header_button.dart';
 import '../../widgets/global/tv_tab_bar.dart';
 import 'shell_indexer_status.dart';
 import 'shell_tabs.dart';
 
 /// L'en-tête d'un téléviseur : la marque à gauche, la pilule des onglets au
 /// centre (la recherche l'ouvre, à gauche d'Accueil), le compte à droite
-/// (ADR-0117).
+/// (ADR-0117). Hors Apple TV, « Reprendre ici » s'y ajoute tant que l'accueil
+/// annonce une lecture sur un autre appareil (ADR-0136).
 ///
 /// Les mêmes entrées que [ShellDesktopHeader], dans la disposition des apps de
 /// salon. La bande de verre pleine largeur a disparu : seule la pilule porte
@@ -119,10 +121,7 @@ class ShellTvHeader extends StatelessWidget {
                       // bibliothèque elle coupait le trajet le plus courant.
                       const TourTarget(
                         anchor: TourAnchor.search,
-                        child: GlassCatalogSearch(
-                          tabBarTrigger: true,
-                          staysAbovePages: true,
-                        ),
+                        child: GlassCatalogSearch(tabBarTrigger: true),
                       ),
                       TourTarget(
                         anchor: TourAnchor.library,
@@ -157,6 +156,7 @@ class ShellTvHeader extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    const RemotePlaybackHeaderButton(),
                     ShellIndexerStatus(homeProvider: homeProvider),
                     const AppDownloadButton(),
                     AccountMenu(authProvider: authProvider),

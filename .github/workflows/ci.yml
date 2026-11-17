@@ -4,7 +4,7 @@ name: CI
 #
 # Appele par server.yml et release.yml avant qu'ils ne publient quoi que ce
 # soit — une image ou une version ne part pas si les tests sont rouges. Tourne
-# aussi seul sur les pull requests, et sur les pushs de main qui ne touchent
+# aussi seul sur les pull requests, et sur les pushs de master qui ne touchent
 # que ce que server.yml ne surveille pas (tests, packages), pour que chaque
 # changement passe par ici exactement une fois.
 
@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "app/test/**"
       - "app/analysis_options.yaml"
@@ -41,9 +41,9 @@ jobs:
       run:
         working-directory: server
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
@@ -105,7 +105,7 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:

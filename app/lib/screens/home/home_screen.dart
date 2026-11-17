@@ -341,8 +341,9 @@ class _HomeScreenState extends State<HomeScreen>
                     // Une notification en haut à droite, sous le compte : elle
                     // ne déplace rien. Sur téléviseur on reprend en
                     // maintenant lecture/pause. La Siri Remote a toujours
-                    // cette touche ; les autres télécommandes pas toutes, et
-                    // la notification y prend aussi le focus, pour OK.
+                    // cette touche ; les autres télécommandes pas toutes, ou
+                    // ne savent pas la tenir, et la notification y prend
+                    // aussi le focus, pour OK (ADR-0136).
                     if (!isPhone)
                       Positioned(
                         top: headerInset + 6,

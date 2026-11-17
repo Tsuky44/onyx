@@ -197,24 +197,55 @@ func dedupeSearchRows(rows []tmdbCatalogRow) []tmdbCatalogRow {
 	return out
 }
 
+// Le seuil de notoriété d'un titre exact pour passer en tête (ADR-0134) :
+// assez de votes, ou assez de popularité pour un titre qui sort et n'a pas
+// encore de votes. Sans seuil, le film « Bat » (1 vote) repasserait devant
+// Batman sur « bat » ; avec, « ava » ouvre sur Ava (2020, environ 2 000 votes)
+// avant Avatar.
+const (
+	exactTitleMinVotes      = 100
+	exactTitleMinPopularity = 10.0
+)
+
 // rankSearchRows range rows du plus pertinent au moins pertinent pour query,
-// dans une nouvelle liste. À score égal, l'ordre reçu reste.
+// dans une nouvelle liste : d'abord les titres exacts assez connus, puis le
+// reste, chacun par score. À rang égal, l'ordre reçu reste.
 func rankSearchRows(query string, rows []tmdbCatalogRow) []tmdbCatalogRow {
 	q := titleindex.Fold(query)
 	scores := make([]float64, len(rows))
+	leads := make([]bool, len(rows))
 	for i, row := range rows {
 		scores[i] = searchRowScore(q, row)
+		leads[i] = isKnownExactTitle(q, row)
 	}
 	order := make([]int, len(rows))
 	for i := range order {
 		order[i] = i
 	}
-	sort.SliceStable(order, func(a, b int) bool { return scores[order[a]] > scores[order[b]] })
+	sort.SliceStable(order, func(a, b int) bool {
+		if leads[order[a]] != leads[order[b]] {
+			return leads[order[a]]
+		}
+		return scores[order[a]] > scores[order[b]]
+	})
 	out := make([]tmdbCatalogRow, len(rows))
 	for i, idx := range order {
 		out[i] = rows[idx]
 	}
 	return out
+}
+
+// isKnownExactTitle dit si row porte exactement le titre cherché (traduit ou
+// original) et passe le seuil de notoriété. Le score seul ne suffisait pas :
+// le titre exact n'y pèse que 15 % de plus qu'un début de titre, et un titre
+// deux ou trois fois plus connu effaçait cet écart (« ava » sortait toute la
+// saga Avatar avant Ava).
+func isKnownExactTitle(foldedQuery string, row tmdbCatalogRow) bool {
+	if !titleindex.IsExactTitle(foldedQuery, row.Title, row.Name, row.OriginalTitle, row.OriginalName) {
+		return false
+	}
+	return row.VoteCount >= exactTitleMinVotes ||
+		titleindex.NormalizedPopularity(row.MediaType, row.Popularity) >= exactTitleMinPopularity
 }
 
 // searchRowScore multiplie le poids de la meilleure correspondance (titre

@@ -44,6 +44,7 @@ import 'shell_page_open_listener.dart';
 import 'shell_tab_stack.dart';
 import 'shell_tabs.dart';
 import 'shell_tv_back.dart';
+import '../../widgets/global/remote_playback_slot.dart';
 import '../../theme/app_icons.dart';
 import '../../l10n/tr.dart';
 
@@ -74,6 +75,10 @@ class _MainShellState extends State<MainShell> {
     canRequestFocus: false,
     skipTraversal: true,
   );
+
+  /// « Reprendre ici » dans la barre d'un téléviseur : l'accueil la remplit,
+  /// la barre la dessine (ADR-0136).
+  final RemotePlaybackSlot _remotePlayback = RemotePlaybackSlot();
 
   /// Les onglets réellement montés dans [ShellTabStack].
   ///
@@ -238,6 +243,7 @@ class _MainShellState extends State<MainShell> {
       node.dispose();
     }
     _headerNode.dispose();
+    _remotePlayback.dispose();
     super.dispose();
   }
 
@@ -598,7 +604,7 @@ class _MainShellState extends State<MainShell> {
       homeTab: ShellTabs.home,
       focusTab: _focusTab,
       selectTab: _selectTab,
-      child: shell,
+      child: RemotePlaybackSlotScope(slot: _remotePlayback, child: shell),
     );
   }
 }

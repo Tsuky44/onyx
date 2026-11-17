@@ -11,7 +11,7 @@
 
 # Configuration
 GITHUB_USER="tsuky44" # Doit être en minuscules pour ghcr.io
-IMAGE_NAME="playeur-server"
+IMAGE_NAME="onyx-server"
 DEFAULT_VERSION="1.0.0"
 
 # Couleurs pour le terminal
