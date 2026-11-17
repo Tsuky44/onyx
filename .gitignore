@@ -56,3 +56,7 @@ prototypes/**/windows/flutter/ephemeral/
 # Runtime : volume Docker et depot imbrique, jamais suivis
 /data/
 /mediahub/
+
+# Préférences Claude perso (une par dev, recréées par le setup script de
+# chaque environnement cloud). Jamais versionnées, donc jamais mergées.
+CLAUDE.local.md
