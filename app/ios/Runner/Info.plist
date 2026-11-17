@@ -5,7 +5,12 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>fr</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Onyx</string>
 	<key>CFBundleExecutable</key>
@@ -51,13 +56,13 @@
 		<string>_http._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>La caméra sert à scanner le QR code affiché par le téléviseur pour l'appairer.</string>
+	<string>The camera is used to scan the QR code shown on your TV to pair it.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Onyx ouvre le sélecteur de fichiers de l'appareil pour choisir un installateur d'application à envoyer à votre serveur.</string>
+	<string>Onyx opens the device file picker so you can choose an app installer to send to your server.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>Onyx lit l'inclinaison du téléphone pour retourner la vidéo quand vous le retournez.</string>
+	<string>Onyx reads the phone's tilt to flip the video when you turn the phone over.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Onyx cherche votre serveur média sur le réseau local et lit vos fichiers depuis celui-ci.</string>
+	<string>Onyx looks for your media server on the local network and reads your files from it.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
