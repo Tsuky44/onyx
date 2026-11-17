@@ -25,13 +25,17 @@ VERSION`, annoncée sur `/api/ping`) télécharge ceux de la Release `v<version>
 
 ## Déclencher
 
-**Actions → Release → Run workflow**, puis choisir l'incrément :
+**Actions → Release → Run workflow**, puis choisir le niveau :
 
-| Bump | Dernier tag `v1.0.34` → |
-|---|---|
-| `patch` (défaut) | `v1.0.35` |
-| `minor` | `v1.1.0` |
-| `major` | `v2.0.0` |
+| Niveau | Usage | Dernier tag `v1.0.34` → |
+|---|---|---|
+| `test` (défaut) · `x.y.Z` | Version légère pour tester, depuis `beta` ou une branche personnelle | `v1.0.35` |
+| `prod` · `x.Y.0` | Mise en production validée, depuis `master` uniquement | `v1.1.0` |
+| `major` · `X.0.0` | Changement structurel profond de l'application, depuis `master` uniquement | `v2.0.0` |
+
+Le niveau est verrouillé par la branche choisie dans le formulaire : depuis `master`,
+seuls `prod` et `major` sont acceptés ; depuis `beta` ou une branche personnelle, seul
+`test` l'est. Le workflow échoue tout de suite avec un message clair sinon.
 
 La version est calculée à partir du dernier tag `vX.Y.Z` (tri sémantique), et
 le tag est créé par la GitHub Release sur le commit construit : plus besoin de
@@ -41,7 +45,7 @@ permet de forcer un numéro précis ; il est refusé si le tag existe déjà.
 Depuis un terminal, avec la CLI GitHub :
 
 ```bash
-gh workflow run release.yml -f bump=patch
+gh workflow run release.yml -f bump=test
 ```
 
 ### Ne reconstruire que certaines plateformes
@@ -71,7 +75,7 @@ précédent est repris au lieu de disparaître de la Release. Le build Play (App
 les envois TestFlight suivent la case de leur plateforme.
 
 ```bash
-gh workflow run release.yml -f bump=patch -f android=false -f windows=false -f macos=false -f ios=false -f tvos=false
+gh workflow run release.yml -f bump=test -f android=false -f windows=false -f macos=false -f ios=false -f tvos=false
 ```
 
 Un tag poussé (`git push origin v1.0.1`) n'a pas de cases : il reconstruit tout.

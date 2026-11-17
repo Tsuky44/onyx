@@ -8,4 +8,4 @@
 
 ## Accord de contribution
 
-- [ ] J'ai lu et j'accepte l'[accord de contribution Onyx](https://github.com/Tsuky44/player/blob/main/CLA.md) pour cette contribution et mes contributions futures.
+- [ ] J'ai lu et j'accepte l'[accord de contribution Onyx](https://github.com/Tsuky44/player/blob/master/CLA.md) pour cette contribution et mes contributions futures.
