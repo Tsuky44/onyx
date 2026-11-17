@@ -52,3 +52,7 @@ server/data/
 
 # Flutter build output (generated)
 prototypes/**/windows/flutter/ephemeral/
+
+# Base SQLite du docker-compose local et clone parasite : jamais versionnes.
+/data/
+/mediahub/
