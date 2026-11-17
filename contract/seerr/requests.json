@@ -1,0 +1,42 @@
+{
+  "pageInfo": { "pages": 1, "pageSize": 100, "results": 4, "page": 1 },
+  "results": [
+    {
+      "id": 14, "status": 1, "type": "movie", "is4k": false,
+      "createdAt": "2026-11-16T18:00:00.000Z", "updatedAt": "2026-11-16T18:00:00.000Z",
+      "media": { "id": 31, "mediaType": "movie", "tmdbId": 438631, "status": 2, "status4k": 1, "downloadStatus": [], "downloadStatus4k": [] },
+      "seasons": [],
+      "requestedBy": { "id": 3, "email": "hugo@example.org", "username": "hugo", "plexUsername": null, "jellyfinUsername": null, "displayName": "hugo", "permissions": 16416 }
+    },
+    {
+      "id": 13, "status": 2, "type": "tv", "is4k": false,
+      "createdAt": "2026-11-15T10:00:00.000Z", "updatedAt": "2026-11-15T12:30:00.000Z",
+      "media": { "id": 30, "mediaType": "tv", "tmdbId": 1399, "tvdbId": 121361, "status": 4, "status4k": 1, "downloadStatus": [], "downloadStatus4k": [] },
+      "seasons": [
+        { "id": 21, "seasonNumber": 1, "status": 2 },
+        { "id": 22, "seasonNumber": 2, "status": 2 }
+      ],
+      "requestedBy": { "id": 2, "email": "lea@example.org", "username": null, "plexUsername": null, "jellyfinUsername": "Lea", "displayName": "Lea", "permissions": 32 }
+    },
+    {
+      "id": 12, "status": 2, "type": "movie", "is4k": false,
+      "createdAt": "2026-11-14T09:00:00.000Z", "updatedAt": "2026-11-14T09:05:00.000Z",
+      "media": {
+        "id": 29, "mediaType": "movie", "tmdbId": 603, "status": 3, "status4k": 1,
+        "downloadStatus": [
+          { "mediaType": "movie", "externalId": 7, "size": 8589934592, "sizeLeft": 2147483648, "status": "downloading", "timeLeft": "00:12:34", "title": "The.Matrix.1999.1080p.BluRay", "downloadId": "abc" }
+        ],
+        "downloadStatus4k": []
+      },
+      "seasons": [],
+      "requestedBy": { "id": 2, "email": "lea@example.org", "username": null, "plexUsername": null, "jellyfinUsername": "Lea", "displayName": "Lea", "permissions": 32 }
+    },
+    {
+      "id": 11, "status": 3, "type": "movie", "is4k": false,
+      "createdAt": "2026-11-13T09:00:00.000Z", "updatedAt": "2026-11-13T10:00:00.000Z",
+      "media": { "id": 28, "mediaType": "movie", "tmdbId": 27205, "status": 1, "status4k": 1, "downloadStatus": [], "downloadStatus4k": [] },
+      "seasons": [],
+      "requestedBy": { "id": 1, "email": "admin@example.org", "username": null, "plexUsername": null, "jellyfinUsername": "admin", "displayName": "admin", "permissions": 2 }
+    }
+  ]
+}

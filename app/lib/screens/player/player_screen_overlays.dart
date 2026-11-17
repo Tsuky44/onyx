@@ -36,7 +36,6 @@ extension _PlayerOverlays on _PlayerScreenState {
           tab: OnyxTab.episodes,
           label: tr('Épisodes'),
           builder: (_) => PlayerEpisodesTab(
-            showTitle: _episodesPanel.showTitle,
             currentEpisodeId: media.id,
             seasons: _episodesPanel.seasons,
             selectedSeasonId:

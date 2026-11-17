@@ -3,6 +3,7 @@
 library;
 
 import '../models/otp.dart';
+import '../models/request_service.dart';
 
 /// État du lien Emby d'un compte (GET/PUT/DELETE /api/me/emby).
 class EmbyLinkStatus {
@@ -32,9 +33,9 @@ class EmbyLinkStatus {
   }
 }
 
-/// Le résultat de POST /api/settings/mediahub/test (ADR-0072) : un échec du
-/// test n'est pas une erreur HTTP, il arrive ici avec [ok] à false et le
-/// message à montrer.
+/// Le résultat de POST /api/settings/mediahub/test (ADR-0072), pour MediaHub
+/// comme pour Overseerr et Jellyseerr : un échec du test n'est pas une erreur
+/// HTTP, il arrive ici avec [ok] à false et le message à montrer.
 class MediaHubLinkTest {
   const MediaHubLinkTest(
       {required this.ok, required this.message, this.notes = const []});
@@ -58,9 +59,14 @@ class MediaHubLinkTest {
 
 /// Public server settings from GET/PUT /api/settings (secrets are never cleartext).
 class ServerSettings {
+  /// L'adresse et la clé du compagnon de demandes, quel qu'il soit : elles
+  /// gardent le nom qu'elles avaient quand MediaHub était le seul.
   final String mediaHubUrl;
   final bool mediaHubApiKeySet;
   final String? mediaHubApiKeyHint;
+
+  /// Le compagnon à cette adresse (ADR-0136).
+  final RequestService requestService;
   final bool tmdbApiKeySet;
   final String? tmdbApiKeyHint;
   final String tmdbLanguage;
@@ -82,6 +88,7 @@ class ServerSettings {
     required this.mediaHubUrl,
     required this.mediaHubApiKeySet,
     this.mediaHubApiKeyHint,
+    this.requestService = RequestService.mediaHub,
     required this.tmdbApiKeySet,
     this.tmdbApiKeyHint,
     required this.tmdbLanguage,
@@ -97,6 +104,7 @@ class ServerSettings {
       mediaHubUrl: json['mediahub_url'] as String? ?? '',
       mediaHubApiKeySet: json['mediahub_api_key_set'] as bool? ?? false,
       mediaHubApiKeyHint: json['mediahub_api_key_hint'] as String?,
+      requestService: RequestService.parse(json['request_service'] as String?),
       tmdbApiKeySet: json['tmdb_api_key_set'] as bool? ?? false,
       tmdbApiKeyHint: json['tmdb_api_key_hint'] as String?,
       tmdbLanguage: json['tmdb_language'] as String? ?? 'fr-FR',

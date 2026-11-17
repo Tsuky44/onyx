@@ -86,16 +86,14 @@ void main() {
       expect(focused(tester), 'barre');
     }
 
-    /// Les boutons ronds, de gauche à droite (le banc joue une série) : un
-    /// par réglage, entre les deux épisodes voisins (ADR-0130).
+    /// Les boutons ronds, de gauche à droite (le banc joue une série) :
+    /// l'essentiel et la roue crantée, entre les deux épisodes voisins
+    /// (ADR-0137).
     const buttons = [
       'Épisode précédent',
       'Sous-titres',
       'Pistes audio',
-      'Qualité',
-      'Vitesse de lecture',
-      'Format d’image',
-      'Minuterie de veille',
+      'Réglages',
       'Épisode suivant',
     ];
 
@@ -347,6 +345,33 @@ void main() {
         expect(find.byType(PlayerRemoteBench), findsNothing);
         expect(focused(tester), 'carte',
             reason: 'la sortie du lecteur rend le focus à la carte d’origine');
+      });
+
+      testWidgets(
+          'la roue crantée ouvre l’index du reste, et Retour le ferme',
+          (tester) async {
+        await open(tester);
+        await toAudio(tester);
+        await press(tester, right);
+        expect(focused(tester), 'Réglages');
+
+        await nav.select();
+        await tester.pumpAndSettle();
+        expect(player(tester).openMenu, OnyxMenuSection.root);
+        // Le reste, et lui seul : les sous-titres et l'audio ont leur bouton,
+        // les chapitres leur onglet.
+        expect(find.text('Vitesse de lecture'), findsOneWidget);
+        expect(find.text('Minuterie de veille'), findsOneWidget);
+        expect(find.text('Audio'), findsNothing);
+        expect(find.text('Chapitres'), findsNothing);
+
+        await nav.back();
+        if (engine == TvNavEngine.dpad) await nav.popRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('Vitesse de lecture'), findsNothing);
+        expect(player(tester).openMenu, isNull);
+        expect(focused(tester),
+            engine == TvNavEngine.dpad ? 'Réglages' : 'barre');
       });
 
       testWidgets('le menu piège les flèches', (tester) async {

@@ -20,11 +20,12 @@ import (
 
 var mediaHubHTTPClient = httpx.Long
 
-// Le compagnon de demandes : MediaHub par son API v1, ou OnyxHub tant qu'il
-// n'est pas retiré, réglé par mediahub_url et mediahub_api_key. Le dialecte se
-// reconnaît dans le package mediahub (ADR-0089) ; les handlers ne voient que
-// le client. Les formats échangés sont épinglés par contract/mediahub/ et,
-// pour OnyxHub, contract/onyxhub/ (ADR-0075).
+// Le compagnon de demandes : MediaHub par son API v1, OnyxHub tant qu'il n'est
+// pas retiré, ou Overseerr et Jellyseerr (ADR-0136), réglé par request_service,
+// mediahub_url et mediahub_api_key. Le dialecte se choisit dans le package
+// mediahub (ADR-0089) ; les handlers ne voient que le client. Les formats
+// échangés sont épinglés par contract/mediahub/, contract/seerr/ et, pour
+// OnyxHub, contract/onyxhub/ (ADR-0075).
 
 // mediaHubAvailability et mediaHubWaiting gardent les noms que lisent les
 // écrans du catalogue.
@@ -35,7 +36,27 @@ type (
 
 // mediaHubClient rend le client réglé, avec l'échéance choisie.
 func mediaHubClient(client *http.Client) mediahub.Client {
-	return mediahub.Client{BaseURL: config.MediaHubURL(), APIKey: config.MediaHubAPIKey(), HTTP: client}
+	return mediahub.Client{
+		BaseURL:  config.MediaHubURL(),
+		APIKey:   config.MediaHubAPIKey(),
+		HTTP:     client,
+		Service:  config.RequestService(),
+		Language: config.TMDBLanguage(),
+	}
+}
+
+// companionLabel est le nom du compagnon réglé, pour les messages.
+func companionLabel() string { return config.RequestService().Label() }
+
+// mediaHubInboundKey est la clé que MediaHub présente quand il appelle Onyx
+// (évènements, annuaire, stockage, rachat d'un code). Avec Overseerr ou
+// Jellyseerr la clé réglée est la leur : ils n'appellent jamais Onyx, et elle
+// n'ouvre rien ici (ADR-0136). Vide, toute vérification échoue.
+func mediaHubInboundKey() string {
+	if config.RequestService().Seerr() {
+		return ""
+	}
+	return config.MediaHubAPIKey()
 }
 
 // mediaHubAccount rend le compte Onyx au nom duquel parler. MediaHub retrouve
@@ -180,15 +201,15 @@ func writeMediaHubFailure(w http.ResponseWriter, where string, err error) {
 		if json.Valid(status.Body) {
 			_, _ = w.Write(status.Body)
 		} else {
-			_ = json.NewEncoder(w).Encode(errorResponse{Error: i18n.Respond(w, "Réponse illisible de MediaHub")})
+			_ = json.NewEncoder(w).Encode(errorResponse{Error: i18n.Respond(w, "Réponse illisible de {0}", companionLabel())})
 		}
 	case errors.Is(err, mediahub.ErrNotConfigured):
-		writeMediaHubError(w, http.StatusServiceUnavailable, "MediaHub n'est pas configuré sur ce serveur")
+		writeMediaHubError(w, http.StatusServiceUnavailable, "{0} n'est pas configuré sur ce serveur", companionLabel())
 	case errors.Is(err, mediahub.ErrUnsupported):
 		writeMediaHubError(w, http.StatusNotImplemented, "Le compagnon de demandes de ce serveur ne le permet pas")
 	default:
 		log.Printf("%s: %v", where, err)
-		writeMediaHubError(w, http.StatusBadGateway, "MediaHub ne répond pas")
+		writeMediaHubError(w, http.StatusBadGateway, "{0} ne répond pas", companionLabel())
 	}
 }
 

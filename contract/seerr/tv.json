@@ -1,0 +1,35 @@
+{
+  "id": 1399,
+  "name": "Game of Thrones",
+  "posterPath": "/got.jpg",
+  "firstAirDate": "2011-04-17",
+  "seasons": [
+    { "id": 3627, "seasonNumber": 0, "name": "Épisodes spéciaux", "episodeCount": 12 },
+    { "id": 3624, "seasonNumber": 1, "name": "Saison 1", "episodeCount": 10 },
+    { "id": 3625, "seasonNumber": 2, "name": "Saison 2", "episodeCount": 10 },
+    { "id": 3626, "seasonNumber": 3, "name": "Saison 3", "episodeCount": 10 },
+    { "id": 3628, "seasonNumber": 4, "name": "Saison 4", "episodeCount": 10 }
+  ],
+  "mediaInfo": {
+    "id": 30, "mediaType": "tv", "tmdbId": 1399, "tvdbId": 121361, "status": 4, "status4k": 1,
+    "seasons": [
+      { "id": 51, "seasonNumber": 1, "status": 5, "status4k": 1 },
+      { "id": 52, "seasonNumber": 2, "status": 3, "status4k": 1 }
+    ],
+    "requests": [
+      {
+        "id": 13, "status": 2, "type": "tv", "is4k": false,
+        "seasons": [
+          { "id": 21, "seasonNumber": 1, "status": 2 },
+          { "id": 22, "seasonNumber": 2, "status": 2 }
+        ]
+      },
+      {
+        "id": 15, "status": 1, "type": "tv", "is4k": false,
+        "seasons": [ { "id": 23, "seasonNumber": 3, "status": 1 } ]
+      }
+    ],
+    "downloadStatus": [],
+    "downloadStatus4k": []
+  }
+}

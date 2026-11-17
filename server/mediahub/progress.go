@@ -51,6 +51,9 @@ func (c Client) Progress(ctx context.Context, as Account, tmdbID int, mediaType 
 	if err != nil {
 		return Progress{}, err
 	}
+	if dialect == DialectSeerr {
+		return c.seerrProgress(ctx, tmdbID, mediaType)
+	}
 	if dialect != DialectV1 {
 		return Progress{}, ErrUnsupported
 	}

@@ -5,11 +5,8 @@ import '../../../../models/models.dart';
 import '../../../../theme/app_type.dart';
 import '../../../../theme/focus_fill.dart';
 import '../../../../tv/tv_focus.dart';
-import '../../../../tv/tv_mode.dart';
 import '../../../../utils/format.dart';
-import '../../../../widgets/global/media_download_button.dart';
 import '../../../../widgets/global/media_poster.dart';
-import '../../../../widgets/global/season_download_button.dart';
 import '../onyx/onyx_capsule_button.dart';
 import '../onyx/onyx_chrome_theme.dart';
 
@@ -22,7 +19,6 @@ import '../onyx/onyx_chrome_theme.dart';
 class PlayerEpisodesTab extends StatefulWidget {
   const PlayerEpisodesTab({
     super.key,
-    required this.showTitle,
     required this.currentEpisodeId,
     required this.seasons,
     required this.selectedSeasonId,
@@ -32,7 +28,6 @@ class PlayerEpisodesTab extends StatefulWidget {
     required this.onEpisodeSelected,
   });
 
-  final String showTitle;
   final int currentEpisodeId;
   final List<Media> seasons;
   final int selectedSeasonId;
@@ -115,54 +110,21 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
     });
   }
 
-  int? get _selectedSeasonNumber {
-    for (final season in widget.seasons) {
-      if (season.id == widget.selectedSeasonId) {
-        return season.effectiveSeasonNumber;
-      }
-    }
-    return widget.episodes.firstOrNull?.media.effectiveSeasonNumber;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final tv = TvMode.isTv;
-    // Ce que le serveur dit de la série, relu sur ses épisodes : le lecteur
-    // n'a pas toujours son identifiant (ouvert depuis autre chose qu'une
-    // ligne d'accueil), la liste de la saison, si.
-    final showId = widget.episodes.firstOrNull?.showId;
-    final canDownload = !tv && showId != null && showId > 0;
     final hasSeasons = widget.seasons.length > 1;
 
+    // Rien ne se télécharge d'ici : l'onglet sert à changer d'épisode, et
+    // l'utilisateur ne voulait pas d'un bouton de téléchargement sous le doigt
+    // au milieu d'un film. On télécharge depuis la fiche de la série.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (hasSeasons || canDownload) ...[
-          SizedBox(
-            height: 40,
-            child: Row(
-              children: [
-                Expanded(
-                  child: hasSeasons ? _buildSeasons() : const SizedBox(),
-                ),
-                // Emporter la suite sans quitter le lecteur : sur une saison
-                // entamée, le bouton ne propose que les épisodes non vus.
-                // Pas sur un téléviseur, qui ne télécharge rien.
-                if (canDownload && widget.episodes.isNotEmpty) ...[
-                  const SizedBox(width: 12),
-                  SeasonDownloadButton(
-                    episodes: widget.episodes,
-                    showTitle: widget.showTitle,
-                    showId: showId,
-                    seasonNumber: _selectedSeasonNumber,
-                  ),
-                ],
-              ],
-            ),
-          ),
+        if (hasSeasons) ...[
+          SizedBox(height: 40, child: _buildSeasons()),
           const SizedBox(height: _gap),
         ],
-        Expanded(child: _buildEpisodes(showId)),
+        Expanded(child: _buildEpisodes()),
       ],
     );
   }
@@ -197,7 +159,7 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
     );
   }
 
-  Widget _buildEpisodes(int? showId) {
+  Widget _buildEpisodes() {
     if (widget.isLoading) {
       return const Center(
         child: SizedBox(
@@ -222,7 +184,6 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
       );
     }
 
-    final seasonNumber = _selectedSeasonNumber;
     return LayoutBuilder(
       builder: (context, constraints) {
         // L'image prend la hauteur que le volet laisse, bornée : la carte d'un
@@ -252,9 +213,6 @@ class _PlayerEpisodesTabState extends State<PlayerEpisodesTab> {
                   width: _cardWidth,
                   thumbHeight: thumbHeight,
                   focusNode: _episodeNode(episode.media.id),
-                  showTitle: widget.showTitle,
-                  showId: showId,
-                  seasonNumber: seasonNumber,
                   onTap: () => widget.onEpisodeSelected(episode),
                 ),
               );
@@ -273,9 +231,6 @@ class _EpisodeCard extends StatelessWidget {
     required this.isCurrent,
     required this.width,
     required this.thumbHeight,
-    required this.showTitle,
-    required this.showId,
-    required this.seasonNumber,
     required this.onTap,
     required this.focusNode,
   });
@@ -284,9 +239,6 @@ class _EpisodeCard extends StatelessWidget {
   final bool isCurrent;
   final double width;
   final double thumbHeight;
-  final String showTitle;
-  final int? showId;
-  final int? seasonNumber;
   final VoidCallback onTap;
   final FocusNode focusNode;
 
@@ -364,27 +316,6 @@ class _EpisodeCard extends StatelessWidget {
                             left: 8,
                             bottom: 8,
                             child: _NowPlayingMark(),
-                          ),
-                        // Pas sur un téléviseur : un second arrêt de focus dans
-                        // chaque carte doublerait les pas de télécommande, et
-                        // un téléviseur ne télécharge rien.
-                        if (!TvMode.isTv)
-                          Positioned(
-                            right: 4,
-                            bottom: 4,
-                            child: DecoratedBox(
-                              decoration: const BoxDecoration(
-                                color: OnyxChromeTheme.questionVeil,
-                                shape: BoxShape.circle,
-                              ),
-                              child: MediaDownloadButton(
-                                item: episode,
-                                showTitle: showTitle,
-                                showId: showId,
-                                seasonNumber: seasonNumber,
-                                compact: true,
-                              ),
-                            ),
                           ),
                       ],
                     ),

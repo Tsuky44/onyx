@@ -74,7 +74,7 @@ func TestErrorsWithoutMiddlewareStayFrench(t *testing.T) {
 
 func TestMediaHubErrorsFollowTheLanguageOfTheRequest(t *testing.T) {
 	handler := i18n.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeMediaHubError(w, http.StatusBadGateway, "MediaHub ne répond pas")
+		writeMediaHubError(w, http.StatusBadGateway, "{0} ne répond pas", "MediaHub")
 	}))
 	req := httptest.NewRequest(http.MethodGet, "/api/mediahub/anything", nil)
 	req.Header.Set("Accept-Language", "en")

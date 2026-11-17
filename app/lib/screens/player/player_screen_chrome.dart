@@ -459,10 +459,24 @@ extension _PlayerChrome on _PlayerScreenState {
     }
   }
 
+  /// Le chrome porte l'essentiel lui-même — un bouton pour les sous-titres,
+  /// un pour l'audio, les onglets sous la barre — et la roue crantée n'ouvre
+  /// que le reste : un écran tenu en main (ADR-0136), un téléviseur
+  /// (ADR-0137). À la souris, la roue crantée garde son index complet.
+  bool get _chromeCarriesEssentials => _handheld || TvMode.isTv;
+
+  /// Ce que l'index de la roue crantée ne répète pas alors : les sous-titres
+  /// et l'audio ont leur bouton, les chapitres leur onglet.
+  static const Set<OnyxMenuSection> _essentialsOffIndex = {
+    OnyxMenuSection.subtitles,
+    OnyxMenuSection.audio,
+    OnyxMenuSection.chapters,
+  };
+
   /// Chrome Onyx settings menu, anchored to the button that opened it.
   ///
-  /// [standalone] : le menu d'un seul réglage, ouvert par son bouton rond sur
-  /// un téléviseur (ADR-0130). Le bouton reste allumé tant qu'il est ouvert.
+  /// [standalone] : le menu d'un seul réglage, ouvert par son bouton rond
+  /// (ADR-0130). Le bouton reste allumé tant qu'il est ouvert.
   void _showOnyxSettingsMenu({
     OnyxMenuSection section = OnyxMenuSection.root,
     required BuildContext? anchor,
@@ -492,13 +506,20 @@ extension _PlayerChrome on _PlayerScreenState {
           onSeekToAbsolute: _seekTo,
           initialSection: section,
           standalone: standalone,
+          indexOmits: _chromeCarriesEssentials
+              ? _PlayerChrome._essentialsOffIndex
+              : const <OnyxMenuSection>{},
           onClose: dismiss,
         ),
       ),
     );
     // Après l'insertion : elle ferme d'abord le menu précédent, qui éteint
-    // son bouton en partant.
-    if (standalone) _update(() => _openMenu = section);
+    // son bouton en partant. La roue crantée s'allume comme les autres, et
+    // sur un écran tenu en main tout menu ouvert efface les commandes du
+    // milieu.
+    if (standalone || _chromeCarriesEssentials) {
+      _update(() => _openMenu = section);
+    }
   }
 
   /// L'onglet « Regarder ensemble » existe partout où un serveur peut héberger
@@ -576,6 +597,7 @@ extension _PlayerChrome on _PlayerScreenState {
       title: _info.showTitle,
       overline: _info.overline,
       logoUrl: _mediaLogoUrl,
+      isEpisode: _info.isEpisode,
       volume: _playerController.session.volume,
       onVolumeChanged: (v) => _playerController.session.setVolume(v),
       brightness: _screenBrightness,
@@ -599,12 +621,15 @@ extension _PlayerChrome on _PlayerScreenState {
       onOpenMenu: (section, anchor) => _showOnyxSettingsMenu(
         section: section,
         anchor: anchor,
-        standalone: true,
+        // La roue crantée ouvre l'index ; les autres boutons, leur réglage.
+        standalone: section != OnyxMenuSection.root,
       ),
       openMenu: _openMenu,
-      // Sur un téléviseur les onglets sont dans le chrome ; ailleurs, la même
-      // liste alimente la feuille du bas (`_buildOverChrome`).
-      tabs: isTv ? _tabEntries : const <OnyxTabEntry>[],
+      // Sur un téléviseur les onglets sont dans le chrome, avec leur volet.
+      // Sur un écran tenu en main ils y sont aussi, et ouvrent la feuille du
+      // bas ; ailleurs la même liste alimente cette feuille, ouverte par un
+      // bouton de la barre (`_buildOverChrome`).
+      tabs: isTv || _handheld ? _tabEntries : const <OnyxTabEntry>[],
       openTab: _tabs.open,
       onTabChanged: _tabs.show,
       onOpenWatchParty: _watchPartyAction,
@@ -631,6 +656,7 @@ extension _PlayerChrome on _PlayerScreenState {
       settingsButtonKey: _settingsButtonKey,
       subtitlesButtonKey: _subtitlesButtonKey,
       isTv: isTv,
+      handheld: _handheld,
       playPauseFocusNode: _playPauseFocusNode,
       progressFocusNode: _progressFocusNode,
       // Row by row, and only the rows the camera is actually

@@ -24,6 +24,7 @@ import '../models/my_request.dart';
 import '../models/request_feed.dart';
 import '../models/request_progress.dart';
 import '../models/request_release.dart';
+import '../models/request_service.dart';
 import '../models/media_share.dart';
 import '../models/shared_show.dart';
 import '../models/server_activity.dart';

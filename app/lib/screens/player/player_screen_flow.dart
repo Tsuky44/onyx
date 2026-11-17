@@ -409,22 +409,37 @@ extension _PlayerFlow on _PlayerScreenState {
     // Awaiting the stop also lets pending stream events flush safely.
     unawaited(stopped.then((_) {
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          settings:
-              const RouteSettings(name: SearchRouteObserver.playerRouteName),
-          builder: (_) => PlayerScreen(
-            media: next,
-            inheritedPreferences: inheritedPreferences,
-            autoAdvance: true,
-            initialDisplayMode: displayMode,
-            seasonNumber: _info.seasonNumberFor(next),
-            resumeAtSeconds: resumeAtSeconds,
-            startPaused: startPaused,
-          ),
-        ),
-      );
+      _replaceWithPlayer(PlayerScreen(
+        media: next,
+        inheritedPreferences: inheritedPreferences,
+        autoAdvance: true,
+        initialDisplayMode: displayMode,
+        seasonNumber: _info.seasonNumberFor(next),
+        resumeAtSeconds: resumeAtSeconds,
+        startPaused: startPaused,
+      ));
     }));
+  }
+
+  /// Cède la place à un autre écran de lecture : l'épisode suivant, ce même
+  /// média relancé, ou sa copie sur un autre serveur.
+  ///
+  /// Le seul endroit qui remplace un lecteur par un lecteur, parce que c'est
+  /// ici que se dit ce que cet écran ne rend pas en partant. Le suivant est
+  /// déjà construit, paysage demandé, quand celui-ci est détruit : rendre
+  /// l'orientation, les barres du système et la luminosité à ce moment-là les
+  /// lui reprenait. « Réessayer » passait à côté et relançait le film en
+  /// portrait sur iPhone (1.1.52). `test/player_handover_guard_test.dart`
+  /// refuse un `pushReplacement` ailleurs dans le lecteur.
+  void _replaceWithPlayer(PlayerScreen next) {
+    _isEpisodeTransition = true;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        settings:
+            const RouteSettings(name: SearchRouteObserver.playerRouteName),
+        builder: (_) => next,
+      ),
+    );
   }
 
   Future<void> _syncProgressOnExit({required bool popAfter}) async {

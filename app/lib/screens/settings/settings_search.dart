@@ -262,8 +262,12 @@ List<_Setting> _settings(Permissions p) {
           tr('Clé API TMDB'), 'tmdb api key cle metadata'),
       _s(SettingsSections.integrations, tr('Fanart.tv'),
           tr('Clé API Fanart.tv'), 'fanart api key cle logos fonds'),
-      _s(SettingsSections.integrations, tr('Service de demandes'),
-          tr('Clé d’intégration MediaHub'), 'mediahub requests api key'),
+      _s(
+          SettingsSections.integrations,
+          tr('Service de demandes'),
+          tr('MediaHub, Overseerr ou Jellyseerr'),
+          'mediahub overseerr jellyseerr seerr requests demandes api key cle '
+              'radarr sonarr'),
       _s(SettingsSections.security, tr('Validation en deux étapes'),
           tr('Validation en deux étapes'), 'otp 2fa obligatoire politique'),
       _s(

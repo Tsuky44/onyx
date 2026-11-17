@@ -57,6 +57,10 @@ services:
       - LIBRARY_POLL_INTERVAL=${LIBRARY_POLL_INTERVAL:-5m}
       - MEDIAHUB_URL=${MEDIAHUB_URL:-http://mediahub-app:3008}
       - MEDIAHUB_API_KEY=${MEDIAHUB_API_KEY:-}
+      # Le service à cette adresse : mediahub (défaut), overseerr ou jellyseerr.
+      # Avec Overseerr ou Jellyseerr, MEDIAHUB_URL est leur adresse et
+      # MEDIAHUB_API_KEY leur clé API. Se règle aussi dans Paramètres → Services.
+      - REQUEST_SERVICE=${REQUEST_SERVICE:-mediahub}
     # devices:
     #   - /dev/dri:/dev/dri
     restart: unless-stopped

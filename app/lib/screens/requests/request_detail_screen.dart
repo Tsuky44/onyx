@@ -196,7 +196,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
           .request(details, seasons: seasons);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('Demande envoyée à MediaHub.'))));
+          SnackBar(content: Text(tr('Demande envoyée.'))));
       if (complete) {
         setState(() => _submitting = false);
         _retry();

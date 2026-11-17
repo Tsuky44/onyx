@@ -31,6 +31,10 @@ func UpdateSettings(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 
 	previousLanguage := medialang.Base()
 	snapshot, err := config.ApplyUpdate(req)
+	if errors.Is(err, config.ErrInvalidRequestService) {
+		writeJSONError(w, http.StatusBadRequest, "Service de demandes inconnu")
+		return
+	}
 	if errors.Is(err, config.ErrInvalidOTPPolicy) {
 		writeJSONError(w, http.StatusBadRequest, "Politique de validation en deux étapes inconnue")
 		return
