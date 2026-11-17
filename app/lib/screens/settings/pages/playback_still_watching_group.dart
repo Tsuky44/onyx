@@ -94,10 +94,10 @@ class StillWatchingSettingsGroup extends StatelessWidget {
                     onSelected: (minute) =>
                         onChanged(value.copyWith(fromMinute: minute)),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('à',
-                        style: TextStyle(color: AppColors.textSecondary)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(tr('à'),
+                        style: const TextStyle(color: AppColors.textSecondary)),
                   ),
                   _HourMenu(
                     tooltip: tr('Fin de la plage'),

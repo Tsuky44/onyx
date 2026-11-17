@@ -13,6 +13,8 @@ import '../../theme/app_theme.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import 'shared_link_screen.dart';
+import '../../l10n/app_language.dart';
+import '../../l10n/material_localizations.dart';
 import '../../l10n/tr.dart';
 
 /// Le code du lien de partage que cette page ouvre, ou nul si elle n'en ouvre
@@ -79,6 +81,9 @@ class SharedLinkApp extends StatelessWidget {
       isTv: false,
       child: MaterialApp(
         title: tr('Onyx'),
+        locale: AppLanguage.current.locale,
+        localizationsDelegates: kLocalizationsDelegates,
+        supportedLocales: kSupportedLocales,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
         color: AppColors.background,

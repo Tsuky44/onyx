@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Les textes de Material (menu copier/coller, sélecteurs de date, page des
+  # licences) suivent la langue de l'app, comme `tr()` le fait pour les nôtres
+  # (ADR-0047). Elle épingle `intl` : on la laisse choisir sa version.
+  flutter_localizations:
+    sdk: flutter
 
   # Navigation and routing
   cupertino_icons: ^2.0.0

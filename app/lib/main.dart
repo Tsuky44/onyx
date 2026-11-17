@@ -1,4 +1,5 @@
 import 'l10n/locale_formats.dart';
+import 'l10n/material_localizations.dart';
 import 'services/media_details_cache.dart';
 import 'services/media_tracks_cache.dart';
 import 'dart:async';
@@ -516,6 +517,9 @@ class OnyxApp extends StatelessWidget {
                   child: MaterialApp(
                     navigatorKey: rootNavigatorKey,
                     title: 'Onyx',
+                    locale: AppLanguage.current.locale,
+                    localizationsDelegates: kLocalizationsDelegates,
+                    supportedLocales: kSupportedLocales,
                     debugShowCheckedModeBanner: false,
                     // Sur un téléviseur, chaque page est mise en page sur une
                     // largeur fixe puis mise à l'échelle de l'écran, pour que l'app

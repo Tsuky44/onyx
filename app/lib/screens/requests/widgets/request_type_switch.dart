@@ -18,6 +18,9 @@ class RequestTypeSwitch extends StatelessWidget {
     required this.onChanged,
   });
 
+  @visibleForTesting
+  static const tabs = _tabs;
+
   static const _tabs = [
     (value: 'all', label: 'Tout'),
     (value: 'movie', label: 'Films'),

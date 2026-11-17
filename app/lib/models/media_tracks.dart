@@ -1,5 +1,7 @@
 import 'dart:ui' show Rect;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../l10n/app_language.dart';
 import '../l10n/tr.dart';
 import 'media_subtitle_track.dart';
@@ -10,35 +12,67 @@ String languageName(String? code) {
   if (code == null) return tr('Indéterminé');
   final c = code.trim().toLowerCase();
   if (c.isEmpty || c == 'und') return tr('Indéterminé');
-  const map = {
-    'fre': 'Français', 'fra': 'Français', 'fr': 'Français',
-    'eng': 'Anglais', 'en': 'Anglais',
-    'spa': 'Espagnol', 'es': 'Espagnol',
-    'ger': 'Allemand', 'deu': 'Allemand', 'de': 'Allemand',
-    'ita': 'Italien', 'it': 'Italien',
-    'por': 'Portugais', 'pt': 'Portugais',
-    'jpn': 'Japonais', 'ja': 'Japonais',
-    'kor': 'Coréen', 'ko': 'Coréen',
-    'chi': 'Chinois', 'zho': 'Chinois', 'zh': 'Chinois',
-    'rus': 'Russe', 'ru': 'Russe',
-    'ara': 'Arabe', 'ar': 'Arabe',
-    'nld': 'Néerlandais', 'dut': 'Néerlandais', 'nl': 'Néerlandais',
-    'pol': 'Polonais', 'pl': 'Polonais',
-    'tur': 'Turc', 'tr': 'Turc',
-    'hin': 'Hindi', 'hi': 'Hindi',
-    'swe': 'Suédois', 'sv': 'Suédois',
-    'nor': 'Norvégien', 'no': 'Norvégien',
-    'dan': 'Danois', 'da': 'Danois',
-    'fin': 'Finnois', 'fi': 'Finnois',
-    'ces': 'Tchèque', 'cze': 'Tchèque', 'cs': 'Tchèque',
-    'ukr': 'Ukrainien', 'uk': 'Ukrainien',
-    'heb': 'Hébreu', 'he': 'Hébreu',
-    'tha': 'Thaï', 'th': 'Thaï',
-    'vie': 'Vietnamien', 'vi': 'Vietnamien',
-  };
-  final name = map[c];
+  final name = kLanguageNames[c];
   return name == null ? code.toUpperCase() : tr(name);
 }
+
+/// Codes ISO 639 connus, lus par `tr()` à l'affichage.
+@visibleForTesting
+const kLanguageNames = {
+  'fre': 'Français',
+  'fra': 'Français',
+  'fr': 'Français',
+  'eng': 'Anglais',
+  'en': 'Anglais',
+  'spa': 'Espagnol',
+  'es': 'Espagnol',
+  'ger': 'Allemand',
+  'deu': 'Allemand',
+  'de': 'Allemand',
+  'ita': 'Italien',
+  'it': 'Italien',
+  'por': 'Portugais',
+  'pt': 'Portugais',
+  'jpn': 'Japonais',
+  'ja': 'Japonais',
+  'kor': 'Coréen',
+  'ko': 'Coréen',
+  'chi': 'Chinois',
+  'zho': 'Chinois',
+  'zh': 'Chinois',
+  'rus': 'Russe',
+  'ru': 'Russe',
+  'ara': 'Arabe',
+  'ar': 'Arabe',
+  'nld': 'Néerlandais',
+  'dut': 'Néerlandais',
+  'nl': 'Néerlandais',
+  'pol': 'Polonais',
+  'pl': 'Polonais',
+  'tur': 'Turc',
+  'tr': 'Turc',
+  'hin': 'Hindi',
+  'hi': 'Hindi',
+  'swe': 'Suédois',
+  'sv': 'Suédois',
+  'nor': 'Norvégien',
+  'no': 'Norvégien',
+  'dan': 'Danois',
+  'da': 'Danois',
+  'fin': 'Finnois',
+  'fi': 'Finnois',
+  'ces': 'Tchèque',
+  'cze': 'Tchèque',
+  'cs': 'Tchèque',
+  'ukr': 'Ukrainien',
+  'uk': 'Ukrainien',
+  'heb': 'Hébreu',
+  'he': 'Hébreu',
+  'tha': 'Thaï',
+  'th': 'Thaï',
+  'vie': 'Vietnamien',
+  'vi': 'Vietnamien',
+};
 
 /// [languageName] tel qu'il s'écrit au milieu d'une phrase : « en français »,
 /// mais « in French ».
@@ -160,8 +194,7 @@ class MediaAudioTrack {
     final lowerTitle = t.toLowerCase();
     final parts = <String>[];
     if (t.isNotEmpty) parts.add(t);
-    if (codec.isNotEmpty &&
-        !lowerTitle.contains(formatLabel.toLowerCase())) {
+    if (codec.isNotEmpty && !lowerTitle.contains(formatLabel.toLowerCase())) {
       parts.add(formatLabel);
     }
     final ch = _channelsLabel(channels);
@@ -324,7 +357,10 @@ class QualityTier {
   /// « 1920×1080 · 6 Mbit/s », pour les menus qui décrivent le barreau.
   String get sizeAndBitrateLabel {
     final size = (width > 0 && height > 0) ? '$width×$height' : null;
-    final parts = [if (size != null) size, if (bitrateLabel != null) bitrateLabel!];
+    final parts = [
+      if (size != null) size,
+      if (bitrateLabel != null) bitrateLabel!,
+    ];
     return parts.isEmpty ? label : parts.join(' · ');
   }
 
@@ -389,17 +425,22 @@ class MediaTracks {
       video: json['video'] is Map<String, dynamic>
           ? MediaVideoTrack.fromJson(json['video'] as Map<String, dynamic>)
           : null,
-      audio: (json['audio'] as List<dynamic>?)
+      audio:
+          (json['audio'] as List<dynamic>?)
               ?.map((e) => MediaAudioTrack.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      subtitles: (json['subtitles'] as List<dynamic>?)
-              ?.map((e) => MediaSubtitleTrack.fromJson(e as Map<String, dynamic>))
+      subtitles:
+          (json['subtitles'] as List<dynamic>?)
+              ?.map(
+                (e) => MediaSubtitleTrack.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
       sourceBitrateBps: (json['source_bitrate_bps'] as num?)?.toInt() ?? 0,
       activeArea: _activeAreaFromJson(json['active_area']),
-      qualities: (json['qualities'] as List<dynamic>?)
+      qualities:
+          (json['qualities'] as List<dynamic>?)
               ?.whereType<Map<String, dynamic>>()
               .map(QualityTier.fromJson)
               .where((tier) => tier.key.isNotEmpty && tier.label.isNotEmpty)

@@ -3821,4 +3821,26 @@ const Map<String, String> kEnglish = <String, String>{
       'Min (minutes)',
   'Max (minutes)':
       'Max (minutes)',
+  '{0} droit':
+      '{0} permission',
+  '{0} droits':
+      '{0} permissions',
+  '←  ·  J':
+      '←  ·  J',
+  '→  ·  L':
+      '→  ·  L',
+  '↑  ↓':
+      '↑  ↓',
+  'M':
+      'M',
+  'F':
+      'F',
+  'N':
+      'N',
+  '0 – 9':
+      '0 – 9',
+  '?':
+      '?',
+  'à':
+      'to',
 };

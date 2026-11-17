@@ -338,7 +338,7 @@ class WebOSPlaybackSession implements PlaybackSession {
     final quality = _video.getVideoPlaybackQuality();
     final elapsed = _video.currentTime;
     return PlaybackDiagnostics(
-      hardwareDecoder: _hls ? 'webos (hls.js)' : 'webos (fichier)',
+      hardwareDecoder: _hls ? 'webos (hls.js)' : 'webos (file)',
       droppedByDecoder: quality.droppedVideoFrames,
       renderedFrames: quality.totalVideoFrames - quality.droppedVideoFrames,
       estimatedFps: elapsed > 0 ? quality.totalVideoFrames / elapsed : null,

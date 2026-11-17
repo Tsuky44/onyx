@@ -52,5 +52,17 @@ gagne une étape — envelopper le texte dans `tr()` et ajouter son entrée.
   passer par `tr()` ; le test de couverture ne voit que les littéraux directs.
 - Les textes légaux et les descriptions d'autorisations d'iOS restent en français. (Les messages du
   serveur, d'abord laissés en français, sont traduits depuis l'ADR-0138.)
-- Material n'est pas localisé (`flutter_localizations` n'est pas embarqué) : ses rares textes
-  propres, comme la page des licences, restent en anglais dans les deux langues.
+- Material est localisé : `flutter_localizations` est embarqué, et le `MaterialApp` reçoit
+  `localizationsDelegates`, `supportedLocales` (`l10n/material_localizations.dart`) et une `locale`
+  qui suit `AppLanguage`. Le menu copier/coller, les sélecteurs de date et la page des licences
+  parlent donc la langue de l'app. Une langue ajoutée à `AppLanguage` doit avoir son code dans les
+  langues que Flutter sait écrire.
+- Trois gardes-fous tiennent le système :
+  - `test/l10n_coverage_test.dart` : chaque littéral passé à `tr()` a son entrée dans `kEnglish`.
+  - `test/l10n_tables_test.dart` : les tables lues par `tr(variable)` (filtres de demandes, droits,
+    raccourcis du lecteur, statuts, langues et pays, libellés d'énumérations, tris, unités) ont
+    chacune leur entrée. Une nouvelle table de ce genre s'ajoute à ce fichier ; elle est exposée en
+    `@visibleForTesting` si elle était privée.
+  - `test/no_hidden_french_test.dart` : dans `screens/`, `widgets/` et `tv/`, un littéral qui
+    ressemble à du français sans être une clé de `kEnglish` fait échouer le test, sauf journaux,
+    traces et diagnostics. Les exceptions sont une liste blanche commentée dans le test.
