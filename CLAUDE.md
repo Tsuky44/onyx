@@ -1,39 +1,58 @@
-## Communication : travail silencieux, récap final
+# Directives Globales du Projet Onyx
 
-Pendant une tâche, travaille en silence : enchaîne lectures, modifications et commandes sans commenter chaque action. Le seul message en cours de route est une question bloquante, c'est-à-dire une décision qui revient à l'utilisateur. Si l'utilisateur demande de détailler ce que tu fais, commente alors au fil de l'eau jusqu'à la fin de cette tâche.
+Tu es l'assistant de développement sur **Onyx**. Tu dois appliquer **strictement** ces règles à chaque interaction.
 
-À la fin, un seul **récap** court :
-- **Fait** : ce qui a été implémenté, avec les fichiers clés en liens.
-- **Vérifié** : les commandes lancées et leur résultat (vert/rouge).
-- **À savoir** : les échecs, les étapes sautées, les décisions prises et ce qui reste à faire. Omets cette partie si elle est vide.
+## 1. Architecture Git & Workflow des Branches
 
-## Économie de tokens
+Le dépôt utilise 4 branches strictes :
+- **`master`** : Branche principale de production. Aucun push direct ou automatique n'est autorisé.
+- **`beta`** : Branche d'intégration et de pré-production globale.
+- **`tsuky`** : Branche de développement personnelle de Tsuky.
+- **`fytroz`** : Branche de développement personnelle de Fytroz.
 
-- Pour trouver une fonction, un handler, un symbole ou la structure d'un fichier, utilise le skill `smart-explore` (AST) au lieu de lire le fichier entier.
-- Pour une question d'architecture ou de relations entre fichiers, interroge d'abord le graphe `graphify-out/` (`/graphify query`) avant de relire le code.
-- Ne lis jamais `app/build/`, `app/macos/build_xcode/`, `app/windows/flutter/ephemeral/`, `.claude/worktrees/`, `server/downloads/`, `server/data/`. Ces dossiers sont refusés dans `.claude/settings.json`.
+### Règles de synchronisation & Merge
+- **Sur branche perso (`tsuky` ou `fytroz`) :** Push autorisé uniquement sur la branche perso active après commit (sauf instruction contraire).
+- **Mise en `beta` :**
+  1. Merger obligatoirement les deux branches (`tsuky` et `fytroz`) dans `beta` (`git checkout beta && git merge tsuky && git merge fytroz`).
+  2. Une fois `beta` à jour, re-synchroniser (`merge` ou `rebase`) `tsuky` et `fytroz` avec `beta` pour les remettre d'équerre.
+- **Mise en `master` (Protection Maximale) :**
+  1. **JAMAIS** de push ou de merge automatique vers `master`.
+  2. Uniquement sur demande explicite de l'utilisateur, **demande une double confirmation** avant d'exécuter l'opération.
+  3. Après confirmation : exécute `git checkout master && git merge beta`, puis demande explicitement s'il faut lancer une **Release Prod**.
 
-## Agent skills
+## 2. Gestion des Releases & Périmètres
 
-### Standards de code
+**Règle absolue par défaut :** Ne lance **JAMAIS** de build ou de release automatiquement.
 
-Pour tout code de ce dépôt, charge le skill `onyx-engineering` (`.claude/skills/onyx-engineering/`).
+### Les 3 Niveaux de Versioning (Format X.Y.Z)
+1. **Niveau 1 - Version Majeure (`X.0.0`) :** Uniquement pour un changement structurel profond de l'application (réinitialise Y et Z à 0).
+2. **Niveau 2 - Version de Prod (`x.Y.0`) :** Chiffre `Y` incrémental à chaque mise en production validée depuis `master` (réinitialise Z à 0).
+3. **Niveau 3 - Version de Test (`x.y.Z`) :** Chiffre `Z` incrémental à la volée depuis `tsuky`, `fytroz` ou `beta` (ex: `1.2.1`, `1.2.2`).
 
-### Issue tracker
+### Périmètres par Utilisateur
+Identifie l'utilisateur actif via la branche Git courante (ou `CLAUDE.local.md`) :
 
-Issues and PRDs live as GitHub issues in this repo. See `docs/agents/issue-tracker.md`.
+- **Si utilisateur = `tsuky` (branche `tsuky`) :**
+  - Il choisit manuellement les releases à envoyer (généralement niveau 3 sur sa branche, ou globales depuis `beta`).
+  - **Périmètre autorisé :** Android, Android TV, webOS, Serveur, Client Windows.
+  - **Interdiction stricte :** Ne **JAMAIS** lancer ou proposer de release sur l'environnement Apple (iOS / tvOS).
 
-### Domain docs
+- **Si utilisateur = `fytroz` (branche `fytroz`) :**
+  - Après chaque push sur sa branche, **demande-lui systématiquement** s'il souhaite lancer une release ou non.
+  - **Périmètre proposé par défaut :** Uniquement l'environnement Apple (**iOS** iPhone/iPad et **tvOS**).
+  - **Périmètre restreint (Serveur / Windows) :** Ne les propose **JAMAIS** par défaut. Ne les build/release que s'il te le demande et te force explicitement.
 
-Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+## 3. Obligations Techniques & Documentation
 
-## graphify
+- **Internationalisation (i18n) Obligatoire :** À chaque ajout ou modification touchant l'interface utilisateur (UI), tu dois **impérativement** ajouter/mettre à jour les traductions en **Français (FR)** et en **Anglais (EN)**. Une tâche UI n'est jamais terminée sans les deux langues.
+- **Architecture Decision Records (ADR) :** À chaque décision technique structurante (choix d'architecture, ajout de dépendance majeure, modification de schéma/API), crée ou mets à jour automatiquement un fichier ADR numéroté dans `docs/adr/` (voir `docs/agents/domain.md`).
+- **Maintien continu de Graphify :**
+  - Avant toute question d'architecture ou recherche dans le code, interroge `graphify-out/` via `graphify query "<question>"` (ou `path`/`explain`).
+  - Après **chaque** modification de code, exécute systématiquement `graphify update .` en autonomie pour garder le graphe à jour. Ne signale jamais les diffs de `graphify-out/graph.json` comme du bruit.
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+## 4. Standards & Économie de Tokens
 
-Rules:
-- When graphify-out/graph.json exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
-- A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
+- **Exploration :** Utilise le skill `smart-explore` (AST) au lieu de lire les fichiers entiers. Lis toujours un fichier avant de le modifier, et ignore les fichiers de plus de 100 KB sauf nécessité absolue.
+- **Exclusions strictes :** Ne lis jamais `app/build/`, `app/macos/build_xcode/`, `app/windows/flutter/ephemeral/`, `.claude/worktrees/`, `server/downloads/`, `server/data/`.
+- **Skills & Docs :** Charge le skill `onyx-engineering` (`.claude/skills/onyx-engineering/`) pour le code. Issues dans GitHub (`docs/agents/issue-tracker.md`), contexte dans `CONTEXT.md`.
+- **Anti-Hallucination :** Ne devine jamais les APIs, flags ou versions. Vérifie dans le code local avant d'agir.
