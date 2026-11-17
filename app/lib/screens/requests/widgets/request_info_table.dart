@@ -67,7 +67,11 @@ class RequestInfoTable extends StatelessWidget {
           icon: AppIcons.collection,
           label: tr('Saisons'),
           value:
-              '$seasons saison${seasons > 1 ? 's' : ''}${episodes > 0 ? ', $episodes épisodes' : ''}',
+              [
+            trPlural(seasons, '{0} saison', '{0} saisons'),
+            if (episodes > 0)
+              trPlural(episodes, '{0} épisode', '{0} épisodes'),
+          ].join(', '),
         ),
       if (rating > 0)
         CartelFact(

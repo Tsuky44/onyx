@@ -218,8 +218,8 @@ class _CollectionHeader extends StatelessWidget {
                 if (partsCount > 0) ...[
                   const SizedBox(height: 10),
                   Text(
-                    '$partsCount film${partsCount > 1 ? 's' : ''}'
-                    '${ownedCount > 0 ? ' · $ownedCount dans ta bibliothèque' : ''}',
+                    '${trPlural(partsCount, '{0} film', '{0} films')}'
+                    '${ownedCount > 0 ? ' · ${tr('{0} dans ta bibliothèque', [ownedCount])}' : ''}',
                     style: const TextStyle(
                         color: AppColors.textSecondary, fontSize: AppType.body),
                   ),

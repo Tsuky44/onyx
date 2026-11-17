@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/tr.dart';
 import '../../models/media_details.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_type.dart';
@@ -60,12 +61,12 @@ class CountdownModel {
   /// Formate la légende d'un épisode (« Saison X · Épisode Y »).
   static String episodeCaption(EpisodeAirRef ep) {
     if (ep.seasonNumber > 0 && ep.episodeNumber > 0) {
-      return 'Saison ${ep.seasonNumber} · Épisode ${ep.episodeNumber}';
+      return tr('Saison {0} · Épisode {1}', [ep.seasonNumber, ep.episodeNumber]);
     }
     if (ep.episodeNumber > 0) {
-      return 'Épisode ${ep.episodeNumber}';
+      return tr('Épisode {0}', [ep.episodeNumber]);
     }
-    return 'Nouvel épisode';
+    return tr('Nouvel épisode');
   }
 
   /// Calcule le modèle de compte à rebours pour une série TV.
@@ -85,7 +86,7 @@ class CountdownModel {
       final lastAir = lastEpisode?.airDate;
       return CountdownModel(
         kind: CountdownKind.next,
-        label: 'Prochain épisode',
+        label: tr('Prochain épisode'),
         target: nextAir,
         from: (lastAir != null && _dayRegex.hasMatch(lastAir)) ? lastAir : null,
         caption: episodeCaption(nextEpisode!),
@@ -100,7 +101,7 @@ class CountdownModel {
     if (isEnded && lastAir != null && _dayRegex.hasMatch(lastAir)) {
       return CountdownModel(
         kind: CountdownKind.last,
-        label: 'Dernier épisode',
+        label: tr('Dernier épisode'),
         target: lastAir,
         caption: episodeCaption(lastEpisode!),
       );
@@ -120,9 +121,9 @@ class CountdownModel {
     if (releaseDate.compareTo(todayStr) >= 0) {
       return CountdownModel(
         kind: CountdownKind.release,
-        label: 'Sortie',
+        label: tr('Sortie'),
         target: releaseDate,
-        caption: 'Film à venir',
+        caption: tr('Film à venir'),
       );
     }
     return null;
@@ -207,6 +208,7 @@ class _MediaCountdownState extends State<MediaCountdown>
   late final Animation<double> _scaleAnimation;
   late final Animation<double> _opacityAnimation;
 
+  // Les tables ne peuvent pas appeler tr() : c'est l'affichage qui traduit.
   static const _frenchWeekdays = [
     'lundi',
     'mardi',
@@ -356,26 +358,28 @@ class _MediaCountdownState extends State<MediaCountdown>
     final alignEnd = widget.alignEnd ?? !compact;
 
     final sameYear = target.year == today.year;
-    final monthLabel = _frenchMonths[target.month - 1];
+    final monthLabel = tr(_frenchMonths[target.month - 1]);
     final dayMonth = sameYear
-        ? '${target.day} $monthLabel'
-        : '${target.day} $monthLabel ${target.year}';
+        ? tr('{0} {1}', [target.day, monthLabel])
+        : tr('{0} {1} {2}', [target.day, monthLabel, target.year]);
 
     String big;
     String line1;
     String line2;
 
     if (model.kind == CountdownKind.last) {
-      big = 'Fin';
-      line1 = 'diffusé le';
-      line2 = '${target.day} $monthLabel ${target.year}';
+      big = tr('Fin');
+      line1 = tr('diffusé le');
+      line2 = tr('{0} {1} {2}', [target.day, monthLabel, target.year]);
     } else if (left == 0) {
-      big = 'Jour J';
-      line1 = "aujourd'hui";
+      big = tr('Jour J');
+      line1 = tr('aujourd’hui');
       line2 = dayMonth;
     } else {
-      big = 'J-$left';
-      line1 = left == 1 ? 'demain' : _frenchWeekdays[target.weekday - 1];
+      big = tr('J-{0}', [left]);
+      line1 = left == 1
+          ? tr('demain')
+          : tr(_frenchWeekdays[target.weekday - 1]);
       line2 = dayMonth;
     }
 
@@ -393,7 +397,8 @@ class _MediaCountdownState extends State<MediaCountdown>
         alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start;
 
     return Semantics(
-      label: '${model.label} : $big, $line1 $line2, ${model.caption}',
+      label: tr('{0} : {1}, {2} {3}, {4}',
+          [model.label, big, line1, line2, model.caption]),
       container: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

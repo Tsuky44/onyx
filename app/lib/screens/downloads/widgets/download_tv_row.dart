@@ -117,10 +117,10 @@ class DownloadTvRow extends StatelessWidget {
         }
         return size;
       case DownloadStatus.downloading:
-        final total =
-            entry.bytesTotal > 0 ? ' sur ${formatBytes(entry.bytesTotal)}' : '';
-        return tr(
-            '{0}{1} téléchargés', [formatBytes(entry.bytesReceived), total]);
+        final received = formatBytes(entry.bytesReceived);
+        if (entry.bytesTotal <= 0) return tr('{0} téléchargés', [received]);
+        return tr('{0} sur {1} téléchargés',
+            [received, formatBytes(entry.bytesTotal)]);
       case DownloadStatus.queued:
         return tr('En attente');
       case DownloadStatus.paused:
