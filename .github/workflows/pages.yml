@@ -7,7 +7,8 @@ name: Pages
 #
 # URL : https://tsuky44.github.io/player/confidentialite.html, et
 # suppression-compte.html pour le champ « URL de suppression de compte » de
-# Google Play (source : docs/legal/).
+# Google Play (source : docs/legal/). Versions anglaises, traductions dont la
+# francaise fait foi : privacy.html, terms.html, account-deletion.html.
 
 on:
   push:

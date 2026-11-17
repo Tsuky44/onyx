@@ -5,9 +5,13 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_type.dart';
 import '../../widgets/global/empty_state.dart';
+import '../../l10n/localized_asset.dart';
 import '../../l10n/tr.dart';
 
 /// Un texte légal embarqué dans l'app, lu depuis `assets/legal/`.
+///
+/// [asset] est la version française, qui fait foi ; l'écran lit sa traduction
+/// dans la langue de l'app quand elle existe (`conditions.en.txt`).
 ///
 /// Embarqué plutôt qu'ouvert dans un navigateur : un téléviseur n'en a pas, et
 /// l'app doit pouvoir montrer sa politique de confidentialité hors ligne.
@@ -40,7 +44,7 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
   final ScrollController _scroll = ScrollController();
   late Future<String> _text = _load();
 
-  Future<String> _load() => rootBundle.loadString(widget.document.asset);
+  Future<String> _load() => loadLocalizedAsset(widget.document.asset);
 
   @override
   void dispose() {

@@ -1,0 +1,54 @@
+Onyx Privacy Policy
+
+This English version is a translation provided for convenience. The French version is the authoritative text and prevails in case of any discrepancy.
+
+Last updated: October 21, 2026
+
+Who we are
+Onyx is an app published by Tsuky, an independent developer. For any question about this policy or about your data, write to tsuky.4400@gmail.com.
+
+In short
+Onyx is the player for a media library hosted on a server that you install and administer yourself, or that someone close to you administers. The publisher runs no central server: it does not receive, store, share or sell any data about you. The app contains no advertising, no audience measurement tool, no tracker and no crash reporting tool.
+
+Who is responsible for your data
+Your data is only sent to the Onyx server you connect to. Its administrator, not the publisher, is the controller of that data within the meaning of the General Data Protection Regulation (GDPR). The publisher provides the software but has no access to the servers or to the data they contain.
+
+Data processed by the server you connect to
+Account: username and password. The password is only sent when you sign in; the server keeps only an encrypted fingerprint of it.
+Device: device name and type, so that you can see and sign out your sessions.
+Usage: playback progress, watched titles, playback settings and media requests.
+Technical: the device's IP address, which the server sees as any website does, and the technical log of a playback when it fails, to help the administrator fix the problem.
+This data is used only to run the service you asked for: signing you in, playing your media and picking up where you left off. This is the legal basis for processing it (performance of the service). It is kept as long as your account exists and is deleted with it.
+
+Data that stays on your device
+The session token, kept in the system's secure storage, the address of your servers, your settings, the poster cache, files downloaded for offline playback and a local technical log. None of this is sent to the publisher. Uninstalling the app deletes all of it.
+
+Third-party services
+TMDB (The Movie Database, United States): when you browse the request catalog, posters are loaded directly from TMDB's image servers, which then see your device's IP address. No account identifier is sent to them. This transfer outside the European Union is limited to that IP address, and TMDB applies its own privacy policy (https://www.themoviedb.org/privacy-policy).
+Services connected by the administrator, for example a request manager or Emby syncing: these exchanges go out from the server, not from the app, and are the administrator's responsibility.
+App store: Google Play or the App Store process your installation and purchase data under their own policies. The publisher only receives anonymous, aggregated statistics from them.
+
+Notifications
+If you turn on new episode alerts, the app checks your own servers from your device from time to time and shows a local notification. No notification service run by the publisher is involved.
+
+Permissions requested
+Camera: only to scan the QR code shown by a TV you are pairing. No image is saved or sent.
+Local network: to find your server on your home network and play your files from it.
+Notifications: only for new episode alerts, if you turn them on.
+File picker: only when an administrator chooses a file to send to their own server.
+
+Security
+The session token is stored in the system's secure vault (Keystore on Android, Keychain on Apple). Exchanges with the server are encrypted over HTTPS whenever the server supports it. The security of the server itself is its administrator's responsibility.
+
+Your rights
+Under the GDPR, you can access your data, correct it, erase it, get a copy of it, or object to its processing. Since it is stored on the server you connect to, send these requests to its administrator. You can delete your account yourself at any time: Settings > My account > Delete my account. The account, your progress, your settings and your sessions are then erased immediately and permanently. A server owner first transfers ownership, or simply deletes their server.
+For any question about the app itself, write to tsuky.4400@gmail.com. If you believe your rights are not being respected, you can file a complaint with the CNIL, the French data protection authority (https://www.cnil.fr).
+
+Children
+Onyx is not specifically directed at children under 13, and the publisher collects no data from them.
+
+Changes
+This policy may change along with the app. The current version can always be viewed in the app (Settings > This device > About) and online, and the date at the top of the page shows when it was last updated.
+
+Contact
+Tsuky, publisher of Onyx: tsuky.4400@gmail.com.
