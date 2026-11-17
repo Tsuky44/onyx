@@ -71,11 +71,11 @@ func RequireAnyPermission(perms []models.Permission, next AuthenticatedHandle) h
 		user, err := LoadUser(userID)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				writeJSONError(w, http.StatusUnauthorized, "Invalid or expired session")
+				writeJSONError(w, http.StatusUnauthorized, "Session invalide ou expirée")
 				return
 			}
 			log.Printf("RequirePermission load user %d: %v", userID, err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 

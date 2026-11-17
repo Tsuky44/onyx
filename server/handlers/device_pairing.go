@@ -142,7 +142,7 @@ func StartDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	deviceCode, err := GenerateRandomToken()
 	if err != nil {
 		log.Printf("StartDevicePairing: token generation failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -153,7 +153,7 @@ func StartDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		userCode, err = generateUserCode()
 		if err != nil {
 			log.Printf("StartDevicePairing: user code generation failed: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		_, err = database.DB.Exec(
@@ -166,13 +166,13 @@ func StartDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		}
 		if !strings.Contains(err.Error(), "UNIQUE") {
 			log.Printf("StartDevicePairing: insert failed: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 	}
 	if err != nil {
 		log.Printf("StartDevicePairing: could not allocate a free user code: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -194,12 +194,12 @@ func PollDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 	var req devicePairingPollRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	deviceCode := strings.TrimSpace(req.DeviceCode)
 	if deviceCode == "" {
-		writeJSONError(w, http.StatusBadRequest, "device_code is required")
+		writeJSONError(w, http.StatusBadRequest, "Le paramètre device_code est requis")
 		return
 	}
 
@@ -220,7 +220,7 @@ func PollDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	}
 	if err != nil {
 		log.Printf("PollDevicePairing: query failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -239,7 +239,7 @@ func PollDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	user, err := LoadUser(int(approvedUser.Int64))
 	if err != nil {
 		log.Printf("PollDevicePairing: failed to load user %d: %v", approvedUser.Int64, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -262,7 +262,7 @@ func LookupDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 
 	code := normalizeUserCode(r.URL.Query().Get("code"))
 	if code == "" {
-		writeJSONError(w, http.StatusBadRequest, "code is required")
+		writeJSONError(w, http.StatusBadRequest, "Le paramètre code est requis")
 		return
 	}
 
@@ -284,7 +284,7 @@ func LookupDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	}
 	if err != nil {
 		log.Printf("LookupDevicePairing: query failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -305,19 +305,19 @@ func ApproveDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.P
 
 	var req devicePairingApproveRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	code := normalizeUserCode(req.UserCode)
 	if code == "" {
-		writeJSONError(w, http.StatusBadRequest, "user_code is required")
+		writeJSONError(w, http.StatusBadRequest, "Le paramètre user_code est requis")
 		return
 	}
 
 	token, err := GenerateRandomToken()
 	if err != nil {
 		log.Printf("ApproveDevicePairing: token generation failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -327,7 +327,7 @@ func ApproveDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.P
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Printf("ApproveDevicePairing: begin failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer tx.Rollback() //nolint:errcheck // no-op once committed
@@ -342,7 +342,7 @@ func ApproveDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.P
 		  AND expires_at > datetime('now')`, userID, token, code)
 	if err != nil {
 		log.Printf("ApproveDevicePairing: update failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -352,13 +352,13 @@ func ApproveDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.P
 
 	if err := storeSession(tx, token, userID); err != nil {
 		log.Printf("ApproveDevicePairing: session insert failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Printf("ApproveDevicePairing: commit failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -373,12 +373,12 @@ func DenyDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 	var req devicePairingApproveRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	code := normalizeUserCode(req.UserCode)
 	if code == "" {
-		writeJSONError(w, http.StatusBadRequest, "user_code is required")
+		writeJSONError(w, http.StatusBadRequest, "Le paramètre user_code est requis")
 		return
 	}
 
@@ -386,7 +386,7 @@ func DenyDevicePairing(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		`DELETE FROM device_pairings WHERE user_code = ? AND approved_user_id IS NULL`, code,
 	); err != nil {
 		log.Printf("DenyDevicePairing: delete failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 

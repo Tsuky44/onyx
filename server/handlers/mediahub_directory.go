@@ -80,7 +80,7 @@ func MediaHubLibraryCounts(w http.ResponseWriter, _ *http.Request, _ httprouter.
 	var counts mediaHubLibraryCounts
 	if err := database.DB.QueryRow(mediaHubCountsQuery).Scan(&counts.Movies, &counts.Shows, &counts.Episodes); err != nil {
 		log.Printf("MediaHubLibraryCounts: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -107,7 +107,7 @@ func MediaHubAccounts(w http.ResponseWriter, _ *http.Request, _ httprouter.Param
 	rows, err := database.DB.Query("SELECT " + userColumns + " FROM users ORDER BY id")
 	if err != nil {
 		log.Printf("MediaHubAccounts: query: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer rows.Close()
@@ -126,7 +126,7 @@ func MediaHubAccounts(w http.ResponseWriter, _ *http.Request, _ httprouter.Param
 	}
 	if err := rows.Err(); err != nil {
 		log.Printf("MediaHubAccounts: rows: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -185,7 +185,7 @@ const minMediaHubKeyLength = 32
 func UpdateMediaHubLink(w http.ResponseWriter, r *http.Request, _ httprouter.Params, _ int) {
 	var req mediaHubLinkUpdate
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	update := config.UpdateRequest{}
@@ -208,7 +208,7 @@ func UpdateMediaHubLink(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 
 	if _, err := config.ApplyUpdate(update); err != nil {
 		log.Printf("UpdateMediaHubLink: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Failed to save settings")
+		writeJSONError(w, http.StatusInternalServerError, "Impossible d’enregistrer les réglages")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

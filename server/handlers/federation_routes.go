@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"project-player/server/config"
 	"project-player/server/database"
+	"project-player/server/i18n"
 	"strconv"
 	"strings"
 	"time"
@@ -39,7 +40,7 @@ func ClaimAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	w.Header().Set("Content-Type", "application/json")
 	var body claimBody
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	peerURL, okURL := normalizeServerURL(body.URL)
@@ -57,7 +58,7 @@ func ClaimAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 
 	tx, err := database.DB.Begin()
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer tx.Rollback()
@@ -73,7 +74,7 @@ func ClaimAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 	if err != nil {
 		log.Printf("ClaimAccountLink code: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -84,14 +85,14 @@ func ClaimAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 			VALUES (?, ?, ?, ?, ?)`, body.ServerID, body.Name, peerURL, body.Secret, body.Approved)
 		if insErr != nil {
 			log.Printf("ClaimAccountLink insert peer: %v", insErr)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		id, _ := res.LastInsertId()
 		peer = peerRow{id: int(id), serverID: body.ServerID}
 	case err != nil:
 		log.Printf("ClaimAccountLink peer: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	default:
 		if subtle.ConstantTimeCompare([]byte(peer.secret), []byte(body.Secret)) != 1 {
@@ -101,7 +102,7 @@ func ClaimAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		}
 		if _, err := tx.Exec(`UPDATE peer_servers SET name = ?, url = ?, remote_approved = ? WHERE id = ?`,
 			body.Name, peerURL, body.Approved, peer.id); err != nil {
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 	}
@@ -111,13 +112,13 @@ func ClaimAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 	if _, err := tx.Exec(`DELETE FROM link_codes WHERE code = ?`, body.Code); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	var localApproved bool
 	_ = tx.QueryRow(`SELECT local_approved FROM peer_servers WHERE id = ?`, peer.id).Scan(&localApproved)
 	if err := tx.Commit(); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	wakeFederation()
@@ -134,19 +135,19 @@ func insertAccountLink(tx *sql.Tx, userID, peerID, remoteUserID int, remoteUsern
 	err := tx.QueryRow(`SELECT remote_user_id FROM account_links WHERE peer_id = ? AND user_id = ?`,
 		peerID, userID).Scan(&existingRemote)
 	if err == nil && existingRemote != remoteUserID {
-		return "Ce compte est déjà lié à un autre compte de ce serveur"
+		return i18n.Key("Ce compte est déjà lié à un autre compte de ce serveur")
 	}
 	err = tx.QueryRow(`SELECT user_id FROM account_links WHERE peer_id = ? AND remote_user_id = ?`,
 		peerID, remoteUserID).Scan(&existingLocal)
 	if err == nil && existingLocal != userID {
-		return "L’autre compte est déjà lié à un autre compte de ce serveur"
+		return i18n.Key("L’autre compte est déjà lié à un autre compte de ce serveur")
 	}
 	if _, err := tx.Exec(`INSERT INTO account_links (user_id, peer_id, remote_user_id, remote_username)
 		VALUES (?, ?, ?, ?)
 		ON CONFLICT(peer_id, user_id) DO UPDATE SET remote_username = excluded.remote_username`,
 		userID, peerID, remoteUserID, remoteUsername); err != nil {
 		log.Printf("insertAccountLink: %v", err)
-		return "Impossible d’enregistrer le lien"
+		return i18n.Key("Impossible d’enregistrer le lien")
 	}
 	return ""
 }
@@ -177,7 +178,7 @@ func RequirePeer(next peerHandle) httprouter.Handle {
 // (POST /api/federation/approval).
 func PeerApproval(w http.ResponseWriter, r *http.Request, peer peerRow) {
 	if _, err := database.DB.Exec(`UPDATE peer_servers SET remote_approved = 1 WHERE id = ?`, peer.id); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	wakeFederation()
@@ -189,7 +190,7 @@ func PeerProgress(w http.ResponseWriter, r *http.Request, peer peerRow) {
 	var body peerProgressBody
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<20)).Decode(&body); err != nil ||
 		len(body.Entries) > federationBatch {
-		writeJSONError(w, http.StatusBadRequest, "Invalid progress batch")
+		writeJSONError(w, http.StatusBadRequest, "Lot de progression invalide")
 		return
 	}
 	if !peer.localApproved {
@@ -214,7 +215,7 @@ func PeerProgress(w http.ResponseWriter, r *http.Request, peer peerRow) {
 	}
 	if err := importPortableProgress(body.ToUserID, body.Entries); err != nil {
 		log.Printf("PeerProgress import: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Unable to save progress")
+		writeJSONError(w, http.StatusInternalServerError, "Impossible d’enregistrer la progression")
 		return
 	}
 	w.Write([]byte(`{"status":"ok"}`))
@@ -225,12 +226,12 @@ func PeerProgress(w http.ResponseWriter, r *http.Request, peer peerRow) {
 func PeerUnlink(w http.ResponseWriter, r *http.Request, peer peerRow) {
 	var body peerUnlinkBody
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	if _, err := database.DB.Exec(`DELETE FROM account_links WHERE peer_id = ? AND user_id = ? AND remote_user_id = ?`,
 		peer.id, body.ToUserID, body.FromUserID); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Write([]byte(`{"status":"ok"}`))
@@ -240,7 +241,7 @@ func PeerUnlink(w http.ResponseWriter, r *http.Request, peer peerRow) {
 // (POST /api/federation/forget). Les liens de comptes partent avec elle.
 func PeerForget(w http.ResponseWriter, _ *http.Request, peer peerRow) {
 	if _, err := database.DB.Exec(`DELETE FROM peer_servers WHERE id = ?`, peer.id); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Write([]byte(`{"status":"ok"}`))
@@ -253,14 +254,14 @@ func CreateLinkCode(w http.ResponseWriter, _ *http.Request, _ httprouter.Params,
 	w.Header().Set("Content-Type", "application/json")
 	code, err := GenerateRandomToken()
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	now := time.Now().UTC()
 	_, _ = database.DB.Exec(`DELETE FROM link_codes WHERE expires_at <= ?`, now.Format(progressTimeLayout))
 	if _, err := database.DB.Exec(`INSERT INTO link_codes (code, user_id, expires_at) VALUES (?, ?, ?)`,
 		code, userID, now.Add(linkCodeTTL).Format(progressTimeLayout)); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	json.NewEncoder(w).Encode(linkCodeResponse{
@@ -284,7 +285,7 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	w.Header().Set("Content-Type", "application/json")
 	var body createLinkBody
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<14)).Decode(&body); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	peerURL, okPeer := normalizeServerURL(body.URL)
@@ -295,7 +296,7 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	}
 	var username string
 	if err := database.DB.QueryRow(`SELECT username FROM users WHERE id = ?`, userID).Scan(&username); err != nil {
-		writeJSONError(w, http.StatusUnauthorized, "Invalid or expired session")
+		writeJSONError(w, http.StatusUnauthorized, "Session invalide ou expirée")
 		return
 	}
 
@@ -308,7 +309,7 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		// autre chose, depuis n'importe quel compte.
 		log.Printf("CreateAccountLink: fetch %s: %v", peerURL, err)
 		writeJSONError(w, http.StatusBadGateway,
-			"Ce serveur ne parvient pas à joindre "+peerURL+" comme serveur Onyx. Les deux serveurs doivent pouvoir se joindre.")
+			"Ce serveur ne parvient pas à joindre {0} comme serveur Onyx. Les deux serveurs doivent pouvoir se joindre.", peerURL)
 		return
 	}
 	if info.ServerID == config.ServerID() {
@@ -318,14 +319,14 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 	existing, err := scanPeer(database.DB.QueryRow(`SELECT `+peerColumns+` FROM peer_servers WHERE server_id = ?`, info.ServerID))
 	if err != nil && err != sql.ErrNoRows {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	known := err == nil
 	secret := existing.secret
 	if !known {
 		if secret, err = GenerateRandomToken(); err != nil {
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 	}
@@ -340,7 +341,9 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		if status == http.StatusBadRequest || status == http.StatusConflict {
 			code = http.StatusConflict
 		}
-		writeJSONError(w, code, err.Error())
+		// Le refus vient de l'autre serveur, dans la langue qu'il a choisie :
+		// on le garde tel quel derrière une phrase traduite.
+		writeJSONError(w, code, "L’autre serveur a répondu : {0}", err.Error())
 		return
 	}
 	if claimed.ServerID != info.ServerID || claimed.UserID <= 0 {
@@ -350,7 +353,7 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 	tx, err := database.DB.Begin()
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer tx.Rollback()
@@ -369,7 +372,7 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	}
 	if err != nil {
 		log.Printf("CreateAccountLink peer: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if msg := insertAccountLink(tx, userID, peerID, claimed.UserID, claimed.Username); msg != "" {
@@ -377,14 +380,14 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		return
 	}
 	if err := tx.Commit(); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	wakeFederation()
 
 	links, err := listAccountLinks(userID)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	for _, link := range links {
@@ -393,7 +396,7 @@ func CreateAccountLink(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 			return
 		}
 	}
-	writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+	writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 }
 
 func listAccountLinks(userID int) ([]AccountLink, error) {
@@ -428,7 +431,7 @@ func ListAccountLinks(w http.ResponseWriter, _ *http.Request, _ httprouter.Param
 	w.Header().Set("Content-Type", "application/json")
 	links, err := listAccountLinks(userID)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	json.NewEncoder(w).Encode(links)
@@ -441,7 +444,7 @@ func DeleteAccountLink(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	w.Header().Set("Content-Type", "application/json")
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid link id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de lien invalide")
 		return
 	}
 	var remoteUserID int
@@ -453,7 +456,7 @@ func DeleteAccountLink(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	_ = database.DB.QueryRow(`SELECT remote_user_id FROM account_links WHERE id = ?`, id).Scan(&remoteUserID)
@@ -461,7 +464,7 @@ func DeleteAccountLink(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	defer cancel()
 	_, _ = peerCall(ctx, peer, "/api/federation/unlink", peerUnlinkBody{FromUserID: userID, ToUserID: remoteUserID}, nil)
 	if _, err := database.DB.Exec(`DELETE FROM account_links WHERE id = ? AND user_id = ?`, id, userID); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Write([]byte(`{"status":"ok"}`))

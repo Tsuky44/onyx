@@ -59,7 +59,7 @@ func AdminStorage(w http.ResponseWriter, r *http.Request, _ httprouter.Params, u
 	}
 	if err != nil {
 		log.Printf("AdminStorage: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 

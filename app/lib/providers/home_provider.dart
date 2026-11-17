@@ -5,6 +5,18 @@ import '../services/api_client.dart';
 import '../services/download_manager.dart';
 import '../l10n/tr.dart';
 
+/// La fin d'un travail de fond, telle que l'écran d'accueil l'affiche.
+///
+/// [refreshesLibrary] dit si le travail a pu changer le catalogue. C'est un
+/// champ à part, et non un test sur le début de [message] : le texte vient de
+/// `tr()`, il change avec la langue de l'interface.
+class HomeCompletion {
+  final String message;
+  final bool refreshesLibrary;
+
+  const HomeCompletion(this.message, {this.refreshesLibrary = false});
+}
+
 class HomeProvider extends ChangeNotifier {
   static const double _minContinueWatchingPercent = 10.0;
 
@@ -19,7 +31,7 @@ class HomeProvider extends ChangeNotifier {
   bool _isExtractingSubtitles = false;
   SubtitleExtractionStats _subtitleStats = SubtitleExtractionStats();
   String? _errorMessage;
-  String? _completionMessage;
+  HomeCompletion? _completion;
   Timer? _statusPollTimer;
   int _generation = 0;
   int _homeRequest = 0;
@@ -36,11 +48,11 @@ class HomeProvider extends ChangeNotifier {
   SubtitleExtractionStats get subtitleStats => _subtitleStats;
   String? get errorMessage => _errorMessage;
 
-  /// One-shot message shown by the UI after a background job finishes.
-  String? consumeCompletionMessage() {
-    final msg = _completionMessage;
-    _completionMessage = null;
-    return msg;
+  /// One-shot notice shown by the UI after a background job finishes.
+  HomeCompletion? consumeCompletion() {
+    final completion = _completion;
+    _completion = null;
+    return completion;
   }
 
   @override
@@ -72,7 +84,7 @@ class HomeProvider extends ChangeNotifier {
     _isExtractingSubtitles = false;
     _subtitleStats = SubtitleExtractionStats();
     _errorMessage = null;
-    _completionMessage = null;
+    _completion = null;
     unawaited(loadHome());
   }
 
@@ -358,15 +370,16 @@ class HomeProvider extends ChangeNotifier {
 
         if (extractJustFinished) {
           final s = status.subtitleExtraction;
-          _completionMessage =
-              tr('Sous-titres extraits : {0}/{1} médias ({2} pistes)', [s.succeeded, s.total, s.tracks]);
+          _completion = HomeCompletion(
+              tr('Sous-titres extraits : {0}/{1} médias ({2} pistes)', [s.succeeded, s.total, s.tracks]));
         } else if (backfillJustFinished) {
-          _completionMessage = tr('Affiches mises à jour depuis TMDB');
+          _completion = HomeCompletion(tr('Affiches mises à jour depuis TMDB'));
         } else if (redetectJustFinished) {
           final r = status.redetectAll;
-          _completionMessage =
+          _completion = HomeCompletion(
               tr('Re-détection terminée : {0} mis à jour, {1} sans '
-                  'changement ({2} titres)', [r.updated, r.skipped, r.total]);
+                  'changement ({2} titres)', [r.updated, r.skipped, r.total]),
+              refreshesLibrary: true);
         }
 
         notifyListeners();

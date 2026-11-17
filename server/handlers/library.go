@@ -36,7 +36,7 @@ func GetMovies(w http.ResponseWriter, r *http.Request, _ httprouter.Params, user
 		ORDER BY m.title ASC`, args...)
 	if err != nil {
 		log.Printf("Movies error: failed to query: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	defer rows.Close()
@@ -54,7 +54,7 @@ func GetMovies(w http.ResponseWriter, r *http.Request, _ httprouter.Params, user
 	rows.Close()
 	results, err = groupMediaVersions(results)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Unable to load versions")
+		writeJSONError(w, http.StatusInternalServerError, "Impossible de charger les versions")
 		return
 	}
 	languageOf(r).itemList(results)
@@ -115,7 +115,7 @@ func GetShows(w http.ResponseWriter, r *http.Request, _ httprouter.Params, userI
 		ORDER BY m.title ASC`, args...)
 	if err != nil {
 		log.Printf("Shows error: failed to query: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 
@@ -210,7 +210,7 @@ func GetSeasonEpisodes(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	seasonID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid season ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de saison invalide")
 		return
 	}
 
@@ -226,7 +226,7 @@ func GetSeasonEpisodes(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		ORDER BY COALESCE(NULLIF(m.episode_number, 0), 9999), m.id ASC`, userID, seasonID)
 	if err != nil {
 		log.Printf("Episodes error: failed to query: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	defer rows.Close()
@@ -244,7 +244,7 @@ func GetSeasonEpisodes(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	rows.Close()
 	results, err = groupMediaVersions(results)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Unable to load versions")
+		writeJSONError(w, http.StatusInternalServerError, "Impossible de charger les versions")
 		return
 	}
 	lang := languageOf(r)

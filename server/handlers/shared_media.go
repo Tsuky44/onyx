@@ -238,7 +238,7 @@ func ReportSharedMediaProgress(w http.ResponseWriter, r *http.Request, _ httprou
 	if share.SingleUse && !consumed && watched {
 		if _, err := store.Consume(share.ID); err != nil {
 			log.Printf("ReportSharedMediaProgress: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		consumed = true

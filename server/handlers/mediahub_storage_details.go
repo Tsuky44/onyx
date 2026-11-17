@@ -89,7 +89,7 @@ type storagePlay struct {
 func MediaHubStorageDetails(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, _ int) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || id <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	details := mediaHubStorageDetails{ID: id, Seasons: []mediaHubStorageSeason{}, Viewers: []mediaHubStorageViewer{}}
@@ -103,7 +103,7 @@ func MediaHubStorageDetails(w http.ResponseWriter, _ *http.Request, ps httproute
 	}
 	if err != nil {
 		log.Printf("MediaHubStorageDetails: load %d: %v", id, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	details.Overview, details.ReleaseDate, details.Path = overview.String, release.String, filePath.String
@@ -124,7 +124,7 @@ func MediaHubStorageDetails(w http.ResponseWriter, _ *http.Request, ps httproute
 	}
 	if err != nil {
 		log.Printf("MediaHubStorageDetails: %d: %v", id, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	details.Viewers = aggregateStorageViewers(plays, details.Type == "show", totals)

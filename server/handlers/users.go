@@ -20,7 +20,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params, _ in
 	rows, err := database.DB.Query("SELECT " + userColumns + " FROM users ORDER BY id")
 	if err != nil {
 		log.Printf("ListUsers query error: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer rows.Close()
@@ -52,7 +52,7 @@ func loadTarget(w http.ResponseWriter, ps httprouter.Params) (models.User, bool)
 			writeJSONError(w, http.StatusNotFound, "Utilisateur introuvable")
 		} else {
 			log.Printf("loadTarget %d: %v", targetID, err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		}
 		return models.User{}, false
 	}
@@ -82,7 +82,7 @@ func UpdateUserPermissions(w http.ResponseWriter, r *http.Request, ps httprouter
 	caller, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("UpdateUserPermissions: failed to load caller %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -97,7 +97,7 @@ func UpdateUserPermissions(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	var req UpdateUserPermissionsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	if changesBeyond(caller, target.Permissions, req.Permissions) ||
@@ -112,7 +112,7 @@ func UpdateUserPermissions(w http.ResponseWriter, r *http.Request, ps httprouter
 		admins, err := CountAdmins()
 		if err != nil {
 			log.Printf("UpdateUserPermissions: admin count failed: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		if admins <= 1 {
@@ -142,7 +142,7 @@ func UpdateUserPermissions(w http.ResponseWriter, r *http.Request, ps httprouter
 	)
 	if err != nil {
 		log.Printf("UpdateUserPermissions update error: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -166,7 +166,7 @@ func UpdateUserPermissions(w http.ResponseWriter, r *http.Request, ps httprouter
 	updated, err := LoadUser(target.ID)
 	if err != nil {
 		log.Printf("UpdateUserPermissions: reload failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -191,7 +191,7 @@ func ResetUserPassword(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	caller, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("ResetUserPassword: failed to load caller %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if target.IsOwner && !caller.IsOwner {
@@ -205,7 +205,7 @@ func ResetUserPassword(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	var req ResetUserPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	if len(req.NewPassword) < minPasswordLength {
@@ -215,7 +215,7 @@ func ResetUserPassword(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	if err := setUserPassword(target.ID, req.NewPassword); err != nil {
 		log.Printf("ResetUserPassword: update failed for %d: %v", target.ID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -253,7 +253,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, us
 	caller, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("DeleteUser: failed to load caller %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if !mayManage(caller, target) {
@@ -264,7 +264,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, us
 		admins, err := CountAdmins()
 		if err != nil {
 			log.Printf("DeleteUser: admin count failed: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		if admins <= 1 {
@@ -277,7 +277,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params, us
 	defer forgetCachedSessionsOf(target.ID)
 	if _, err := database.DB.Exec("DELETE FROM users WHERE id = ?", target.ID); err != nil {
 		log.Printf("DeleteUser: delete failed for %d: %v", target.ID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -293,7 +293,7 @@ func TransferOwnership(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	caller, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("TransferOwnership: failed to load caller %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if !caller.IsOwner {
@@ -313,14 +313,14 @@ func TransferOwnership(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Printf("TransferOwnership: begin failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer tx.Rollback()
 
 	if _, err := tx.Exec("UPDATE users SET is_owner = 0 WHERE id = ?", caller.ID); err != nil {
 		log.Printf("TransferOwnership: demote failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	// The new owner gets every right along with the status: an owner who cannot
@@ -332,12 +332,12 @@ func TransferOwnership(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			perm_share_media = 1
 		 WHERE id = ?`, target.ID); err != nil {
 		log.Printf("TransferOwnership: promote failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if err := tx.Commit(); err != nil {
 		log.Printf("TransferOwnership: commit failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 

@@ -45,7 +45,7 @@ func ListLibraries(w http.ResponseWriter, r *http.Request, _ httprouter.Params, 
 	libs, err := libraries.List()
 	if err != nil {
 		log.Printf("ListLibraries: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	user, err := LoadUser(userID)
@@ -84,7 +84,7 @@ func CreateLibrary(w http.ResponseWriter, r *http.Request, _ httprouter.Params, 
 func UpdateLibrary(w http.ResponseWriter, r *http.Request, ps httprouter.Params, _ int) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid library ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de bibliothèque invalide")
 		return
 	}
 	req, ok := decodeLibraryRequest(w, r)
@@ -110,7 +110,7 @@ func UpdateLibrary(w http.ResponseWriter, r *http.Request, ps httprouter.Params,
 func DeleteLibrary(w http.ResponseWriter, r *http.Request, ps httprouter.Params, _ int) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid library ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de bibliothèque invalide")
 		return
 	}
 	lib, err := libraries.Delete(id)
@@ -137,7 +137,7 @@ func decodeLibraryRequest(w http.ResponseWriter, r *http.Request) (libraryReques
 	var req libraryRequest
 	r.Body = http.MaxBytesReader(w, r.Body, libraryBodyLimit)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return libraryRequest{}, false
 	}
 	return req, true
@@ -151,7 +151,7 @@ func writeLibraryError(w http.ResponseWriter, context string, err error) {
 		writeJSONError(w, http.StatusNotFound, "Bibliothèque introuvable")
 	case errors.Is(err, libraries.ErrInvalidName):
 		writeJSONError(w, http.StatusBadRequest,
-			"Donnez un nom à la bibliothèque ("+strconv.Itoa(libraries.MaxNameLength)+" caractères au plus)")
+			"Donnez un nom à la bibliothèque ({0} caractères au plus)", libraries.MaxNameLength)
 	case errors.Is(err, libraries.ErrInvalidKind):
 		writeJSONError(w, http.StatusBadRequest, "Type de bibliothèque inconnu")
 	case errors.Is(err, libraries.ErrInvalidPath):
@@ -162,7 +162,7 @@ func writeLibraryError(w http.ResponseWriter, context string, err error) {
 		writeJSONError(w, http.StatusConflict, "Ce dossier est déjà celui d'une autre bibliothèque")
 	default:
 		log.Printf("%s: %v", context, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 	}
 }
 
@@ -176,7 +176,7 @@ func libraryFilter(w http.ResponseWriter, r *http.Request) (lib *libraries.Libra
 	}
 	id, err := strconv.Atoi(raw)
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid library ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de bibliothèque invalide")
 		return nil, false
 	}
 	found, err := libraries.Get(id)

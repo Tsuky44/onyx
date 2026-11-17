@@ -260,7 +260,7 @@ func TmdbRequestFilterOptions(w http.ResponseWriter, r *http.Request, _ httprout
 	w.Header().Set("Content-Type", "application/json")
 	apiKey := tmdbRequestAPIKey()
 	if apiKey == "" {
-		writeJSONError(w, http.StatusServiceUnavailable, "TMDB API key not configured")
+		writeJSONError(w, http.StatusServiceUnavailable, "Clé d’API TMDB non configurée")
 		return
 	}
 
@@ -295,7 +295,7 @@ func TmdbRequestFilterOptions(w http.ResponseWriter, r *http.Request, _ httprout
 		movieG, errM := fetchGenres("movie")
 		tvG, errT := fetchGenres("tv")
 		if errM != nil && errT != nil {
-			writeJSONError(w, http.StatusBadGateway, "Failed to fetch genres")
+			writeJSONError(w, http.StatusBadGateway, "Impossible de récupérer les genres")
 			return
 		}
 		byID := map[int]genreRow{}
@@ -314,7 +314,7 @@ func TmdbRequestFilterOptions(w http.ResponseWriter, r *http.Request, _ httprout
 		})
 	}
 	if err != nil {
-		writeJSONError(w, http.StatusBadGateway, "Failed to fetch genres")
+		writeJSONError(w, http.StatusBadGateway, "Impossible de récupérer les genres")
 		return
 	}
 
@@ -328,7 +328,7 @@ func TmdbRequestWatchProviders(w http.ResponseWriter, r *http.Request, _ httprou
 	w.Header().Set("Content-Type", "application/json")
 	apiKey := tmdbRequestAPIKey()
 	if apiKey == "" {
-		writeJSONError(w, http.StatusServiceUnavailable, "TMDB API key not configured")
+		writeJSONError(w, http.StatusServiceUnavailable, "Clé d’API TMDB non configurée")
 		return
 	}
 
@@ -359,7 +359,7 @@ func TmdbRequestWatchProviders(w http.ResponseWriter, r *http.Request, _ httprou
 	case "movie", "tv":
 		p, err := fetchProviders(mediaType)
 		if err != nil {
-			writeJSONError(w, http.StatusBadGateway, "Failed to fetch providers")
+			writeJSONError(w, http.StatusBadGateway, "Impossible de récupérer les plateformes")
 			return
 		}
 		lists = append(lists, p)
@@ -367,7 +367,7 @@ func TmdbRequestWatchProviders(w http.ResponseWriter, r *http.Request, _ httprou
 		movieP, errM := fetchProviders("movie")
 		tvP, errT := fetchProviders("tv")
 		if errM != nil && errT != nil {
-			writeJSONError(w, http.StatusBadGateway, "Failed to fetch providers")
+			writeJSONError(w, http.StatusBadGateway, "Impossible de récupérer les plateformes")
 			return
 		}
 		lists = append(lists, movieP, tvP)

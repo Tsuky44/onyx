@@ -19,6 +19,7 @@ import (
 	"project-player/server/database"
 	"project-player/server/devline"
 	"project-player/server/handlers"
+	"project-player/server/i18n"
 	"project-player/server/indexer"
 	"project-player/server/libraries"
 	"project-player/server/logging"
@@ -98,9 +99,9 @@ func main() {
 	// Initialize router
 	router := httprouter.New()
 
-	// Global middleware: CORS on the outside, then the body limit, then gzip for
-	// the JSON API.
-	handler := middleware.LimitBodies(middleware.Gzip(router))
+	// Global middleware: CORS on the outside, then the language of the error
+	// messages (ADR-0137), the body limit, and gzip for the JSON API.
+	handler := i18n.Middleware(middleware.LimitBodies(middleware.Gzip(router)))
 	corsRouter := setupCORS(handler)
 
 	// Base API route

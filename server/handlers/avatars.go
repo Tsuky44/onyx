@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"project-player/server/database"
+	"project-player/server/i18n"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -51,7 +52,7 @@ func SetMyAvatar(w http.ResponseWriter, r *http.Request, _ httprouter.Params, us
 	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 	var req SetAvatarRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	avatar := ""
@@ -64,7 +65,7 @@ func SetMyAvatar(w http.ResponseWriter, r *http.Request, _ httprouter.Params, us
 	}
 	if err := storeAvatar(userID, avatar, nil, ""); err != nil {
 		log.Printf("SetMyAvatar: store: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	writeUser(w, userID)
@@ -82,13 +83,13 @@ func UploadMyAvatarPhoto(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	}
 	contentType, err := validateAvatarPhoto(data)
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, err.Error())
+		writeJSONFailure(w, http.StatusBadRequest, err)
 		return
 	}
 	version := strconv.FormatInt(time.Now().UnixMilli(), 10)
 	if err := storeAvatar(userID, avatarPhotoPrefix+version, data, contentType); err != nil {
 		log.Printf("UploadMyAvatarPhoto: store: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	writeUser(w, userID)
@@ -101,7 +102,7 @@ func UploadMyAvatarPhoto(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 func GetUserAvatar(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, _ int) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid user id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant utilisateur invalide")
 		return
 	}
 	var contentType string
@@ -110,12 +111,12 @@ func GetUserAvatar(w http.ResponseWriter, _ *http.Request, ps httprouter.Params,
 		`SELECT content_type, image FROM user_avatar_photos WHERE user_id = ?`, id,
 	).Scan(&contentType, &photo)
 	if err == sql.ErrNoRows {
-		writeJSONError(w, http.StatusNotFound, "No photo")
+		writeJSONError(w, http.StatusNotFound, "Pas de photo")
 		return
 	}
 	if err != nil {
 		log.Printf("GetUserAvatar: query: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", contentType)
@@ -126,14 +127,14 @@ func GetUserAvatar(w http.ResponseWriter, _ *http.Request, ps httprouter.Params,
 // validateAvatarPhoto rend le type de l'image, ou l'erreur à montrer.
 func validateAvatarPhoto(data []byte) (string, error) {
 	if len(data) == 0 {
-		return "", fmt.Errorf("Photo vide")
+		return "", i18n.Errorf("Photo vide")
 	}
 	config, format, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil {
-		return "", fmt.Errorf("Ce fichier n'est pas une image JPEG ou PNG")
+		return "", i18n.Errorf("Ce fichier n'est pas une image JPEG ou PNG")
 	}
 	if config.Width > maxAvatarPhotoSide || config.Height > maxAvatarPhotoSide {
-		return "", fmt.Errorf("Photo trop grande (%d px de côté au plus)", maxAvatarPhotoSide)
+		return "", i18n.Errorf("Photo trop grande ({0} px de côté au plus)", maxAvatarPhotoSide)
 	}
 	switch format {
 	case "jpeg":
@@ -141,7 +142,7 @@ func validateAvatarPhoto(data []byte) (string, error) {
 	case "png":
 		return "image/png", nil
 	}
-	return "", fmt.Errorf("Ce fichier n'est pas une image JPEG ou PNG")
+	return "", i18n.Errorf("Ce fichier n'est pas une image JPEG ou PNG")
 }
 
 // storeAvatar écrit le choix et la photo ensemble : un compte qui annonce une
@@ -180,7 +181,7 @@ func writeUser(w http.ResponseWriter, userID int) {
 	user, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("avatars: load user: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

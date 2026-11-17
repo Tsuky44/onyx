@@ -12,6 +12,7 @@ import (
 
 	"project-player/server/config"
 	"project-player/server/database"
+	"project-player/server/i18n"
 	"project-player/server/models"
 	"project-player/server/otp"
 
@@ -74,21 +75,21 @@ func beginLoginOTP(w http.ResponseWriter, user models.User) bool {
 	}
 
 	c := otp.Challenge{UserID: user.ID, Username: user.Username, Setup: step == otp.StepSetup}
-	message := "Code de vérification requis. Mets l'application à jour si elle ne te le demande pas."
+	message := i18n.Respond(w, "Code de vérification requis. Mets l'application à jour si elle ne te le demande pas.")
 	if c.Setup {
 		secret, err := otp.GenerateSecret()
 		if err != nil {
 			log.Printf("Login: otp secret: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return true
 		}
 		c.Secret = secret
-		message = "La validation en deux étapes est obligatoire sur ce serveur. Mets l'application à jour pour la configurer."
+		message = i18n.Respond(w, "La validation en deux étapes est obligatoire sur ce serveur. Mets l'application à jour pour la configurer.")
 	}
 	token, err := loginChallenges.Issue(c)
 	if err != nil {
 		log.Printf("Login: otp challenge: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return true
 	}
 
@@ -124,7 +125,7 @@ func VerifyLoginOTP(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 
 	var req VerifyLoginOTPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -158,7 +159,7 @@ func VerifyLoginOTP(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		}
 		if err != nil {
 			log.Printf("VerifyLoginOTP: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		recoveryCodes = codes
@@ -171,7 +172,7 @@ func VerifyLoginOTP(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		}
 		if err != nil {
 			log.Printf("VerifyLoginOTP: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		if verdict == otp.Rejected {
@@ -185,7 +186,7 @@ func VerifyLoginOTP(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	user, err := LoadUser(c.UserID)
 	if err != nil {
 		log.Printf("VerifyLoginOTP: failed to load user %d: %v", c.UserID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	openLoginSession(w, user, recoveryCodes)
@@ -246,7 +247,7 @@ func StartOTPSetup(w http.ResponseWriter, r *http.Request, _ httprouter.Params, 
 	secret, err := otp.GenerateSecret()
 	if err != nil {
 		log.Printf("StartOTPSetup: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	otpEnrollments.Put(strconv.Itoa(userID), otp.Challenge{
@@ -278,7 +279,7 @@ func EnableOTP(w http.ResponseWriter, r *http.Request, _ httprouter.Params, user
 
 	var req OTPCodeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	if !config.OTPPolicy().Available() {
@@ -305,7 +306,7 @@ func EnableOTP(w http.ResponseWriter, r *http.Request, _ httprouter.Params, user
 	}
 	if err != nil {
 		log.Printf("EnableOTP: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	json.NewEncoder(w).Encode(OTPRecoveryCodes{RecoveryCodes: codes})
@@ -325,7 +326,7 @@ func DisableOTP(w http.ResponseWriter, r *http.Request, _ httprouter.Params, use
 
 	var req OTPPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	user, _, ok := loadOTPAccount(w, userID)
@@ -341,7 +342,7 @@ func DisableOTP(w http.ResponseWriter, r *http.Request, _ httprouter.Params, use
 	}
 	if err := otp.Disable(database.DB, userID); err != nil {
 		log.Printf("DisableOTP: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Write([]byte(`{"status": "success"}`))
@@ -354,7 +355,7 @@ func RegenerateOTPRecoveryCodes(w http.ResponseWriter, r *http.Request, _ httpro
 
 	var req OTPPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	_, account, ok := loadOTPAccount(w, userID)
@@ -371,7 +372,7 @@ func RegenerateOTPRecoveryCodes(w http.ResponseWriter, r *http.Request, _ httpro
 	codes, err := otp.RegenerateRecoveryCodes(database.DB, userID)
 	if err != nil {
 		log.Printf("RegenerateOTPRecoveryCodes: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	json.NewEncoder(w).Encode(OTPRecoveryCodes{RecoveryCodes: codes})
@@ -391,7 +392,7 @@ func ResetUserOTP(w http.ResponseWriter, r *http.Request, ps httprouter.Params, 
 	caller, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("ResetUserOTP: failed to load caller %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	// Même asymétrie que pour le mot de passe : retirer le second facteur du
@@ -406,7 +407,7 @@ func ResetUserOTP(w http.ResponseWriter, r *http.Request, ps httprouter.Params, 
 	}
 	if err := otp.Disable(database.DB, target.ID); err != nil {
 		log.Printf("ResetUserOTP: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Write([]byte(`{"status": "success"}`))
@@ -418,13 +419,13 @@ func loadOTPAccount(w http.ResponseWriter, userID int) (models.User, otp.Account
 	user, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("otp: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return models.User{}, otp.Account{}, false
 	}
 	account, err := otp.Load(database.DB, userID)
 	if err != nil {
 		log.Printf("otp: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return models.User{}, otp.Account{}, false
 	}
 	return user, account, true
@@ -436,7 +437,7 @@ func passwordMatches(w http.ResponseWriter, userID int, password string) bool {
 	var hash string
 	if err := database.DB.QueryRow("SELECT password_hash FROM users WHERE id = ?", userID).Scan(&hash); err != nil {
 		log.Printf("otp: failed to load password of user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return false
 	}
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {

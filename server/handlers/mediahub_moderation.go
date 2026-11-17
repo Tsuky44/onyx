@@ -60,12 +60,12 @@ func MediaHubModerateRequests(w http.ResponseWriter, r *http.Request, _ httprout
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || !req.Action.Valid() ||
 		len(req.RequestIDs) == 0 || len(req.RequestIDs) > maxModeratedIDs || len(req.Reason) > 500 {
-		writeMediaHubError(w, http.StatusBadRequest, "Invalid request body")
+		writeMediaHubError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	for _, id := range req.RequestIDs {
 		if id <= 0 {
-			writeMediaHubError(w, http.StatusBadRequest, "Invalid request body")
+			writeMediaHubError(w, http.StatusBadRequest, "Corps de requête invalide")
 			return
 		}
 	}

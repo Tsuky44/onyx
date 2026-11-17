@@ -220,7 +220,7 @@ func GetShowResumeEpisode(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	showID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid show ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de série invalide")
 		return
 	}
 	showID = indexer.ResolveCanonicalShowID(showID)
@@ -228,7 +228,7 @@ func GetShowResumeEpisode(w http.ResponseWriter, r *http.Request, ps httprouter.
 	episodes, err := loadShowEpisodesWithProgress(showID, userID)
 	if err != nil {
 		log.Printf("Resume: query failed for show %d: %v", showID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 

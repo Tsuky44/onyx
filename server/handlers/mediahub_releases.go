@@ -50,7 +50,7 @@ func MediaHubGrabRelease(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	var grab mediahub.GrabRequest
 	r.Body = http.MaxBytesReader(w, r.Body, maxGrabBody)
 	if err := json.NewDecoder(r.Body).Decode(&grab); err != nil || !grab.Valid() {
-		writeMediaHubError(w, http.StatusBadRequest, "Invalid request body")
+		writeMediaHubError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	account, ok := mediaHubAccountOrFail(w, userID)

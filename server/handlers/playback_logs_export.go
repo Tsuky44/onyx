@@ -84,7 +84,7 @@ func ExportPlaybackLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	if raw := q.Get("from"); raw != "" {
 		from, _, ok := parseExportBound(raw, zone)
 		if !ok {
-			writeJSONError(w, http.StatusBadRequest, "Invalid from")
+			writeJSONError(w, http.StatusBadRequest, "Paramètre « from » invalide")
 			return
 		}
 		query += ` AND h.started_at >= ?`
@@ -93,7 +93,7 @@ func ExportPlaybackLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	if raw := q.Get("to"); raw != "" {
 		to, dateOnly, ok := parseExportBound(raw, zone)
 		if !ok {
-			writeJSONError(w, http.StatusBadRequest, "Invalid to")
+			writeJSONError(w, http.StatusBadRequest, "Paramètre « to » invalide")
 			return
 		}
 		if dateOnly {
@@ -108,7 +108,7 @@ func ExportPlaybackLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	rows, err := database.DB.Query(query, args...)
 	if err != nil {
 		log.Printf("ExportPlaybackLogs: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	var logs []exportedLog
@@ -119,7 +119,7 @@ func ExportPlaybackLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 			&e.deviceName, &e.client, &e.playMethod, &started, &e.stats, &body); err != nil {
 			rows.Close()
 			log.Printf("ExportPlaybackLogs: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		e.startedAt = parseSQLiteTime(started)
@@ -131,14 +131,14 @@ func ExportPlaybackLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	rows.Close()
 	if err := rows.Err(); err != nil {
 		log.Printf("ExportPlaybackLogs: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
 	archive, err := buildPlaybackLogsZip(logs, zone)
 	if err != nil {
 		log.Printf("ExportPlaybackLogs: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	name := "onyx-journaux-" + time.Now().In(zone).Format("2006-01-02_15-04") + ".zip"

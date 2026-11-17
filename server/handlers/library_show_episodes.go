@@ -59,13 +59,13 @@ func loadLibraryShowEpisodes(tmdbID int) (libraryShowEpisodes, error) {
 func GetLibraryShowEpisodes(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, _ int) {
 	tmdbID, err := strconv.Atoi(ps.ByName("tmdb"))
 	if err != nil || tmdbID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid TMDB ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant TMDB invalide")
 		return
 	}
 	result, err := loadLibraryShowEpisodes(tmdbID)
 	if err != nil {
 		log.Printf("GetLibraryShowEpisodes: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

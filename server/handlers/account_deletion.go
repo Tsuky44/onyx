@@ -31,7 +31,7 @@ func DeleteOwnAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 	var req DeleteOwnAccountRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -41,7 +41,7 @@ func DeleteOwnAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		"SELECT password_hash, is_owner FROM users WHERE id = ?", userID,
 	).Scan(&passwordHash, &isOwner); err != nil {
 		log.Printf("DeleteOwnAccount: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
@@ -58,7 +58,7 @@ func DeleteOwnAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	defer forgetCachedSessionsOf(userID)
 	if _, err := database.DB.Exec("DELETE FROM users WHERE id = ?", userID); err != nil {
 		log.Printf("DeleteOwnAccount: delete failed for %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 

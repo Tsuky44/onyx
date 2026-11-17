@@ -265,7 +265,7 @@ func ListMyDevices(w http.ResponseWriter, r *http.Request, _ httprouter.Params, 
 	devices, err := listDevices(userID, bearerToken(r))
 	if err != nil {
 		log.Printf("ListMyDevices: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -278,7 +278,7 @@ func ListAllDevices(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 	devices, err := listDevices(0, bearerToken(r))
 	if err != nil {
 		log.Printf("ListAllDevices: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -314,17 +314,17 @@ func revokeDevice(id int64, allowed func(ownerID int) bool) (bool, error) {
 func RevokeMyDevice(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, userID int) {
 	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
 	if err != nil || id <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid device id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant d’appareil invalide")
 		return
 	}
 	ok, err := revokeDevice(id, func(ownerID int) bool { return ownerID == userID })
 	if err != nil {
 		log.Printf("RevokeMyDevice: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if !ok {
-		writeJSONError(w, http.StatusNotFound, "Device not found")
+		writeJSONError(w, http.StatusNotFound, "Appareil introuvable")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -336,12 +336,12 @@ func RevokeMyDevice(w http.ResponseWriter, _ *http.Request, ps httprouter.Params
 func RevokeAnyDevice(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, userID int) {
 	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
 	if err != nil || id <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid device id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant d’appareil invalide")
 		return
 	}
 	caller, err := LoadUser(userID)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	forbidden := false
@@ -358,7 +358,7 @@ func RevokeAnyDevice(w http.ResponseWriter, _ *http.Request, ps httprouter.Param
 	})
 	if err != nil {
 		log.Printf("RevokeAnyDevice: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if forbidden {
@@ -366,7 +366,7 @@ func RevokeAnyDevice(w http.ResponseWriter, _ *http.Request, ps httprouter.Param
 		return
 	}
 	if !ok {
-		writeJSONError(w, http.StatusNotFound, "Device not found")
+		writeJSONError(w, http.StatusNotFound, "Appareil introuvable")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

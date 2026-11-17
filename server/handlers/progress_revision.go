@@ -135,7 +135,7 @@ func GetProgressRevision(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		revision, err := progressRevision(userID)
 		if err != nil {
 			log.Printf("GetProgressRevision: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 			return
 		}
 		expired := false

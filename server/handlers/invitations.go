@@ -115,7 +115,7 @@ func ListInvitations(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	user, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("ListInvitations: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -130,7 +130,7 @@ func ListInvitations(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	rows, err := database.DB.Query(query, args...)
 	if err != nil {
 		log.Printf("ListInvitations query error: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer rows.Close()
@@ -159,7 +159,7 @@ func CreateInvitation(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	user, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("CreateInvitation: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -178,7 +178,7 @@ func CreateInvitation(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	token, err := GenerateRandomToken()
 	if err != nil {
 		log.Printf("CreateInvitation: token generation failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -189,7 +189,7 @@ func CreateInvitation(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		token, userID, models.EncodePermissions(grants), expiresAt.Format(time.RFC3339))
 	if err != nil {
 		log.Printf("CreateInvitation insert error: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -213,7 +213,7 @@ func RevokeInvitation(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	user, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("RevokeInvitation: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -227,7 +227,7 @@ func RevokeInvitation(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	res, err := database.DB.Exec(query, args...)
 	if err != nil {
 		log.Printf("RevokeInvitation error: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {

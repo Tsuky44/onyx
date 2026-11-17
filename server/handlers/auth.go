@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"project-player/server/database"
+	"project-player/server/i18n"
 	"project-player/server/models"
 
 	"github.com/julienschmidt/httprouter"
@@ -34,13 +35,13 @@ func RequireAuth(next AuthenticatedHandle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			writeJSONError(w, http.StatusUnauthorized, "Authorization header required")
+			writeJSONError(w, http.StatusUnauthorized, "En-tête Authorization requis")
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			writeJSONError(w, http.StatusUnauthorized, "Authorization header must be Bearer <token>")
+			writeJSONError(w, http.StatusUnauthorized, "L’en-tête Authorization doit être de la forme Bearer <jeton>")
 			return
 		}
 
@@ -48,11 +49,11 @@ func RequireAuth(next AuthenticatedHandle) httprouter.Handle {
 		userID, ok, err := lookupSession(parts[1])
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("Session query error: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		if !ok {
-			writeJSONError(w, http.StatusUnauthorized, "Invalid or expired session")
+			writeJSONError(w, http.StatusUnauthorized, "Session invalide ou expirée")
 			return
 		}
 
@@ -97,7 +98,7 @@ func GetAuthState(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	empty, err := usersTableEmpty()
 	if err != nil {
 		log.Printf("GetAuthState error: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -126,13 +127,13 @@ func Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
 	req.Username = strings.TrimSpace(req.Username)
 	if req.Username == "" {
-		writeJSONError(w, http.StatusBadRequest, "Username must not be empty")
+		writeJSONError(w, http.StatusBadRequest, "Le nom d’utilisateur ne peut pas être vide")
 		return
 	}
 	if len(req.Password) < minPasswordLength {
@@ -143,7 +144,7 @@ func Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	firstAccount, err := usersTableEmpty()
 	if err != nil {
 		log.Printf("Register: failed to count users: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -168,7 +169,7 @@ func Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		invitation, err = redeemableInvitation(strings.TrimSpace(req.InviteToken))
 		if err != nil {
 			log.Printf("Register: invitation lookup failed: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		if invitation == nil {
@@ -181,11 +182,11 @@ func Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	exists, err := usernameTaken(database.DB, req.Username)
 	if err != nil {
 		log.Printf("Failed to check if user exists: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if exists {
-		writeJSONError(w, http.StatusConflict, "Username already taken")
+		writeJSONError(w, http.StatusConflict, "Ce nom d’utilisateur est déjà pris")
 		return
 	}
 
@@ -193,7 +194,7 @@ func Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Printf("Failed to hash password: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -222,7 +223,7 @@ func insertRegisteredUser(username, passwordHash string, owner bool, permissions
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Printf("Register: begin: %v", err)
-		return 0, http.StatusInternalServerError, "Internal server error"
+		return 0, http.StatusInternalServerError, i18n.Key("Erreur interne du serveur")
 	}
 	defer tx.Rollback() //nolint:errcheck // no-op once committed
 
@@ -246,13 +247,13 @@ func insertRegisteredUser(username, passwordHash string, owner bool, permissions
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			return 0, http.StatusConflict, "Username already taken"
+			return 0, http.StatusConflict, i18n.Key("Ce nom d’utilisateur est déjà pris")
 		}
 		log.Printf("Register: insert user: %v", err)
-		return 0, http.StatusInternalServerError, "Internal server error"
+		return 0, http.StatusInternalServerError, i18n.Key("Erreur interne du serveur")
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
-		return 0, http.StatusForbidden, "Une invitation est requise pour créer un compte"
+		return 0, http.StatusForbidden, i18n.Key("Une invitation est requise pour créer un compte")
 	}
 	userID, _ := res.LastInsertId()
 
@@ -260,16 +261,16 @@ func insertRegisteredUser(username, passwordHash string, owner bool, permissions
 		claimed, err := claimInvitation(tx, invitation.Token, int(userID))
 		if err != nil {
 			log.Printf("Register: claim invitation: %v", err)
-			return 0, http.StatusInternalServerError, "Internal server error"
+			return 0, http.StatusInternalServerError, i18n.Key("Erreur interne du serveur")
 		}
 		if !claimed {
-			return 0, http.StatusForbidden, "Invitation invalide, expirée ou déjà utilisée"
+			return 0, http.StatusForbidden, i18n.Key("Invitation invalide, expirée ou déjà utilisée")
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Printf("Register: commit: %v", err)
-		return 0, http.StatusInternalServerError, "Internal server error"
+		return 0, http.StatusInternalServerError, i18n.Key("Erreur interne du serveur")
 	}
 	return userID, 0, ""
 }
@@ -295,7 +296,7 @@ func Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -314,10 +315,10 @@ func Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			// pour rien, la réponse rapide disait que le compte n'existe pas.
 			_ = bcrypt.CompareHashAndPassword(unknownUserHash(), []byte(req.Password))
 			accountLoginLimiter.allow(account)
-			writeJSONError(w, http.StatusUnauthorized, "Invalid username or password")
+			writeJSONError(w, http.StatusUnauthorized, "Nom d’utilisateur ou mot de passe incorrect")
 		} else {
 			log.Printf("Login database query error: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		}
 		return
 	}
@@ -326,7 +327,7 @@ func Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// the server a full profile load.
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
 		accountLoginLimiter.allow(account)
-		writeJSONError(w, http.StatusUnauthorized, "Invalid username or password")
+		writeJSONError(w, http.StatusUnauthorized, "Nom d’utilisateur ou mot de passe incorrect")
 		return
 	}
 
@@ -334,7 +335,7 @@ func Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	user, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("Login: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -354,13 +355,13 @@ func openLoginSession(w http.ResponseWriter, user models.User, recoveryCodes []s
 	token, err := GenerateRandomToken()
 	if err != nil {
 		log.Printf("Failed to generate token: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
 	if err := storeSession(database.DB, token, user.ID); err != nil {
 		log.Printf("Failed to save session token: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -388,13 +389,13 @@ func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		writeJSONError(w, http.StatusUnauthorized, "Authorization header required")
+		writeJSONError(w, http.StatusUnauthorized, "En-tête Authorization requis")
 		return
 	}
 
 	parts := strings.Split(authHeader, " ")
 	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-		writeJSONError(w, http.StatusUnauthorized, "Invalid Authorization header")
+		writeJSONError(w, http.StatusUnauthorized, "En-tête Authorization invalide")
 		return
 	}
 
@@ -403,7 +404,7 @@ func Logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// Delete session from DB
 	if err := deleteSession(token); err != nil {
 		log.Printf("Logout database deletion error: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	forgetSessionClient(sessionKey(token))
@@ -419,7 +420,7 @@ func Me(w http.ResponseWriter, r *http.Request, _ httprouter.Params, userID int)
 	user, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("Me handler query error: %v", err)
-		writeJSONError(w, http.StatusNotFound, "User not found")
+		writeJSONError(w, http.StatusNotFound, "Utilisateur introuvable")
 		return
 	}
 
@@ -439,7 +440,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 
 	var req ChangePasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	if len(req.NewPassword) < minPasswordLength {
@@ -450,7 +451,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 	var currentHash string
 	if err := database.DB.QueryRow("SELECT password_hash FROM users WHERE id = ?", userID).Scan(&currentHash); err != nil {
 		log.Printf("ChangePassword: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(req.CurrentPassword)); err != nil {
@@ -460,7 +461,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 
 	if err := setUserPassword(userID, req.NewPassword); err != nil {
 		log.Printf("ChangePassword: failed to update user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 

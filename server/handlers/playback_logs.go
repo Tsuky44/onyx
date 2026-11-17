@@ -102,7 +102,7 @@ func AttachPlaybackLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		HistoryID int64 `json:"history_id"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, playbackLogMaxBytes*2)).Decode(&body); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid log payload")
+		writeJSONError(w, http.StatusBadRequest, "Journal de lecture invalide")
 		return
 	}
 
@@ -137,7 +137,7 @@ func AttachPlaybackLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	}
 	encoded, err := json.Marshal(lines)
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid log payload")
+		writeJSONError(w, http.StatusBadRequest, "Journal de lecture invalide")
 		return
 	}
 
@@ -155,7 +155,7 @@ func AttachPlaybackLogs(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 			updated_at = excluded.updated_at`,
 		historyID, hasError, len(lines), string(encoded), stats, historyStamp(time.Now()),
 	); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	pruneOldPlaybackLogs()
@@ -196,7 +196,7 @@ func pruneOldPlaybackLogs() {
 func GetPlaybackLogs(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, _ int) {
 	historyID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || historyID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid history id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant d’historique invalide")
 		return
 	}
 
@@ -219,7 +219,7 @@ func GetPlaybackLogs(w http.ResponseWriter, _ *http.Request, ps httprouter.Param
 		// ou une app tuée avant d'envoyer. Une liste vide le dit mieux qu'un
 		// 404, qui se confondrait avec une ligne d'historique absente.
 	case err != nil:
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	default:
 		if err := json.Unmarshal([]byte(body), &out.Lines); err != nil {

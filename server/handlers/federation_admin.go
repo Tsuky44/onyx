@@ -48,7 +48,7 @@ func ListPeerServers(w http.ResponseWriter, _ *http.Request, _ httprouter.Params
 	w.Header().Set("Content-Type", "application/json")
 	peers, err := loadPeerServers("")
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	json.NewEncoder(w).Encode(peers)
@@ -70,12 +70,12 @@ func ApprovePeerServer(w http.ResponseWriter, _ *http.Request, ps httprouter.Par
 	w.Header().Set("Content-Type", "application/json")
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant invalide")
 		return
 	}
 	res, err := database.DB.Exec(`UPDATE peer_servers SET local_approved = 1, approval_sent = 0 WHERE id = ?`, id)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -97,7 +97,7 @@ func UpdatePeerServer(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	id, err := strconv.Atoi(ps.ByName("id"))
 	var body updatePeerBody
 	if err != nil || json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body) != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	peerURL, ok := normalizeServerURL(body.URL)
@@ -107,7 +107,7 @@ func UpdatePeerServer(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 	res, err := database.DB.Exec(`UPDATE peer_servers SET url = ?, last_error = '' WHERE id = ?`, peerURL, id)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -125,7 +125,7 @@ func RemovePeerServer(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	w.Header().Set("Content-Type", "application/json")
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant invalide")
 		return
 	}
 	peer, err := scanPeer(database.DB.QueryRow(`SELECT `+peerColumns+` FROM peer_servers WHERE id = ?`, id))
@@ -137,7 +137,7 @@ func RemovePeerServer(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	defer cancel()
 	_, _ = peerCall(ctx, peer, "/api/federation/forget", struct{}{}, nil)
 	if _, err := database.DB.Exec(`DELETE FROM peer_servers WHERE id = ?`, id); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Write([]byte(`{"status":"ok"}`))

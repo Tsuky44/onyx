@@ -24,11 +24,11 @@ func CreatePlaybackTicket(w http.ResponseWriter, r *http.Request, _ httprouter.P
 		Purpose string `json:"purpose"`
 	}
 	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body) != nil || body.MediaID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	if !isPlayableMedia(body.MediaID) {
-		writeJSONError(w, http.StatusNotFound, "Playable media not found")
+		writeJSONError(w, http.StatusNotFound, "Média lisible introuvable")
 		return
 	}
 	issue := PlaybackTickets.Issue
@@ -37,7 +37,7 @@ func CreatePlaybackTicket(w http.ResponseWriter, r *http.Request, _ httprouter.P
 	}
 	token, ticket, err := issue(userID, body.MediaID)
 	if err != nil {
-		writeJSONError(w, http.StatusServiceUnavailable, "Playback ticket unavailable")
+		writeJSONError(w, http.StatusServiceUnavailable, "Ticket de lecture indisponible")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -51,7 +51,7 @@ func UpdatePlaybackTicket(w http.ResponseWriter, r *http.Request, _ httprouter.P
 		Ticket string `json:"ticket"`
 	}
 	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body) != nil || len(body.Ticket) != 43 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid ticket")
+		writeJSONError(w, http.StatusBadRequest, "Ticket de lecture invalide")
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
@@ -62,7 +62,7 @@ func UpdatePlaybackTicket(w http.ResponseWriter, r *http.Request, _ httprouter.P
 	}
 	ticket, err := PlaybackTickets.Renew(body.Ticket, userID)
 	if err != nil {
-		writeJSONError(w, http.StatusUnauthorized, "Playback ticket expired")
+		writeJSONError(w, http.StatusUnauthorized, "Ticket de lecture expiré")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

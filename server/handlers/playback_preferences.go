@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"project-player/server/database"
+	"project-player/server/i18n"
 	"project-player/server/models"
 
 	"github.com/julienschmidt/httprouter"
@@ -143,7 +144,7 @@ func GetPlaybackPreferences(w http.ResponseWriter, r *http.Request, _ httprouter
 	prefs, err := loadPlaybackPreferences(userID)
 	if err != nil {
 		log.Printf("GetPlaybackPreferences: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -156,21 +157,21 @@ func UpdatePlaybackPreferences(w http.ResponseWriter, r *http.Request, _ httprou
 	r.Body = http.MaxBytesReader(w, r.Body, playbackPreferencesBodyLimit)
 	var req playbackPreferencesUpdate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
 	current, err := loadPlaybackPreferences(userID)
 	if err != nil {
 		log.Printf("UpdatePlaybackPreferences: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	next, err := applyPlaybackPreferencesUpdate(current, req)
 	if err != nil {
-		message := "Invalid still-watching settings"
+		message := i18n.Key("Réglages « Toujours là ? » invalides")
 		if errors.Is(err, errInvalidAudioLang) {
-			message = "Invalid audio language"
+			message = i18n.Key("Langue audio invalide")
 		}
 		writeJSONError(w, http.StatusBadRequest, message)
 		return
@@ -195,14 +196,14 @@ func UpdatePlaybackPreferences(w http.ResponseWriter, r *http.Request, _ httprou
 		next.StillWatchingEnabled, next.StillWatchingEpisodes,
 		next.StillWatchingFrom, next.StillWatchingUntil); err != nil {
 		log.Printf("UpdatePlaybackPreferences: save: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 
 	stored, err := loadPlaybackPreferences(userID)
 	if err != nil {
 		log.Printf("UpdatePlaybackPreferences: reload: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

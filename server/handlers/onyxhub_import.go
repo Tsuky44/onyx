@@ -43,7 +43,7 @@ func OnyxHubImported(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	var req onyxHubImportRequest
 	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || len(req.Paths) > maxImportPaths {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
