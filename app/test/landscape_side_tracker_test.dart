@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/player/hooks/use_landscape_side.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 Duration ms(int v) => Duration(milliseconds: v);
 
@@ -58,6 +61,81 @@ void main() {
       t.add(-9.5, 0, 1, ms(100));
       t.cancelPending();
       expect(t.add(-9.5, 0, 1, ms(900)), isNull);
+    });
+  });
+
+  group('PlayerLandscapeLock', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+
+    /// Ce que le verrou demande au système, appel par appel.
+    Future<List<List<String>>> requestsFor({
+      required bool mirrored,
+      required double x,
+    }) async {
+      final requests = <List<String>>[];
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'SystemChrome.setPreferredOrientations') {
+          requests.add((call.arguments as List).cast<String>());
+        }
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+
+      final events = StreamController<AccelerometerEvent>();
+      final lock = PlayerLandscapeLock(
+        isSuspended: () => false,
+        events: events.stream,
+        mirrored: mirrored,
+      )..start();
+      events.add(AccelerometerEvent(x, 0.5, 1, DateTime(2026)));
+      await Future<void>.delayed(Duration.zero);
+      lock.dispose();
+      await events.close();
+      return requests;
+    }
+
+    const both = [
+      'DeviceOrientation.landscapeLeft',
+      'DeviceOrientation.landscapeRight',
+    ];
+
+    test('sur Android, le haut à gauche demande landscapeLeft', () async {
+      expect(await requestsFor(mirrored: false, x: 9.5), [
+        both,
+        ['DeviceOrientation.landscapeLeft'],
+      ]);
+    });
+
+    test(
+        'sur iPhone, le haut à gauche demande landscapeRight : iOS nomme le '
+        'paysage d’après le bouton principal, pas d’après le haut', () async {
+      // La même main, la même mesure, le nom opposé. Sans cet échange l'image
+      // passait à l'envers dès la première mesure (1.1.53 et 1.1.54).
+      expect(await requestsFor(mirrored: true, x: 9.5), [
+        both,
+        ['DeviceOrientation.landscapeRight'],
+      ]);
+      expect(await requestsFor(mirrored: true, x: -9.5), [
+        both,
+        ['DeviceOrientation.landscapeLeft'],
+      ]);
+    });
+
+    test('seuls les deux paysages s’échangent', () {
+      for (final side in DeviceOrientation.values) {
+        expect(PlayerLandscapeLock.orientationFor(side, mirrored: false), side);
+      }
+      expect(
+        PlayerLandscapeLock.orientationFor(
+          DeviceOrientation.portraitUp,
+          mirrored: true,
+        ),
+        DeviceOrientation.portraitUp,
+      );
     });
   });
 }

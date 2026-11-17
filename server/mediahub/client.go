@@ -1,7 +1,9 @@
 // Package mediahub est le client d'Onyx vers son compagnon de demandes
-// (ADR-0089) : MediaHub par son API d'intégration v1, ou OnyxHub, l'ancien
-// compagnon, par ses routes d'origine (ADR-0072 à 0077). L'appelant ne voit
-// qu'un Client ; le dialecte se reconnaît au premier appel et se retient.
+// (ADR-0089) : MediaHub par son API d'intégration v1, OnyxHub, l'ancien
+// compagnon, par ses routes d'origine (ADR-0072 à 0077), ou Overseerr et
+// Jellyseerr par l'API de Seerr (ADR-0136). L'appelant ne voit qu'un Client ;
+// le dialecte vient du service réglé, ou se reconnaît au premier appel et se
+// retient.
 package mediahub
 
 import (
@@ -55,6 +57,11 @@ type Client struct {
 	BaseURL string
 	APIKey  string
 	HTTP    *http.Client
+	// Service dit quel compagnon est en face. Vide : MediaHub (ou OnyxHub).
+	Service Service
+	// Language est la langue des titres que le compagnon ne garde pas et va
+	// chercher chez TMDB (Seerr), par exemple « fr-FR ». Vide : la sienne.
+	Language string
 }
 
 func (c Client) base() string { return strings.TrimRight(strings.TrimSpace(c.BaseURL), "/") }
@@ -66,6 +73,22 @@ func (c Client) Configured() bool { return c.base() != "" && c.key() != "" }
 // do envoie un appel et rend le statut et le corps. Une erreur n'est rendue
 // que si l'appel n'a pas abouti.
 func (c Client) do(ctx context.Context, method, path string, as Account, query url.Values, body []byte) (int, []byte, error) {
+	header := http.Header{}
+	header.Set("Authorization", "Bearer "+c.key())
+	if as.Username != "" {
+		header.Set("X-Player-Username", as.Username)
+	}
+	// L'id du compte Onyx est le lien stable : MediaHub y rattache le compte
+	// connecté avec Onyx (ADR-0090), OnyxHub ses demandes (ADR-0075).
+	if as.ID > 0 {
+		header.Set("X-Player-Id", strconv.Itoa(as.ID))
+	}
+	return c.roundTrip(ctx, method, path, header, query, body)
+}
+
+// roundTrip est l'aller-retour commun aux dialectes : seuls les en-têtes
+// changent de l'un à l'autre.
+func (c Client) roundTrip(ctx context.Context, method, path string, header http.Header, query url.Values, body []byte) (int, []byte, error) {
 	if !c.Configured() {
 		return 0, nil, ErrNotConfigured
 	}
@@ -81,15 +104,7 @@ func (c Client) do(ctx context.Context, method, path string, as Account, query u
 	if err != nil {
 		return 0, nil, fmt.Errorf("mediahub: build %s %s: %w", method, path, err)
 	}
-	req.Header.Set("Authorization", "Bearer "+c.key())
-	if as.Username != "" {
-		req.Header.Set("X-Player-Username", as.Username)
-	}
-	// L'id du compte Onyx est le lien stable : MediaHub y rattache le compte
-	// connecté avec Onyx (ADR-0090), OnyxHub ses demandes (ADR-0075).
-	if as.ID > 0 {
-		req.Header.Set("X-Player-Id", strconv.Itoa(as.ID))
-	}
+	req.Header = header
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

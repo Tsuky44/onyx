@@ -1,0 +1,17 @@
+{
+  "pageInfo": { "pages": 1, "pageSize": 100, "results": 3, "page": 1 },
+  "results": [
+    {
+      "id": 1, "email": "admin@example.org", "plexUsername": null, "jellyfinUsername": "admin",
+      "username": null, "displayName": "admin", "permissions": 2, "requestCount": 3
+    },
+    {
+      "id": 2, "email": "lea@example.org", "plexUsername": null, "jellyfinUsername": "Lea",
+      "username": null, "displayName": "Lea", "permissions": 32, "requestCount": 2
+    },
+    {
+      "id": 3, "email": "hugo@example.org", "plexUsername": null, "jellyfinUsername": null,
+      "username": "hugo", "displayName": "hugo", "permissions": 16416, "requestCount": 1
+    }
+  ]
+}

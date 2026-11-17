@@ -18,6 +18,9 @@ func (c Client) CreateRequest(ctx context.Context, as Account, body []byte) (int
 	if err != nil {
 		return 0, nil, err
 	}
+	if dialect == DialectSeerr {
+		return c.seerrCreate(ctx, as, body)
+	}
 	path := "/api/request"
 	if dialect == DialectV1 {
 		path = V1Path + "/requests"
@@ -47,6 +50,9 @@ func (c Client) Requests(ctx context.Context, as Account, scope Scope) ([]Lot, e
 	dialect, err := c.dialect(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if dialect == DialectSeerr {
+		return c.seerrRequests(ctx, as, scope)
 	}
 	if dialect == DialectOnyxHub {
 		if scope != ScopeMine {
@@ -110,6 +116,9 @@ func (c Client) Feed(ctx context.Context, as Account, after *int) (Feed, error) 
 	dialect, err := c.dialect(ctx)
 	if err != nil {
 		return Feed{}, err
+	}
+	if dialect == DialectSeerr {
+		return c.seerrFeed(ctx, as, after)
 	}
 	query := url.Values{}
 	if after != nil {
@@ -200,11 +209,15 @@ type moderation struct {
 
 // Moderate applique une décision à chaque ligne d'un lot, au nom du compte :
 // MediaHub juge du droit (update ou delete MediaRequest). La première ligne
-// refusée arrête le lot et rend son erreur.
+// refusée arrête le lot et rend son erreur. Overseerr et Jellyseerr ne gardent
+// pas de motif de refus : reason n'y va pas.
 func (c Client) Moderate(ctx context.Context, as Account, ids []int, action Action, reason string) error {
 	dialect, err := c.dialect(ctx)
 	if err != nil {
 		return err
+	}
+	if dialect == DialectSeerr {
+		return c.seerrModerate(ctx, as, ids, action)
 	}
 	if dialect != DialectV1 {
 		return ErrUnsupported
@@ -231,11 +244,12 @@ func (c Client) Moderate(ctx context.Context, as Account, ids []int, action Acti
 
 // Access dit ce que le compte peut faire chez le compagnon.
 type Access struct {
-	// Service vaut "mediahub" ou "onyxhub".
+	// Service vaut "mediahub", "onyxhub", "overseerr" ou "jellyseerr".
 	Service string `json:"service"`
 	Version string `json:"version,omitempty"`
-	// Linked : un compte MediaHub porte le nom du compte Onyx. Sans lui,
-	// MediaHub prête les droits d'un compte sans rôle, sans demandes à lui.
+	// Linked : un compte du compagnon porte le nom du compte Onyx. Sans lui,
+	// MediaHub prête les droits d'un compte sans rôle, sans demandes à lui ;
+	// Overseerr et Jellyseerr font agir le compte de la clé (ADR-0136).
 	Linked bool      `json:"linked"`
 	Can    Abilities `json:"can"`
 	// SeasonChoice : le compagnon laisse choisir les saisons d'une série au
@@ -249,6 +263,9 @@ func (c Client) Access(ctx context.Context, as Account) (Access, error) {
 	dialect, err := c.dialect(ctx)
 	if err != nil {
 		return Access{}, err
+	}
+	if dialect == DialectSeerr {
+		return c.seerrAccess(ctx, as)
 	}
 	if dialect == DialectOnyxHub {
 		return Access{Service: DialectOnyxHub.String(), Linked: true, Can: Abilities{Read: true, Request: true}}, nil

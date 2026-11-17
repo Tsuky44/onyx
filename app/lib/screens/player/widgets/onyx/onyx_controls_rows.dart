@@ -13,8 +13,8 @@ extension _OnyxControlsRows on OnyxControlsLayer {
   ///
   /// Rien au milieu de l'image ni de bouton Retour : OK met en pause, gauche
   /// et droite déplacent sur la barre, Retour quitte. En haut à gauche le logo
-  /// du titre ; en bas, le titre et un bouton rond par réglage, la barre de
-  /// lecture et ses temps, puis les onglets et leur volet (ADR-0130).
+  /// du titre ; en bas, ce qu'on regarde et l'essentiel en boutons ronds, la barre de
+  /// lecture et ses temps, puis les onglets et leur volet (ADR-0130, ADR-0137).
   ///
   /// Des rangées parcourues en ligne droite ([TvRegion.controlRows]) : les
   /// boutons ronds, la barre, les onglets, puis celles du volet ouvert. La
@@ -59,32 +59,44 @@ extension _OnyxControlsRows on OnyxControlsLayer {
     );
   }
 
-  /// Le logo du titre, en haut à gauche. Sans logo, rien : le titre est déjà
-  /// écrit au-dessus de la barre, et le répéter ici le dirait deux fois.
+  /// Le logo du titre, en haut à gauche. Voir [_buildTitleMark].
   Widget _buildTvTop(OnyxChromeMetrics m) {
-    final url = logoUrl;
     return OnyxScrim(
       gradient: OnyxChromeTheme.topScrim,
       child: Padding(
         padding: EdgeInsets.fromLTRB(m.gutter, m.topInset, m.gutter, 64),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: url == null || url.isEmpty
-              ? SizedBox(height: m.logoHeight)
-              : IgnorePointer(
-                  child: AppNetworkImage(
-                    url: url,
-                    height: m.logoHeight,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.centerLeft,
-                    fadeInDuration: const Duration(milliseconds: 120),
-                    // La même image décodée que l'en-tête de la fiche.
-                    decodeAtSourceSize: true,
-                    placeholder: SizedBox(height: m.logoHeight),
-                    errorWidget: SizedBox(height: m.logoHeight),
-                  ),
-                ),
+          child: _buildTitleMark(m),
         ),
+      ),
+    );
+  }
+
+  /// Ce qui dit le titre, en haut à gauche d'un téléviseur et d'un écran tenu
+  /// en main : son logo.
+  ///
+  /// Sans logo, ou le temps qu'il arrive, le nom de la série en toutes
+  /// lettres pour un épisode : la ligne du bas ne dit plus que l'épisode
+  /// ([_buildIdentityLine]), et sans cela rien ne dirait la série. Rien pour
+  /// un film, dont le titre est écrit en bas. Transparent aux touchers.
+  Widget _buildTitleMark(OnyxChromeMetrics m) {
+    final Widget standIn = isEpisode
+        ? SizedBox(height: m.logoHeight, child: _brandText(m))
+        : SizedBox(height: m.logoHeight);
+    final url = logoUrl;
+    if (url == null || url.isEmpty) return IgnorePointer(child: standIn);
+    return IgnorePointer(
+      child: AppNetworkImage(
+        url: url,
+        height: m.logoHeight,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        fadeInDuration: AppMotion.micro,
+        // La même image décodée que l'en-tête de la fiche.
+        decodeAtSourceSize: true,
+        placeholder: standIn,
+        errorWidget: standIn,
       ),
     );
   }
@@ -110,9 +122,9 @@ extension _OnyxControlsRows on OnyxControlsLayer {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Expanded(child: _buildTvTitleBlock(m)),
+                      Expanded(child: _buildIdentityLine(m)),
                       const SizedBox(width: 24),
-                      TvRegion.controls(child: _buildTvActions(m)),
+                      TvRegion.controls(child: _buildEssentialActions(m)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -161,48 +173,41 @@ extension _OnyxControlsRows on OnyxControlsLayer {
     );
   }
 
-  /// Le titre en gras, l'épisode ou l'année dessous : l'ordre du lecteur
-  /// d'Apple, l'inverse des autres arrangements.
-  Widget _buildTvTitleBlock(OnyxChromeMetrics m) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title ?? '',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: OnyxChromeTheme.title,
-            fontSize: m.titleSize,
-            fontWeight: FontWeight.w700,
-            height: 1.15,
-            letterSpacing: -0.4,
-          ),
-        ),
-        if (overline != null && overline!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            overline!,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: OnyxChromeTheme.time,
-              fontSize: m.metaSize,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ],
+  /// Ce qu'on regarde, en une ligne, en bas à gauche : le nom de l'épisode
+  /// pour une série, le titre pour un film, dans le même dessin.
+  ///
+  /// L'ADR-0124 y écrivait le nom de la série en gras, l'épisode dessous. Le
+  /// logo, en haut, dit déjà la série ([_buildTitleMark]) : le répéter en
+  /// gros ici le disait deux fois sur le même écran (demande de
+  /// l'utilisateur, ADR-0137).
+  Widget _buildIdentityLine(OnyxChromeMetrics m) {
+    final episode = overline;
+    final line = isEpisode && episode != null && episode.isNotEmpty
+        ? episode
+        : (title ?? '');
+    return Text(
+      line,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: OnyxChromeTheme.time,
+        fontSize: m.metaSize,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 
-  /// Les boutons ronds, à droite du titre : un par réglage, chacun avec son
-  /// menu, entre l'épisode précédent et le suivant quand il y en a
-  /// (ADR-0130). L'ADR-0124 rangeait la qualité, la vitesse, le format
-  /// d'image et la minuterie derrière un seul bouton « Réglages » : un index
-  /// à traverser pour chaque changement.
-  Widget _buildTvActions(OnyxChromeMetrics m) {
+  /// L'essentiel, à droite du titre, en boutons ronds de verre : les
+  /// sous-titres et l'audio, chacun avec son menu, la roue crantée pour le
+  /// reste (qualité, vitesse, format d'image, minuterie), entre l'épisode
+  /// précédent et le suivant quand il y en a. Le bouton reste allumé tant que
+  /// son menu est ouvert.
+  ///
+  /// La même rangée sur un téléviseur et sur un écran tenu en main (ADR-0136,
+  /// ADR-0137). L'ADR-0130 donnait à un téléviseur un bouton par réglage :
+  /// huit disques contre le titre, dont quatre qu'on ne touche presque jamais
+  /// en cours de film.
+  Widget _buildEssentialActions(OnyxChromeMetrics m) {
     Widget plain(
       String id,
       IconData icon,
@@ -214,22 +219,35 @@ extension _OnyxControlsRows on OnyxControlsLayer {
           icon: icon,
           tooltip: label,
           metrics: m,
-          isTv: true,
+          isTv: isTv,
           glass: true,
           onPressed: onPressed,
         );
     // Le bouton est son propre repère : le menu se pose au-dessus de lui.
-    Widget menu(OnyxMenuSection section, IconData icon, String label) =>
+    // Sans [onOpenMenu], le chrome retombe sur l'ouverture d'avant.
+    Widget menu(
+      OnyxMenuSection section,
+      String id,
+      IconData icon,
+      String label, {
+      required VoidCallback fallback,
+      GlobalKey? buttonKey,
+    }) =>
         Builder(
-          key: ValueKey('onyx-${section.name}'),
+          key: ValueKey('onyx-$id'),
           builder: (anchor) => OnyxIconButton(
+            buttonKey: buttonKey,
             icon: icon,
             tooltip: label,
             metrics: m,
-            isTv: true,
+            isTv: isTv,
             glass: true,
             lit: openMenu == section,
-            onPressed: () => onOpenMenu?.call(section, anchor),
+            onPressed: () {
+              final open = onOpenMenu;
+              if (open == null) return fallback();
+              open(section, anchor);
+            },
           ),
         );
     final buttons = <Widget>[
@@ -240,16 +258,30 @@ extension _OnyxControlsRows on OnyxControlsLayer {
           tr('Épisode précédent'),
           onSkipPrevious!,
         ),
-      menu(OnyxMenuSection.subtitles, Icons.subtitles_rounded,
-          tr('Sous-titres')),
-      menu(OnyxMenuSection.audio, Icons.graphic_eq_rounded, tr('Pistes audio')),
-      menu(OnyxMenuSection.quality, Icons.high_quality_rounded, tr('Qualité')),
-      menu(OnyxMenuSection.speed, Icons.speed_rounded,
-          tr('Vitesse de lecture')),
-      menu(OnyxMenuSection.display, Icons.aspect_ratio_rounded,
-          tr('Format d’image')),
-      menu(OnyxMenuSection.sleep, Icons.bedtime_rounded,
-          tr('Minuterie de veille')),
+      menu(
+        OnyxMenuSection.subtitles,
+        'subtitles',
+        Icons.closed_caption_rounded,
+        tr('Sous-titres'),
+        fallback: onToggleSubtitles,
+        buttonKey: subtitlesButtonKey,
+      ),
+      menu(
+        OnyxMenuSection.audio,
+        'audio',
+        Icons.graphic_eq_rounded,
+        tr('Pistes audio'),
+        fallback: onOpenAudio,
+      ),
+      // L'index : [OnyxMenuSection.root].
+      menu(
+        OnyxMenuSection.root,
+        'settings',
+        Icons.settings_rounded,
+        tr('Réglages'),
+        fallback: onOpenSettings,
+        buttonKey: settingsButtonKey,
+      ),
       if (onSkipNext != null)
         plain(
           'next',

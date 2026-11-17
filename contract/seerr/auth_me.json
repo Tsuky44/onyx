@@ -1,0 +1,11 @@
+{
+  "id": 1,
+  "email": "admin@example.org",
+  "plexUsername": null,
+  "jellyfinUsername": "admin",
+  "username": null,
+  "displayName": "admin",
+  "permissions": 2,
+  "userType": 2,
+  "requestCount": 3
+}

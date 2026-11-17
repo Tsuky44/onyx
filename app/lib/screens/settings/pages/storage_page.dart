@@ -121,8 +121,8 @@ class _StoragePageState extends State<StoragePage> {
             ),
           ]),
           if (!list.requestsAvailable)
-            SettingsBanner(tr('MediaHub n’a pas répondu : les demandes ne '
-                's’affichent pas.')),
+            SettingsBanner(tr('Le service de demandes n’a pas répondu : les '
+                'demandes ne s’affichent pas.')),
           SettingsGroup(
             title: tr('Afficher'),
             children: [

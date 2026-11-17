@@ -18,8 +18,6 @@ import 'package:flutter_test/flutter_test.dart';
 const Map<String, String> _allowed = {
   'lib/screens/player/widgets/onyx/onyx_glass_panel.dart':
       'le verre du lecteur : le seul qui floute le film',
-  'lib/screens/player/widgets/video_zoom_hint.dart':
-      'l’indice de cadrage, une pastille d’une seconde sous le pincement',
   'lib/screens/player/widgets/end_card_chrome.dart':
       'floute une affiche derrière une page de fin, pas le film, et s’en passe '
           'en mode léger',

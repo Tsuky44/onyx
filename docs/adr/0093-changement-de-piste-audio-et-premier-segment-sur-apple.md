@@ -34,3 +34,14 @@ flux : Dolby Vision et Atmos en stream-copy restent des octets recopiés, seule 
 - Gain attendu sur `wait=` du premier segment : de ~1,1 s vers ~0,5 s (à mesurer).
 - Risque : jamais mesuré ici avec DV / Atmos. À vérifier sur appareil ; en cas de régression,
   retirer la ligne (le test garde la signalera).
+- **Une piste choisie pendant l'ouverture** (journal iPhone 1.1.52, MobLand S02E09 : le moteur ouvre
+  sur l'anglais Atmos, l'app demande le français dès que les pistes sont listées). La reconstruction
+  remplace alors le `load` en cours, qui lève `CancellationError` sans que la tâche du plugin soit
+  annulée, et la session revient en pause. `AetherPlayer` retenait chaque `play()` de Dart tant que
+  `loadTask` était posé : elle restait en pause, l'écran attendait ses 25 s puis annonçait « La
+  lecture ne démarre pas » devant une session prête. Le plugin libère maintenant `loadTask` dans ce
+  cas et porte au moteur le dernier play/pause demandé (`deliverWantedTransport`), que la
+  reconstruction en cours note et applique en finissant. Épinglé par
+  `app/test/onyx_player_apple_sources_test.dart`, faute de pouvoir exécuter du Swift hors de Xcode.
+  Le coût de la double ouverture (~0,35 s ici) reste : l'éviter demanderait de connaître la piste
+  avant d'ouvrir.

@@ -40,9 +40,10 @@ func IssueMediaHubSSO(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		writeMediaHubError(w, http.StatusServiceUnavailable, "MediaHub n'est pas configuré sur ce serveur")
 		return
 	}
-	// OnyxHub n'a pas de route d'atterrissage. Une adresse muette n'empêche
-	// rien : le rachat passe dans l'autre sens, de MediaHub vers Onyx.
-	if hub.Dialect(r.Context()) == mediahub.DialectOnyxHub {
+	// OnyxHub n'a pas de route d'atterrissage, Overseerr et Jellyseerr ont
+	// leur propre connexion. Une adresse muette n'empêche rien : le rachat
+	// passe dans l'autre sens, de MediaHub vers Onyx.
+	if dialect := hub.Dialect(r.Context()); dialect == mediahub.DialectOnyxHub || dialect == mediahub.DialectSeerr {
 		writeMediaHubError(w, http.StatusNotImplemented, "Le compagnon de demandes de ce serveur ne le permet pas")
 		return
 	}
@@ -66,7 +67,7 @@ func IssueMediaHubSSO(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 // serveur MediaHub qui appelle, avec la clé d'intégration. Seul lui peut donc
 // apprendre à qui appartient un code, même lu dans un historique.
 func RedeemMediaHubSSO(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if err := mediahub.VerifyKey(r.Header, config.MediaHubAPIKey()); err != nil {
+	if err := mediahub.VerifyKey(r.Header, mediaHubInboundKey()); err != nil {
 		writeJSONError(w, http.StatusUnauthorized, "Clé d'intégration invalide")
 		return
 	}

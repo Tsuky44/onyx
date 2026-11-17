@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 
-	"project-player/server/config"
 	"project-player/server/i18n"
 	"project-player/server/indexer"
 	"project-player/server/mediahub"
@@ -33,7 +32,7 @@ func MediaHubEvents(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		writeJSONError(w, http.StatusRequestEntityTooLarge, "Évènement trop gros")
 		return
 	}
-	if err := mediahub.VerifyDelivery(r.Header, body, config.MediaHubAPIKey()); err != nil {
+	if err := mediahub.VerifyDelivery(r.Header, body, mediaHubInboundKey()); err != nil {
 		message := i18n.Key("Clé d'intégration invalide")
 		if errors.Is(err, mediahub.ErrBadSignature) {
 			message = i18n.Key("Signature invalide")

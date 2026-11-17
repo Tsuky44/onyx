@@ -110,7 +110,11 @@ func GroupLots(rows []Request) []Lot {
 			order = append(order, key)
 		}
 		lot := &group.lot
-		lot.RequestIDs = append(lot.RequestIDs, row.ID)
+		// Une demande de Seerr donne une ligne par état de ses saisons : son
+		// numéro ne se modère qu'une fois.
+		if !containsInt(lot.RequestIDs, row.ID) {
+			lot.RequestIDs = append(lot.RequestIDs, row.ID)
+		}
 		group.statuses = append(group.statuses, row.Status)
 		if row.UpdatedAt > lot.UpdatedAt {
 			lot.UpdatedAt = row.UpdatedAt
@@ -150,6 +154,15 @@ func GroupLots(rows []Request) []Lot {
 		lots = append(lots, lot)
 	}
 	return lots
+}
+
+func containsInt(values []int, wanted int) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 // normalizeLegacyLots complète les lots lus chez OnyxHub, qui en écrivait

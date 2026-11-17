@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"project-player/server/config"
 	"project-player/server/indexer"
 
 	"github.com/julienschmidt/httprouter"
@@ -28,7 +27,7 @@ const maxImportPaths = 100
 // onyxHubKeyMatches compare en temps constant la clé présentée à celle
 // qu'Onyx présente lui-même à OnyxHub : c'est le même secret partagé.
 func onyxHubKeyMatches(r *http.Request) bool {
-	expected := strings.TrimSpace(config.MediaHubAPIKey())
+	expected := strings.TrimSpace(mediaHubInboundKey())
 	presented := strings.TrimSpace(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 	return expected != "" && presented != "" && subtle.ConstantTimeCompare([]byte(expected), []byte(presented)) == 1
 }

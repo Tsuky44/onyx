@@ -1,0 +1,10 @@
+{
+  "initialized": true,
+  "applicationTitle": "Jellyseerr",
+  "localLogin": true,
+  "movie4kEnabled": false,
+  "series4kEnabled": false,
+  "partialRequestsEnabled": true,
+  "mediaServerType": 2,
+  "locale": "fr"
+}

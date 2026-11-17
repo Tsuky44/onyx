@@ -176,10 +176,12 @@ class RequestAccess {
     canDelete: false,
   );
 
-  /// `mediahub` ou `onyxhub`.
+  /// `mediahub`, `onyxhub`, `overseerr` ou `jellyseerr`.
   final String service;
 
-  /// Un compte MediaHub porte le nom de ce compte Onyx.
+  /// Un compte du compagnon porte le nom de ce compte Onyx. Sans lui,
+  /// MediaHub ne retrouve pas ses demandes ; Overseerr et Jellyseerr le font
+  /// agir par le compte de la clé, partagé (ADR-0136).
   final bool linked;
   final bool canRequest;
   final bool canReadAll;

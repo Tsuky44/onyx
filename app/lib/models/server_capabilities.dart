@@ -61,6 +61,10 @@ class ServerCapabilities {
   /// Le serveur tire le code qui ouvre MediaHub déjà connecté (ADR-0090).
   static const mediaHubSso = 'mediahub_sso';
 
+  /// Le compagnon de demandes se choisit : MediaHub, Overseerr ou Jellyseerr
+  /// (ADR-0136). Sans elle, le serveur ne connaît que MediaHub.
+  static const requestServices = 'request_services';
+
   bool supports(String capability) => capabilities.contains(capability);
 
   /// Null quand la réponse n'est pas celle d'un serveur Onyx qui va bien.

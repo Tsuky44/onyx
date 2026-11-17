@@ -315,17 +315,13 @@ extension _PlayerStartup on _PlayerScreenState {
           isFinished: false, clientUpdatedAt: DateTime.now().toUtc())
           .catchError((Object _) => false));
       if (!mounted) return;
-      _isEpisodeTransition = true;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(tr('Lecture reprise sur {0}.', [relay.account.displayName])),
       ));
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-        settings: const RouteSettings(name: SearchRouteObserver.playerRouteName),
-        builder: (_) => PlayerScreen(media: relay.media,
-          inheritedPreferences: preferences, initialDisplayMode: _chosenDisplayMode,
-          seasonNumber: widget.seasonNumber, resumeAtSeconds: position,
-          startPaused: paused, relayAttempts: {...widget.relayAttempts, source: DateTime.now()}),
-      ));
+      _replaceWithPlayer(PlayerScreen(media: relay.media,
+        inheritedPreferences: preferences, initialDisplayMode: _chosenDisplayMode,
+        seasonNumber: widget.seasonNumber, resumeAtSeconds: position,
+        startPaused: paused, relayAttempts: {...widget.relayAttempts, source: DateTime.now()}));
     } on Object catch (error) {
       debugPrint('Player relay unavailable: ${redactPlaybackDiagnostic(error)}');
       if (mounted && !_progressFlushed) {
@@ -354,16 +350,11 @@ extension _PlayerStartup on _PlayerScreenState {
     final inheritedPreferences = _playerController.exportPreferences();
     final displayMode = _chosenDisplayMode;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: SearchRouteObserver.playerRouteName),
-        builder: (_) => PlayerScreen(
-          media: widget.media,
-          inheritedPreferences: inheritedPreferences,
-          initialDisplayMode: displayMode,
-          seasonNumber: widget.seasonNumber,
-        ),
-      ),
-    );
+    _replaceWithPlayer(PlayerScreen(
+      media: widget.media,
+      inheritedPreferences: inheritedPreferences,
+      initialDisplayMode: displayMode,
+      seasonNumber: widget.seasonNumber,
+    ));
   }
 }

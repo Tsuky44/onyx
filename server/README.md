@@ -136,19 +136,28 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   `disabled`, `optional` (défaut), `admins`, `everyone`. Variable d'environnement de repli :
   `OTP_POLICY`.
 
-#### ➡️ Liaison avec MediaHub (ADR-0072, ADR-0089)
-* Réglée par `mediahub_url` et `mediahub_api_key` dans `PUT /api/settings` (`manage_settings`).
-  Le compagnon est MediaHub par son API d'intégration v1 (`{url}/api/integrations/player/v1`), ou
+#### ➡️ Liaison avec le service de demandes (ADR-0072, ADR-0089, ADR-0136)
+* Réglée par `request_service`, `mediahub_url` et `mediahub_api_key` dans `PUT /api/settings`
+  (`manage_settings`). `request_service` vaut `mediahub` (défaut), `overseerr` ou `jellyseerr`
+  (`400` pour une autre valeur ; variable de repli `REQUEST_SERVICE`). Capacité `request_services`.
+* Avec `mediahub`, le compagnon est MediaHub par son API d'intégration v1 (`{url}/api/integrations/player/v1`), ou
   OnyxHub tant qu'il n'est pas retiré. Le serveur reconnaît le dialecte à `GET {url}/api/integrations/player/v1/ping`
   (`200`, `401`/`403` : MediaHub ; `404` : OnyxHub) et le retient 10 minutes.
+* Avec `overseerr` ou `jellyseerr`, le serveur parle leur API (`{url}/api/v1`) : `X-Api-Key: <mediahub_api_key>`
+  (la clé API de Paramètres → Général), et `X-Api-User: <id>` au nom du compte Seerr qui porte le nom du
+  compte Onyx, sinon du compte de la clé (`linked: false`). Les routes `/api/requests/*` rendent les mêmes
+  formats ; `releases` rend `501`, `progress` n'a pas d'import, et un refus de Seerr arrive en
+  `{ "error" }` français. Les routes `/api/integrations/mediahub/*` et `…/onyxhub/imported` refusent la
+  clé (`401`) : Seerr n'appelle pas Onyx. Exemples : `contract/seerr/`.
 * Chaque appel porte `Authorization: Bearer <mediahub_api_key>`, et, au nom d'un compte,
   `X-Player-Username` (MediaHub retrouve son compte par ce nom) et `X-Player-Id` (OnyxHub, ADR-0075).
   Formats échangés : `contract/mediahub/` (copie des exemples de MediaHub) et `contract/onyxhub/`.
 * `POST /api/settings/mediahub/test` (`manage_settings`) — body facultatif
-  `{ "mediahub_url", "mediahub_api_key" }` (vides : les valeurs enregistrées). Le serveur appelle le
-  ping v1 au nom de l'administrateur, puis, sur `404`, `GET {url}/api/integration/ping` d'OnyxHub, et
-  rend toujours `200` `{ "ok", "message", "service"?: "onyxhub"|"mediahub", "version"?, "notes"? }`.
-  `notes` : compte de l'administrateur absent de MediaHub, `ONYX_WEBHOOK_URL` non réglé.
+  `{ "mediahub_url", "mediahub_api_key", "request_service" }` (vides : les valeurs enregistrées). Le
+  serveur appelle le ping v1 au nom de l'administrateur, puis, sur `404`, `GET {url}/api/integration/ping`
+  d'OnyxHub ; pour Overseerr et Jellyseerr, `GET {url}/api/v1/status` puis le compte de la clé. Il
+  rend toujours `200` `{ "ok", "message", "service"?: "onyxhub"|"mediahub"|"overseerr"|"jellyseerr", "version"?, "notes"? }`.
+  `notes` : compte de l'administrateur absent du compagnon, `ONYX_WEBHOOK_URL` non réglé (MediaHub).
   Capacité `mediahub_link_test` sur `/api/ping`.
 * `GET /api/requests/catalog?query=&type=&page=` (`request_media`, ADR-0134) — tendances,
   découverte ou recherche TMDB. Une recherche reclasse ensemble les trois premières pages de TMDB
@@ -170,7 +179,9 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   `note` le motif d'un refus. Capacité `my_requests` (format en lots : `mediahub_requests`).
 * `GET /api/requests/access` (`request_media`, ADR-0089) — `{ "service", "version"?, "linked",
   "can": { "read", "request", "readAllRequests", "moderate", "delete" } }`, les droits du compte
-  MediaHub de même nom (OnyxHub : `request` seulement).
+  MediaHub de même nom (OnyxHub : `request` seulement ; Overseerr et Jellyseerr : ceux du compte de
+  même nom, sinon du compte de la clé). `readAllRequests`, `moderate`, `delete` et
+  `interactiveSearch` ne sont vrais que pour qui a aussi `manage_settings` chez Onyx.
 * `GET /api/requests/progress?tmdbId=&type=movie|tv` (`request_media`) — le téléchargement et
   l'import du titre, lus chez MediaHub (`GET /progress/:tmdbId`) : `{ "active", "downloading",
   "download": { "progress", "timeleft", "speed", "size", "sizeLeft", "releaseTitle" } | null,

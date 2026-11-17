@@ -781,14 +781,14 @@ void main() {
         ],
       );
 
-      // One per control: previous, the six settings, next, the scrubber, and
-      // the three tabs. A count is what catches a control added later without
-      // a way to reach it.
+      // One per control: previous, subtitles, audio, the gear, next, the
+      // scrubber, and the three tabs. A count is what catches a control added
+      // later without a way to reach it.
       final focusable = tester
           .widgetList<Focus>(find.byType(Focus))
           .where((f) => f.canRequestFocus)
           .length;
-      expect(focusable, greaterThanOrEqualTo(12));
+      expect(focusable, greaterThanOrEqualTo(9));
     });
 
     testWidgets('a hidden chrome holds no focus', (tester) async {
@@ -867,8 +867,8 @@ void main() {
         await nav.press(TraversalDirection.up);
         expect(progress.hasFocus, isFalse);
 
-        // Sans épisode voisin, la minuterie de veille ferme la rangée.
-        final last = find.byIcon(Icons.bedtime_rounded);
+        // Sans épisode voisin, la roue crantée ferme la rangée.
+        final last = find.byIcon(Icons.settings_rounded);
         var reached = focusedOn(tester, last);
         for (var press = 0; press < 8 && !reached; press++) {
           await nav.press(TraversalDirection.right);
@@ -1025,15 +1025,12 @@ void main() {
   });
 
   group('the television chrome is laid out for the remote', () {
-    // ADR-0124 : l'arrangement du lecteur d'Apple. ADR-0130 : un bouton rond
-    // par réglage, dans cet ordre.
+    // ADR-0124 : l'arrangement du lecteur d'Apple. ADR-0137 : l'essentiel en
+    // boutons ronds, la roue crantée pour le reste, dans cet ordre.
     const settingIcons = [
-      Icons.subtitles_rounded,
+      Icons.closed_caption_rounded,
       Icons.graphic_eq_rounded,
-      Icons.high_quality_rounded,
-      Icons.speed_rounded,
-      Icons.aspect_ratio_rounded,
-      Icons.bedtime_rounded,
+      Icons.settings_rounded,
     ];
 
     testWidgets(
@@ -1054,13 +1051,13 @@ void main() {
 
       final bar = tester.getRect(find.byType(OnyxProgressBar));
       final title = tester.getRect(find.text('Avatar : La Voie de l’eau'));
-      final overline = tester.getRect(find.text('2022'));
       final elapsed = tester.getRect(find.text('42:00'));
       final remaining = tester.getRect(find.text('-01:18:00'));
 
-      // Le titre en gras, sa ligne dessous, tous deux à gauche.
-      expect(title.bottom, lessThanOrEqualTo(overline.top));
-      expect(overline.bottom, lessThanOrEqualTo(bar.top));
+      // Un film : son titre en une ligne, à gauche, sans l'année dessous
+      // (ADR-0137).
+      expect(find.text('2022'), findsNothing);
+      expect(title.bottom, lessThanOrEqualTo(bar.top));
       expect(title.left, bar.left);
       // Les boutons ronds à droite, au-dessus de la barre.
       for (final icon in settingIcons) {
@@ -1078,8 +1075,8 @@ void main() {
     });
 
     testWidgets(
-        'one round button per setting, in order, and no « Réglages » to go '
-        'through', (tester) async {
+        'the essentials have a round button each, and the gear opens the '
+        'rest', (tester) async {
       final opened = <OnyxMenuSection>[];
       await pumpChrome(
         tester,
@@ -1093,8 +1090,15 @@ void main() {
         },
       );
 
-      expect(find.byIcon(Icons.more_horiz_rounded), findsNothing);
-      expect(find.byIcon(Icons.settings_rounded), findsNothing);
+      // Ce qui avait son bouton avant l'ADR-0137 est derrière la roue crantée.
+      for (final icon in [
+        Icons.high_quality_rounded,
+        Icons.speed_rounded,
+        Icons.aspect_ratio_rounded,
+        Icons.bedtime_rounded,
+      ]) {
+        expect(find.byIcon(icon), findsNothing, reason: '$icon');
+      }
       final lefts = [
         for (final icon in settingIcons) tester.getRect(find.byIcon(icon)).left,
       ];
@@ -1106,10 +1110,8 @@ void main() {
       expect(opened, const [
         OnyxMenuSection.subtitles,
         OnyxMenuSection.audio,
-        OnyxMenuSection.quality,
-        OnyxMenuSection.speed,
-        OnyxMenuSection.display,
-        OnyxMenuSection.sleep,
+        // L'index : la roue crantée.
+        OnyxMenuSection.root,
       ]);
     });
 
@@ -1119,7 +1121,7 @@ void main() {
         width: 960,
         height: 540,
         isTv: true,
-        openMenu: OnyxMenuSection.quality,
+        openMenu: OnyxMenuSection.root,
       );
 
       Color? disc(IconData icon) => (tester
@@ -1131,8 +1133,8 @@ void main() {
               .decoration! as BoxDecoration)
           .color;
 
-      expect(disc(Icons.high_quality_rounded), FocusFill.fill);
-      expect(disc(Icons.speed_rounded), isNot(FocusFill.fill));
+      expect(disc(Icons.settings_rounded), FocusFill.fill);
+      expect(disc(Icons.graphic_eq_rounded), isNot(FocusFill.fill));
     });
 
     testWidgets(
@@ -1140,7 +1142,7 @@ void main() {
         'remote', (tester) async {
       await pumpChrome(tester, width: 960, height: 540, isTv: true);
 
-      final icon = find.byIcon(Icons.speed_rounded);
+      final icon = find.byIcon(Icons.graphic_eq_rounded);
       BoxDecoration disc() => tester
           .widgetList<AnimatedContainer>(find.ancestor(
             of: icon,
@@ -1155,7 +1157,15 @@ void main() {
       expect(tester.getSize(find.ancestor(
         of: icon,
         matching: find.byType(AnimatedContainer),
-      ).first), const Size.square(OnyxIconButton.glassSize));
+      ).first), const Size.square(OnyxIconButton.glassDisc));
+      // Le disque a rétréci, pas la place du bouton dans la rangée.
+      expect(
+        tester.getSize(find.ancestor(
+          of: icon,
+          matching: find.byType(OnyxIconButton),
+        )),
+        const Size.square(OnyxIconButton.glassSize),
+      );
 
       Focus.of(tester.element(icon)).requestFocus();
       await tester.pumpAndSettle();
@@ -1204,16 +1214,16 @@ void main() {
     });
 
     testWidgets('drawn larger than the phone chrome', (tester) async {
-      double titleSize() => tester
-          .widgetList<Text>(find.text('Avatar : La Voie de l’eau'))
-          .map((text) => text.style!.fontSize!)
-          .reduce((a, b) => a > b ? a : b);
+      // Les heures : la seule ligne que les deux arrangements écrivent dans
+      // le même rôle, depuis que le téléviseur n'a plus de titre en gras.
+      double timeSize() =>
+          tester.widget<Text>(find.text('42:00')).style!.fontSize!;
 
       await pumpChrome(tester, width: 960, height: 540, isTv: true);
-      final tv = titleSize();
+      final tv = timeSize();
 
       await pumpChrome(tester, width: 700, height: 400, showVolume: false);
-      expect(tv, greaterThan(titleSize()));
+      expect(tv, greaterThan(timeSize()));
     });
 
     testWidgets('without a logo, nothing is drawn at the top left',

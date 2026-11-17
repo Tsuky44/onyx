@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import '../../../utils/app_platform.dart';
+
 /// Déduit de l'accéléromètre de quel côté le téléphone est tenu en paysage.
 ///
 /// Logique pure, sans capteur ni horloge : [PlayerLandscapeLock] lui passe
 /// les mesures. Les valeurs suivent la convention d'Android (sensors_plus
 /// ramène iOS à la même) : un téléphone tourné vers la gauche, le haut à
-/// gauche, lit `x ≈ +9,8`.
+/// gauche, lit `x ≈ +9,8`. Le côté rendu suit la même convention, qui n'est
+/// pas celle d'iOS : voir [PlayerLandscapeLock.orientationFor].
 class LandscapeSideTracker {
   /// Gravité minimale sur l'axe x (m/s²) pour compter comme paysage, soit à
   /// peu près 40° d'inclinaison franche. En dessous, on garde le côté actuel :
@@ -80,12 +83,18 @@ class PlayerLandscapeLock {
   PlayerLandscapeLock({
     required this.isSuspended,
     Stream<AccelerometerEvent>? events,
-  }) : _events = events;
+    bool? mirrored,
+  })  : _events = events,
+        _mirrored = mirrored ?? AppPlatform.isIOS;
 
   /// Vrai quand l'image ne doit pas bouger, en image dans l'image par exemple.
   final bool Function() isSuspended;
 
   final Stream<AccelerometerEvent>? _events;
+
+  /// Le système nomme les deux paysages à l'envers de [LandscapeSideTracker].
+  /// Voir [orientationFor]. Vrai sur iPhone ; passé par les tests.
+  final bool _mirrored;
   final LandscapeSideTracker _tracker = LandscapeSideTracker();
   final Stopwatch _clock = Stopwatch();
   StreamSubscription<AccelerometerEvent>? _subscription;
@@ -116,7 +125,33 @@ class PlayerLandscapeLock {
       return;
     }
     final side = _tracker.add(event.x, event.y, event.z, _clock.elapsed);
-    if (side != null) unawaited(SystemChrome.setPreferredOrientations([side]));
+    if (side == null) return;
+    unawaited(SystemChrome.setPreferredOrientations(
+      [orientationFor(side, mirrored: _mirrored)],
+    ));
+  }
+
+  /// Le paysage à demander au système pour le [side] que rend
+  /// [LandscapeSideTracker].
+  ///
+  /// Le suiveur parle comme Android : son `landscapeLeft` est un téléphone
+  /// dont le haut est à gauche, et Flutter le porte à Android sous le nom
+  /// `landscape`, qui veut dire la même chose. Sur iPhone, Flutter porte ce
+  /// même `landscapeLeft` à `UIInterfaceOrientationMaskLandscapeLeft`, qu'iOS
+  /// nomme d'après le côté du bouton principal : le *haut* du téléphone est
+  /// alors à droite. Demandé tel quel, c'était le paysage opposé à la main,
+  /// et l'image passait à l'envers dès la première mesure (iPhone, 1.1.53 et
+  /// 1.1.54). Les deux noms s'échangent donc sur iPhone.
+  static DeviceOrientation orientationFor(
+    DeviceOrientation side, {
+    required bool mirrored,
+  }) {
+    if (!mirrored) return side;
+    return switch (side) {
+      DeviceOrientation.landscapeLeft => DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeRight => DeviceOrientation.landscapeLeft,
+      _ => side,
+    };
   }
 
   /// Arrête le capteur. Ne rend pas l'orientation : c'est l'écran qui sait
