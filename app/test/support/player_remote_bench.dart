@@ -196,7 +196,8 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
     setState(() => openTab = null);
   }
 
-  /// `_showOnyxSettingsMenu` du lecteur, pour le bouton rond d'un réglage.
+  /// `_showOnyxSettingsMenu` du lecteur, pour un bouton rond : le menu de son
+  /// réglage, ou l'index du reste pour la roue crantée (ADR-0137).
   void _openMenu(OnyxMenuSection section, BuildContext anchor) {
     final screenSize = MediaQuery.sizeOf(context);
     final placement = placeSettingsPopup(anchor, screenSize);
@@ -219,7 +220,12 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
             playbackRates: const [0.5, 1.0, 1.5, 2.0],
             onRateChanged: (_) {},
             initialSection: section,
-            standalone: true,
+            standalone: section != OnyxMenuSection.root,
+            indexOmits: const {
+              OnyxMenuSection.subtitles,
+              OnyxMenuSection.audio,
+              OnyxMenuSection.chapters,
+            },
             onClose: dismiss,
           ),
         ),

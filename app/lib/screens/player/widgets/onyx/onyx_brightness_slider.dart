@@ -39,7 +39,17 @@ class OnyxBrightnessSlider extends StatefulWidget {
     required this.onChanged,
     required this.metrics,
     this.onDraggingChanged,
+    this.barWidth = defaultBarWidth,
   });
+
+  /// La colonne visible, dont la piste et l'icône tiennent le milieu. Sur un
+  /// écran tenu en main elle prend la largeur d'un bouton rond, pour que la
+  /// barre tombe à la verticale du verrou, au-dessus, et de l'épisode
+  /// suivant, au-dessous (ADR-0136).
+  final double barWidth;
+
+  /// La colonne d'un chrome à souris, qui n'a pas de boutons à qui s'aligner.
+  static const double defaultBarWidth = 52;
 
   @override
   State<OnyxBrightnessSlider> createState() => _OnyxBrightnessSliderState();
@@ -51,9 +61,6 @@ class _OnyxBrightnessSliderState extends State<OnyxBrightnessSlider> {
   /// thicker, because it sits over the film.
   static const double _trackWidth = 8;
   static const double _trackWidthDragging = 12;
-
-  /// The visible column the track is centred in.
-  static const double _barWidth = 52;
 
   /// The invisible column the finger is caught in — about a thumb's width of
   /// picture beside the bar. Vertically it takes the whole band the chrome
@@ -198,7 +205,7 @@ class _OnyxBrightnessSliderState extends State<OnyxBrightnessSlider> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 SizedBox(
-                  width: _barWidth,
+                  width: widget.barWidth,
                   height: trackHeight,
                   child: Center(
                     child: AnimatedContainer(
@@ -248,7 +255,7 @@ class _OnyxBrightnessSliderState extends State<OnyxBrightnessSlider> {
                 // stays clear of the finger for the whole of an upward drag.
                 if (withIcon)
                   SizedBox(
-                    width: _barWidth,
+                    width: widget.barWidth,
                     child: Center(
                       child: Icon(
                         value < 0.35
