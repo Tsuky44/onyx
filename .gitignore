@@ -52,3 +52,7 @@ server/data/
 
 # Flutter build output (generated)
 prototypes/**/windows/flutter/ephemeral/
+
+# Runtime : volume Docker et depot imbrique, jamais suivis
+/data/
+/mediahub/
