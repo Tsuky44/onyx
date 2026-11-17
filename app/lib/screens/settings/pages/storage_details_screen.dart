@@ -247,7 +247,7 @@ class _Requests extends StatelessWidget {
             title: request.requester,
             subtitle: [
               if (request.requestedAt != null)
-                tr('Demandé le {0}', [formatFrenchDay(request.requestedAt!)]),
+                tr('Demandé le {0}', [formatDay(request.requestedAt!)]),
               if (request.seasons.isNotEmpty)
                 tr('Saisons {0}', [request.seasons.join(', ')]),
             ].join(' · '),

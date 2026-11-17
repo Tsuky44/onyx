@@ -1,4 +1,5 @@
 import '../models/models.dart';
+import '../l10n/locale_formats.dart';
 import '../l10n/tr.dart';
 
 String formatDuration(int seconds) {
@@ -50,21 +51,6 @@ String? extractYear(String? releaseDate) {
   return releaseDate.split('-').first;
 }
 
-const _shortMonths = [
-  'janv.',
-  'févr.',
-  'mars',
-  'avr.',
-  'mai',
-  'juin',
-  'juil.',
-  'août',
-  'sept.',
-  'oct.',
-  'nov.',
-  'déc.',
-];
-
 /// Date TMDB (YYYY-MM-DD) en toutes lettres : « 12 mars 2024 ».
 ///
 /// Sert aux épisodes déjà sur le serveur, où la date seule suffit : un
@@ -73,7 +59,7 @@ String? formatReleaseDay(String? raw) {
   if (raw == null || raw.trim().isEmpty) return null;
   final parsed = DateTime.tryParse(raw.trim());
   if (parsed == null) return raw.trim();
-  return '${parsed.day} ${tr(_shortMonths[parsed.month - 1])} ${parsed.year}';
+  return LocaleFormats.mediumDate(parsed);
 }
 
 /// Formats a TMDB air/release date (YYYY-MM-DD) for unavailable episode tiles.
@@ -111,7 +97,7 @@ String mediaTypeLabel(MediaType type) {
   }
 }
 
-/// Taille de fichier lisible : « 1,4 Go ».
+/// Taille de fichier lisible : « 1,4 Go » / « 1.4 GB ».
 ///
 /// Base 1000 comme les systèmes d'exploitation grand public l'affichent, et
 /// une décimale seulement à partir du gigaoctet — sous cette échelle elle ne
@@ -126,5 +112,5 @@ String formatBytes(int bytes) {
     unit++;
   }
   final decimals = unit >= 3 && value < 100 ? 1 : 0;
-  return '${value.toStringAsFixed(decimals).replaceAll('.', ',')} ${tr(units[unit])}';
+  return '${LocaleFormats.decimal(value.toStringAsFixed(decimals))} ${tr(units[unit])}';
 }

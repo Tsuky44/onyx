@@ -217,7 +217,7 @@ String mediaShareSummary(MediaShare share, {DateTime? now}) {
       final expires = share.expiresAt;
       parts.add(expires == null
           ? tr('Sans limite')
-          : tr('Expire le {0}', [formatFrenchDay(expires)]));
+          : tr('Expire le {0}', [formatDay(expires)]));
   }
   if (share.hasPassword) parts.add(tr('Mot de passe'));
   return parts.join(' · ');

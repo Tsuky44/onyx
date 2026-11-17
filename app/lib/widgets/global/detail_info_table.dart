@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/locale_formats.dart';
 import '../../l10n/tr.dart';
 import '../../models/models.dart';
 import '../../theme/app_colors.dart';
@@ -106,19 +107,9 @@ String formatCountry(String? code) {
   return name == null ? code : tr(name);
 }
 
-/// Formate un montant en dollars (ex. « 190 M $US »).
-String formatMoney(int? amount) {
-  if (amount == null || amount <= 0) return '';
-  if (amount >= 1000000000) {
-    final val = (amount / 1000000000.0).toStringAsFixed(1);
-    return '$val Md \$US';
-  }
-  if (amount >= 1000000) {
-    final val = (amount / 1000000.0).round();
-    return '$val M \$US';
-  }
-  return '$amount \$US';
-}
+/// Formate un montant en dollars (« 190 M $US », « $190M » en anglais).
+String formatMoney(int? amount) =>
+    amount == null || amount <= 0 ? '' : LocaleFormats.dollars(amount);
 
 /// Cartel de la fiche (verre discret) : nature, langue et pays, créateurs,
 /// faits clés en grille, lignes de l'équipe et thèmes en bulles.

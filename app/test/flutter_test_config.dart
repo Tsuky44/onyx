@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:onyx/l10n/locale_formats.dart';
 import 'package:onyx/services/server_scheme.dart';
 
 /// Configuration commune à tous les tests.
@@ -11,5 +12,8 @@ import 'package:onyx/services/server_scheme.dart';
 /// `server_scheme_test.dart` posent leur propre sonde.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   ServerScheme.instance = ServerScheme(probe: (_) async => false);
+  // Les dates se formatent par langue : leurs données se chargent comme au
+  // démarrage de l'app.
+  await LocaleFormats.initialize();
   await testMain();
 }

@@ -5,6 +5,7 @@ import '../../../models/server_activity.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/app_type.dart';
+import '../../../l10n/locale_formats.dart';
 import '../../../l10n/tr.dart';
 import '../../../tv/tv_mode.dart';
 import 'settings_choice_focus.dart';
@@ -641,43 +642,14 @@ String relativeTime(DateTime moment, {DateTime? now}) {
   return '${moment.day.toString().padLeft(2, '0')}/${moment.month.toString().padLeft(2, '0')}/${moment.year}';
 }
 
-const _weekdays = [
-  'lundi',
-  'mardi',
-  'mercredi',
-  'jeudi',
-  'vendredi',
-  'samedi',
-  'dimanche',
-];
-const _months = [
-  'janvier',
-  'février',
-  'mars',
-  'avril',
-  'mai',
-  'juin',
-  'juillet',
-  'août',
-  'septembre',
-  'octobre',
-  'novembre',
-  'décembre',
-];
-
-/// « lundi 14 septembre ». L'app n'initialise pas les locales d'intl, et un
-/// libellé de jour ne justifie pas de le faire.
-String formatFrenchDay(DateTime day, {bool capitalize = false}) {
-  final label =
-      '${tr(_weekdays[day.weekday - 1])} ${day.day} ${tr(_months[day.month - 1])}';
+/// « lundi 14 septembre » / « Monday, September 14 ».
+String formatDay(DateTime day, {bool capitalize = false}) {
+  final label = LocaleFormats.weekdayDate(day);
   return capitalize ? label[0].toUpperCase() + label.substring(1) : label;
 }
 
-/// « 14 sept. » : une date courte pour les axes de graphique.
-String formatShortFrenchDate(DateTime day) {
-  final month = _months[day.month - 1];
-  return '${day.day} ${month.length > 4 ? '${month.substring(0, 4)}.' : month}';
-}
+/// « 14 sept. » / « Sep 14 » : une date courte pour les axes de graphique.
+String formatShortDate(DateTime day) => LocaleFormats.shortDate(day);
 
 /// « 42 h 10 », « 35 min » : un temps de visionnage.
 String formatWatchTime(int seconds) {

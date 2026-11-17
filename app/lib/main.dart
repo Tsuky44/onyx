@@ -1,3 +1,4 @@
+import 'l10n/locale_formats.dart';
 import 'services/media_details_cache.dart';
 import 'services/media_tracks_cache.dart';
 import 'dart:async';
@@ -236,6 +237,9 @@ void main() async {
   // appareil en anglais afficherait un écran de connexion en français, puis
   // le verrait se retraduire.
   await AppLanguage.load();
+  // Les dates et les nombres suivent la langue : leurs données se chargent
+  // avant la première image, comme la langue elle-même.
+  await LocaleFormats.initialize();
 
   // How much memory playback may spend here. Resolved before the first frame
   // like the TV mode above, because it is read when a media opens and the
