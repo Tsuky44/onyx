@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"project-player/server/i18n"
 )
 
 // Le client HTTP d'Emby, et l'index qui relie ses éléments aux contenus
@@ -55,14 +57,14 @@ func embyRequest(ctx context.Context, base, token, deviceID, method, path string
 		// une adresse du réseau interne refuse la connexion ou ne répond pas —
 		// de quoi cartographier ce réseau depuis n'importe quel compte.
 		log.Printf("Emby: %s %s: %v", method, base, err)
-		return errors.New("Emby injoignable à cette adresse")
+		return i18n.Errorf("Emby injoignable à cette adresse")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-		return &embyStatusError{resp.StatusCode, errEmbyAuth.Error()}
+		return &embyStatusError{resp.StatusCode, errEmbyAuth}
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return &embyStatusError{resp.StatusCode, fmt.Sprintf("Emby a répondu %d sur %s", resp.StatusCode, path)}
+		return &embyStatusError{resp.StatusCode, i18n.Errorf("Emby a répondu {0} sur {1}", resp.StatusCode, path)}
 	}
 	if out == nil {
 		_, _ = io.Copy(io.Discard, resp.Body)
@@ -72,7 +74,7 @@ func embyRequest(ctx context.Context, base, token, deviceID, method, path string
 		// Comme pour la connexion : l'erreur du décodeur citait le début de
 		// la réponse, de quoi reconnaître le service interne qui l'a donnée.
 		log.Printf("Emby: %s %s%s: decode: %v", method, base, path, err)
-		return errors.New("Réponse Emby illisible")
+		return i18n.Errorf("Réponse Emby illisible")
 	}
 	return nil
 }
@@ -99,13 +101,13 @@ func embyAuthenticate(ctx context.Context, base, deviceID, username, password st
 	err := embyRequest(ctx, base, "", deviceID, http.MethodPost, "/Users/AuthenticateByName", nil,
 		map[string]string{"Username": username, "Pw": password}, &result)
 	if isEmbyAuthError(err) {
-		return result, errors.New("Nom d’utilisateur ou mot de passe Emby incorrect")
+		return result, i18n.Errorf("Nom d’utilisateur ou mot de passe Emby incorrect")
 	}
 	if err != nil {
 		return result, err
 	}
 	if result.AccessToken == "" || result.User.ID == "" {
-		return result, errors.New("Ce serveur ne ressemble pas à un serveur Emby")
+		return result, i18n.Errorf("Ce serveur ne ressemble pas à un serveur Emby")
 	}
 	return result, nil
 }

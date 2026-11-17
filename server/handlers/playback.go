@@ -24,7 +24,7 @@ func GetEpisodeTimestamps(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	episodeID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid episode ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant d’épisode invalide")
 		return
 	}
 
@@ -35,10 +35,10 @@ func GetEpisodeTimestamps(w http.ResponseWriter, r *http.Request, ps httprouter.
 	).Scan(&introStart, &introEnd, &outroStart, &outroEnd, &seasonID, &duration)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			writeJSONError(w, http.StatusNotFound, "Episode not found")
+			writeJSONError(w, http.StatusNotFound, "Épisode introuvable")
 		} else {
 			log.Printf("Timestamps error: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		}
 		return
 	}
@@ -68,7 +68,7 @@ func GetEpisodeChapters(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 
 	episodeID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid episode ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant d’épisode invalide")
 		return
 	}
 
@@ -77,16 +77,16 @@ func GetEpisodeChapters(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	err = database.DB.QueryRow("SELECT file_path FROM medias WHERE id = ? AND type = 'episode'", episodeID).Scan(&filePath)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			writeJSONError(w, http.StatusNotFound, "Episode not found")
+			writeJSONError(w, http.StatusNotFound, "Épisode introuvable")
 		} else {
 			log.Printf("GetEpisodeChapters DB error: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		}
 		return
 	}
 
 	if filePath == "" {
-		writeJSONError(w, http.StatusBadRequest, "Media file path is empty")
+		writeJSONError(w, http.StatusBadRequest, "Le chemin du fichier du média est vide")
 		return
 	}
 
@@ -115,7 +115,7 @@ func GetMediaTracks(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 
 	mediaID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 
@@ -123,21 +123,21 @@ func GetMediaTracks(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	err = database.DB.QueryRow("SELECT file_path FROM medias WHERE id = ?", mediaID).Scan(&filePath)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			writeJSONError(w, http.StatusNotFound, "Media not found")
+			writeJSONError(w, http.StatusNotFound, "Média introuvable")
 		} else {
 			log.Printf("GetMediaTracks DB error: %v", err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		}
 		return
 	}
 
 	if filePath == "" {
-		writeJSONError(w, http.StatusBadRequest, "Media file path is empty")
+		writeJSONError(w, http.StatusBadRequest, "Le chemin du fichier du média est vide")
 		return
 	}
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		writeJSONError(w, http.StatusNotFound, "Media file not found on disk")
+		writeJSONError(w, http.StatusNotFound, "Fichier du média introuvable sur le disque")
 		return
 	}
 
@@ -149,7 +149,7 @@ func GetMediaTracks(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		probe, err = streaming.ProbeTracks(filePath)
 		if err != nil {
 			log.Printf("GetMediaTracks probe error for media %d: %v", mediaID, err)
-			writeJSONError(w, http.StatusInternalServerError, "Failed to probe media tracks")
+			writeJSONError(w, http.StatusInternalServerError, "Impossible d’analyser les pistes du média")
 			return
 		}
 		go safego.Run("PersistProbeAfterLiveProbe", func() { indexer.PersistProbeAfterLiveProbe(mediaID, filePath, probe) })

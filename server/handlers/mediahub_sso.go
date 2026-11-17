@@ -50,7 +50,7 @@ func IssueMediaHubSSO(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	code, err := mediaHubSSOCodes.Issue(userID)
 	if err != nil {
 		log.Printf("IssueMediaHubSSO: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -72,7 +72,7 @@ func RedeemMediaHubSSO(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	}
 	var req mediahub.SSORedeemRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&req); err != nil || req.Code == "" {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -89,7 +89,7 @@ func RedeemMediaHubSSO(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	}
 	if err != nil {
 		log.Printf("RedeemMediaHubSSO: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

@@ -155,12 +155,12 @@ func applyShowTrackPreferencesUpdate(
 func episodeShowForTrackPreferences(w http.ResponseWriter, ps httprouter.Params) (int, bool) {
 	mediaID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return 0, false
 	}
 	showID, ok := showIDForTrackPreferences(mediaID)
 	if !ok {
-		writeJSONError(w, http.StatusNotFound, "Media is not an episode or a movie")
+		writeJSONError(w, http.StatusNotFound, "Ce média n’est ni un épisode ni un film")
 		return 0, false
 	}
 	return showID, true
@@ -179,7 +179,7 @@ func GetShowTrackPreferences(w http.ResponseWriter, r *http.Request, ps httprout
 	prefs, err := loadShowTrackPreferences(userID, showID)
 	if err != nil {
 		log.Printf("GetShowTrackPreferences: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -197,19 +197,19 @@ func UpdateShowTrackPreferences(w http.ResponseWriter, r *http.Request, ps httpr
 	r.Body = http.MaxBytesReader(w, r.Body, playbackPreferencesBodyLimit)
 	var req showTrackPreferencesUpdate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
 	current, err := loadShowTrackPreferences(userID, showID)
 	if err != nil {
 		log.Printf("UpdateShowTrackPreferences: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	next, err := applyShowTrackPreferencesUpdate(current, req)
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid track preferences")
+		writeJSONError(w, http.StatusBadRequest, "Préférences de pistes invalides")
 		return
 	}
 
@@ -230,14 +230,14 @@ func UpdateShowTrackPreferences(w http.ResponseWriter, r *http.Request, ps httpr
 	`, userID, showID, next.AudioLang, next.Subtitle.Mode, next.Subtitle.Lang, next.Subtitle.Key,
 		next.Subtitle.Forced, next.Subtitle.Image, next.AwaitAudioLang); err != nil {
 		log.Printf("UpdateShowTrackPreferences: save: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 
 	stored, err := loadShowTrackPreferences(userID, showID)
 	if err != nil {
 		log.Printf("UpdateShowTrackPreferences: reload: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

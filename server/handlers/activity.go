@@ -441,7 +441,7 @@ func RunPlaybackActivity(ctx context.Context) {
 func ReportPlayback(w http.ResponseWriter, r *http.Request, _ httprouter.Params, userID int) {
 	var req PlaybackReport
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req); err != nil || req.MediaID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid playback report")
+		writeJSONError(w, http.StatusBadRequest, "Rapport de lecture invalide")
 		return
 	}
 	if req.Position < 0 {
@@ -457,11 +457,11 @@ func ReportPlayback(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 
 	if err := playbackActivity.report(sessionKey(token), userID, username, client, req); err != nil {
 		if err == sql.ErrNoRows {
-			writeJSONError(w, http.StatusNotFound, "Media not found")
+			writeJSONError(w, http.StatusNotFound, "Média introuvable")
 			return
 		}
 		log.Printf("ReportPlayback: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -562,7 +562,7 @@ func ListPlaybackHistory(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	entries, err := queryHistory(userFilter, queryInt(r, "limit", 50, 1, 200), beforeID)
 	if err != nil {
 		log.Printf("ListPlaybackHistory: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -580,7 +580,7 @@ func ClearPlaybackHistory(w http.ResponseWriter, _ *http.Request, _ httprouter.P
 	playbackActivity.mu.Unlock()
 	if _, err := database.DB.Exec(`DELETE FROM playback_history`); err != nil {
 		log.Printf("ClearPlaybackHistory: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -789,7 +789,7 @@ func writeStats(w http.ResponseWriter, r *http.Request, userID int, includeUsers
 	stats, err := computePlaybackStats(userID, days, offset, time.Now(), includeUsers)
 	if err != nil {
 		log.Printf("PlaybackStats: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

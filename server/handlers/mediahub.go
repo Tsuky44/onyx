@@ -12,6 +12,7 @@ import (
 	"project-player/server/config"
 	"project-player/server/database"
 	"project-player/server/httpx"
+	"project-player/server/i18n"
 	"project-player/server/mediahub"
 
 	"github.com/julienschmidt/httprouter"
@@ -51,7 +52,7 @@ func mediaHubAccount(userID int) (mediahub.Account, error) {
 func MediaHubRequest(w http.ResponseWriter, r *http.Request, _ httprouter.Params, userID int) {
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	if err != nil || !json.Valid(body) {
-		writeMediaHubError(w, http.StatusBadRequest, "Invalid request body")
+		writeMediaHubError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -160,7 +161,7 @@ func fetchMediaHubAvailability(tmdbID int, mediaType string, client *http.Client
 func mediaHubAccountOrFail(w http.ResponseWriter, userID int) (mediahub.Account, bool) {
 	account, err := mediaHubAccount(userID)
 	if err != nil {
-		writeMediaHubError(w, http.StatusUnauthorized, "Player user not found")
+		writeMediaHubError(w, http.StatusUnauthorized, "Utilisateur introuvable")
 		return mediahub.Account{}, false
 	}
 	return account, true
@@ -179,7 +180,7 @@ func writeMediaHubFailure(w http.ResponseWriter, where string, err error) {
 		if json.Valid(status.Body) {
 			_, _ = w.Write(status.Body)
 		} else {
-			_ = json.NewEncoder(w).Encode(errorResponse{Error: "Réponse illisible de MediaHub"})
+			_ = json.NewEncoder(w).Encode(errorResponse{Error: i18n.Respond(w, "Réponse illisible de MediaHub")})
 		}
 	case errors.Is(err, mediahub.ErrNotConfigured):
 		writeMediaHubError(w, http.StatusServiceUnavailable, "MediaHub n'est pas configuré sur ce serveur")
@@ -200,8 +201,11 @@ func playerUsername(userID int) (string, error) {
 	return username, err
 }
 
-func writeMediaHubError(w http.ResponseWriter, status int, message string) {
+// writeMediaHubError : même contrat que writeJSONError, pour les routes
+// MediaHub (phrase française, {0} pour les valeurs, ADR-0137).
+func writeMediaHubError(w http.ResponseWriter, status int, message string, args ...any) {
+	text := i18n.Respond(w, message, args...)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(errorResponse{Error: message})
+	_ = json.NewEncoder(w).Encode(errorResponse{Error: text})
 }

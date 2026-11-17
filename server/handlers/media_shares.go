@@ -64,7 +64,7 @@ func CreateMediaShare(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 	if err != nil {
 		log.Printf("CreateMediaShare: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -87,7 +87,7 @@ func ListMediaShares(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	shares, err := shareLinks().ListByUser(userID)
 	if err != nil {
 		log.Printf("ListMediaShares: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	ids := make([]int, 0, len(shares))
@@ -97,7 +97,7 @@ func ListMediaShares(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	displays, err := loadShareDisplays(ids)
 	if err != nil {
 		log.Printf("ListMediaShares: displays: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	// Les spectateurs ne sont qu'un complément : sans eux, la liste reste
@@ -131,7 +131,7 @@ func DeleteMediaShare(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 			return
 		}
 		log.Printf("DeleteMediaShare: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	PlaybackTickets.RevokeShare(id)

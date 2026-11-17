@@ -25,17 +25,17 @@ const remotePostersTimeout = 15 * time.Second
 func GetRemotePosters(w http.ResponseWriter, r *http.Request, ps httprouter.Params, _ int) {
 	mediaID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || mediaID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	target, err := artwork.Load(mediaID)
 	if errors.Is(err, artwork.ErrNotFound) {
-		writeJSONError(w, http.StatusNotFound, "Media not found")
+		writeJSONError(w, http.StatusNotFound, "Média introuvable")
 		return
 	}
 	if err != nil {
 		log.Printf("GetRemotePosters: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Unable to read media")
+		writeJSONError(w, http.StatusInternalServerError, "Impossible de lire le média")
 		return
 	}
 
@@ -67,12 +67,12 @@ type setPosterRequest struct {
 func SetMediaPoster(w http.ResponseWriter, r *http.Request, ps httprouter.Params, _ int) {
 	mediaID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || mediaID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	var req setPosterRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	err = artwork.Choose(mediaID, req.URL)
@@ -88,7 +88,7 @@ func SetMediaPoster(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 func ResetMediaPoster(w http.ResponseWriter, r *http.Request, ps httprouter.Params, _ int) {
 	mediaID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || mediaID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	if !writeArtworkError(w, "ResetMediaPoster", artwork.Reset(mediaID)) {
@@ -105,12 +105,12 @@ func writeArtworkError(w http.ResponseWriter, handler string, err error) bool {
 	case err == nil:
 		return true
 	case errors.Is(err, artwork.ErrNotFound):
-		writeJSONError(w, http.StatusNotFound, "Media not found")
+		writeJSONError(w, http.StatusNotFound, "Média introuvable")
 	case errors.Is(err, artwork.ErrHostNotAllowed):
-		writeJSONError(w, http.StatusBadRequest, "Image host not allowed")
+		writeJSONError(w, http.StatusBadRequest, "Hébergeur d’images non autorisé")
 	default:
 		log.Printf("%s: %v", handler, err)
-		writeJSONError(w, http.StatusInternalServerError, "Unable to save poster")
+		writeJSONError(w, http.StatusInternalServerError, "Impossible d’enregistrer l’affiche")
 	}
 	return false
 }

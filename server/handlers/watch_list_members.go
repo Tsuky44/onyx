@@ -49,7 +49,7 @@ func AddWatchListMember(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	if r.Body != nil {
 		r.Body = http.MaxBytesReader(w, r.Body, watchListBodyLimit)
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
-			writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+			writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 			return
 		}
 		if req.Role == "" {

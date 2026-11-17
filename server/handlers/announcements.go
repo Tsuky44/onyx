@@ -153,7 +153,7 @@ func GetPendingAnnouncement(w http.ResponseWriter, r *http.Request, _ httprouter
 	pending, err := loadPendingAnnouncement(userID)
 	if err != nil {
 		log.Printf("GetPendingAnnouncement: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	writeAnnouncement(w, pending)
@@ -165,12 +165,12 @@ func MarkAnnouncementSeen(w http.ResponseWriter, r *http.Request, _ httprouter.P
 	r.Body = http.MaxBytesReader(w, r.Body, announcementBodyLimit)
 	var req announcementSeenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	if err := markAnnouncementSeen(userID, req.ID); err != nil {
 		log.Printf("MarkAnnouncementSeen: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -183,7 +183,7 @@ func GetAnnouncement(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	current, err := loadCurrentAnnouncement()
 	if err != nil {
 		log.Printf("GetAnnouncement: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	writeAnnouncement(w, current)
@@ -196,20 +196,20 @@ func PublishAnnouncement(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	r.Body = http.MaxBytesReader(w, r.Body, announcementBodyLimit)
 	var req announcementUpdate
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	req, err := normalizeAnnouncement(req)
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, fmt.Sprintf(
-			"Le message est vide ou trop long (titre %d, message %d caractères au plus)",
-			maxAnnouncementTitle, maxAnnouncementMessage))
+		writeJSONError(w, http.StatusBadRequest,
+			"Le message est vide ou trop long (titre {0}, message {1} caractères au plus)",
+			maxAnnouncementTitle, maxAnnouncementMessage)
 		return
 	}
 	published, err := publishAnnouncement(userID, req)
 	if err != nil {
 		log.Printf("PublishAnnouncement: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	writeAnnouncement(w, published)
@@ -220,7 +220,7 @@ func PublishAnnouncement(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 func ClearAnnouncement(w http.ResponseWriter, r *http.Request, _ httprouter.Params, _ int) {
 	if _, err := database.DB.Exec(`DELETE FROM announcements`); err != nil {
 		log.Printf("ClearAnnouncement: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	writeAnnouncement(w, nil)

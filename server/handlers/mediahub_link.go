@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"project-player/server/config"
 	"project-player/server/httpx"
+	"project-player/server/i18n"
 	"project-player/server/mediahub"
 
 	"github.com/julienschmidt/httprouter"
@@ -52,14 +52,14 @@ type integrationPing struct {
 // probeMediaHub essaie d'abord le ping de l'API v1 de MediaHub, qui vérifie
 // la clé et dit ce que vaut le compte de l'administrateur. Un 404 dit un
 // compagnon plus ancien : on retombe sur la sonde d'OnyxHub.
-func probeMediaHub(baseURL, apiKey string, as mediahub.Account, client *http.Client) mediaHubLinkResult {
+func probeMediaHub(lang, baseURL, apiKey string, as mediahub.Account, client *http.Client) mediaHubLinkResult {
 	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
 	apiKey = strings.TrimSpace(apiKey)
 	if baseURL == "" {
-		return mediaHubLinkResult{Message: "Aucune adresse MediaHub n'est enregistrée."}
+		return mediaHubLinkResult{Message: i18n.T(lang, "Aucune adresse MediaHub n'est enregistrée.")}
 	}
 	if apiKey == "" {
-		return mediaHubLinkResult{Message: "Aucune clé d'intégration n'est enregistrée."}
+		return mediaHubLinkResult{Message: i18n.T(lang, "Aucune clé d'intégration n'est enregistrée.")}
 	}
 
 	hub := mediahub.Client{BaseURL: baseURL, APIKey: apiKey, HTTP: client}
@@ -68,39 +68,39 @@ func probeMediaHub(baseURL, apiKey string, as mediahub.Account, client *http.Cli
 	switch {
 	case err == nil && ping.Status == "ok":
 		hub.Remember(mediahub.DialectV1)
-		return mediaHubV1LinkResult(ping, as)
+		return mediaHubV1LinkResult(lang, ping, as)
 	case errors.As(err, &status) && (status.Status == http.StatusUnauthorized || status.Status == http.StatusForbidden):
 		hub.Remember(mediahub.DialectV1)
-		return mediaHubLinkResult{Message: "MediaHub répond, mais refuse cette clé.", Service: "mediahub"}
+		return mediaHubLinkResult{Message: i18n.T(lang, "MediaHub répond, mais refuse cette clé."), Service: "mediahub"}
 	case errors.As(err, &status) && (status.Status == http.StatusNotFound || status.Status == http.StatusMethodNotAllowed):
-		result := probeOnyxHub(baseURL, apiKey, client)
+		result := probeOnyxHub(lang, baseURL, apiKey, client)
 		if result.OK {
 			hub.Remember(mediahub.DialectOnyxHub)
 		}
 		return result
 	case errors.As(err, &status):
-		return mediaHubLinkResult{Message: fmt.Sprintf("Réponse inattendue de cette adresse (HTTP %d).", status.Status)}
+		return mediaHubLinkResult{Message: i18n.T(lang, "Réponse inattendue de cette adresse (HTTP {0}).", status.Status)}
 	case err == nil:
-		return mediaHubLinkResult{Message: "Cette adresse répond, mais pas comme MediaHub."}
+		return mediaHubLinkResult{Message: i18n.T(lang, "Cette adresse répond, mais pas comme MediaHub.")}
 	default:
-		return mediaHubLinkResult{Message: "Le serveur ne joint pas cette adresse."}
+		return mediaHubLinkResult{Message: i18n.T(lang, "Le serveur ne joint pas cette adresse.")}
 	}
 }
 
 // mediaHubV1LinkResult dit ce qui marche, puis ce qui manque encore.
-func mediaHubV1LinkResult(ping mediahub.Ping, as mediahub.Account) mediaHubLinkResult {
-	message := "MediaHub répond et accepte la clé."
+func mediaHubV1LinkResult(lang string, ping mediahub.Ping, as mediahub.Account) mediaHubLinkResult {
+	message := i18n.T(lang, "MediaHub répond et accepte la clé.")
 	if ping.Version != "" {
-		message = fmt.Sprintf("MediaHub %s répond et accepte la clé.", ping.Version)
+		message = i18n.T(lang, "MediaHub {0} répond et accepte la clé.", ping.Version)
 	}
 	var notes []string
 	if as.Username != "" && (ping.User == nil || !ping.User.Linked) {
-		notes = append(notes, fmt.Sprintf("Aucun compte MediaHub ne s'appelle « %s » : MediaHub retrouve chaque compte "+
+		notes = append(notes, i18n.T(lang, "Aucun compte MediaHub ne s'appelle « {0} » : MediaHub retrouve chaque compte "+
 			"d'Onyx par son nom, et un nom inconnu peut demander sans retrouver ses demandes.", as.Username))
 	}
 	if !ping.WebhookConfigured {
-		notes = append(notes, "MediaHub n'envoie pas ses évènements à Onyx : réglez ONYX_WEBHOOK_URL sur "+
-			"l'adresse d'Onyx suivie de /api/integrations/mediahub/events pour que les imports s'indexent tout de suite.")
+		notes = append(notes, i18n.T(lang, "MediaHub n'envoie pas ses évènements à Onyx : réglez ONYX_WEBHOOK_URL sur "+
+			"l'adresse d'Onyx suivie de /api/integrations/mediahub/events pour que les imports s'indexent tout de suite."))
 	}
 	return mediaHubLinkResult{OK: true, Message: message, Service: ping.Service, Version: ping.Version, Notes: notes}
 }
@@ -109,32 +109,32 @@ func mediaHubV1LinkResult(ping mediahub.Ping, as mediahub.Account) mediaHubLinkR
 // n'accepte que la clé d'intégration. MediaHub ne l'a pas : sur un 404, sa
 // route de disponibilité (qu'il servait sans clé) dit au moins que l'adresse
 // est la bonne.
-func probeOnyxHub(baseURL, apiKey string, client *http.Client) mediaHubLinkResult {
+func probeOnyxHub(lang, baseURL, apiKey string, client *http.Client) mediaHubLinkResult {
 	status, body, err := getWithKey(client, baseURL+"/api/integration/ping", apiKey)
 	if err != nil {
-		return mediaHubLinkResult{Message: "Le serveur ne joint pas cette adresse."}
+		return mediaHubLinkResult{Message: i18n.T(lang, "Le serveur ne joint pas cette adresse.")}
 	}
 	switch {
 	case status == http.StatusOK:
 		var ping integrationPing
 		if json.Unmarshal(body, &ping) != nil || ping.Status != "ok" {
-			return mediaHubLinkResult{Message: "Cette adresse répond, mais pas comme OnyxHub."}
+			return mediaHubLinkResult{Message: i18n.T(lang, "Cette adresse répond, mais pas comme OnyxHub.")}
 		}
-		message := "OnyxHub répond et accepte la clé."
+		message := i18n.T(lang, "OnyxHub répond et accepte la clé.")
 		if ping.Version != "" {
-			message = fmt.Sprintf("OnyxHub %s répond et accepte la clé.", ping.Version)
+			message = i18n.T(lang, "OnyxHub {0} répond et accepte la clé.", ping.Version)
 		}
 		return mediaHubLinkResult{OK: true, Message: message, Service: ping.Service, Version: ping.Version}
 	case status == http.StatusUnauthorized || status == http.StatusForbidden:
-		return mediaHubLinkResult{Message: "OnyxHub répond, mais refuse cette clé.", Service: "onyxhub"}
+		return mediaHubLinkResult{Message: i18n.T(lang, "OnyxHub répond, mais refuse cette clé."), Service: "onyxhub"}
 	case status == http.StatusNotFound:
 		legacy, _, err := getWithKey(client, baseURL+"/api/media/availability/550?type=movie", apiKey)
 		if err == nil && legacy == http.StatusOK {
-			return mediaHubLinkResult{OK: true, Message: "MediaHub répond (il ne permet pas de vérifier la clé).", Service: "mediahub"}
+			return mediaHubLinkResult{OK: true, Message: i18n.T(lang, "MediaHub répond (il ne permet pas de vérifier la clé)."), Service: "mediahub"}
 		}
-		return mediaHubLinkResult{Message: "Cette adresse répond, mais ni comme OnyxHub ni comme MediaHub."}
+		return mediaHubLinkResult{Message: i18n.T(lang, "Cette adresse répond, mais ni comme OnyxHub ni comme MediaHub.")}
 	default:
-		return mediaHubLinkResult{Message: fmt.Sprintf("Réponse inattendue de cette adresse (HTTP %d).", status)}
+		return mediaHubLinkResult{Message: i18n.T(lang, "Réponse inattendue de cette adresse (HTTP {0}).", status)}
 	}
 }
 
@@ -163,7 +163,7 @@ func TestMediaHubLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	var req mediaHubLinkRequest
 	r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -179,5 +179,5 @@ func TestMediaHubLink(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	w.Header().Set("Content-Type", "application/json")
 	// Sans compte lisible, le test vaut quand même pour l'adresse et la clé.
 	account, _ := mediaHubAccount(userID)
-	_ = json.NewEncoder(w).Encode(probeMediaHub(baseURL, apiKey, account, httpx.Standard))
+	_ = json.NewEncoder(w).Encode(probeMediaHub(i18n.FromRequest(r), baseURL, apiKey, account, httpx.Standard))
 }

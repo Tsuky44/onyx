@@ -50,7 +50,7 @@ gagne une étape — envelopper le texte dans `tr()` et ajouter son entrée.
   quand les deux langues mettent un `s`, approximatif ailleurs.
 - Un texte fabriqué dans un argument (`cond ? 'a' : 'b'` à l'intérieur d'un `tr`) doit lui-même
   passer par `tr()` ; le test de couverture ne voit que les littéraux directs.
-- Les messages du serveur, les textes légaux et les descriptions d'autorisations d'iOS restent
-  en français.
+- Les textes légaux et les descriptions d'autorisations d'iOS restent en français. (Les messages du
+  serveur, d'abord laissés en français, sont traduits depuis l'ADR-0137.)
 - Material n'est pas localisé (`flutter_localizations` n'est pas embarqué) : ses rares textes
   propres, comme la page des licences, restent en anglais dans les deux langues.

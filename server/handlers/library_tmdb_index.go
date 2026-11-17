@@ -58,7 +58,7 @@ func GetLibraryTMDBIndex(w http.ResponseWriter, _ *http.Request, _ httprouter.Pa
 	index, err := loadLibraryTMDBIndex()
 	if err != nil {
 		log.Printf("GetLibraryTMDBIndex: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

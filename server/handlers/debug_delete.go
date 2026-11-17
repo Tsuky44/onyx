@@ -33,7 +33,7 @@ func DebugDeleteShow(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		var err error
 		showID, err = strconv.Atoi(idStr)
 		if err != nil {
-			writeJSONError(w, http.StatusBadRequest, "Invalid show ID")
+			writeJSONError(w, http.StatusBadRequest, "Identifiant de série invalide")
 			return
 		}
 		err = database.DB.QueryRow(
@@ -41,16 +41,16 @@ func DebugDeleteShow(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		).Scan(&showTitle)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				writeJSONError(w, http.StatusNotFound, "Show not found")
+				writeJSONError(w, http.StatusNotFound, "Série introuvable")
 			} else {
-				writeJSONError(w, http.StatusInternalServerError, "Database error")
+				writeJSONError(w, http.StatusInternalServerError, "Erreur de base de données")
 			}
 			return
 		}
 	} else {
 		title := strings.TrimSpace(r.URL.Query().Get("title"))
 		if title == "" {
-			writeJSONError(w, http.StatusBadRequest, "Missing 'title' query parameter")
+			writeJSONError(w, http.StatusBadRequest, "Paramètre « title » manquant")
 			return
 		}
 		err := database.DB.QueryRow(
@@ -59,9 +59,9 @@ func DebugDeleteShow(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		).Scan(&showID, &showTitle)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				writeJSONError(w, http.StatusNotFound, "No show found matching '"+title+"'")
+				writeJSONError(w, http.StatusNotFound, "Aucune série ne correspond à « {0} »", title)
 			} else {
-				writeJSONError(w, http.StatusInternalServerError, "Database error")
+				writeJSONError(w, http.StatusInternalServerError, "Erreur de base de données")
 			}
 			return
 		}
@@ -76,7 +76,7 @@ func DebugDeleteShow(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		JOIN medias season ON ep.parent_id = season.id AND season.type = 'season'
 		WHERE ep.type = 'episode' AND season.parent_id = ?`, showID)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "Failed to query episodes")
+		writeJSONError(w, http.StatusInternalServerError, "Impossible de lire les épisodes")
 		return
 	}
 	var episodeIDs []int

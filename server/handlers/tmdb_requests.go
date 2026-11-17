@@ -109,7 +109,7 @@ func TmdbRequestCatalog(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 
 	apiKey := tmdbRequestAPIKey()
 	if apiKey == "" {
-		writeJSONError(w, http.StatusServiceUnavailable, "TMDB API key not configured")
+		writeJSONError(w, http.StatusServiceUnavailable, "Clé d’API TMDB non configurée")
 		return
 	}
 
@@ -150,7 +150,7 @@ func TmdbRequestCatalog(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	}
 
 	if err != nil {
-		writeJSONError(w, http.StatusBadGateway, "TMDB request failed")
+		writeJSONError(w, http.StatusBadGateway, "La requête TMDB a échoué")
 		return
 	}
 
@@ -264,13 +264,13 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 
 	apiKey := tmdbRequestAPIKey()
 	if apiKey == "" {
-		writeJSONError(w, http.StatusServiceUnavailable, "TMDB API key not configured")
+		writeJSONError(w, http.StatusServiceUnavailable, "Clé d’API TMDB non configurée")
 		return
 	}
 
 	tmdbID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || tmdbID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 
@@ -281,13 +281,13 @@ func TmdbRequestDetails(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	} else if rawType == "movie" {
 		mediaType = models.TypeMovie
 	} else {
-		writeJSONError(w, http.StatusBadRequest, "Missing or invalid type parameter")
+		writeJSONError(w, http.StatusBadRequest, "Paramètre « type » manquant ou invalide")
 		return
 	}
 
 	details := indexer.FetchMediaCatalogDetails(tmdbID, mediaType, languageOf(r).code)
 	if details == nil {
-		writeJSONError(w, http.StatusNotFound, "Media not found on TMDB")
+		writeJSONError(w, http.StatusNotFound, "Média introuvable sur TMDB")
 		return
 	}
 
@@ -524,18 +524,18 @@ func TmdbRequestSeasonEpisodes(w http.ResponseWriter, r *http.Request, ps httpro
 
 	apiKey := tmdbRequestAPIKey()
 	if apiKey == "" {
-		writeJSONError(w, http.StatusServiceUnavailable, "TMDB API key not configured")
+		writeJSONError(w, http.StatusServiceUnavailable, "Clé d’API TMDB non configurée")
 		return
 	}
 
 	tmdbID, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || tmdbID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	seasonNum, err := strconv.Atoi(ps.ByName("num"))
 	if err != nil || seasonNum < 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid season number")
+		writeJSONError(w, http.StatusBadRequest, "Numéro de saison invalide")
 		return
 	}
 
@@ -547,16 +547,16 @@ func TmdbRequestSeasonEpisodes(w http.ResponseWriter, r *http.Request, ps httpro
 	)
 	resp, err := tmdb.Get(client, reqURL)
 	if err != nil {
-		writeJSONError(w, http.StatusBadGateway, "Failed to fetch season from TMDB")
+		writeJSONError(w, http.StatusBadGateway, "Impossible de récupérer la saison sur TMDB")
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		writeJSONError(w, http.StatusNotFound, "Season not found on TMDB")
+		writeJSONError(w, http.StatusNotFound, "Saison introuvable sur TMDB")
 		return
 	}
 	if resp.StatusCode != http.StatusOK {
-		writeJSONError(w, http.StatusBadGateway, "TMDB returned an error")
+		writeJSONError(w, http.StatusBadGateway, "TMDB a renvoyé une erreur")
 		return
 	}
 
@@ -573,7 +573,7 @@ func TmdbRequestSeasonEpisodes(w http.ResponseWriter, r *http.Request, ps httpro
 		} `json:"episodes"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&tmdbResp); err != nil {
-		writeJSONError(w, http.StatusBadGateway, "Failed to decode TMDB response")
+		writeJSONError(w, http.StatusBadGateway, "Réponse TMDB illisible")
 		return
 	}
 

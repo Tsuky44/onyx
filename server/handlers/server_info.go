@@ -81,7 +81,7 @@ func GetServerInfo(w http.ResponseWriter, _ *http.Request, _ httprouter.Params, 
 		FROM medias WHERE type IN ('movie', 'show', 'episode') GROUP BY type`)
 	if err != nil {
 		log.Printf("GetServerInfo: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer rows.Close()

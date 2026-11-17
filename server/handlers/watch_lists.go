@@ -53,18 +53,18 @@ func writeWatchListError(w http.ResponseWriter, where string, err error) {
 	case errors.Is(err, watchlists.ErrNotOwner):
 		writeJSONError(w, http.StatusForbidden, "Seul son propriétaire modifie cette liste")
 	case errors.Is(err, watchlists.ErrInvalid):
-		writeJSONError(w, http.StatusBadRequest, fmt.Sprintf(
-			"Nom vide ou trop long (%d caractères au plus, description %d), titre ou compte inconnu",
-			watchlists.MaxNameRunes, watchlists.MaxDescRunes))
+		writeJSONError(w, http.StatusBadRequest,
+			"Nom vide ou trop long ({0} caractères au plus, description {1}), titre ou compte inconnu",
+			watchlists.MaxNameRunes, watchlists.MaxDescRunes)
 	case errors.Is(err, watchlists.ErrFixed):
 		writeJSONError(w, http.StatusConflict, "La liste « À regarder plus tard » ne se supprime pas")
 	case errors.Is(err, watchlists.ErrTooMany):
-		writeJSONError(w, http.StatusConflict, fmt.Sprintf(
-			"Limite atteinte (%d listes, %d titres et %d invités par liste)",
-			watchlists.MaxListsPerOwner, watchlists.MaxItemsPerList, watchlists.MaxMembersPerList))
+		writeJSONError(w, http.StatusConflict,
+			"Limite atteinte ({0} listes, {1} titres et {2} invités par liste)",
+			watchlists.MaxListsPerOwner, watchlists.MaxItemsPerList, watchlists.MaxMembersPerList)
 	default:
 		log.Printf("%s: %v", where, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 	}
 }
 
@@ -78,7 +78,7 @@ func writeWatchListJSON(w http.ResponseWriter, status int, v interface{}) {
 func listIDParam(w http.ResponseWriter, ps httprouter.Params, name string) (int, bool) {
 	id, err := strconv.Atoi(ps.ByName(name))
 	if err != nil || id <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant invalide")
 		return 0, false
 	}
 	return id, true
@@ -154,7 +154,7 @@ func ListWatchLists(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 		mediaID, errMedia := strconv.Atoi(q.Get("media_id"))
 		tmdbID, errTMDB := strconv.Atoi(q.Get("tmdb_id"))
 		if errMedia != nil && errTMDB != nil {
-			writeJSONError(w, http.StatusBadRequest, "Invalid media_id or tmdb_id")
+			writeJSONError(w, http.StatusBadRequest, "Paramètre media_id ou tmdb_id invalide")
 			return
 		}
 		probe = &watchlists.Probe{MediaID: mediaID, TMDBID: tmdbID, MediaType: q.Get("media_type")}
@@ -172,7 +172,7 @@ func CreateWatchList(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	r.Body = http.MaxBytesReader(w, r.Body, watchListBodyLimit)
 	var req watchListRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	list, err := watchListStore().Create(userID, watchlists.ListParams(req))
@@ -212,7 +212,7 @@ func UpdateWatchList(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	r.Body = http.MaxBytesReader(w, r.Body, watchListBodyLimit)
 	var req watchListRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	list, err := watchListStore().Update(userID, listID, watchlists.ListParams(req))
@@ -248,7 +248,7 @@ func AddWatchListItem(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	r.Body = http.MaxBytesReader(w, r.Body, watchListBodyLimit)
 	var req watchListItemRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	store := watchListStore()

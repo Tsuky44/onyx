@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"project-player/server/database"
+	"project-player/server/i18n"
 	"project-player/server/indexer"
 	"project-player/server/mediahub"
 
@@ -45,7 +46,7 @@ type adminStorageDeleteResponse struct {
 func AdminDeleteStorage(w http.ResponseWriter, r *http.Request, ps httprouter.Params, userID int) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || id <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	target, err := loadStorageTarget(id)
@@ -55,7 +56,7 @@ func AdminDeleteStorage(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	}
 	if err != nil {
 		log.Printf("AdminDeleteStorage: load %d: %v", id, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 		return
 	}
 	if err := indexer.CheckDeletable(id); err != nil {
@@ -125,21 +126,23 @@ func forgetInMediaHub(parent context.Context, userID int, target storageTarget) 
 // de MediaHub tel quel, que l'app prendrait pour une session expirée.
 func writeForgetFailure(w http.ResponseWriter, err error) {
 	var status *mediahub.StatusError
-	message := "MediaHub ne répond pas : rien n'a été supprimé."
+	message := i18n.Key("MediaHub ne répond pas : rien n'a été supprimé.")
+	var args []any
 	switch {
 	case errors.As(err, &status) && status.Status == http.StatusNotFound:
-		message = "MediaHub est trop ancien pour retirer le titre de sorraa ou de Radarr/Sonarr : mettez-le à jour. Rien n'a été supprimé."
+		message = i18n.Key("MediaHub est trop ancien pour retirer le titre de sorraa ou de Radarr/Sonarr : mettez-le à jour. Rien n'a été supprimé.")
 	case errors.As(err, &status) && (status.Status == http.StatusUnauthorized || status.Status == http.StatusForbidden):
-		message = "MediaHub refuse : votre compte n'y a pas le droit de supprimer des médias. Rien n'a été supprimé."
+		message = i18n.Key("MediaHub refuse : votre compte n'y a pas le droit de supprimer des médias. Rien n'a été supprimé.")
 	case errors.As(err, &status):
 		var body errorResponse
 		if json.Unmarshal(status.Body, &body) == nil && body.Error != "" {
-			message = body.Error + " Rien n'a été supprimé."
+			message = i18n.Key("{0} Rien n'a été supprimé.")
+			args = []any{body.Error}
 		}
 	case errors.Is(err, mediahub.ErrUnsupported):
-		message = "OnyxHub ne sait pas retirer un titre de son gestionnaire : rien n'a été supprimé."
+		message = i18n.Key("OnyxHub ne sait pas retirer un titre de son gestionnaire : rien n'a été supprimé.")
 	default:
 		log.Printf("AdminDeleteStorage: mediahub: %v", err)
 	}
-	writeJSONError(w, http.StatusBadGateway, message)
+	writeJSONError(w, http.StatusBadGateway, message, args...)
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"project-player/server/database"
+	"project-player/server/i18n"
 )
 
 // PortableProgress identifies content, never an ID or a user on another server.
@@ -98,10 +99,10 @@ func validatePortableProgress(entries []PortableProgress) string {
 		if (e.Type != "movie" && e.Type != "episode") || e.TMDBID <= 0 || e.Position < 0 ||
 			(e.Type == "episode" && (e.Season < 0 || e.Episode <= 0)) ||
 			(e.Type == "movie" && (e.Season != 0 || e.Episode != 0)) {
-			return "Invalid content identity"
+			return i18n.Key("Identité de contenu invalide")
 		}
 		if _, err := time.Parse(time.RFC3339Nano, e.UpdatedAt); err != nil {
-			return "Invalid progress date"
+			return i18n.Key("Date de progression invalide")
 		}
 	}
 	return ""

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,6 +13,7 @@ import (
 
 	"project-player/server/database"
 	"project-player/server/httpx"
+	"project-player/server/i18n"
 	"project-player/server/safego"
 
 	"github.com/julienschmidt/httprouter"
@@ -58,7 +58,7 @@ var (
 	embyLastPull = map[string]time.Time{}
 	embyBackoffs = map[string]*peerBackoff{} // par jeton : relier repart à zéro
 	embyWake     = make(chan struct{}, 1)
-	errEmbyAuth  = errors.New("Emby a refusé la session : reconnectez le compte")
+	errEmbyAuth  = i18n.Errorf("Emby a refusé la session : reconnectez le compte")
 	embyDateZero = time.Unix(0, 0).UTC()
 )
 
@@ -105,12 +105,15 @@ type embyIndex struct {
 	episodes   map[string]map[[2]int]string
 }
 
+// embyStatusError garde la réponse d'Emby avec sa phrase, traduisible
+// (i18n.Error) : Unwrap la laisse atteindre writeJSONFailure.
 type embyStatusError struct {
 	status int
-	msg    string
+	err    error
 }
 
-func (e *embyStatusError) Error() string { return e.msg }
+func (e *embyStatusError) Error() string { return e.err.Error() }
+func (e *embyStatusError) Unwrap() error { return e.err }
 
 // ==================== AU MOMENT DE REPRENDRE ====================
 
@@ -368,7 +371,7 @@ type embyLinkRequest struct {
 func LinkEmby(w http.ResponseWriter, r *http.Request, _ httprouter.Params, userID int) {
 	var body embyLinkRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	base, ok := normalizeServerURL(body.URL)
@@ -393,7 +396,7 @@ func LinkEmby(w http.ResponseWriter, r *http.Request, _ httprouter.Params, userI
 	defer cancel()
 	auth, err := embyAuthenticate(ctx, base, deviceID, username, body.Password)
 	if err != nil {
-		writeJSONError(w, http.StatusBadGateway, err.Error())
+		writeJSONFailure(w, http.StatusBadGateway, err)
 		return
 	}
 	// Un nouveau lien renvoie tout l'historique : l'envoi ne réécrit rien
@@ -455,7 +458,7 @@ func SyncEmbyNow(w http.ResponseWriter, r *http.Request, _ httprouter.Params, us
 	result, err := syncEmby(ctx, &link, true)
 	embySyncMu.Unlock()
 	if err != nil {
-		writeJSONError(w, http.StatusBadGateway, err.Error())
+		writeJSONFailure(w, http.StatusBadGateway, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

@@ -25,7 +25,7 @@ func UpdateSettings(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 
 	var req config.UpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -37,7 +37,7 @@ func UpdateSettings(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 	}
 	if err != nil {
 		log.Printf("UpdateSettings error: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Failed to save settings")
+		writeJSONError(w, http.StatusInternalServerError, "Impossible d’enregistrer les réglages")
 		return
 	}
 

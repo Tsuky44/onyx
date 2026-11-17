@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"project-player/server/config"
+	"project-player/server/i18n"
 	"project-player/server/indexer"
 	"project-player/server/mediahub"
 
@@ -33,16 +34,16 @@ func MediaHubEvents(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		return
 	}
 	if err := mediahub.VerifyDelivery(r.Header, body, config.MediaHubAPIKey()); err != nil {
-		message := "Clé d'intégration invalide"
+		message := i18n.Key("Clé d'intégration invalide")
 		if errors.Is(err, mediahub.ErrBadSignature) {
-			message = "Signature invalide"
+			message = i18n.Key("Signature invalide")
 		}
 		writeJSONError(w, http.StatusUnauthorized, message)
 		return
 	}
 	event, err := mediahub.DecodeEvent(body)
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -53,7 +54,7 @@ func MediaHubEvents(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	if mediahub.FirstDelivery(delivery) {
 		if err := applyMediaHubEvent(event); err != nil {
 			// Un 4xx : MediaHub ne réessaie pas un corps qu'Onyx ne lira pas mieux.
-			writeJSONError(w, http.StatusBadRequest, "Invalid event data")
+			writeJSONError(w, http.StatusBadRequest, "Données d’évènement invalides")
 			return
 		}
 	}

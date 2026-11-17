@@ -23,7 +23,7 @@ func writeETaggedJSON(w http.ResponseWriter, r *http.Request, v any) {
 	body, err := json.Marshal(v)
 	if err != nil {
 		log.Printf("writeETaggedJSON: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	sum := sha256.Sum256(body)

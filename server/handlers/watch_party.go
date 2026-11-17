@@ -592,11 +592,11 @@ func CreateWatchParty(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		Playing  bool    `json:"playing"`
 	}
 	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body) != nil || body.MediaID <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	if _, err := loadWatchPartyMedia(userID, body.MediaID); err != nil {
-		writeJSONError(w, http.StatusNotFound, "Playable media not found")
+		writeJSONError(w, http.StatusNotFound, "Média lisible introuvable")
 		return
 	}
 	if body.Position < 0 {
@@ -699,18 +699,18 @@ func UpdateWatchParty(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	code := normalizeUserCode(ps.ByName("code"))
 	var req watchPartyUpdate
 	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req) != nil || req.MemberID == "" {
-		writeJSONError(w, http.StatusBadRequest, "Invalid watch party update")
+		writeJSONError(w, http.StatusBadRequest, "Mise à jour de séance invalide")
 		return
 	}
 	switch req.Action {
 	case "play", "pause", "seek", "media", "loading":
 	default:
-		writeJSONError(w, http.StatusBadRequest, "Unknown action")
+		writeJSONError(w, http.StatusBadRequest, "Action inconnue")
 		return
 	}
 	if req.MediaID > 0 {
 		if _, err := loadWatchPartyMedia(userID, req.MediaID); err != nil {
-			writeJSONError(w, http.StatusNotFound, "Playable media not found")
+			writeJSONError(w, http.StatusNotFound, "Média lisible introuvable")
 			return
 		}
 	}
@@ -740,7 +740,7 @@ func LeaveWatchParty(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		MemberID string `json:"member_id"`
 	}
 	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body) != nil || body.MemberID == "" {
-		writeJSONError(w, http.StatusBadRequest, "Invalid member id")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de membre invalide")
 		return
 	}
 	if err := watchParties.leave(code, body.MemberID, userID); err != nil && err != errWatchPartyNotFound {

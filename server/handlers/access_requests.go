@@ -128,7 +128,7 @@ func RequestAccess(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 
 	var body accessRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 
@@ -149,7 +149,7 @@ func RequestAccess(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 	empty, err := usersTableEmpty()
 	if err != nil {
 		log.Printf("RequestAccess: failed to count users: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if empty {
@@ -161,7 +161,7 @@ func RequestAccess(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 	taken, err := usernameTaken(database.DB, username)
 	if err != nil {
 		log.Printf("RequestAccess: username lookup failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if taken {
@@ -175,7 +175,7 @@ func RequestAccess(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 	duplicate, err := pendingAccessRequestFor(username)
 	if err != nil {
 		log.Printf("RequestAccess: duplicate lookup failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if duplicate {
@@ -190,7 +190,7 @@ func RequestAccess(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		WHERE status = 'pending' AND expires_at > datetime('now')`,
 	).Scan(&pending); err != nil {
 		log.Printf("RequestAccess: pending count failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if pending >= maxPendingAccessRequests {
@@ -205,14 +205,14 @@ func RequestAccess(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Printf("RequestAccess: hash failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
 	code, err := GenerateRandomToken()
 	if err != nil {
 		log.Printf("RequestAccess: code generation failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -225,7 +225,7 @@ func RequestAccess(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		sqliteFuture(accessRequestTTL),
 	); err != nil {
 		log.Printf("RequestAccess: insert failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -248,12 +248,12 @@ func PollAccessRequest(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 	var body accessPollBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "Invalid request body")
+		writeJSONError(w, http.StatusBadRequest, "Corps de requête invalide")
 		return
 	}
 	code := strings.TrimSpace(body.RequestCode)
 	if code == "" {
-		writeJSONError(w, http.StatusBadRequest, "request_code is required")
+		writeJSONError(w, http.StatusBadRequest, "Le paramètre request_code est requis")
 		return
 	}
 
@@ -275,7 +275,7 @@ func PollAccessRequest(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 	}
 	if err != nil {
 		log.Printf("PollAccessRequest: query failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -295,7 +295,7 @@ func PollAccessRequest(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 		user, err := LoadUser(int(createdUser.Int64))
 		if err != nil {
 			log.Printf("PollAccessRequest: failed to load user %d: %v", createdUser.Int64, err)
-			writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 			return
 		}
 		// Usage unique : le jeton vit dans la table sessions à partir d'ici.
@@ -334,7 +334,7 @@ func ListAccessRequests(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		ORDER BY a.created_at ASC`)
 	if err != nil {
 		log.Printf("ListAccessRequests: query failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer rows.Close()
@@ -370,7 +370,7 @@ func ApproveAccessRequest(w http.ResponseWriter, r *http.Request, ps httprouter.
 	approver, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("ApproveAccessRequest: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -390,7 +390,7 @@ func ApproveAccessRequest(w http.ResponseWriter, r *http.Request, ps httprouter.
 	token, err := GenerateRandomToken()
 	if err != nil {
 		log.Printf("ApproveAccessRequest: token generation failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -400,7 +400,7 @@ func ApproveAccessRequest(w http.ResponseWriter, r *http.Request, ps httprouter.
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Printf("ApproveAccessRequest: begin failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	defer tx.Rollback() //nolint:errcheck // sans effet une fois validée
@@ -416,7 +416,7 @@ func ApproveAccessRequest(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 	if err != nil {
 		log.Printf("ApproveAccessRequest: load failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -425,7 +425,7 @@ func ApproveAccessRequest(w http.ResponseWriter, r *http.Request, ps httprouter.
 	taken, err := usernameTaken(tx, username)
 	if err != nil {
 		log.Printf("ApproveAccessRequest: username lookup failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if taken {
@@ -448,14 +448,14 @@ func ApproveAccessRequest(w http.ResponseWriter, r *http.Request, ps httprouter.
 	)
 	if err != nil {
 		log.Printf("ApproveAccessRequest: user insert failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	newUserID, _ := res.LastInsertId()
 
 	if err := storeSession(tx, token, int(newUserID)); err != nil {
 		log.Printf("ApproveAccessRequest: session insert failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -466,20 +466,20 @@ func ApproveAccessRequest(w http.ResponseWriter, r *http.Request, ps httprouter.
 		WHERE id = ? AND status = 'pending'`, userID, newUserID, token, id,
 	); err != nil {
 		log.Printf("ApproveAccessRequest: update failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Printf("ApproveAccessRequest: commit failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
 	user, err := LoadUser(int(newUserID))
 	if err != nil {
 		log.Printf("ApproveAccessRequest: failed to load new user %d: %v", newUserID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
@@ -507,7 +507,7 @@ func DenyAccessRequest(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		WHERE id = ? AND status = 'pending'`, userID, id)
 	if err != nil {
 		log.Printf("DenyAccessRequest: update failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {

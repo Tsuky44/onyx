@@ -83,12 +83,12 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _onHomeProviderChanged() {
     if (!mounted || _homeProvider == null) return;
-    final msg = _homeProvider!.consumeCompletionMessage();
-    if (msg != null) {
+    final completion = _homeProvider!.consumeCompletion();
+    if (completion != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
+        SnackBar(content: Text(completion.message)),
       );
-      if (msg.startsWith('Re-détection') || msg.startsWith('Scan')) {
+      if (completion.refreshesLibrary) {
         final library = Provider.of<LibraryProvider>(context, listen: false);
         library.loadShows();
         library.loadMovies();

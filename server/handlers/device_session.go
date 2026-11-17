@@ -48,20 +48,20 @@ func CreateDeviceSession(w http.ResponseWriter, _ *http.Request, _ httprouter.Pa
 	token, err := GenerateRandomToken()
 	if err != nil {
 		log.Printf("CreateDeviceSession: token generation failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
 	if err := storeSession(database.DB, token, userID); err != nil {
 		log.Printf("CreateDeviceSession: session insert failed: %v", err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 
 	user, err := LoadUser(userID)
 	if err != nil {
 		log.Printf("CreateDeviceSession: failed to load user %d: %v", userID, err)
-		writeJSONError(w, http.StatusInternalServerError, "Internal server error")
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
 		return
 	}
 

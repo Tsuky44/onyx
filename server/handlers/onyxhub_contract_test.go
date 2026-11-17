@@ -14,6 +14,7 @@ import (
 
 	"project-player/server/database"
 	"project-player/server/httpx"
+	"project-player/server/i18n"
 	"project-player/server/mediahub"
 )
 
@@ -85,7 +86,7 @@ func TestOnyxHubContractLinkTestReadsThePingAndAnswersTheSettingsScreen(t *testi
 	hubStub(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write(onyxHubContract(t, "integration_ping.json"))
 	})
-	result, err := json.Marshal(probeMediaHub(os.Getenv("MEDIAHUB_URL"), "cle", mediahub.Account{}, httpx.Fast))
+	result, err := json.Marshal(probeMediaHub(i18n.Default, os.Getenv("MEDIAHUB_URL"), "cle", mediahub.Account{}, httpx.Fast))
 	if err != nil {
 		t.Fatal(err)
 	}

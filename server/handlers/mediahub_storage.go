@@ -68,7 +68,7 @@ func MediaHubStorage(w http.ResponseWriter, _ *http.Request, _ httprouter.Params
 		}
 	}
 	log.Printf("MediaHubStorage: %v", err)
-	writeJSONError(w, http.StatusInternalServerError, "Internal database error")
+	writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
 }
 
 func loadStorageMovies() ([]mediaHubStorageItem, error) {
@@ -240,7 +240,7 @@ func formatStorageTime(t time.Time) string {
 func MediaHubDeleteStorage(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, _ int) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || id <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	var tmdbID int
@@ -266,7 +266,7 @@ func MediaHubDeleteStorage(w http.ResponseWriter, _ *http.Request, ps httprouter
 func MediaHubCheckDeletableStorage(w http.ResponseWriter, _ *http.Request, ps httprouter.Params, _ int) {
 	id, err := strconv.Atoi(ps.ByName("id"))
 	if err != nil || id <= 0 {
-		writeJSONError(w, http.StatusBadRequest, "Invalid media ID")
+		writeJSONError(w, http.StatusBadRequest, "Identifiant de média invalide")
 		return
 	}
 	if err := indexer.CheckErasable(id); err != nil {
@@ -287,8 +287,9 @@ func writeStorageDeleteError(w http.ResponseWriter, where string, err error) {
 		writeJSONError(w, http.StatusConflict, "Un fichier du média n'est dans aucune bibliothèque de films ou de séries d'Onyx")
 	case errors.As(err, &notWritable):
 		log.Printf("%s: %v", where, err)
-		writeJSONError(w, http.StatusConflict, "Onyx n'a pas le droit d'écrire dans « "+notWritable.Dir+
-			" » : le dossier des médias est monté en lecture seule (« :ro » dans docker-compose) ou n'appartient pas au compte du serveur (PUID/PGID). Rien n'a été supprimé.")
+		writeJSONError(w, http.StatusConflict,
+			"Onyx n'a pas le droit d'écrire dans « {0} » : le dossier des médias est monté en lecture seule (« :ro » dans docker-compose) ou n'appartient pas au compte du serveur (PUID/PGID). Rien n'a été supprimé.",
+			notWritable.Dir)
 	default:
 		log.Printf("%s: %v", where, err)
 		writeJSONError(w, http.StatusInternalServerError, "Onyx n'a pas pu supprimer tous les fichiers (droits d'écriture sur le disque ?)")
