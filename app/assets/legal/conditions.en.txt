@@ -1,0 +1,26 @@
+Onyx Terms of Use
+
+This English version is a translation provided for convenience. The French version is the authoritative text and prevails in case of any discrepancy.
+
+Last updated: October 6, 2026
+
+What Onyx is
+Onyx is a player for a personal media library hosted on a self-hosted Onyx server. The app does not provide, host, index or sell any content. It has no built-in catalog and no default server.
+
+Your content, your responsibility
+You alone are responsible for the server you connect to, the files on it and the rights attached to them. Only use Onyx with works you have the right to own and play, and only share access or a link with people you have the right to show them to. The publisher can neither see nor control what a server contains.
+
+Third-party services
+Posters and metadata come from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Optional integrations (requests, syncing) only work with the services that the server administrator has configured themselves, under their own responsibility.
+
+Account
+An Onyx account exists only on the server where it was created. Keep your password to yourself. You can delete your account at any time from Settings > My account.
+
+License
+The app is licensed to you for personal use. You may not resell it, redistribute it or remove its rights notices. The open source components it includes remain subject to their own licenses, which you can view in Settings > This device > Open source licenses.
+
+Warranty and liability
+Onyx is provided "as is." To the extent permitted by law, the publisher does not guarantee uninterrupted or error-free operation, and is not liable for data loss, for the content on a server or for how it is used. Nothing here limits the rights the law grants you as a consumer.
+
+Governing law
+These terms are governed by French law.

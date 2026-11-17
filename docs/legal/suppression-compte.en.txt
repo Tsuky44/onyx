@@ -1,0 +1,30 @@
+Deleting your Onyx account
+
+This English version is a translation provided for convenience. The French version is the authoritative text and prevails in case of any discrepancy.
+
+Last updated: October 21, 2026
+
+Before you start
+Onyx is an app published by Tsuky. It is the player for a media library hosted on a server that you, or someone close to you, install and administer. Your account exists only on that server: the publisher has no account in your name and holds no data about you. Deletion therefore happens on the server you connect to.
+
+From the app (recommended)
+1. Open Onyx and sign in to the server in question.
+2. Go to Settings, then My account.
+3. Tap Delete my account.
+4. Confirm with your password.
+Deletion is immediate and permanent. If you have an account on several servers, repeat these steps on each one.
+
+Without the app
+Ask the server administrator to delete it: they can delete your account from their server's user management. If you cannot reach them, write to tsuky.4400@gmail.com with the server address and your username: the publisher has no access to servers, but will help you find out what to do.
+
+If you own the server
+The owner account cannot be deleted while it owns the server. First transfer ownership to another account, or simply delete your server: all data goes with it.
+
+Data deleted
+As soon as you confirm, the server erases your account and everything attached to it: username and password, sessions and signed-in devices, watch progress and history, hidden titles and lists, playback and track settings, shares, invitations, TV pairings and links to other services.
+
+Data kept
+Backups: the server keeps its last three automatic backups, made before each update that changes its database. They may contain your account until later updates replace them.
+Services connected by the administrator: media requests sent to a request manager, or data from an Emby sync, remain in those services. Ask the administrator to have them deleted.
+Your device: settings, cache and downloaded files stay on the device until the app is uninstalled.
+No other copy is kept, and the publisher holds none.

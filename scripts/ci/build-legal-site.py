@@ -21,11 +21,19 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 # declaree dans les consoles des magasins : le changer casse la fiche.
 # La procedure de suppression de compte n'a rien a faire dans l'app (elle y
 # est un bouton) : Google Play veut seulement une page web qui la decrit.
+# Les versions anglaises sont des traductions : la francaise fait foi, et
+# chaque traduction le dit en tete.
 PAGES = {
-    "app/assets/legal/confidentialite.txt": "confidentialite.html",
-    "app/assets/legal/conditions.txt": "conditions.html",
-    "docs/legal/suppression-compte.txt": "suppression-compte.html",
+    "app/assets/legal/confidentialite.txt": ("confidentialite.html", "fr"),
+    "app/assets/legal/conditions.txt": ("conditions.html", "fr"),
+    "docs/legal/suppression-compte.txt": ("suppression-compte.html", "fr"),
+    "app/assets/legal/confidentialite.en.txt": ("privacy.html", "en"),
+    "app/assets/legal/conditions.en.txt": ("terms.html", "en"),
+    "docs/legal/suppression-compte.en.txt": ("account-deletion.html", "en"),
 }
+
+# La ligne de date, dans chaque langue publiee.
+DATE_PREFIXES = ("Dernière mise à jour", "Last updated")
 
 # Une adresse, web ou e-mail, ne garde pas la ponctuation qui termine sa
 # phrase : le texte de l'app finit chaque paragraphe par un point.
@@ -75,7 +83,7 @@ def render(source: str) -> tuple[str, str]:
         if not line:
             continue
         following = lines[i + 1] if i + 1 < len(lines) else ""
-        if line.startswith("Dernière mise à jour"):
+        if line.startswith(DATE_PREFIXES):
             body.append(f'<p class="date">{inline(line)}</p>')
         elif following and not line.endswith((".", ":", ";", "?", "!")):
             body.append(f"<h2>{inline(line)}</h2>")
@@ -84,9 +92,9 @@ def render(source: str) -> tuple[str, str]:
     return title, "\n".join(body)
 
 
-def page(title: str, body: str) -> str:
+def page(title: str, body: str, lang: str = "fr") -> str:
     return f"""<!doctype html>
-<html lang="fr">
+<html lang="{lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -110,9 +118,9 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
 
     links = []
-    for source, target in PAGES.items():
+    for source, (target, lang) in PAGES.items():
         title, body = render((ROOT / source).read_text(encoding="utf-8"))
-        (out / target).write_text(page(title, body), encoding="utf-8")
+        (out / target).write_text(page(title, body, lang), encoding="utf-8")
         links.append(f'<p><a href="{target}">{html.escape(title)}</a></p>')
 
     (out / "index.html").write_text(

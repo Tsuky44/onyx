@@ -70,6 +70,7 @@ import 'desktop_window.dart';
 import 'widgets/global/middle_click_autoscroll.dart';
 import 'widgets/global/resume_preview/hover_preview_preference.dart';
 import 'l10n/app_language.dart';
+import 'l10n/localized_asset.dart';
 import 'l10n/tr.dart';
 
 /// Les licences de ce qu'aucun paquet Dart ne déclare : les polices embarquées
@@ -86,7 +87,7 @@ Stream<LicenseEntry> _bundledFontLicenses() async* {
   yield LicenseEntryWithLineBreaks(const ['Phosphor Icons'], phosphor);
   // Les moteurs de lecture ne sont pas des paquets Dart : rien ne les déclare
   // à leur place, et la LGPL demande qu'ils soient nommés avec leurs sources.
-  final players = await rootBundle.loadString('assets/legal/third_party.txt');
+  final players = await loadLocalizedAsset('assets/legal/third_party.txt');
   yield LicenseEntryWithLineBreaks(
       const ['mpv, FFmpeg, AetherEngine, Media3'], players);
 }

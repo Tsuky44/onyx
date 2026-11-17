@@ -42,7 +42,11 @@ des motifs de rejet connus :
 4. **Les textes légaux sont embarqués** (`assets/legal/`), pas ouverts dans un navigateur : un
    téléviseur n'en a pas, et l'app démarre hors ligne (ADR-0025). Les moteurs natifs (mpv, FFmpeg,
    AetherEngine, Media3) sont déclarés au `LicenseRegistry`, qu'aucun paquet Dart n'alimente à
-   leur place.
+   leur place. *Ajout du 2026-11-17 :* chaque texte a sa traduction à côté de lui
+   (`conditions.en.txt`, nom dérivé par `localized_asset.dart`), lue selon la langue de l'app
+   avec repli sur le français. **La version française fait foi** ; chaque traduction le dit en
+   tête, et le site public publie les deux (`privacy.html`, `terms.html`,
+   `account-deletion.html`).
 5. **La CI produit un App Bundle** (`store-android`, hors de `/api/downloads` et de la Release)
    et passe le drapeau à l'archive TestFlight. L'APK et l'IPA de sideloading restent complets.
 
