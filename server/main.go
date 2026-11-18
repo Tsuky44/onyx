@@ -207,6 +207,10 @@ func main() {
 	// bibliothèque fait lire un autre dossier du disque au serveur : c'est
 	// manage_settings, comme l'étaient les deux chemins de /api/settings.
 	router.GET("/api/libraries", handlers.RequireAuth(handlers.ListLibraries))
+	// Les dossiers que le conteneur monte, pour préremplir une bibliothèque
+	// (ADR-0155) : c'est le plan du disque du serveur, réservé à qui peut en
+	// créer une.
+	router.GET("/api/libraries/folders", handlers.RequirePermission(models.PermManageSettings, handlers.ListLibraryFolders))
 	router.POST("/api/libraries", handlers.RequirePermission(models.PermManageSettings, handlers.CreateLibrary))
 	router.PUT("/api/libraries/:id", handlers.RequirePermission(models.PermManageSettings, handlers.UpdateLibrary))
 	router.DELETE("/api/libraries/:id", handlers.RequirePermission(models.PermManageSettings, handlers.DeleteLibrary))

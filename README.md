@@ -112,15 +112,19 @@ Une règle que l'on s'impose : ce qui est gratuit dans la version stable le rest
 
 ### Serveur (Docker)
 
-```bash
-mkdir -p data media/Films media/Series
-```
+Récupérez [`docker-compose.yml`](docker-compose.yml) et [`.env.example`](.env.example), puis :
 
 ```bash
-docker compose up -d --build
+cp .env.example .env
 ```
 
-Le serveur tourne sur **http://localhost:8080**. Le premier compte créé devient le propriétaire.
+Remplissez `.env` : au minimum `MEDIA_PATH`, le dossier de vos médias, et `TMDB_API_KEY` pour les affiches.
+
+```bash
+docker compose up -d
+```
+
+Le serveur tourne sur **http://localhost:8080**. Le premier compte créé devient le propriétaire. Les bibliothèques se créent dans l'app (Paramètres → Bibliothèque), qui propose les dossiers trouvés dans `MEDIA_PATH`.
 
 La documentation complète de l'API est dans [`server/README.md`](server/README.md).
 

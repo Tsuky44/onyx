@@ -11,8 +11,9 @@ name: Server
 # dans la Release de sa version. Cette image porte un tag `main-<sha>`, qui n'a
 # pas de Release : elle propose celle de la plus recente.
 #
-# Publie par defaut sur :latest, le tag que suit docker-compose.prod.yml : le
-# serveur de test recupere le build par un simple `docker compose pull`.
+# Publie par defaut sur :latest, le tag que suit docker-compose.yml (sans
+# ONYX_VERSION dans .env) : le serveur de test recupere le build par un simple
+# `docker compose pull`.
 
 on:
   workflow_dispatch:

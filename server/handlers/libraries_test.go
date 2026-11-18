@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -368,5 +370,35 @@ func TestPlainLibraryVideosAreNotQueuedForReview(t *testing.T) {
 	}
 	if queue.Count != 1 || queue.Items[0].Title != "Film inconnu" {
 		t.Fatalf("review queue = %+v, want the unidentified film only", queue.Items)
+	}
+}
+
+// Le formulaire d'une bibliothèque se préremplit avec les dossiers que le
+// conteneur monte et qu'aucune bibliothèque n'a encore (ADR-0155).
+func TestLibraryFoldersSuggestWhatIsMountedAndFree(t *testing.T) {
+	setupAuthDB(t)
+	admin := createTestUser(t, "admin", true, models.AllPermissions())
+	root := t.TempDir()
+	for _, name := range []string{"Films", "Séries"} {
+		if err := os.MkdirAll(filepath.Join(root, name), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("MEDIA_ROOT", root)
+	if _, err := libraries.Create("Films", libraries.KindMovies, filepath.Join(root, "Films")); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := libraryCall(t, ListLibraryFolders, http.MethodGet, "", 0, admin)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
+	}
+	var got libraryFoldersResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Root != root || len(got.Folders) != 1 ||
+		got.Folders[0].Name != "Séries" || got.Folders[0].Kind != libraries.KindShows {
+		t.Fatalf("folders = %+v, want Séries alone under %s", got, root)
 	}
 }

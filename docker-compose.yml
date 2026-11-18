@@ -1,48 +1,44 @@
-version: '3.8'
+# Onyx, le serveur.
+#
+#   1. cp .env.example .env
+#   2. Remplissez .env (au minimum MEDIA_PATH).
+#   3. docker compose up -d
+#
+# Puis ouvrez http://<votre-serveur>:8080 : le premier compte créé devient le
+# propriétaire. Les bibliothèques se créent dans l'app (Paramètres →
+# Bibliothèque), qui propose les dossiers trouvés dans MEDIA_PATH.
+#
+# Tous les réglages sont dans .env : ce fichier n'a pas à être modifié, sauf
+# pour le transcodage matériel (plus bas) ou un second disque de médias.
 
 services:
-  backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: onyx-backend
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./data:/app/data
-      # Mount your local media folders here.
-      # Replace the left-hand side paths with your actual system media paths if different.
-      - ./media/Films:/media/Films:ro
-      - ./media/Series:/media/Series:ro
-    environment:
-      # Only read when upgrading an install that predates libraries, to turn
-      # its two folders into libraries. Libraries are created and named from
-      # the app (Settings > Library): add the container paths mounted above.
-      - MOVIES_DIR=/media/Films
-      - SERIES_DIR=/media/Series
-      # Clé API TMDB gratuite (obligatoire pour les affiches) :
-      # https://www.themoviedb.org/settings/api
-      - TMDB_API_KEY=your_tmdb_api_key_here
-      # Langue des titres/synopsis TMDB (films et séries)
-      - TMDB_LANGUAGE=fr-FR
-      # --- OPTIONNEL : faire tourner le serveur sans privilèges ---
-      # Décommentez pour qu'il tourne sous ce compte plutôt que sous root. Le
-      # dossier ./data lui est rendu au démarrage ; vos dossiers de médias
-      # doivent lui être lisibles (`id -u` et `id -g` donnent vos numéros).
-      # - PUID=1000
-      # - PGID=1000
-      # Nombre maximal d'extractions FFmpeg de sous-titres simultanées
-      - SUBTITLE_EXTRACTION_CONCURRENCY=${SUBTITLE_EXTRACTION_CONCURRENCY:-2}
-      # Surveillance de la médiathèque : un fichier déposé est indexé en quelques
-      # secondes, sans scan manuel. Les notifications ne voient pas les ajouts faits
-      # depuis une autre machine sur un partage réseau (NFS/SMB) ; la vérification
-      # périodique des dossiers les rattrape. "0" la désactive.
-      - LIBRARY_WATCH=${LIBRARY_WATCH:-true}
-      - LIBRARY_POLL_INTERVAL=${LIBRARY_POLL_INTERVAL:-5m}
-      - MEDIAHUB_URL=${MEDIAHUB_URL:-http://host.docker.internal:3008}
-      - MEDIAHUB_API_KEY=${MEDIAHUB_API_KEY:-}
-      # Le service à cette adresse : mediahub (défaut), overseerr ou jellyseerr.
-      # Avec Overseerr ou Jellyseerr, MEDIAHUB_URL est leur adresse et
-      # MEDIAHUB_API_KEY leur clé API. Se règle aussi dans Paramètres → Services.
-      - REQUEST_SERVICE=${REQUEST_SERVICE:-mediahub}
+  onyx:
+    image: ghcr.io/tsuky44/onyx-server:${ONYX_VERSION:-latest}
+    # Pour construire l'image depuis les sources de ce dépôt (sans l'app web
+    # embarquée, que publish-image.sh y ajoute) :
+    # build: ./server
+    container_name: onyx-server
+    # L'image des versions est publiée pour amd64 seulement (ADR-0051).
+    platform: linux/amd64
     restart: unless-stopped
+    ports:
+      - "${ONYX_PORT:-8080}:8080"
+    volumes:
+      # La base, les sous-titres extraits et les aperçus de lecture.
+      - ${ONYX_DATA:-./data}:/app/data
+      # Vos médias, vus par le serveur sous /media.
+      - ${MEDIA_PATH:?Indiquez le dossier de vos médias (MEDIA_PATH) dans .env}:/media:${MEDIA_ACCESS:-ro}
+      # Un autre disque ? Montez-le sous /media, il sera proposé aussi :
+      # - /mnt/disque2/Films:/media/Films-disque2:ro
+    # Tout ce que .env contient est passé au serveur : les réglages
+    # facultatifs s'activent en y décommentant leur ligne.
+    env_file: .env
+    # Transcodage par le circuit vidéo (Intel, AMD) : décommentez ces deux
+    # lignes et mettez VIDEO_ENCODER=auto dans .env.
+    # devices:
+    #   - /dev/dri:/dev/dri
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

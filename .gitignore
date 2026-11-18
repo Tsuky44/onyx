@@ -57,6 +57,9 @@ prototypes/**/windows/flutter/ephemeral/
 /data/
 /mediahub/
 
+# Les réglages du serveur, clés comprises : chacun copie .env.example.
+/.env
+
 # Préférences Claude perso (une par dev, recréées par le setup script de
 # chaque environnement cloud). Jamais versionnées, donc jamais mergées.
 CLAUDE.local.md

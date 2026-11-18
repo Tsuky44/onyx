@@ -167,6 +167,7 @@ func TestAPIContract(t *testing.T) {
 		"scan_status":        filled[scanStatusResponse](),
 		"ping":               pingPayload(),
 		"libraries":          []libraries.Library{filled[libraries.Library]()},
+		"library_folders":    filled[libraryFoldersResponse](),
 		"remote_posters":     filled[models.RemotePosters](),
 		"announcement":       filled[announcementResponse](),
 		"announcement_none":  announcementResponse{},

@@ -76,3 +76,43 @@ class MediaLibrary {
   @override
   int get hashCode => Object.hash(id, name, kind, path);
 }
+
+/// Un dossier que le serveur voit sous le point de montage du docker-compose
+/// et qu'aucune bibliothèque n'a encore, avec le type que son nom laisse
+/// deviner (ADR-0155).
+class LibraryFolder {
+  const LibraryFolder({
+    required this.path,
+    required this.name,
+    required this.kind,
+  });
+
+  final String path;
+  final String name;
+  final LibraryKind kind;
+
+  factory LibraryFolder.fromJson(Map<String, dynamic> json) => LibraryFolder(
+        path: json['path'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        kind: LibraryKind.parse(json['kind'] as String?),
+      );
+}
+
+/// Ce que le serveur propose pour une nouvelle bibliothèque : le dossier qu'il
+/// a parcouru, et ce qu'il y a trouvé de libre, les films d'abord.
+class LibraryFolders {
+  const LibraryFolders({required this.root, required this.folders});
+
+  static const LibraryFolders none = LibraryFolders(root: '', folders: []);
+
+  final String root;
+  final List<LibraryFolder> folders;
+
+  factory LibraryFolders.fromJson(Map<String, dynamic> json) => LibraryFolders(
+        root: json['root'] as String? ?? '',
+        folders: [
+          for (final folder in json['folders'] as List<dynamic>? ?? const [])
+            LibraryFolder.fromJson(folder as Map<String, dynamic>),
+        ],
+      );
+}

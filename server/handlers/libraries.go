@@ -58,6 +58,35 @@ func ListLibraries(w http.ResponseWriter, r *http.Request, _ httprouter.Params, 
 	json.NewEncoder(w).Encode(libs)
 }
 
+// libraryFoldersResponse est la réponse de GET /api/libraries/folders.
+type libraryFoldersResponse struct {
+	// Root est le dossier parcouru, celui où le docker-compose monte les médias.
+	Root    string             `json:"root"`
+	Folders []libraries.Folder `json:"folders"`
+}
+
+// ListLibraryFolders propose les dossiers du conteneur qu'aucune bibliothèque
+// ne couvre encore (GET /api/libraries/folders), pour que l'app préremplisse
+// la création d'une bibliothèque (ADR-0155).
+func ListLibraryFolders(w http.ResponseWriter, r *http.Request, _ httprouter.Params, _ int) {
+	libs, err := libraries.List()
+	if err != nil {
+		log.Printf("ListLibraryFolders: list: %v", err)
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne de la base de données")
+		return
+	}
+	root := libraries.MediaRoot()
+	folders, err := libraries.SuggestFolders(root, libs)
+	if err != nil {
+		// Un dossier illisible (droits, partage tombé) n'empêche pas de
+		// créer une bibliothèque : le formulaire reste à remplir à la main.
+		log.Printf("ListLibraryFolders: %v", err)
+		folders = []libraries.Folder{}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(libraryFoldersResponse{Root: root, Folders: folders})
+}
+
 // CreateLibrary declares a library and starts indexing it (POST /api/libraries).
 func CreateLibrary(w http.ResponseWriter, r *http.Request, _ httprouter.Params, _ int) {
 	req, ok := decodeLibraryRequest(w, r)

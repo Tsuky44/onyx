@@ -17,36 +17,108 @@ typedef LibraryDraft = ({String name, LibraryKind kind, String path});
 /// échoue le formulaire reste ouvert avec la raison que le serveur donne (un
 /// dossier introuvable, déjà pris…), au lieu de se fermer sur une saisie
 /// perdue. Rend vrai quand la bibliothèque est enregistrée.
+///
+/// À la création, [loadFolders] donne les dossiers que le serveur voit sous
+/// son point de montage : le premier préremplit le formulaire, les autres se
+/// proposent d'un geste (ADR-0155).
 Future<bool> showLibraryEditor(
   BuildContext context, {
   MediaLibrary? library,
   required Future<void> Function(LibraryDraft draft) onSubmit,
+  Future<LibraryFolders> Function()? loadFolders,
 }) async {
   final saved = await showOnyxDialog<bool>(
     context: context,
-    builder: (_) => _LibraryEditorDialog(library: library, onSubmit: onSubmit),
+    builder: (_) => LibraryEditorDialog(
+      library: library,
+      onSubmit: onSubmit,
+      loadFolders: loadFolders,
+    ),
   );
   return saved == true;
 }
 
-class _LibraryEditorDialog extends StatefulWidget {
-  const _LibraryEditorDialog({required this.library, required this.onSubmit});
+@visibleForTesting
+class LibraryEditorDialog extends StatefulWidget {
+  const LibraryEditorDialog({
+    super.key,
+    required this.library,
+    required this.onSubmit,
+    this.loadFolders,
+  });
 
   final MediaLibrary? library;
   final Future<void> Function(LibraryDraft draft) onSubmit;
+  final Future<LibraryFolders> Function()? loadFolders;
 
   @override
-  State<_LibraryEditorDialog> createState() => _LibraryEditorDialogState();
+  State<LibraryEditorDialog> createState() => _LibraryEditorDialogState();
 }
 
-class _LibraryEditorDialogState extends State<_LibraryEditorDialog> {
+class _LibraryEditorDialogState extends State<LibraryEditorDialog> {
   late final _name = TextEditingController(text: widget.library?.name ?? '');
   late final _path = TextEditingController(text: widget.library?.path ?? '');
   late LibraryKind _kind = widget.library?.kind ?? LibraryKind.movies;
   bool _saving = false;
   String? _error;
 
+  /// Les dossiers libres du serveur, et ce que le formulaire en a repris : un
+  /// nom ou un dossier tapé à la main n'est jamais remplacé.
+  List<LibraryFolder> _folders = const [];
+  String? _suggestedName;
+  String? _suggestedPath;
+
   bool get _editing => widget.library != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final load = widget.loadFolders;
+    if (!_editing && load != null) _loadFolders(load);
+  }
+
+  Future<void> _loadFolders(Future<LibraryFolders> Function() load) async {
+    try {
+      final found = await load();
+      if (!mounted || found.folders.isEmpty) return;
+      setState(() {
+        _folders = found.folders;
+        if (_path.text.trim().isEmpty) _useFolder(found.folders.first);
+      });
+    } catch (e) {
+      // Sans la liste, le formulaire se remplit à la main, comme avant : une
+      // erreur ici n'empêche pas de créer la bibliothèque.
+      debugPrint('LibraryEditorDialog: dossiers du serveur indisponibles: $e');
+    }
+  }
+
+  /// Reprend [folder] : son chemin, son type, et son nom tant que le nom est
+  /// vide ou vient d'une proposition.
+  void _useFolder(LibraryFolder folder) {
+    final name = _name.text.trim();
+    if (name.isEmpty || name == _suggestedName) {
+      _name.text = folder.name;
+      _suggestedName = folder.name;
+    }
+    _path.text = folder.path;
+    _suggestedPath = folder.path;
+    _kind = folder.kind;
+  }
+
+  /// Un autre type choisi : tant que le dossier vient d'une proposition, il
+  /// suit, vers le premier dossier libre de ce type.
+  void _chooseKind(LibraryKind kind) {
+    setState(() {
+      _kind = kind;
+      if (_path.text.trim() != _suggestedPath) return;
+      for (final folder in _folders) {
+        if (folder.kind == kind) {
+          _useFolder(folder);
+          return;
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -131,6 +203,15 @@ class _LibraryEditorDialogState extends State<_LibraryEditorDialog> {
             label: tr('Dossier'),
             hint: tr('Chemin complet sur le serveur'),
           ),
+          if (_folders.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _FolderChoices(
+              folders: _folders,
+              path: _path,
+              enabled: !_saving,
+              onChoose: (folder) => setState(() => _useFolder(folder)),
+            ),
+          ],
           const SizedBox(height: 6),
           Text(
             tr(
@@ -170,7 +251,7 @@ class _LibraryEditorDialogState extends State<_LibraryEditorDialog> {
             // épisodes : le type se choisit à la création.
             onSelectionChanged: _editing || _saving
                 ? null
-                : (choice) => setState(() => _kind = choice.first),
+                : (choice) => _chooseKind(choice.first),
           ),
           const SizedBox(height: 8),
           // Ce que le choix change, dit là où il se fait : le serveur va
@@ -226,6 +307,60 @@ class _LibraryEditorDialogState extends State<_LibraryEditorDialog> {
           label: _saving ? tr('Enregistrement…') : tr('Enregistrer'),
           primary: true,
           onPressed: _saving ? null : _submit,
+        ),
+      ],
+    );
+  }
+}
+
+/// Les dossiers que le serveur a trouvés, en pastilles : celle du dossier
+/// saisi est cochée, et en toucher une remplit le formulaire avec.
+class _FolderChoices extends StatelessWidget {
+  const _FolderChoices({
+    required this.folders,
+    required this.path,
+    required this.enabled,
+    required this.onChoose,
+  });
+
+  final List<LibraryFolder> folders;
+  final TextEditingController path;
+  final bool enabled;
+  final ValueChanged<LibraryFolder> onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          tr('Dossiers trouvés sur le serveur'),
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: AppType.footnote,
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Le dossier tapé à la main décoche la pastille sans reconstruire
+        // tout le formulaire.
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: path,
+          builder: (context, value, _) => Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final folder in folders)
+                Tooltip(
+                  message: folder.path,
+                  child: ChoiceChip(
+                    label: Text(folder.name),
+                    selected: value.text.trim() == folder.path,
+                    showCheckmark: false,
+                    onSelected: enabled ? (_) => onChoose(folder) : null,
+                  ),
+                ),
+            ],
+          ),
         ),
       ],
     );

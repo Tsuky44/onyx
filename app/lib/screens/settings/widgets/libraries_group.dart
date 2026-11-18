@@ -34,10 +34,11 @@ class _LibrariesGroupState extends State<LibrariesGroup> {
       context,
       onSubmit: (draft) => provider.createLibrary(
           name: draft.name, kind: draft.kind, path: draft.path),
+      loadFolders: provider.apiClient.getLibraryFolders,
     );
     if (saved && mounted) {
-      showSettingsSnack(context,
-          tr('Bibliothèque ajoutée. Le serveur analyse son dossier.'));
+      showSettingsSnack(
+          context, tr('Bibliothèque ajoutée. Le serveur analyse son dossier.'));
     }
   }
 

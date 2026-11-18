@@ -3870,4 +3870,6 @@ const Map<String, String> kEnglish = <String, String>{
       'First episode',
   'Prochain épisode le {0}':
       'Next episode {0}',
+  'Dossiers trouvés sur le serveur':
+      'Folders found on the server',
 };
