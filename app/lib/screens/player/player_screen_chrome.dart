@@ -575,12 +575,31 @@ extension _PlayerChrome on _PlayerScreenState {
     ];
   }
 
+  /// Le lecteur attend quelque chose : la première image, un changement de
+  /// qualité, ou le tampon après une recherche. Une seule réponse pour
+  /// l'anneau d'attente et pour le bouton lecture qui lui cède la place.
+  bool get _awaitingPicture =>
+      (!_playerController.hasFirstFrame && !_startupStalled) ||
+      _playerController.isSwitchingQuality ||
+      (_playerController.isBuffering && _isInitialized);
+
+  /// L'anneau d'attente, là où est lecture/pause sur un écran tenu en main,
+  /// au milieu ailleurs (ADR-0140).
+  Widget _buildLoadingRing(bool isTv) => PlayerLoadingSpinner(
+        centreAt: _handheld ? OnyxChromeTheme.handheldCentreAt : 0.5,
+        scale: PlayerTvScale.factorFor(
+          MediaQuery.sizeOf(context).width,
+          isTv: isTv,
+        ),
+      );
+
   Widget _buildChrome(bool isTv) {
     final nav = _episodeNav;
     return OnyxControlsLayer(
       visible: _controlsVisible,
       timelineAnchorKey: _timelineAnchorKey,
       isPlaying: _playerController.isPlaying,
+      isLoading: _awaitingPicture,
       position: _displayedPosition,
       duration: _playerController.duration,
       buffered: _bufferedFraction,
@@ -610,6 +629,7 @@ extension _PlayerChrome on _PlayerScreenState {
       // from under a finger that is still on it.
       onBrightnessDraggingChanged: _holdChromeWhile,
       onBack: _leavePlayer,
+      hasSubtitles: _playerController.hasSubtitleTracks,
       onToggleSubtitles: () => _showOnyxSettingsMenu(
         section: OnyxMenuSection.subtitles,
         anchor: _subtitlesButtonKey.currentContext,

@@ -14,6 +14,7 @@ import 'account_menu_route.dart';
 import 'glass_chrome.dart';
 import 'interface_tour/tour_anchor.dart';
 import 'join_watch_party_dialog.dart';
+import 'liquid_glass.dart';
 import 'profile_disc.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -27,7 +28,18 @@ import '../../l10n/tr.dart';
 class AccountMenu extends StatefulWidget {
   final AuthProvider authProvider;
 
-  const AccountMenu({super.key, required this.authProvider});
+  /// Le rond de verre liquide de la barre du haut du téléphone (ADR-0144),
+  /// de la taille de la pilule de la marque à côté de lui.
+  final bool liquid;
+
+  /// Le diamètre du rond [liquid] : les 44 points de cible qu'Apple demande.
+  static const double liquidSize = 44;
+
+  const AccountMenu({
+    super.key,
+    required this.authProvider,
+    this.liquid = false,
+  });
 
   @override
   State<AccountMenu> createState() => _AccountMenuState();
@@ -125,11 +137,32 @@ class _AccountMenuState extends State<AccountMenu> {
       anchor: TourAnchor.account,
       child: Tooltip(
         message: tr('Menu'),
-        child: GlassIconButton(
-          key: _anchorKey,
-          size: 34,
-          onTap: _open,
-          child: _avatarOrInitial(),
+        child: widget.liquid
+            ? _buildLiquid()
+            : GlassIconButton(
+                key: _anchorKey,
+                size: 34,
+                onTap: _open,
+                child: _avatarOrInitial(32),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildLiquid() {
+    return SizedBox.square(
+      key: _anchorKey,
+      dimension: AccountMenu.liquidSize,
+      child: LiquidGlass(
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: _open,
+            child: Center(
+              child: _avatarOrInitial(AccountMenu.liquidSize - 6),
+            ),
+          ),
         ),
       ),
     );
@@ -137,11 +170,11 @@ class _AccountMenuState extends State<AccountMenu> {
 
   /// L'image de profil quand la personne en a choisi une, sinon son initiale
   /// sur le verre du header, comme avant (ADR-0078).
-  Widget _avatarOrInitial() {
+  Widget _avatarOrInitial(double size) {
     final active = authProvider.activeServer;
     if (active != null &&
         ProfileAvatar.parse(active.avatar) is! InitialAvatar) {
-      return ClipOval(child: ProfileDisc(account: active, size: 32));
+      return ClipOval(child: ProfileDisc(account: active, size: size));
     }
     return Text(
       (authProvider.currentUser?.username ?? '?')[0].toUpperCase(),

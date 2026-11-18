@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/media_request.dart';
 import 'package:onyx/models/models.dart';
-import 'package:onyx/navigation/shell_navigator.dart';
 import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/home_provider.dart';
 import 'package:onyx/providers/library_provider.dart';
@@ -28,6 +27,7 @@ import 'package:onyx/widgets/global/unavailable_badge.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/phone_search_harness.dart';
 import 'support/search_catalog_fakes.dart';
 import 'support/tv_nav_harness.dart';
 
@@ -254,30 +254,14 @@ void main() {
       addTearDown(auth.dispose);
       await tester.binding.setSurfaceSize(const Size(400, 860));
       addTearDown(() => tester.binding.setSurfaceSize(null));
+      final session = phoneSearchSession();
       await tester.pumpWidget(_providers(
         api,
         auth,
-        MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                const GlassCatalogSearch(),
-                Expanded(
-                  child: Navigator(
-                    key: shellNavigatorKey,
-                    onGenerateRoute: (_) => MaterialPageRoute<void>(
-                      builder: (_) => const Center(child: Text('Accueil')),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        MaterialApp(home: phoneSearchHarness(session)),
       ));
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(GlassCatalogSearch));
-      await tester.pumpAndSettle();
+      await openPhoneSearchIn(tester, session);
       expect(find.byType(PhoneSearchScreen), findsOneWidget);
     }
 

@@ -11,6 +11,7 @@ import '../../utils/format.dart';
 import '../../utils/poster_url.dart';
 import '../../tv/tv_mode.dart';
 import 'app_network_image.dart';
+import 'backdrop_extension.dart';
 import 'media_logo_display.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
@@ -31,6 +32,11 @@ class HeroBanner extends StatefulWidget {
 
   final bool autofocusPlay;
 
+  /// La hauteur ajoutée au-dessus du bandeau pour que l'image monte sous la
+  /// barre d'état et la barre du haut du téléphone (ADR-0144). Le texte et
+  /// les boutons, calés en bas, ne bougent pas.
+  final double extendTop;
+
   const HeroBanner({
     super.key,
     required this.media,
@@ -42,6 +48,7 @@ class HeroBanner extends StatefulWidget {
     this.onInfo,
     this.detailsMediaId,
     this.autofocusPlay = false,
+    this.extendTop = 0,
   });
 
   static double heightFor(BuildContext context) {
@@ -138,7 +145,7 @@ class _HeroBannerState extends State<HeroBanner> {
     final isCompact = screenWidth < 600;
     final isTv = TvScope.of(context);
     final horizontalPadding = isCompact ? 16.0 : 48.0;
-    final bannerHeight = HeroBanner.heightFor(context);
+    final bannerHeight = HeroBanner.heightFor(context) + widget.extendTop;
     final detailsOverview = _details?.overview;
     final overview = media.type != MediaType.episode &&
             detailsOverview != null &&
@@ -154,16 +161,21 @@ class _HeroBannerState extends State<HeroBanner> {
         children: [
           const ColoredBox(color: AppColors.background),
           if (backgroundUrl != null)
-            AppNetworkImage(
-              url: backgroundUrl,
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-              filterQuality: FilterQuality.high,
-              // Logical width — AppNetworkImage applies the device pixel ratio.
-              decodeWidth: screenWidth,
-              fadeInDuration: AppMotion.emphasis,
-              placeholder: const ColoredBox(color: AppColors.background),
-              errorWidget: const ColoredBox(color: AppColors.background),
+            // Sous la barre du téléphone, l'image garde son cadrage et se
+            // prolonge en miroir flou au-dessus d'elle (ADR-0144).
+            BackdropExtension(
+              extendTop: widget.extendTop,
+              image: () => AppNetworkImage(
+                url: backgroundUrl,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+                filterQuality: FilterQuality.high,
+                // Logical width — AppNetworkImage applies the device pixel ratio.
+                decodeWidth: screenWidth,
+                fadeInDuration: AppMotion.emphasis,
+                placeholder: const ColoredBox(color: AppColors.background),
+                errorWidget: const ColoredBox(color: AppColors.background),
+              ),
             ),
 
           // Le voile latéral d'abord, le vertical ensuite, et tous deux vers
@@ -186,20 +198,23 @@ class _HeroBannerState extends State<HeroBanner> {
               ),
             ),
           ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  // Un voile en haut, pour que l'en-tête reste lisible sur un
-                  // fond clair.
-                  AppColors.background.withValues(alpha: 0.45),
-                  AppColors.background.withValues(alpha: 0),
-                  AppColors.background.withValues(alpha: 0.35),
-                  AppColors.background,
-                ],
-                stops: const [0.0, 0.25, 0.6, 1.0],
+          Positioned.fill(
+            top: widget.extendTop,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    // Un voile en haut, pour que l'en-tête reste lisible sur un
+                    // fond clair.
+                    AppColors.background.withValues(alpha: 0.45),
+                    AppColors.background.withValues(alpha: 0),
+                    AppColors.background.withValues(alpha: 0.35),
+                    AppColors.background,
+                  ],
+                  stops: const [0.0, 0.25, 0.6, 1.0],
+                ),
               ),
             ),
           ),

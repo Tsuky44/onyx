@@ -64,20 +64,25 @@ class SearchFilterChips extends StatelessWidget {
               : () => onSelected(filter),
         ),
     ];
-    if (!scrolls) {
-      return Wrap(spacing: 8, runSpacing: 8, children: children);
-    }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: padding,
-      child: Row(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(width: 8),
-            children[i],
-          ],
-        ],
-      ),
+    // De la même région de toucher que le champ : toucher une pastille n'est
+    // pas quitter le champ, et la frappe continue (ADR-0141). Sans elle, le
+    // toucher retirait le focus au champ, sur un bureau comme sur un écran
+    // tactile.
+    return TextFieldTapRegion(
+      child: !scrolls
+          ? Wrap(spacing: 8, runSpacing: 8, children: children)
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: padding,
+              child: Row(
+                children: [
+                  for (var i = 0; i < children.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    children[i],
+                  ],
+                ],
+              ),
+            ),
     );
   }
 }

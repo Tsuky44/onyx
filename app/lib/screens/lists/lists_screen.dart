@@ -15,6 +15,7 @@ import '../../widgets/global/empty_state.dart';
 import '../../widgets/global/watch_list_editor_dialog.dart';
 import 'list_detail_screen.dart';
 import 'widgets/watch_list_tile.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 /// L'onglet des listes (ADR-0070) : « À regarder plus tard » et les listes
 /// du compte, puis celles que les autres comptes partagent.
@@ -160,7 +161,8 @@ class ListsScreen extends StatelessWidget {
               _Section(title: tr('Partagées par les autres')),
               if (overview.shared.isEmpty)
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(padding, 0, padding, 48),
+                  padding: EdgeInsets.fromLTRB(
+                      padding, 0, padding, SliverScrollEnd.extentOf(context)),
                   sliver: SliverToBoxAdapter(
                     child: Text(
                       tr('Personne n’a encore partagé de liste sur ce serveur.'),
@@ -170,7 +172,8 @@ class ListsScreen extends StatelessWidget {
                 )
               else
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(padding, 0, padding, 48),
+                  padding: EdgeInsets.fromLTRB(
+                      padding, 0, padding, SliverScrollEnd.extentOf(context)),
                   sliver: SliverGrid(
                     gridDelegate: _gridDelegate(context),
                     delegate: SliverChildBuilderDelegate(

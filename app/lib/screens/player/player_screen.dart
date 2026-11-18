@@ -636,7 +636,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       ),
                     )
                   else
-                    const PlayerLoadingSpinner(),
+                    _buildLoadingRing(isTv),
                 // Les fenêtres de question sont à l'échelle du lecteur, comme
                 // le chrome : voir [PlayerTvScale].
                 if (_handoff.handedOffTo != null)
@@ -653,7 +653,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   ),
                 if (_playerController.isSwitchingQuality ||
                     (_playerController.isBuffering && _isInitialized))
-                  const PlayerLoadingSpinner(),
+                  _buildLoadingRing(isTv),
                 if (_stillWatchingAsked)
                   PlayerTvScale.layer(
                     isTv: isTv,

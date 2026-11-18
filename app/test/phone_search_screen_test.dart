@@ -12,19 +12,20 @@ import 'package:onyx/providers/search_provider.dart';
 import 'package:onyx/providers/watch_lists_provider.dart';
 import 'package:onyx/screens/search/phone/phone_search_row.dart';
 import 'package:onyx/screens/search/phone/phone_search_screen.dart';
+import 'package:onyx/screens/search/recent_searches.dart';
 import 'package:onyx/screens/search/search_chips.dart';
 import 'package:onyx/screens/search/search_layout.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/services/download_manager.dart';
-import 'package:onyx/theme/app_icons.dart';
-import 'package:onyx/widgets/global/glass_catalog_search.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/phone_search_harness.dart';
 import 'support/search_catalog_fakes.dart';
 
-/// La recherche du téléphone (ADR-0145) : une page à elle, ouverte par la
-/// loupe de la barre du haut, son champ seul à prendre la frappe.
+/// La recherche du téléphone (ADR-0145) : une page à elle, ouverte sous la
+/// bulle de la barre d'onglets (ADR-0142), dont le champ est le seul à
+/// prendre la frappe.
 ///
 /// Demande de l'utilisateur : « la recherche sur téléphone est super mal
 /// gérée […] trouve une solution plus pratique et utilisable pour les
@@ -54,6 +55,7 @@ SearchCatalogApi _server({int extraMovies = 0}) => SearchCatalogApi(
     );
 
 Future<void> _pump(WidgetTester tester, {int extraMovies = 0}) async {
+  final session = phoneSearchSession();
   final api = _server(extraMovies: extraMovies);
   final auth = _SignedIn(api, const Permissions());
   addTearDown(auth.dispose);
@@ -74,26 +76,15 @@ Future<void> _pump(WidgetTester tester, {int extraMovies = 0}) async {
       ChangeNotifierProvider(create: (_) => MediaRequestsProvider(api)),
     ],
     child: MaterialApp(
-      home: Scaffold(
-        body: Column(
-          children: [
-            const GlassCatalogSearch(),
-            Expanded(
-              child: Navigator(
-                key: shellNavigatorKey,
-                onGenerateRoute: (_) => MaterialPageRoute<void>(
-                  builder: (_) => const Center(child: Text('Accueil')),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      home: Builder(builder: (context) {
+        // Comme la coquille : les recherches récentes du profil connecté.
+        session.recentsFor(RecentSearches.watchProfileKey(context));
+        return phoneSearchHarness(session);
+      }),
     ),
   ));
   await tester.pumpAndSettle();
-  await tester.tap(find.byType(GlassCatalogSearch));
-  await tester.pumpAndSettle();
+  await openPhoneSearchIn(tester, session);
 }
 
 Future<void> _type(WidgetTester tester, String text) async {
@@ -121,7 +112,7 @@ bool _fieldFocused(WidgetTester tester) =>
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('la loupe ouvre la page, le champ prêt à taper', (tester) async {
+  testWidgets('le rond ouvre la page, le champ prêt à taper', (tester) async {
     await _pump(tester);
 
     expect(find.byType(PhoneSearchScreen), findsOneWidget);
@@ -155,11 +146,11 @@ void main() {
     expect(find.text('Ajoutés récemment'), findsOneWidget);
   });
 
-  testWidgets('« Annuler » referme la page', (tester) async {
+  testWidgets('la croix de la bulle referme la page', (tester) async {
     await _pump(tester);
     await _type(tester, 'dune');
 
-    await tester.tap(find.text('Annuler'));
+    await tester.tap(find.bySemanticsLabel('Fermer la recherche'));
     await tester.pumpAndSettle();
     expect(find.byType(PhoneSearchScreen), findsNothing);
     expect(find.text('Accueil'), findsOneWidget);
@@ -212,8 +203,9 @@ void main() {
     shellNavigatorKey.currentState!.pop();
     await tester.pumpAndSettle();
 
-    // La croix du champ : la page reste, et propose la recherche d'avant.
-    await tester.tap(find.byIcon(AppIcons.close));
+    // Le champ vidé (le clavier est simulé muet ici, la frappe passe donc par
+    // le contrôleur) : la page reste, et propose la recherche d'avant.
+    tester.widget<TextField>(find.byType(TextField)).controller!.clear();
     await tester.pumpAndSettle();
     expect(find.byType(PhoneSearchScreen), findsOneWidget);
     expect(find.text('Recherches récentes'), findsOneWidget);

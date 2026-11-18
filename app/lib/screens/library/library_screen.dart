@@ -19,6 +19,7 @@ import 'widgets/catalog_header.dart';
 import 'widgets/catalog_sort_capsule.dart';
 import 'widgets/library_desktop_spotlight.dart';
 import 'widgets/library_tv_view.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 enum _SortOption { recent, title, progress }
 
@@ -255,7 +256,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 horizontalPadding,
                 24,
                 horizontalPadding,
-                MediaQuery.paddingOf(context).bottom + 48,
+                SliverScrollEnd.extentOf(context),
               ),
               sliver: SliverLayoutBuilder(
                 builder: (context, constraints) => SliverGrid(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/library_provider.dart';
-import '../../screens/search/phone/phone_search_screen.dart';
 import '../../screens/search/tv_search_screen.dart';
 import '../../screens/search/tv_system_search_screen.dart';
 import '../../services/tv_system_search.dart';
@@ -9,24 +8,18 @@ import '../../theme/app_colors.dart';
 import '../../navigation/shell_navigator.dart';
 import '../../tv/tv_focus.dart';
 import '../../tv/tv_mode.dart';
-import 'glass_chrome.dart';
 import 'tv_tab_bar.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 
-/// La porte de la recherche du catalogue, sur téléphone et sur téléviseur.
-///
-/// Sur téléphone, une loupe qui ouvre la page de recherche
-/// ([PhoneSearchScreen], ADR-0145). Elle remplace un champ étroit dans la
-/// barre du haut, qui passait la frappe au champ d'une autre page dès le
-/// premier caractère.
-///
-/// Sur téléviseur, l'écran de recherche du système (Apple TV) ou celui de
-/// l'app ([TvSearchScreen]).
+/// La porte de la recherche du catalogue sur téléviseur : l'écran de
+/// recherche du système (Apple TV) ou celui de l'app ([TvSearchScreen]).
 ///
 /// Le bureau a la sienne, dans son en-tête (`DesktopHeaderSearch`,
-/// ADR-0139).
+/// ADR-0139) ; le téléphone le rond de sa barre d'onglets, qui s'étire en
+/// bulle au-dessus de la page de recherche (`PhoneSearchSession`, ADR-0142
+/// et ADR-0145). Hors d'un téléviseur, elle ne dessine rien.
 class GlassCatalogSearch extends StatefulWidget {
   /// La largeur du champ d'un téléviseur, hors de la pilule des onglets.
   final double collapsedWidth;
@@ -170,19 +163,6 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
       );
     }
 
-    return Semantics(
-      button: true,
-      label: tr('Rechercher'),
-      excludeSemantics: true,
-      child: GlassIconButton(
-        size: 40,
-        onTap: () => openPhoneSearch(context),
-        child: Icon(
-          AppIcons.search,
-          size: 20,
-          color: AppColors.textPrimary.withValues(alpha: 0.92),
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }

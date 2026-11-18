@@ -24,6 +24,12 @@ abstract final class OnyxChromeTheme {
   static bool pointerCarriesTabs(Size size) =>
       size.width >= compactBreakpoint && size.height >= tabsPaneMinHeight;
 
+  /// Où tombe le milieu de lecture/pause sur un écran tenu en main, en
+  /// fraction de la hauteur : un peu au-dessus du centre, parce que la barre
+  /// du bas pèse plus que celle du haut. L'anneau d'attente s'y pose aussi
+  /// (ADR-0140), à la place du bouton.
+  static const double handheldCentreAt = 0.42;
+
   /// À partir de cette largeur, un écran tenu en main est une tablette : son
   /// chrome garde les tailles d'un doigt mais s'écarte davantage des bords,
   /// que rien n'y protège (un téléphone couché a ses zones sûres). Le plus
