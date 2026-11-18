@@ -75,7 +75,10 @@ class MobileBottomNav extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      _YieldsToKeyboard(child: Builder(builder: _buildBar));
+
+  Widget _buildBar(BuildContext context) {
     final inline = libraries.length <= maxInlineLibraries;
     return GlassBarSurface(
       child: SafeArea(
@@ -171,6 +174,59 @@ class MobileBottomNav extends StatelessWidget {
       ),
     );
   }
+}
+
+/// La barre laisse la place au clavier (ADR-0141).
+///
+/// La coquille réduit sa page au-dessus du clavier, et la barre, posée sous
+/// la page, se retrouvait sur lui, entre la frappe et les touches. Le clavier
+/// se lit sur la vue et non dans le [MediaQuery] : le [Scaffold] de la
+/// coquille en retire l'encart pour tout ce qu'il contient. Et la barre ne se
+/// reconstruit que quand le clavier s'ouvre ou se ferme, pas à chaque image
+/// de sa montée.
+class _YieldsToKeyboard extends StatefulWidget {
+  const _YieldsToKeyboard({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_YieldsToKeyboard> createState() => _YieldsToKeyboardState();
+}
+
+class _YieldsToKeyboardState extends State<_YieldsToKeyboard>
+    with WidgetsBindingObserver {
+  bool _keyboardOpen = false;
+
+  bool _readKeyboard() => View.of(context).viewInsets.bottom > 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _keyboardOpen = _readKeyboard();
+  }
+
+  @override
+  void didChangeMetrics() {
+    if (!mounted) return;
+    final open = _readKeyboard();
+    if (open != _keyboardOpen) setState(() => _keyboardOpen = open);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _keyboardOpen ? const SizedBox.shrink() : widget.child;
 }
 
 class _BottomNavItem extends StatelessWidget {

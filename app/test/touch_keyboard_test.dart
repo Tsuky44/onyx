@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:onyx/models/models.dart';
+import 'package:onyx/screens/shell/mobile_bottom_nav.dart';
+import 'package:onyx/screens/shell/shell_tabs.dart';
 import 'package:onyx/tv/tv_deferred_keyboard.dart';
 import 'package:onyx/widgets/global/glass_chrome.dart';
 
@@ -154,4 +157,39 @@ void main() {
     await tester.pump();
     expect(node.hasFocus, isTrue);
   }, variant: TargetPlatformVariant.desktop());
+
+  testWidgets('la barre d’onglets du téléphone cède la place au clavier',
+      (tester) async {
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(1170, 2532);
+    addTearDown(tester.view.reset);
+    // Sous un Scaffold, comme dans la coquille : il retire l'encart du
+    // clavier du MediaQuery de son contenu.
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Column(children: [
+          const Expanded(child: SizedBox.expand()),
+          MobileBottomNav(
+            selected: ShellTabs.home,
+            onTabSelected: (_) {},
+            libraries: const [
+              MediaLibrary(id: 1, name: 'Films', kind: LibraryKind.movies),
+            ],
+            canRequestMedia: true,
+            canDownload: true,
+          ),
+        ]),
+      ),
+    ));
+    expect(find.text('Accueil'), findsOneWidget);
+
+    // Le clavier monte : la barre ne se pose plus sur lui.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 1008);
+    await tester.pump();
+    expect(find.text('Accueil'), findsNothing);
+
+    tester.view.resetViewInsets();
+    await tester.pump();
+    expect(find.text('Accueil'), findsOneWidget);
+  });
 }

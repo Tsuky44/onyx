@@ -4,7 +4,7 @@
   c'est complètement bugé, le clavier ne part jamais ») ; comportement épinglé par des tests sous
   iOS et Android simulés, **pas encore vu sur un iPhone**.
 - **Date :** 2026-11-18
-- **Portée :** `tv/tv_deferred_keyboard.dart` (`usesTouchKeyboard`, le toucher hors du champ, le
+- **Portée :** `screens/shell/mobile_bottom_nav.dart`, `tv/tv_deferred_keyboard.dart` (`usesTouchKeyboard`, le toucher hors du champ, le
   champ « garé »), `widgets/global/glass_chrome.dart` (`GlassSearchInput`),
   `screens/library/search_results_screen.dart`,
   `screens/search/desktop/desktop_search_chips.dart`.
@@ -45,6 +45,12 @@ Sur un écran tactile (`TvDeferredKeyboard.usesTouchKeyboard` : iOS ou Android d
    passait que parce que Flutter, sous Android, ignore les touchers hors du champ ; sur un vrai
    bureau, le clic retirait le focus.
 
+5. **La barre d'onglets du téléphone cède la place au clavier** (`MobileBottomNav`). La coquille
+   réduit sa page au-dessus du clavier, et la barre, posée sous la page, se retrouvait sur lui.
+   Le clavier se lit sur la vue (`View.viewInsets`) : le `Scaffold` de la coquille retire son
+   encart du `MediaQuery` de tout ce qu'il contient. La barre ne se reconstruit que quand le
+   clavier s'ouvre ou se ferme.
+
 ### Écarté
 
 - **Fermer le clavier au défilement seulement** (`keyboardDismissBehavior.onDrag`). Un toucher
@@ -58,4 +64,5 @@ Sur un écran tactile (`TvDeferredKeyboard.usesTouchKeyboard` : iOS ou Android d
   un menu ou un dialogue par-dessus un champ referme le clavier, qui ne revient pas seul.
 - Les tests de l'app tournent par défaut sous Android : tous passent maintenant par ce chemin.
 - Épinglé par `test/touch_keyboard_test.dart` (iOS et Android : toucher hors du champ, autre
-  champ, retour sur la page, touche « Rechercher » ; au bureau, Entrée garde le champ).
+  champ, retour sur la page, touche « Rechercher » ; au bureau, Entrée garde le champ ; la barre
+  d'onglets sous le clavier).
