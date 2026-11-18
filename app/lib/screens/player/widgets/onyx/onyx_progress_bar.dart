@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -109,6 +110,10 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
   double? _dragFraction;
   double? _pointerFraction;
 
+  /// Ce qui touche la barre : une souris la survole encore après le clic, un
+  /// doigt non.
+  PointerDeviceKind? _pointerKind;
+
   /// Pointed at, dragged, or standing under the remote — all three mean the
   /// bar is the thing being aimed at, and all three thicken it.
   bool get _active => _hovered || _focused || _dragFraction != null;
@@ -151,7 +156,15 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
       width <= 0 ? 0.0 : (dx / width).clamp(0.0, 1.0);
 
   void _setDrag(double? value) {
-    setState(() => _dragFraction = value);
+    setState(() {
+      _dragFraction = value;
+      // Un doigt ne survole pas : la vignette qu'il a fait venir en glissant
+      // part avec lui. Seule la sortie d'une souris l'effaçait, et sur un
+      // iPhone elle restait à l'écran après le lever.
+      if (value == null && _pointerKind != PointerDeviceKind.mouse) {
+        _pointerFraction = null;
+      }
+    });
     widget.onScrubbingChanged?.call(value != null);
   }
 
@@ -183,10 +196,14 @@ class _OnyxProgressBarState extends State<OnyxProgressBar> {
             // Décrite d'un bloc par [_described] : un tap et un glissement
             // anonymes ne disent rien à un lecteur d'écran.
             excludeFromSemantics: true,
-            onTapDown: (d) =>
-                widget.onSeek(_fractionFor(d.localPosition.dx, width)),
-            onHorizontalDragStart: (d) =>
-                _setDrag(_fractionFor(d.localPosition.dx, width)),
+            onTapDown: (d) {
+              _pointerKind = d.kind;
+              widget.onSeek(_fractionFor(d.localPosition.dx, width));
+            },
+            onHorizontalDragStart: (d) {
+              _pointerKind = d.kind;
+              _setDrag(_fractionFor(d.localPosition.dx, width));
+            },
             onHorizontalDragUpdate: (d) => setState(() {
               _dragFraction = _fractionFor(d.localPosition.dx, width);
               _pointerFraction = _dragFraction;

@@ -45,6 +45,7 @@ part 'player_controller_dolby_vision.dart';
 part 'player_controller_hls.dart';
 part 'player_controller_language.dart';
 part 'player_controller_startup.dart';
+part 'player_controller_subtitle_offer.dart';
 part 'player_controller_tracks.dart';
 
 /// Orchestrates playback, quality/audio/subtitle switching and the Direct Play

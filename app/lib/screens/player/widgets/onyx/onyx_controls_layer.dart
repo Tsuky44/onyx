@@ -44,6 +44,12 @@ class OnyxControlsLayer extends StatelessWidget {
 
   // --- Playback -----------------------------------------------------------
   final bool isPlaying;
+
+  /// Le lecteur attend : démarrage, recherche, tampon, changement de qualité.
+  /// Sur un écran tenu en main, lecture/pause s'efface et l'anneau d'attente
+  /// de l'écran du lecteur prend sa place (ADR-0140) ; le bouton garde sa
+  /// cible, pour qu'on puisse encore mettre en pause.
+  final bool isLoading;
   final Duration position;
   final Duration duration;
 
@@ -102,6 +108,10 @@ class OnyxControlsLayer extends StatelessWidget {
   // --- Utilities ----------------------------------------------------------
   final VoidCallback onBack;
   final VoidCallback onToggleSubtitles;
+
+  /// Le média a au moins un sous-titre à proposer. Sans aucun, le bouton des
+  /// sous-titres n'est pas posé : il n'ouvrait qu'un menu vide (ADR-0140).
+  final bool hasSubtitles;
   final VoidCallback onOpenAudio;
   final VoidCallback onOpenSettings;
   final VoidCallback onToggleFullscreen;
@@ -241,6 +251,7 @@ class OnyxControlsLayer extends StatelessWidget {
     super.key,
     required this.visible,
     required this.isPlaying,
+    this.isLoading = false,
     required this.position,
     required this.duration,
     required this.buffered,
@@ -255,6 +266,7 @@ class OnyxControlsLayer extends StatelessWidget {
     this.onBrightnessDraggingChanged,
     required this.onBack,
     required this.onToggleSubtitles,
+    this.hasSubtitles = true,
     required this.onOpenAudio,
     required this.onOpenSettings,
     required this.onToggleFullscreen,
