@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/library_screen.dart": {
-    "mtime": 1795013856.1732748,
-    "seen": 1795020837.491643,
-    "ast_hash": "83d119aa14e36756e0cc293c5488d615",
+    "mtime": 1795022101.9861627,
+    "seen": 1795022506.7520385,
+    "ast_hash": "93c310ecfa8aa5181153ca036c5ae944",
     "semantic_hash": ""
   },
   "app/lib/screens/library/movie_detail_screen.dart": {
@@ -3186,9 +3186,9 @@
     "semantic_hash": ""
   },
   "app/lib/utils/poster_grid_zoom.dart": {
-    "mtime": 1795013856.1936805,
-    "seen": 1795020837.492341,
-    "ast_hash": "6aafb1bd4b9b804b93b68fcf03d1135b",
+    "mtime": 1795022102.1145003,
+    "seen": 1795022506.752734,
+    "ast_hash": "62b49f816a3eeadb2d1c57422a01c56e",
     "semantic_hash": ""
   },
   "app/lib/utils/poster_url.dart": {
@@ -3204,9 +3204,9 @@
     "semantic_hash": ""
   },
   "app/lib/utils/responsive.dart": {
-    "mtime": 1795013856.1936805,
-    "seen": 1795020837.4923432,
-    "ast_hash": "d1287fc62eae65c14ef84339969bdb2e",
+    "mtime": 1795022071.7401564,
+    "seen": 1795022506.7527366,
+    "ast_hash": "2be76dea6281bce54d21499ac6955441",
     "semantic_hash": ""
   },
   "app/lib/utils/search_match.dart": {
@@ -3522,9 +3522,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_grid_zoom_region.dart": {
-    "mtime": 1795013856.1971514,
-    "seen": 1795020837.492435,
-    "ast_hash": "c05f7b22661b6447bf79ab276e90f777",
+    "mtime": 1795022071.739926,
+    "seen": 1795022506.75284,
+    "ast_hash": "cd4f9ae240da20196628fd0c1988d19b",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_launch_route.dart": {
@@ -11772,9 +11772,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_grid_display_menu.dart": {
-    "mtime": 1795013856.1971514,
-    "seen": 1795020837.4924335,
-    "ast_hash": "a878fa4ac00c1ca15f90a1a8a066ad25",
+    "mtime": 1795022102.1225004,
+    "seen": 1795022506.7528389,
+    "ast_hash": "31065033fc75e5b2363fdc0aab9a424d",
     "semantic_hash": ""
   },
   "app/test/poster_grid_display_menu_test.dart": {
@@ -14082,15 +14082,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_desktop_spotlight.dart": {
-    "mtime": 1795013856.173917,
-    "seen": 1795020837.4916625,
-    "ast_hash": "a1638bec3a8df566d3821e15006bfac2",
+    "mtime": 1795022092.2878766,
+    "seen": 1795022506.7520626,
+    "ast_hash": "422d7e2c0e67e1f541089383a1c09290",
     "semantic_hash": ""
   },
   "app/test/library_desktop_spotlight_test.dart": {
-    "mtime": 1795013856.200442,
-    "seen": 1795020837.4926012,
-    "ast_hash": "aba2f38a4664cedec5c6a0c360736202",
+    "mtime": 1795022131.5705013,
+    "seen": 1795022506.7529912,
+    "ast_hash": "e9b87466f6bda96d10967aceb5c8440d",
     "semantic_hash": ""
   },
   "docs/adr/0140-sur-le-bureau-les-bibliotheques-ont-le-volet-de-la-recherche.md": {
@@ -14493,6 +14493,12 @@
     "mtime": 1795020519.2521706,
     "seen": 1795020837.4940948,
     "ast_hash": "af413d84a0232285dc1e2671882253e7",
+    "semantic_hash": ""
+  },
+  "docs/adr/0156-sur-le-bureau-le-volet-d-une-bibliotheque-prend-les-proportions-de-l-apple-tv.md": {
+    "mtime": 1795022184.1145031,
+    "seen": 1795022506.754548,
+    "ast_hash": "466ec60eb74a3609a1ff7a6bee7f2379",
     "semantic_hash": ""
   }
 }
