@@ -6,11 +6,10 @@ import '../../theme/app_motion.dart';
 import '../../widgets/global/account_menu.dart';
 import '../../widgets/global/app_download_button.dart';
 import '../../widgets/global/glass_chrome.dart';
-import '../../widgets/global/sticky_glass_search.dart';
 
 /// La barre du haut du téléphone, la même sur chaque onglet, accueil compris :
-/// le logo (il ramène à l'accueil), la recherche, l'application à télécharger,
-/// le compte.
+/// le logo (il ramène à l'accueil), l'application à télécharger, le compte.
+/// La recherche est en bas, dans le rond de la barre d'onglets (ADR-0142).
 ///
 /// L'accueil avait sa propre barre avec « ONYX » écrit, les autres onglets une
 /// barre sans logo et une recherche calée à droite : on changeait de barre en
@@ -84,9 +83,7 @@ class MobileTopBar extends StatelessWidget {
             child: Row(
               children: [
                 GlassBrand(showWordmark: false, onTap: onLogoTap),
-                const SizedBox(width: 12),
-                const Expanded(child: InlineCatalogSearch()),
-                const SizedBox(width: 4),
+                const Spacer(),
                 if (working)
                   const Padding(
                     padding: EdgeInsets.only(right: 8),

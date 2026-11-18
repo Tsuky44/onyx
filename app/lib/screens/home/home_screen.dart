@@ -28,6 +28,7 @@ import '../player/player_screen.dart';
 import 'home_empty_view.dart';
 import 'home_recent_rows.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool embedded;
@@ -332,8 +333,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                               ),
                             ],
-                            const SliverToBoxAdapter(
-                                child: SizedBox(height: 48)),
+                            const SliverScrollEnd(),
                           ],
                         ],
                       ),

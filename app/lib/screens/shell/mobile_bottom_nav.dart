@@ -1,22 +1,38 @@
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../../models/models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
+import '../../theme/app_motion.dart';
 import '../../widgets/global/glass_chrome.dart';
 import '../../widgets/global/interface_tour/tour_anchor.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 import '../library/library_screen.dart';
+import 'phone_search.dart';
 import 'shell_tabs.dart';
 
-/// La barre d'onglets du téléphone.
+/// La barre d'onglets du téléphone (ADR-0142) : une capsule de verre qui
+/// flotte en bas de l'écran, le verre de la pilule de l'Apple TV posé où le
+/// pouce l'attend, et à côté d'elle un rond de verre pour la recherche.
 ///
-/// La plus grande surface structurelle de l'app sur téléphone : elle se lit en
-/// verre sombre et dense, pas en voile blanc à 5 % — plus légère que n'importe
-/// quel menu, elle laissait passer les affiches en pleine couleur sous les
-/// libellés.
-class MobileBottomNav extends StatelessWidget {
+/// - **au repos**, l'icône et le nom de chaque onglet, une lentille de verre
+///   clair sous celui qui est affiché ;
+/// - **la page défile vers le bas** ([minimized]), la capsule se réduit à
+///   l'onglet affiché et la recherche reste ; elle revient en entier au
+///   premier geste vers le haut ;
+/// - **la recherche s'ouvre** ([search]), le rond s'étire sur toute la
+///   largeur et devient le champ, pendant que les onglets s'effacent dessous ;
+///   le clavier monte ensuite et le champ monte avec lui ;
+/// - **un autre champ ouvre le clavier**, la barre lui laisse la place
+///   (ADR-0141).
+///
+/// Elle remplace la barre pleine largeur, en verre sombre et dense, qui
+/// prenait 90 points au bas de chaque écran.
+class MobileBottomNav extends StatefulWidget {
   /// L'identifiant de l'onglet affiché (voir [ShellTabs]).
   final String selected;
   final ValueChanged<String> onTabSelected;
@@ -30,10 +46,53 @@ class MobileBottomNav extends StatelessWidget {
   /// Le serveur tient des listes (ADR-0070).
   final bool canUseLists;
 
+  /// La recherche du téléphone. Null : pas de rond de recherche.
+  final PhoneSearchSession? search;
+
+  /// La page défile vers le bas : la capsule se réduit à l'onglet affiché.
+  final bool minimized;
+
+  /// La capsule réduite est touchée : elle demande à revenir en entier.
+  final VoidCallback? onExpand;
+
   /// Au-delà, les bibliothèques ne tiennent plus côte à côte entre l'accueil
   /// et les deux derniers onglets : un seul onglet les réunit et ouvre leur
   /// liste.
   static const int maxInlineLibraries = 2;
+
+  /// La hauteur de la capsule et du rond : « B bis », la version compacte
+  /// que l'utilisateur a choisie (62 sur la première maquette).
+  static const double height = 52;
+
+  /// La marge des côtés de l'écran, et l'écart entre la capsule et le rond.
+  static const double side = 16;
+  static const double gap = 8;
+
+  /// Ce qui sépare la barre du bas de l'écran : un peu moins que la zone de
+  /// l'indicateur d'accueil d'iOS ou de la poignée des gestes d'Android,
+  /// qu'elle chevauche comme la barre d'iOS, et jamais moins de 12. Au-dessus
+  /// des trois boutons de navigation d'Android, plus hauts, elle se pose
+  /// au-dessus d'eux : le bas de la capsule serait sous leurs touches.
+  static double bottomFor(EdgeInsets padding) {
+    final inset = padding.bottom;
+    if (inset > _gestureInset) return inset + 8;
+    return math.max(inset - 14, 12);
+  }
+
+  /// La plus haute zone de gestes : l'indicateur d'accueil d'un iPhone.
+  static const double _gestureInset = 34;
+
+  /// La place que les pages laissent libre sous leur contenu pour que la
+  /// barre ne le cache pas : sa hauteur, son écart au bas de l'écran, et un
+  /// peu d'air. Rien quand un autre champ a le clavier : la barre s'efface.
+  static double reserveFor(
+    EdgeInsets padding, {
+    required bool keyboardOpen,
+    required bool searching,
+  }) {
+    if (keyboardOpen && !searching) return 0;
+    return bottomFor(padding) + height + 12;
+  }
 
   const MobileBottomNav({
     super.key,
@@ -43,7 +102,87 @@ class MobileBottomNav extends StatelessWidget {
     required this.canRequestMedia,
     required this.canDownload,
     this.canUseLists = false,
+    this.search,
+    this.minimized = false,
+    this.onExpand,
   });
+
+  @override
+  State<MobileBottomNav> createState() => _MobileBottomNavState();
+}
+
+class _MobileBottomNavState extends State<MobileBottomNav>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  /// 0 : la capsule et le rond ; 1 : la bulle de recherche sur toute la
+  /// largeur.
+  late final AnimationController _searchOpening = AnimationController(
+    vsync: this,
+    duration: PhoneSearchSession.expand,
+    value: widget.search?.isOpen ?? false ? 1 : 0,
+  )..addStatusListener(_onSearchStatus);
+
+  bool _keyboardOpen = false;
+
+  bool get _searching => widget.search?.isOpen ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    widget.search?.addListener(_onSearchChanged);
+  }
+
+  @override
+  void didUpdateWidget(MobileBottomNav oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.search != widget.search) {
+      oldWidget.search?.removeListener(_onSearchChanged);
+      widget.search?.addListener(_onSearchChanged);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _keyboardOpen = _readKeyboard();
+  }
+
+  /// Le clavier se lit sur la vue et non dans le [MediaQuery] : le [Scaffold]
+  /// de la coquille en retire l'encart pour tout ce qu'il contient.
+  bool _readKeyboard() => View.of(context).viewInsets.bottom > 0;
+
+  @override
+  void didChangeMetrics() {
+    if (!mounted) return;
+    final open = _readKeyboard();
+    if (open != _keyboardOpen) setState(() => _keyboardOpen = open);
+  }
+
+  void _onSearchChanged() {
+    if (!mounted) return;
+    final duration = AppMotion.reduced(context) ? Duration.zero : null;
+    if (_searching) {
+      _searchOpening.animateTo(1, duration: duration, curve: Curves.easeOutCubic);
+    } else {
+      _searchOpening.animateBack(0, duration: duration, curve: Curves.easeOutCubic);
+    }
+    setState(() {});
+  }
+
+  /// La bulle a pris toute la largeur : le champ prend la main, et le clavier
+  /// monte.
+  void _onSearchStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || !_searching) return;
+    widget.search?.focusNode.requestFocus();
+  }
+
+  @override
+  void dispose() {
+    widget.search?.removeListener(_onSearchChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    _searchOpening.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickLibrary(BuildContext context) async {
     final picked = await showModalBottomSheet<MediaLibrary>(
@@ -54,15 +193,15 @@ class MobileBottomNav extends StatelessWidget {
         child: ListView(
           shrinkWrap: true,
           children: [
-            for (final library in libraries)
+            for (final library in widget.libraries)
               ListTile(
                 leading: Icon(
                   libraryIcon(library.kind,
-                      selected: selected == ShellTabs.library(library)),
+                      selected: widget.selected == ShellTabs.library(library)),
                   color: AppColors.textPrimary,
                 ),
                 title: Text(ShellTabs.label(library)),
-                trailing: selected == ShellTabs.library(library)
+                trailing: widget.selected == ShellTabs.library(library)
                     ? const Icon(AppIcons.check, color: AppColors.textPrimary)
                     : null,
                 onTap: () => Navigator.of(sheetContext).pop(library),
@@ -71,222 +210,381 @@ class MobileBottomNav extends StatelessWidget {
         ),
       ),
     );
-    if (picked != null) onTabSelected(ShellTabs.library(picked));
+    if (picked != null) widget.onTabSelected(ShellTabs.library(picked));
   }
 
   @override
-  Widget build(BuildContext context) =>
-      _YieldsToKeyboard(child: Builder(builder: _buildBar));
-
-  Widget _buildBar(BuildContext context) {
-    final inline = libraries.length <= maxInlineLibraries;
-    return GlassBarSurface(
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 56,
-          child: Row(
-            children: [
-              // L'accueil et les bibliothèques d'un seul tenant : c'est ainsi
-              // que la présentation de l'interface les montre.
-              Expanded(
-                flex: inline ? 1 + libraries.length : 2,
-                child: TourTarget(
-                  anchor: TourAnchor.library,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _BottomNavItem(
-                          icon: AppIcons.home,
-                          selectedIcon: AppIcons.homeSelected,
-                          label: tr('Accueil'),
-                          selected: selected == ShellTabs.home,
-                          onTap: () => onTabSelected(ShellTabs.home),
-                        ),
-                      ),
-                      if (inline)
-                        for (final library in libraries)
-                          Expanded(
-                            child: _BottomNavItem(
-                              icon: libraryIcon(library.kind),
-                              selectedIcon:
-                                  libraryIcon(library.kind, selected: true),
-                              label: ShellTabs.label(library),
-                              selected:
-                                  selected == ShellTabs.library(library),
-                              onTap: () =>
-                                  onTabSelected(ShellTabs.library(library)),
-                            ),
-                          )
-                      else
-                        Expanded(
-                          child: _BottomNavItem(
-                            icon: AppIcons.collection,
-                            selectedIcon: AppIcons.collection,
-                            label: tr('Bibliothèques'),
-                            selected: ShellTabs.isLibrary(selected),
-                            onTap: () => _pickLibrary(context),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              if (canRequestMedia)
-                Expanded(
-                  child: TourTarget(
-                    anchor: TourAnchor.requests,
-                    child: _BottomNavItem(
-                      icon: AppIcons.request,
-                      selectedIcon: AppIcons.requestSelected,
-                      label: tr('Demandes'),
-                      selected: selected == ShellTabs.requests,
-                      onTap: () => onTabSelected(ShellTabs.requests),
-                    ),
-                  ),
-                ),
-              if (canUseLists)
-                Expanded(
-                  child: _BottomNavItem(
-                    icon: AppIcons.lists,
-                    selectedIcon: AppIcons.listsSelected,
-                    label: tr('Listes'),
-                    selected: selected == ShellTabs.lists,
-                    onTap: () => onTabSelected(ShellTabs.lists),
-                  ),
-                ),
-              if (canDownload)
-                Expanded(
-                  child: TourTarget(
-                    anchor: TourAnchor.downloads,
-                    child: _BottomNavItem(
-                      icon: AppIcons.offline,
-                      selectedIcon: AppIcons.offlineSelected,
-                      label: tr('Hors ligne'),
-                      selected: selected == ShellTabs.downloads,
-                      onTap: () => onTabSelected(ShellTabs.downloads),
-                    ),
-                  ),
-                ),
-            ],
+  Widget build(BuildContext context) {
+    // Un autre champ a ouvert le clavier : la barre lui laisse la place, et
+    // ne se posait plus sur lui (ADR-0141). Le champ de la recherche, lui, est
+    // dans la barre : il monte avec le clavier.
+    if (_keyboardOpen && !_searching) return const SizedBox.shrink();
+    final bottom = MobileBottomNav.bottomFor(MediaQuery.paddingOf(context));
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        MobileBottomNav.side,
+        0,
+        MobileBottomNav.side,
+        bottom,
+      ),
+      child: SizedBox(
+        height: MobileBottomNav.height,
+        child: LayoutBuilder(
+          builder: (context, constraints) => AnimatedBuilder(
+            animation: _searchOpening,
+            builder: (context, _) =>
+                _buildBar(context, constraints.maxWidth, _searchOpening.value),
           ),
         ),
       ),
     );
   }
+
+  Widget _buildBar(BuildContext context, double width, double opening) {
+    final search = widget.search;
+    const round = MobileBottomNav.height;
+    final capsuleWidth = search == null
+        ? width
+        : width - round - MobileBottomNav.gap;
+    final minimized = widget.minimized && !_searching;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Les onglets se resserrent et s'effacent sous la bulle qui s'étire.
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          child: IgnorePointer(
+            ignoring: opening > 0,
+            child: Opacity(
+              opacity: (1 - opening * 1.6).clamp(0.0, 1.0),
+              child: Transform.scale(
+                scale: 1 - 0.1 * opening,
+                alignment: Alignment.centerLeft,
+                child: AnimatedContainer(
+                  duration: AppMotion.move(context, AppMotion.emphasis),
+                  curve: AppMotion.curve,
+                  width: minimized ? round : capsuleWidth,
+                  child: _GlassPill(
+                    child: AnimatedSwitcher(
+                      duration: AppMotion.fade(context),
+                      child: minimized
+                          ? _buildMinimized()
+                          : _buildTabs(context),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (search != null)
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: lerpDouble(round, width, opening),
+            child: TourTarget(
+              anchor: TourAnchor.search,
+              child: _GlassPill(
+                child: opening < 0.5
+                    ? _buildSearchRound(search)
+                    : Opacity(
+                        opacity: ((opening - 0.5) * 2).clamp(0.0, 1.0),
+                        child: PhoneSearchField(session: search),
+                      ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSearchRound(PhoneSearchSession search) {
+    return Semantics(
+      button: true,
+      label: tr('Rechercher'),
+      child: GestureDetector(
+        key: const ValueKey('phone-search-round'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => search.open(reduced: AppMotion.reduced(context)),
+        child: const Center(
+          child: Icon(
+            AppIcons.search,
+            size: 21,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// La capsule réduite : l'onglet affiché seul, dans sa lentille. La toucher
+  /// rend la barre entière.
+  Widget _buildMinimized() {
+    final tab = _tabs().firstWhere(
+      (t) => t.selected,
+      orElse: () => _tabs().first,
+    );
+    return Semantics(
+      key: const ValueKey('phone-tab-bar-minimized'),
+      button: true,
+      label: tab.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onExpand,
+        child: Padding(
+          padding: const EdgeInsets.all(_GlassPill.inset),
+          child: _Lens(
+            child: Center(
+              child: Icon(
+                tab.selectedIcon,
+                size: 21,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabs(BuildContext context) {
+    final tabs = _tabs();
+    return Padding(
+      key: const ValueKey('phone-tab-bar-tabs'),
+      padding: const EdgeInsets.all(_GlassPill.inset),
+      child: Row(
+        children: [
+          for (final tab in tabs)
+            Expanded(
+              child: tab.anchor == null
+                  ? _BottomNavItem(tab: tab)
+                  : TourTarget(
+                      anchor: tab.anchor!,
+                      child: _BottomNavItem(tab: tab),
+                    ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<_Tab> _tabs() {
+    final selected = widget.selected;
+    final libraries = widget.libraries;
+    final inline = libraries.length <= MobileBottomNav.maxInlineLibraries;
+    return [
+      _Tab(
+        icon: AppIcons.home,
+        selectedIcon: AppIcons.homeSelected,
+        label: tr('Accueil'),
+        selected: selected == ShellTabs.home,
+        onTap: () => widget.onTabSelected(ShellTabs.home),
+        // L'accueil porte l'ancre des bibliothèques quand elles sont réunies
+        // ailleurs ; sinon c'est la première bibliothèque.
+        anchor: libraries.isEmpty ? TourAnchor.library : null,
+      ),
+      if (inline)
+        for (final (index, library) in libraries.indexed)
+          _Tab(
+            icon: libraryIcon(library.kind),
+            selectedIcon: libraryIcon(library.kind, selected: true),
+            label: ShellTabs.label(library),
+            selected: selected == ShellTabs.library(library),
+            onTap: () => widget.onTabSelected(ShellTabs.library(library)),
+            anchor: index == 0 ? TourAnchor.library : null,
+          )
+      else
+        _Tab(
+          icon: AppIcons.collection,
+          selectedIcon: AppIcons.collection,
+          label: tr('Bibliothèques'),
+          selected: ShellTabs.isLibrary(selected),
+          onTap: () => _pickLibrary(context),
+          anchor: TourAnchor.library,
+        ),
+      if (widget.canRequestMedia)
+        _Tab(
+          icon: AppIcons.request,
+          selectedIcon: AppIcons.requestSelected,
+          label: tr('Demandes'),
+          selected: selected == ShellTabs.requests,
+          onTap: () => widget.onTabSelected(ShellTabs.requests),
+          anchor: TourAnchor.requests,
+        ),
+      if (widget.canUseLists)
+        _Tab(
+          icon: AppIcons.lists,
+          selectedIcon: AppIcons.listsSelected,
+          label: tr('Listes'),
+          selected: selected == ShellTabs.lists,
+          onTap: () => widget.onTabSelected(ShellTabs.lists),
+        ),
+      if (widget.canDownload)
+        _Tab(
+          icon: AppIcons.offline,
+          selectedIcon: AppIcons.offlineSelected,
+          label: tr('Hors ligne'),
+          selected: selected == ShellTabs.downloads,
+          onTap: () => widget.onTabSelected(ShellTabs.downloads),
+          anchor: TourAnchor.downloads,
+        ),
+    ];
+  }
 }
 
-/// La barre laisse la place au clavier (ADR-0141).
-///
-/// La coquille réduit sa page au-dessus du clavier, et la barre, posée sous
-/// la page, se retrouvait sur lui, entre la frappe et les touches. Le clavier
-/// se lit sur la vue et non dans le [MediaQuery] : le [Scaffold] de la
-/// coquille en retire l'encart pour tout ce qu'il contient. Et la barre ne se
-/// reconstruit que quand le clavier s'ouvre ou se ferme, pas à chaque image
-/// de sa montée.
-class _YieldsToKeyboard extends StatefulWidget {
-  const _YieldsToKeyboard({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_YieldsToKeyboard> createState() => _YieldsToKeyboardState();
-}
-
-class _YieldsToKeyboardState extends State<_YieldsToKeyboard>
-    with WidgetsBindingObserver {
-  bool _keyboardOpen = false;
-
-  bool _readKeyboard() => View.of(context).viewInsets.bottom > 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _keyboardOpen = _readKeyboard();
-  }
-
-  @override
-  void didChangeMetrics() {
-    if (!mounted) return;
-    final open = _readKeyboard();
-    if (open != _keyboardOpen) setState(() => _keyboardOpen = open);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) =>
-      _keyboardOpen ? const SizedBox.shrink() : widget.child;
-}
-
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-
-  /// Plein quand l'onglet est actif, creux sinon : la sélection se lit à la
-  /// forme autant qu'à la couleur.
-  final IconData selectedIcon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _BottomNavItem({
+/// Un onglet de la capsule.
+class _Tab {
+  const _Tab({
     required this.icon,
     required this.selectedIcon,
     required this.label,
     required this.selected,
     required this.onTap,
+    this.anchor,
   });
+
+  final IconData icon;
+
+  /// Plein quand l'onglet est affiché, creux sinon : la sélection se lit à la
+  /// forme autant qu'à la lentille.
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  /// L'ancre de la visite guidée qu'il porte, s'il en porte une.
+  final TourAnchor? anchor;
+}
+
+/// Le verre de la capsule et du rond : un voile clair dégradé sur un flou de
+/// ce qui passe dessous, un liseré et une ombre qui le détachent de la page.
+/// En mode léger et sur un téléviseur LG, un fond dense sans flou
+/// ([glassBlurs]).
+class _GlassPill extends StatelessWidget {
+  const _GlassPill({required this.child});
+
+  final Widget child;
+
+  /// Le retrait des onglets dans la capsule.
+  static const double inset = 3;
+
+  static const BorderRadius _radius =
+      BorderRadius.all(Radius.circular(MobileBottomNav.height / 2));
 
   @override
   Widget build(BuildContext context) {
+    final blurs = glassBlurs(context);
+    final glass = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: _radius,
+        color: blurs ? null : const Color(0xF22A2A2E),
+        gradient: blurs
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.16),
+                  Colors.white.withValues(alpha: 0.06),
+                ],
+              )
+            : null,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+      ),
+      child: child,
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: _radius,
+        boxShadow: [
+          // Une ombre courte : longue et dense, elle dessinait une tache
+          // sombre sous la capsule, sur l'indicateur d'accueil.
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: _radius,
+        child: blurs
+            ? BackdropFilter.grouped(
+                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                child: glass,
+              )
+            : glass,
+      ),
+    );
+  }
+}
+
+/// La lentille de verre clair sous l'onglet affiché.
+class _Lens extends StatelessWidget {
+  const _Lens({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: const BorderRadius.all(Radius.circular(23)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _BottomNavItem extends StatelessWidget {
+  const _BottomNavItem({required this.tab});
+
+  final _Tab tab;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = tab.selected;
+    // Blanc et non bleu : l'accent est réservé au focus et à la progression,
+    // et cinq onglets en bas d'écran ne sont ni l'un ni l'autre.
+    final ink = selected
+        ? AppColors.textPrimary
+        : AppColors.textPrimary.withValues(alpha: 0.78);
+    final content = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(selected ? tab.selectedIcon : tab.icon, color: ink, size: 19),
+        const SizedBox(height: 1),
+        // Le nom d'une bibliothèque est libre : au-delà de la largeur de
+        // l'onglet il se coupe, il ne déborde pas sur le voisin.
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 1),
+          child: Text(
+            tab.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: ink,
+              fontSize: AppType.micro,
+              // Resserré : « Demandes » et « Hors ligne » tiennent dans un
+              // cinquième de capsule.
+              letterSpacing: -0.2,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
     return Semantics(
       selected: selected,
       button: true,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Blanc et non bleu : l'accent est réservé au focus et à la
-              // progression, et cinq onglets en bas d'écran ne sont ni l'un
-              // ni l'autre.
-              Icon(
-                selected ? selectedIcon : icon,
-                color: selected ? AppColors.textPrimary : AppColors.textMuted,
-                size: 24,
-              ),
-              const SizedBox(height: 4),
-              // Le nom d'une bibliothèque est libre : au-delà de la largeur
-              // de l'onglet il se coupe, il ne déborde pas sur le voisin.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color:
-                        selected ? AppColors.textPrimary : AppColors.textMuted,
-                    fontSize: AppType.caption,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: tab.onTap,
+        child: selected ? _Lens(child: content) : content,
       ),
     );
   }

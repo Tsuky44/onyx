@@ -34,6 +34,7 @@ import '../../theme/app_icons.dart';
 import '../../l10n/tr.dart';
 import '../../models/watch_list.dart';
 import '../../widgets/global/add_to_list_button.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 class MovieDetailScreen extends StatefulWidget {
   final HomeMediaItem? movieItem;
@@ -534,7 +535,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen>
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+            const SliverScrollEnd(),
           ],
         ),
       ),

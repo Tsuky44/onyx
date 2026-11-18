@@ -22,6 +22,7 @@ import '../../widgets/global/season_watched_button.dart';
 import 'show_episode_actions.dart';
 import 'widgets/season_preview.dart';
 import 'widgets/season_tabs.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 /// La page d'une saison : son affiche et son résumé sur le fond de la série,
 /// puis ses épisodes. On y arrive par la fiche qui s'ouvre au survol d'un
@@ -335,7 +336,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                 ],
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+            const SliverScrollEnd(),
           ],
         ),
       ),

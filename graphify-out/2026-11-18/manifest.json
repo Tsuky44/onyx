@@ -1050,9 +1050,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/downloads/downloads_screen.dart": {
-    "mtime": 1794953725.7438138,
-    "seen": 1794958195.4566922,
-    "ast_hash": "a102c40408ac1e98e6368bdf3bea49c3",
+    "mtime": 1794996295.5580497,
+    "seen": 1794996876.0422468,
+    "ast_hash": "1e94a6e693b00b820dbfcba86e35e557",
     "semantic_hash": ""
   },
   "app/lib/screens/home/home_empty_view.dart": {
@@ -1068,9 +1068,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/home/home_screen.dart": {
-    "mtime": 1794958149.199891,
-    "seen": 1794958195.4567032,
-    "ast_hash": "3801ab18e622e014d7362560e30e86d3",
+    "mtime": 1794996295.557617,
+    "seen": 1794996876.042265,
+    "ast_hash": "93080165c13b0fc4748b042a932244aa",
     "semantic_hash": ""
   },
   "app/lib/screens/library/collection_screen.dart": {
@@ -1080,15 +1080,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/library_screen.dart": {
-    "mtime": 1794953725.7443757,
-    "seen": 1794958195.4567058,
-    "ast_hash": "62ba1a48cd524c275d5258406997a664",
+    "mtime": 1794996295.5608637,
+    "seen": 1794996876.0422697,
+    "ast_hash": "e6e6e256eb361e872b4a3acd4672e2ee",
     "semantic_hash": ""
   },
   "app/lib/screens/library/movie_detail_screen.dart": {
-    "mtime": 1794953725.7443757,
-    "seen": 1794958195.456707,
-    "ast_hash": "807af1a05daf25222c8f57049d9c5352",
+    "mtime": 1794996295.5584822,
+    "seen": 1794996876.0422723,
+    "ast_hash": "1f1db5b128cf3105ecaf8a2d9055c84b",
     "semantic_hash": ""
   },
   "app/lib/screens/library/person_detail_screen.dart": {
@@ -1104,21 +1104,21 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/search_results_screen.dart": {
-    "mtime": 1794962772.9960892,
-    "seen": 1794963561.169375,
-    "ast_hash": "588394bed3d1aadde5ecd5e88647611e",
+    "mtime": 1794996480.4602933,
+    "seen": 1794996876.0422814,
+    "ast_hash": "09bc5e7f980fc4f1e92fc6e3655abd08",
     "semantic_hash": ""
   },
   "app/lib/screens/library/season_detail_screen.dart": {
-    "mtime": 1794953725.7443757,
-    "seen": 1794958195.4567144,
-    "ast_hash": "835c1daf0bf0efb7de257283a3f7120e",
+    "mtime": 1794996295.559401,
+    "seen": 1794996876.042284,
+    "ast_hash": "69be9474ecb9b343f8aca55e0e3bcd54",
     "semantic_hash": ""
   },
   "app/lib/screens/library/show_detail_screen.dart": {
-    "mtime": 1794953725.7443757,
-    "seen": 1794958195.4567158,
-    "ast_hash": "5ae0dcc73a1ab5aff01a95619ef84cf6",
+    "mtime": 1794996295.5590467,
+    "seen": 1794996876.0422864,
+    "ast_hash": "065d1ceafa71c9b5b40e35b204ac5da0",
     "semantic_hash": ""
   },
   "app/lib/screens/library/show_episode_actions.dart": {
@@ -1164,9 +1164,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/lists/lists_screen.dart": {
-    "mtime": 1794953725.7458723,
-    "seen": 1794958195.456738,
-    "ast_hash": "4cdc9dca33e0a29bd75180032e91f5d6",
+    "mtime": 1794996295.560639,
+    "seen": 1794996876.0423207,
+    "ast_hash": "7962f364ecdd8725afbf09d1ac1484d1",
     "semantic_hash": ""
   },
   "app/lib/screens/lists/widgets/watch_list_tile.dart": {
@@ -1890,15 +1890,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/requests/request_detail_screen.dart": {
-    "mtime": 1794953725.7549913,
-    "seen": 1794958195.456944,
-    "ast_hash": "6ddc96547a782208141a674b72bf7f05",
+    "mtime": 1794996295.5597222,
+    "seen": 1794996876.0426977,
+    "ast_hash": "b79563f0ef5907292911fc0f994e4eb4",
     "semantic_hash": ""
   },
   "app/lib/screens/requests/requests_screen.dart": {
-    "mtime": 1794953725.7549913,
-    "seen": 1794958195.456945,
-    "ast_hash": "6a90725117307be9d46d37af6e9cb7d7",
+    "mtime": 1794996295.5601397,
+    "seen": 1794996876.0427008,
+    "ast_hash": "9c59ece87f0eac8e00360f3b4a0d0537",
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/my_request_card.dart": {
@@ -2298,21 +2298,21 @@
     "semantic_hash": ""
   },
   "app/lib/screens/shell/main_shell.dart": {
-    "mtime": 1794958149.2059379,
-    "seen": 1794958195.4571197,
-    "ast_hash": "6df85fa2c782dd5321a7da92eb57bbe7",
+    "mtime": 1794996202.4311943,
+    "seen": 1794996876.0429826,
+    "ast_hash": "672814026addf69fbec8432f614dd272",
     "semantic_hash": ""
   },
   "app/lib/screens/shell/mobile_bottom_nav.dart": {
-    "mtime": 1794953725.7611365,
-    "seen": 1794958195.4571207,
-    "ast_hash": "8a3f9996418a31832b98ae4dc7a3f02b",
+    "mtime": 1794996480.4597569,
+    "seen": 1794996876.0429847,
+    "ast_hash": "687e4867e4f06ed981e430d19f20a9c6",
     "semantic_hash": ""
   },
   "app/lib/screens/shell/mobile_top_bar.dart": {
-    "mtime": 1794953725.7611365,
-    "seen": 1794958195.457122,
-    "ast_hash": "592352577c1b49c100b0318c6ea739a4",
+    "mtime": 1794996254.2843764,
+    "seen": 1794996876.0429869,
+    "ast_hash": "d42f41e263808f67aef0cbfc51d56848",
     "semantic_hash": ""
   },
   "app/lib/screens/shell/pending_announcement.dart": {
@@ -3639,12 +3639,6 @@
     "mtime": 1794953725.7751818,
     "seen": 1794958195.4575632,
     "ast_hash": "49ff6b51c5e22ff372b2b7198d8c8a17",
-    "semantic_hash": ""
-  },
-  "app/lib/widgets/global/sticky_glass_search.dart": {
-    "mtime": 1794953725.7751818,
-    "seen": 1794958195.4575663,
-    "ast_hash": "97e7c0b1d2d3c0b7d66610d4ccfdfac2",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/watch_badge.dart": {
@@ -14250,15 +14244,39 @@
     "semantic_hash": ""
   },
   "app/test/touch_keyboard_test.dart": {
-    "mtime": 1794963495.8354316,
-    "seen": 1794963561.1714468,
-    "ast_hash": "8f8acdc5f8135e04462fed56f49988fd",
+    "mtime": 1794993917.5543876,
+    "seen": 1794994254.4833126,
+    "ast_hash": "3a4a6f456bb7588c86c4e63f42329e5f",
     "semantic_hash": ""
   },
   "docs/adr/0141-le-clavier-d-un-ecran-tactile-se-referme.md": {
-    "mtime": 1794963526.712347,
-    "seen": 1794963561.1734781,
-    "ast_hash": "56271d593d5aa359df0ec1d1bb624729",
+    "mtime": 1794994215.2688503,
+    "seen": 1794994254.4918764,
+    "ast_hash": "dd952a87c25626e9b82f0c34c6f9a7ac",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/shell/phone_search.dart": {
+    "mtime": 1794996789.6577349,
+    "seen": 1794996876.0429916,
+    "ast_hash": "97d1d828b83d6f2e4b7aadcd61eb33cf",
+    "semantic_hash": ""
+  },
+  "app/lib/widgets/global/sliver_scroll_end.dart": {
+    "mtime": 1794996295.53066,
+    "seen": 1794996876.0437145,
+    "ast_hash": "d4541ab89444a8c694fca91964dccd89",
+    "semantic_hash": ""
+  },
+  "app/test/phone_tab_bar_test.dart": {
+    "mtime": 1794996357.110662,
+    "seen": 1794996876.044104,
+    "ast_hash": "13d0b8d513a90843d7599ed3455f8313",
+    "semantic_hash": ""
+  },
+  "docs/adr/0142-la-barre-d-onglets-du-telephone-est-une-capsule-de-verre.md": {
+    "mtime": 1794996846.219033,
+    "seen": 1794996876.0472717,
+    "ast_hash": "a0cd1c842f37555717102fb8d4d26b0c",
     "semantic_hash": ""
   }
 }

@@ -24,7 +24,9 @@ import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 import '../requests/request_availability.dart';
 import '../requests/widgets/request_media_card.dart';
+import '../search/desktop/recent_searches.dart';
 import '../search/search_shelves.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 /// Full-page grid of catalog results, updated live in real time as the user types.
 ///
@@ -46,18 +48,41 @@ class SearchResultsScreen extends StatefulWidget {
   /// pas refermer.
   final bool closesWhenEmptied;
 
+  /// Sur un téléphone, la page s'ouvre sous la bulle de recherche de la barre
+  /// d'onglets, posée au-dessus du clavier (ADR-0142) : elle suit la frappe
+  /// comme [followsHeader], sans barre en haut, et montre les [recents] tant
+  /// que rien n'est tapé.
+  final bool docked;
+
+  /// Les recherches récentes du profil, et ce qu'en toucher une fait.
+  final RecentSearches? recents;
+  final ValueChanged<String>? onRecent;
+
   const SearchResultsScreen({
     super.key,
     this.query = '',
     this.autofocusField = false,
     this.closesWhenEmptied = false,
-  }) : followsHeader = false;
+  })  : followsHeader = false,
+        docked = false,
+        recents = null,
+        onRecent = null;
 
   const SearchResultsScreen.followingHeader({super.key})
       : query = '',
         autofocusField = false,
         closesWhenEmptied = false,
-        followsHeader = true;
+        followsHeader = true,
+        docked = false,
+        recents = null,
+        onRecent = null;
+
+  const SearchResultsScreen.docked({super.key, this.recents, this.onRecent})
+      : query = '',
+        autofocusField = false,
+        closesWhenEmptied = false,
+        followsHeader = true,
+        docked = true;
 
   @override
   State<SearchResultsScreen> createState() => _SearchResultsScreenState();
@@ -108,8 +133,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     super.didChangeDependencies();
     // Au retour d'une fiche de demande, le statut d'un titre a pu changer :
     // « Indispo » devient « Demandé ».
-    final current = ModalRoute.of(context)?.isCurrent ?? true;
+    final route = ModalRoute.of(context);
+    final current = route?.isCurrent ?? true;
     if (current && !_current) _catalog.refresh();
+    // Une fiche s'ouvre par-dessus les résultats : la recherche a servi, elle
+    // rejoint les récentes. Pas quand la page se referme.
+    if (!current && _current && (route?.isActive ?? false)) {
+      widget.recents?.remember(_lastQuery);
+    }
     _current = current;
   }
 
@@ -170,9 +201,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final results = shelves.library;
     final unavailable = shelves.unavailable;
 
-    return Scaffold(
+    if (widget.docked && query.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(bottom: false, child: _buildDockedStart(context)),
+      );
+    }
+
+    final page = Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
+      appBar: widget.docked ? null : AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         automaticallyImplyLeading: !isTv,
@@ -296,7 +334,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                               ? EdgeInsets.symmetric(
                                   horizontal: horizontalPadding)
                               : EdgeInsets.fromLTRB(horizontalPadding, 20,
-                                  horizontalPadding, unavailable.isEmpty ? 48 : 8),
+                                  horizontalPadding,
+                                  unavailable.isEmpty ? SliverScrollEnd.extentOf(context) : 8),
                           sliver: SliverLayoutBuilder(
                             builder: (context, constraints) {
                               final grid = AppLayout.posterGridDelegate(
@@ -358,6 +397,63 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   ),
                 ),
     );
+    return widget.docked ? SafeArea(bottom: false, child: page) : page;
+  }
+
+  /// La page de recherche du téléphone avant la frappe : son titre, et les
+  /// recherches récentes à retaper d'un toucher (ADR-0142).
+  Widget _buildDockedStart(BuildContext context) {
+    final recents = widget.recents;
+    return ListenableBuilder(
+      listenable: recents ?? kAlwaysCompleteAnimation,
+      builder: (context, _) {
+        final items = recents?.items ?? const <String>[];
+        return ListView(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, SliverScrollEnd.extentOf(context)),
+          children: [
+            Text(
+              tr('Rechercher'),
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: AppType.display,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (items.isEmpty)
+              Text(
+                tr('Recherchez et demandez de nouveaux films et séries'),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: AppType.subhead,
+                ),
+              )
+            else ...[
+              Text(
+                tr('Recherches récentes'),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: AppType.footnote,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final item in items)
+                    ActionChip(
+                      label: Text(item),
+                      onPressed: () => widget.onRecent?.call(item),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        );
+      },
+    );
   }
 
   /// Le rayon des titres que le serveur n'a pas, sous ceux de la
@@ -395,7 +491,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       ),
       SliverPadding(
         padding:
-            EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 48),
+            EdgeInsets.fromLTRB(
+                horizontalPadding, 20, horizontalPadding, SliverScrollEnd.extentOf(context)),
         sliver: SliverLayoutBuilder(
           builder: (context, constraints) => SliverGrid(
             gridDelegate: AppLayout.posterGridDelegate(

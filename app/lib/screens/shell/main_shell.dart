@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
+import '../../providers/search_provider.dart';
 import '../../providers/watch_lists_provider.dart';
 import '../../services/api_client.dart';
 import '../../services/auto_updater_service.dart';
@@ -36,6 +37,7 @@ import '../requests/requests_screen.dart';
 import '../lists/lists_screen.dart';
 import 'mobile_bottom_nav.dart';
 import 'mobile_top_bar.dart';
+import 'phone_search.dart';
 import 'pending_announcement.dart';
 import 'shell_desktop_header.dart';
 import 'shell_tv_header.dart';
@@ -244,6 +246,10 @@ class _MainShellState extends State<MainShell> {
     }
     _headerNode.dispose();
     _remotePlayback.dispose();
+    _barMinimized.dispose();
+    _phoneSearch
+      ..removeListener(_onPhoneSearchChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -301,12 +307,28 @@ class _MainShellState extends State<MainShell> {
   /// par-dessus les onglets, dans [shellNavigatorKey].
   bool _pageOpen = false;
 
+  /// La barre d'onglets du téléphone réduite pendant que la page défile vers
+  /// le bas (ADR-0142).
+  final ValueNotifier<bool> _barMinimized = ValueNotifier(false);
+
+  /// La recherche du téléphone : le rond de la barre d'onglets, sa bulle, sa
+  /// page de résultats (ADR-0142).
+  late final PhoneSearchSession _phoneSearch = PhoneSearchSession(
+    provider: context.read<SearchProvider>(),
+    navigatorKey: shellNavigatorKey,
+  )..addListener(_onPhoneSearchChanged);
+
+  void _onPhoneSearchChanged() {
+    if (mounted) setState(() {});
+  }
+
   void _selectTab(String tab) {
     // Un onglet choisi depuis une fiche ramène aux onglets, y compris celui
     // qui était déjà sélectionné : c'est le chemin du retour à la liste.
     if (_pageOpen) {
       shellNavigatorKey.currentState?.popUntil((route) => route.isFirst);
     }
+    _barMinimized.value = false;
     if (_selectedTab == tab) return;
     // Un onglet choisi avant son tour se monte maintenant : l'attente d'une
     // image vaut mieux que celle de la fin du délai.
@@ -334,8 +356,25 @@ class _MainShellState extends State<MainShell> {
     // son corps : le laisser dans ces données le ferait retirer une seconde
     // fois par le Scaffold de l'onglet, et la page se viderait en noir
     // au-dessus du clavier.
-    final media =
-        MediaQuery.of(context).removeViewInsets(removeBottom: true);
+    var media = MediaQuery.of(context).removeViewInsets(removeBottom: true);
+    if (!isWide) {
+      // La barre d'onglets flotte au-dessus des pages, qui passent dessous :
+      // elles lisent sa place dans leur marge du bas, comme celle de
+      // l'indicateur d'accueil (ADR-0142).
+      final reserve = MobileBottomNav.reserveFor(
+        MediaQuery.paddingOf(context),
+        keyboardOpen: MediaQuery.viewInsetsOf(context).bottom > 0,
+        searching: _phoneSearch.isOpen,
+      );
+      media = media.copyWith(
+        padding: media.padding.copyWith(
+          bottom: reserve > media.padding.bottom ? reserve : null,
+        ),
+        viewPadding: media.viewPadding.copyWith(
+          bottom: reserve > media.viewPadding.bottom ? reserve : null,
+        ),
+      );
+    }
     Widget navigator = Navigator(
       key: shellNavigatorKey,
       pages: [
@@ -392,6 +431,12 @@ class _MainShellState extends State<MainShell> {
         ],
       );
     }
+    if (!isWide) {
+      navigator = TabBarScrollWatch(
+        minimized: _barMinimized,
+        child: navigator,
+      );
+    }
     return NavigatorPopHandler<Object?>(
       // Retour (Android, souris, clavier) ferme d'abord la fiche ouverte.
       onPopWithResult: (_) => shellNavigatorKey.currentState?.maybePop(),
@@ -402,6 +447,14 @@ class _MainShellState extends State<MainShell> {
         child: navigator,
       ),
     );
+  }
+
+  /// `"<serveur>:<profil>"`, la clé des recherches récentes ; null avant la
+  /// connexion.
+  static String? _profileKey(AuthProvider auth) {
+    final server = auth.activeServer?.id;
+    final user = auth.currentUser?.id;
+    return server == null || user == null ? null : '$server:$user';
   }
 
   /// Les onglets dont la liste a quitté son haut : la barre du haut mobile y
@@ -519,29 +572,36 @@ class _MainShellState extends State<MainShell> {
         clipBehavior: Clip.none,
         children: [
           Positioned.fill(
-            child: Column(
-              children: [
-                Expanded(
-                  // Pas de navigateur imbriqué sur un téléviseur : les fiches
-                  // y restent en plein écran, avec le parcours au D-pad et le
-                  // Retour de [ShellTvBack] tels qu'ils sont réglés.
-                  child: isTv
-                      ? tabs
-                      : _buildPageNavigator(context,
-                          tabs: tabs, isWide: isWide),
-                ),
-                if (!isWide)
-                  MobileBottomNav(
-                    selected: selectedTab,
-                    onTabSelected: _selectTab,
-                    libraries: libraries,
-                    canRequestMedia: canRequest,
-                    canDownload: downloads.isSupported,
-                    canUseLists: canUseLists,
-                  ),
-              ],
-            ),
+            // Pas de navigateur imbriqué sur un téléviseur : les fiches y
+            // restent en plein écran, avec le parcours au D-pad et le Retour
+            // de [ShellTvBack] tels qu'ils sont réglés.
+            child: isTv
+                ? tabs
+                : _buildPageNavigator(context, tabs: tabs, isWide: isWide),
           ),
+          // La capsule flotte au-dessus des pages, qui défilent sous son
+          // verre (ADR-0142).
+          if (!isWide)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _barMinimized,
+                builder: (context, minimized, _) => MobileBottomNav(
+                  selected: selectedTab,
+                  onTabSelected: _selectTab,
+                  libraries: libraries,
+                  canRequestMedia: canRequest,
+                  canDownload: downloads.isSupported,
+                  canUseLists: canUseLists,
+                  search: _phoneSearch
+                    ..recentsFor(_profileKey(authProvider)),
+                  minimized: minimized,
+                  onExpand: () => _barMinimized.value = false,
+                ),
+              ),
+            ),
           if (isWide)
             Positioned(
               top: 0,

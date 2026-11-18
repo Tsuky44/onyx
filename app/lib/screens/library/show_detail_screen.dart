@@ -36,6 +36,7 @@ import 'show_metadata_actions.dart';
 import 'widgets/missing_season_banner.dart';
 import 'widgets/season_tabs.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 class ShowDetailScreen extends StatefulWidget {
   final Media show;
@@ -765,7 +766,7 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
                   ),
                 ),
               ),
-            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+            const SliverScrollEnd(),
           ],
         ),
       ),
