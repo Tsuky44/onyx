@@ -41,21 +41,27 @@ class DesktopSearchChips extends StatelessWidget {
           layout.unavailableCount
         ),
     ];
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final (filter, label, count) in chips)
-          _FilterChip(
-            label: label,
-            count: count,
-            selected: controller.filter.value == filter,
-            // Une pastille vide ne garderait rien : on ne la choisit pas.
-            onTap: count == 0 && filter != DesktopSearchFilter.all
-                ? null
-                : () => controller.setFilter(filter),
-          ),
-      ],
+    // De la même région de toucher que le champ : cliquer une pastille n'est
+    // pas quitter le champ, et la frappe continue (ADR-0141). Sans elle, le
+    // clic retirait le focus au champ sur un bureau comme sur un écran
+    // tactile.
+    return TextFieldTapRegion(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final (filter, label, count) in chips)
+            _FilterChip(
+              label: label,
+              count: count,
+              selected: controller.filter.value == filter,
+              // Une pastille vide ne garderait rien : on ne la choisit pas.
+              onTap: count == 0 && filter != DesktopSearchFilter.all
+                  ? null
+                  : () => controller.setFilter(filter),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -29,6 +32,13 @@ import 'tv_mode.dart';
 ///   ),
 /// )
 /// ```
+///
+/// Sur un écran tactile (iPhone, iPad, téléphone Android, et leur navigateur),
+/// il donne au champ ce que Flutter ne fait pas de lui-même (ADR-0141) : un
+/// toucher hors du champ referme le clavier, et un champ que recouvre une
+/// autre page ne reprend pas le focus quand on y revient. Sans cela, le
+/// clavier d'iOS ne partait jamais : rien ne le fermait, et chaque retour sur
+/// la page le rouvrait.
 ///
 /// Le nœud est fourni par le widget, parce que sans cela chaque champ de l'app
 /// aurait dû s'en créer un — quinze déclarations et quinze `dispose` dont
@@ -64,6 +74,20 @@ class TvDeferredKeyboard extends StatefulWidget {
   /// dès l'affichage du widget.
   final bool autofocus;
 
+  /// Un clavier à l'écran, qu'un doigt ouvre et doit pouvoir refermer : un
+  /// téléphone ou une tablette, app installée ou navigateur. Jamais un
+  /// téléviseur, dont le clavier se gère à la télécommande.
+  ///
+  /// Lu de [defaultTargetPlatform] plutôt que du système : un navigateur
+  /// d'iPhone y répond iOS, et un test peut le choisir.
+  static bool usesTouchKeyboard(BuildContext context) {
+    if (TvScope.of(context)) return false;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.iOS || TargetPlatform.android => true,
+      _ => false,
+    };
+  }
+
   @override
   State<TvDeferredKeyboard> createState() => TvDeferredKeyboardState();
 }
@@ -77,6 +101,15 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
   FocusNode? _ownedNode;
 
   late bool _keyboardRequested = widget.autofocus;
+
+  /// Sur un écran tactile, la page du champ est recouverte par une autre : le
+  /// champ ne peut plus prendre le focus. Flutter le lui rend au retour, dès
+  /// la première image, et le clavier se rouvrait sur une page qu'on
+  /// regardait seulement (ADR-0141).
+  bool _parked = false;
+
+  /// La page du champ était au premier plan à la dernière lecture.
+  bool? _routeWasCurrent;
 
   FocusNode get _fieldNode =>
       widget.fieldFocusNode ?? (_ownedNode ??= FocusNode());
@@ -93,6 +126,45 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
       });
     }
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!TvDeferredKeyboard.usesTouchKeyboard(context)) return;
+    final current = ModalRoute.isCurrentOf(context) ?? true;
+    final was = _routeWasCurrent;
+    _routeWasCurrent = current;
+    if (was == null || was == current) return;
+    if (!current) {
+      // La construction qui suit retire le focus au champ, s'il l'avait.
+      _parked = true;
+      return;
+    }
+    // Revenue au premier plan, la page attend que celle qui part ait rendu le
+    // focus : il se rend pendant la première image du retour, et les
+    // changements de focus s'appliquent après elle. Le champ redevient
+    // ensuite focalisable, sans prendre le focus.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Timer.run(() {
+        if (!mounted || !(ModalRoute.isCurrentOf(context) ?? true)) return;
+        setState(() => _parked = false);
+      });
+    });
+  }
+
+  /// Un toucher hors du champ (sur la page, une affiche, un bouton) le quitte
+  /// et referme le clavier. Un autre champ n'est pas « hors » : ils partagent
+  /// la région de toucher de [EditableText], et le focus passe de l'un à
+  /// l'autre sans que le clavier retombe.
+  static final Map<Type, Action<Intent>> _touchOutsideActions = {
+    EditableTextTapOutsideIntent:
+        CallbackAction<EditableTextTapOutsideIntent>(
+      onInvoke: (intent) {
+        intent.focusNode.unfocus();
+        return null;
+      },
+    ),
+  };
 
   @override
   void didUpdateWidget(TvDeferredKeyboard oldWidget) {
@@ -217,7 +289,13 @@ class TvDeferredKeyboardState extends State<TvDeferredKeyboard> {
   @override
   Widget build(BuildContext context) {
     if (!TvScope.of(context)) {
-      return widget.builder(context, _fieldNode, true);
+      if (!TvDeferredKeyboard.usesTouchKeyboard(context)) {
+        return widget.builder(context, _fieldNode, true);
+      }
+      return Actions(
+        actions: _touchOutsideActions,
+        child: widget.builder(context, _fieldNode, !_parked),
+      );
     }
 
     return TvFocusable(

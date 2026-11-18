@@ -8,6 +8,7 @@ import '../../theme/lite_mode.dart';
 import '../../tv/input/tv_field_key_handler.dart';
 import '../../tv/nav/onyx_dpad.dart' show TvNavScope;
 import '../../tv/nav/tv_focusable.dart';
+import '../../tv/tv_deferred_keyboard.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/responsive.dart';
@@ -248,6 +249,13 @@ class GlassSearchInput extends StatelessWidget {
               final query = controller.text.trim();
               if (query.isNotEmpty) {
                 onSubmitted?.call(query);
+              }
+              // La touche « Rechercher » d'un clavier à l'écran le referme :
+              // c'est le geste par défaut de Flutter, que fournir
+              // `onEditingComplete` retire. Sur un iPhone, le clavier restait
+              // donc ouvert sur les résultats (ADR-0141).
+              if (TvDeferredKeyboard.usesTouchKeyboard(context)) {
+                focusNode.unfocus();
               }
             },
             textInputAction: TextInputAction.search,

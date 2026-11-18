@@ -199,7 +199,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                       _controller.clear();
                     },
                     onSubmitted: (_) {
-                      if (results.isNotEmpty) {
+                      // Au doigt, la touche referme le clavier et laisse les
+                      // résultats sous le pouce ; descendre sur la première
+                      // affiche est un geste de clavier et de télécommande.
+                      if (results.isNotEmpty &&
+                          !TvDeferredKeyboard.usesTouchKeyboard(context)) {
                         SystemChannels.textInput.invokeMethod('TextInput.hide');
                         FocusScope.of(context)
                             .focusInDirection(TraversalDirection.down);
