@@ -9,7 +9,7 @@ import '../../../widgets/global/unavailable_badge.dart';
 import '../../library/widgets/library_spotlight.dart';
 import '../../library/widgets/library_tv_view.dart';
 import 'desktop_search_controller.dart';
-import 'desktop_search_hits.dart';
+import '../search_layout.dart';
 
 /// Le volet gauche de la recherche du bureau : le titre sélectionné (sous le
 /// pointeur ou les flèches), présenté comme dans le volet d'une bibliothèque

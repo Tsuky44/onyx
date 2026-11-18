@@ -14,7 +14,7 @@ import 'package:onyx/providers/watch_lists_provider.dart';
 import 'package:onyx/screens/library/widgets/library_spotlight.dart';
 import 'package:onyx/screens/requests/request_detail_screen.dart';
 import 'package:onyx/screens/requests/widgets/request_media_card.dart';
-import 'package:onyx/screens/search/desktop/desktop_search_chips.dart';
+import 'package:onyx/screens/search/search_chips.dart';
 import 'package:onyx/screens/search/desktop/desktop_search_hotkey.dart';
 import 'package:onyx/screens/search/desktop/desktop_search_sheet.dart';
 import 'package:onyx/screens/shell/desktop_header_search.dart';

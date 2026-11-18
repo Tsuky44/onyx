@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// La recherche tapée dans la barre de navigation.
+/// La recherche tapée dans l'en-tête du bureau.
 ///
-/// Sur grand écran la barre reste au-dessus de la page de résultats, qui lit
-/// [query] ici pour suivre la frappe (`SearchResultsScreen.followingHeader`).
+/// L'en-tête reste au-dessus de la feuille de résultats, qui lit [query] ici
+/// pour suivre la frappe (`DesktopSearchSheet`, ADR-0139).
 class SearchProvider extends ChangeNotifier {
   String _query = '';
   bool _expanded = false;

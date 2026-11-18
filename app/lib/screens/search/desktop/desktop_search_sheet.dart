@@ -27,11 +27,12 @@ import '../../requests/request_availability.dart';
 import '../../requests/request_detail_launch.dart';
 import '../../requests/widgets/request_media_card.dart';
 import '../search_shelves.dart';
+import '../search_chips.dart';
 import 'desktop_search_chips.dart';
 import 'desktop_search_controller.dart';
-import 'desktop_search_hits.dart';
+import '../search_layout.dart';
 import 'desktop_search_spotlight.dart';
-import 'recent_searches.dart';
+import '../recent_searches.dart';
 
 /// Les résultats de la recherche du bureau, sous le voile de
 /// `DesktopSearchRoute` (ADR-0139).
@@ -199,7 +200,7 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
   }
 
   /// La fiche du titre, depuis sa carte quand elle est à l'écran.
-  void _open(DesktopSearchHit hit) {
+  void _open(SearchHit hit) {
     final cell = _selectedCell;
     final fromCard = identical(hit, widget.controller.current) &&
         cell != null &&
@@ -253,13 +254,13 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
       child: Padding(
         // La hauteur de l'en-tête, que la coquille donne aux pages ouvertes.
         padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
-        child: ValueListenableBuilder<DesktopSearchFilter>(
+        child: ValueListenableBuilder<SearchFilter>(
           valueListenable: widget.controller.filter,
           builder: (context, filter, _) {
             final layout = query.isEmpty
-                ? DesktopSearchLayout.recent(SearchShelves.recentlyAdded(
+                ? SearchLayout.recent(SearchShelves.recentlyAdded(
                     lp, DesktopSearchSheet.recentCount))
-                : DesktopSearchLayout.of(
+                : SearchLayout.of(
                     SearchShelves.of(lp, query,
                         catalog: _catalog.resultsFor(query)),
                     filter,
@@ -312,8 +313,8 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
   Widget _results(
     BuildContext context,
     String query,
-    DesktopSearchLayout layout,
-    DesktopSearchFilter filter,
+    SearchLayout layout,
+    SearchFilter filter,
   ) {
     if (query.isNotEmpty && layout.total == 0) {
       return EmptyStateView(

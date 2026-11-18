@@ -1,5 +1,8 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../providers/auth_provider.dart';
 
 /// Les dernières recherches d'un profil, proposées quand le champ est vide.
 ///
@@ -16,10 +19,21 @@ class RecentSearches extends ChangeNotifier {
   /// retenu.
   final String? profileKey;
 
+  /// La clé du profil ouvert, que [context] suit : un changement de profil
+  /// ou de serveur reconstruit l'appelant, qui recharge alors l'historique.
+  static String? watchProfileKey(BuildContext context) =>
+      context.select<AuthProvider, String?>((auth) {
+        final server = auth.activeServer?.id;
+        final user = auth.currentUser?.id;
+        return server == null || user == null ? null : '$server:$user';
+      });
+
   /// Assez pour retrouver ce qu'on cherchait cette semaine, pas au point de
   /// pousser les derniers ajouts sous le pli.
   static const int max = 6;
 
+  /// Le nom d'avant le partage avec le téléphone : le garder conserve
+  /// l'historique déjà retenu sur le bureau.
   static const String _prefix = 'desktop_recent_searches/';
 
   List<String> _items = const [];

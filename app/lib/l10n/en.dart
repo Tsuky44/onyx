@@ -2158,8 +2158,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Revenue',
   'Revoir le lien':
       'Show the link again',
-  'Rien dans la bibliothèque':
-      'Nothing in the library',
   'Rien ne descend sans que vous le demandiez.':
       'Nothing is downloaded unless you ask for it.',
   'Rien n’a été gardé de ce serveur : reconnectez-vous.':
@@ -2898,8 +2896,6 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} is no longer the main server.',
   '{0} reçue(s) d’Emby, {1} envoyée(s) à Emby.':
       '{0} received from Emby, {1} sent to Emby.',
-  '{0} résultat{1}':
-      '{0} result{1}',
   '{0} sur {1}':
       '{0} of {1}',
   '{0} % vu':
