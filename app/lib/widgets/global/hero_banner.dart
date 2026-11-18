@@ -43,7 +43,7 @@ class HeroBanner extends StatefulWidget {
 
   /// L'épisode de « Reprendre » que présente la diapositive. Pour une série
   /// de la découverte, nul : le bandeau demande au serveur l'épisode à
-  /// reprendre, comme la fiche (ADR-0147).
+  /// reprendre, comme la fiche (ADR-0154).
   final HomeMediaItem? continueItem;
 
   /// La diapositive est celle qu'on voit. Ses voisines, que le carrousel
@@ -96,7 +96,7 @@ class _HeroBannerState extends State<HeroBanner> {
   MediaDetails? _details;
   bool _detailsSettled = false;
 
-  /// L'épisode à lancer et les images du fond, pour une série (ADR-0147).
+  /// L'épisode à lancer et les images du fond, pour une série (ADR-0154).
   HeroSeriesPreview? _preview;
 
   /// L'image du fond à l'écran, pour sa légende.

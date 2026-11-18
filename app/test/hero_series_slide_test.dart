@@ -13,7 +13,7 @@ import 'package:onyx/widgets/global/hero_banner.dart';
 import 'package:onyx/widgets/global/hero_carousel.dart';
 import 'package:onyx/widgets/global/media_logo_display.dart';
 
-/// Le bandeau d'accueil d'une série (ADR-0147) : il lance l'épisode qu'il
+/// Le bandeau d'accueil d'une série (ADR-0154) : il lance l'épisode qu'il
 /// annonce, fait défiler les images des épisodes déjà passés, et ne dévoile
 /// rien de la suite.
 

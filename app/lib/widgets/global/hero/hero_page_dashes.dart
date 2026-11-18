@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_motion.dart';
 
-/// Les traits du carrousel d'accueil, un par diapositive (ADR-0147). Celui de
+/// Les traits du carrousel d'accueil, un par diapositive (ADR-0154). Celui de
 /// la diapositive affichée est plus long et se remplit à mesure qu'elle
 /// passe : on voit quand la suivante viendra.
 ///

@@ -24,7 +24,7 @@ String? heroNextAirLabel(MediaDetails? details) {
 }
 
 /// Le surtitre du bandeau : « SÉRIE · 3 SAISONS », et la pastille « Nouvel
-/// épisode » quand l'épisode à lancer vient de sortir (ADR-0147).
+/// épisode » quand l'épisode à lancer vient de sortir (ADR-0154).
 class HeroEyebrow extends StatelessWidget {
   const HeroEyebrow({super.key, required this.text, this.newEpisode = false});
 

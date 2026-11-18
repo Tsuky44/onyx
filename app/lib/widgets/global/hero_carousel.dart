@@ -42,7 +42,7 @@ class _HeroCarouselState extends State<HeroCarousel>
   static const _defaultDwell = Duration(seconds: 7);
 
   /// Le plus long qu'une diapositive au fond vivant reste à l'écran : quatre
-  /// images de quatre secondes (ADR-0147).
+  /// images de quatre secondes (ADR-0154).
   static const _maxDwell = Duration(seconds: 16);
 
   late final PageController _pageController;
@@ -141,7 +141,7 @@ class _HeroCarouselState extends State<HeroCarousel>
   /// en pause.
   ///
   /// Une minuterie par diapositive, et non plus une périodique : une série
-  /// au fond vivant reste plus longtemps qu'un film (ADR-0147).
+  /// au fond vivant reste plus longtemps qu'un film (ADR-0154).
   void _scheduleAutoAdvance() {
     _autoTimer?.cancel();
     _autoTimer = null;

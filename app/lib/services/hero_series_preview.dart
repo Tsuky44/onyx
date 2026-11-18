@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import 'api_client.dart';
 
-/// Ce que le bandeau d'accueil montre d'une série (ADR-0147) : l'épisode que
+/// Ce que le bandeau d'accueil montre d'une série (ADR-0154) : l'épisode que
 /// son bouton de lecture lance, et des images d'épisodes pour le fond qui
 /// défile.
 @immutable

@@ -34,7 +34,7 @@ String detailPlayLabel({
 /// Le numéro d'un épisode tel que les boutons de lecture l'écrivent :
 /// « S2 E4 », ou « E4 » sans saison. Nul sans numéro d'épisode.
 ///
-/// La fiche et le bandeau d'accueil (ADR-0147) disent ainsi le même épisode
+/// La fiche et le bandeau d'accueil (ADR-0154) disent ainsi le même épisode
 /// de la même façon.
 String? episodeShortCode(Media? episode, {int? seasonOverride}) {
   if (episode == null) return null;

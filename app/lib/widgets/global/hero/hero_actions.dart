@@ -10,7 +10,7 @@ import '../liquid_glass.dart';
 /// lance, plus pâle (« Reprendre S2 E4 »).
 ///
 /// Hors téléviseur, une pilule, comme les pièces de verre du reste de l'écran
-/// (ADR-0147) ; sur un téléviseur, le bouton d'avant, que la télécommande
+/// (ADR-0154) ; sur un téléviseur, le bouton d'avant, que la télécommande
 /// connaît (ADR-0112).
 class HeroPlayButton extends StatelessWidget {
   const HeroPlayButton({

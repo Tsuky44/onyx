@@ -1,4 +1,4 @@
-# ADR-0147 — Le bandeau d'une série lance son épisode et fait défiler ses images
+# ADR-0154 — Le bandeau d'une série lance son épisode et fait défiler ses images
 
 - **Statut :** accepté. Maquettes « Bandeau série Onyx » : la A choisie par l'utilisateur le
   2026-11-18, sans la capsule autour des traits et sans la carte « À suivre » sur téléphone (« ça

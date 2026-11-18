@@ -51,7 +51,7 @@ class MediaLogoDisplay extends StatelessWidget {
     // Pas d'ombre portée : une `BoxShadow` ombre la boîte, pas les lettres, et
     // la boîte fait toute la largeur permise (560 px sur le bandeau). Elle
     // dessinait un rectangle sombre et flou derrière le logo, bien visible sur
-    // une image claire (ADR-0147). Les voiles du bandeau et des fiches
+    // une image claire (ADR-0154). Les voiles du bandeau et des fiches
     // suffisent à le détacher.
     return SizedBox(
       width: width,

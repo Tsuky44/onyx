@@ -29,7 +29,7 @@ class HeroBackdropFrame {
   int get hashCode => Object.hash(url, caption);
 }
 
-/// Le fond vivant du bandeau d'accueil (ADR-0147) : ses images passent de
+/// Le fond vivant du bandeau d'accueil (ADR-0154) : ses images passent de
 /// l'une à l'autre en fondu, chacune sous un zoom lent.
 ///
 /// Une image seule zoome aussi, une fois, puis se fige. Sans [animate] (sur un

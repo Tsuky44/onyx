@@ -69,7 +69,7 @@ class HeroEpisodeSummary {
 }
 
 /// La carte « À suivre » du bandeau d'une série, sur grand écran
-/// (ADR-0147) : l'image de l'épisode que le bouton de lecture lance, où l'on
+/// (ADR-0154) : l'image de l'épisode que le bouton de lecture lance, où l'on
 /// en est, et son nom. La toucher lance l'épisode, comme le bouton.
 ///
 /// Absente du téléphone : sous le texte et les boutons, elle chargeait trop
