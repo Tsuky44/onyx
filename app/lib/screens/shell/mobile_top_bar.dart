@@ -144,17 +144,22 @@ class BrandPill extends StatelessWidget {
 }
 
 /// Le bord du haut d'une page qui défile sous la barre du téléphone : flou et
-/// assombri en haut, net et clair en bas, sans arête (ADR-0144).
+/// assombri en haut, net et clair en bas, sans marche ni arête (ADR-0144).
 ///
-/// Flutter ne sait pas dégrader un flou : cinq bandes de flou de plus en
-/// plus léger, assez rapprochées pour que leurs marches ne se lisent pas, et
-/// par-dessus un voile vers la couleur de la page, qui les fond. Sans flou
+/// Sous Impeller, un flou dont la force baisse en continu de haut en bas
+/// (`shaders/scroll_edge_blur.frag`, deux passes). Ailleurs, des bandes de
+/// flou de plus en plus léger : leurs marches se voyaient sur de vraies
+/// affiches, d'où le shader. Par-dessus, un voile vers la couleur de la page,
+/// en courbe : en trois droites, ses coudes se lisaient en lignes. Sans flou
 /// ([glassBlurs]), le voile seul, plus dense.
-class ScrollEdgeBlur extends StatelessWidget {
+class ScrollEdgeBlur extends StatefulWidget {
   const ScrollEdgeBlur({super.key});
 
-  /// Les bandes de flou, de haut en bas : (début, fin) en fraction de la
-  /// hauteur, et la force du flou.
+  /// Le flou le plus fort, en haut (écart type, en points).
+  static const double sigma = 14;
+
+  /// Le repli hors Impeller : (début, fin) en fraction de la hauteur, et la
+  /// force du flou.
   static const List<(double, double, double)> bands = [
     (0, 0.45, 16),
     (0.45, 0.62, 10),
@@ -163,21 +168,97 @@ class ScrollEdgeBlur extends StatelessWidget {
     (0.88, 0.96, 1.2),
   ];
 
+  /// La densité du voile à la hauteur [t] (0 en haut, 1 en bas) : forte sous
+  /// l'heure, elle s'éteint en bas sans pente, donc sans ligne.
+  static double veilAt(double t, {required bool blurs}) {
+    final top = blurs ? 0.92 : 0.96;
+    final fall = 1 - t * t * t;
+    return top * fall * fall;
+  }
+
+  static const int _veilStops = 13;
+
+  @override
+  State<ScrollEdgeBlur> createState() => _ScrollEdgeBlurState();
+}
+
+class _ScrollEdgeBlurState extends State<ScrollEdgeBlur> {
+  static FragmentProgram? _program;
+  static Future<void>? _loading;
+
+  FragmentShader? _horizontal;
+  FragmentShader? _vertical;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!ImageFilter.isShaderFilterSupported) return;
+    if (_program != null) {
+      _makeShaders();
+      return;
+    }
+    _loading ??= FragmentProgram.fromAsset('shaders/scroll_edge_blur.frag')
+        .then<void>((program) => _program = program)
+        .catchError((Object error) {
+      debugPrint('ScrollEdgeBlur: shader indisponible ($error)');
+    });
+    _loading!.then((_) {
+      if (mounted && _program != null) setState(_makeShaders);
+    });
+  }
+
+  void _makeShaders() {
+    _horizontal = _program!.fragmentShader();
+    _vertical = _program!.fragmentShader();
+  }
+
+  @override
+  void dispose() {
+    _horizontal?.dispose();
+    _vertical?.dispose();
+    super.dispose();
+  }
+
+  /// Le flou progressif, en deux passes, ou null tant que le shader n'est pas
+  /// là (ou hors Impeller).
+  ImageFilter? _progressive(double height) {
+    final horizontal = _horizontal;
+    final vertical = _vertical;
+    if (horizontal == null || vertical == null) return null;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    for (final (shader, x, y) in [
+      (horizontal, 1.0, 0.0),
+      (vertical, 0.0, 1.0)
+    ]) {
+      // 0 et 1 : la taille de la texture, posée par le moteur.
+      shader
+        ..setFloat(2, height * dpr)
+        ..setFloat(3, ScrollEdgeBlur.sigma * dpr)
+        ..setFloat(4, x)
+        ..setFloat(5, y);
+    }
+    return ImageFilter.compose(
+      outer: ImageFilter.shader(vertical),
+      inner: ImageFilter.shader(horizontal),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final blurs = glassBlurs(context);
+    const last = ScrollEdgeBlur._veilStops - 1;
     final veil = DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.background.withValues(alpha: blurs ? 0.92 : 0.96),
-            AppColors.background.withValues(alpha: blurs ? 0.78 : 0.86),
-            AppColors.background.withValues(alpha: blurs ? 0.4 : 0.5),
-            AppColors.background.withValues(alpha: 0),
+            for (var i = 0; i <= last; i++)
+              AppColors.background.withValues(
+                alpha: ScrollEdgeBlur.veilAt(i / last, blurs: blurs),
+              ),
           ],
-          stops: const [0, 0.45, 0.75, 1],
+          stops: [for (var i = 0; i <= last; i++) i / last],
         ),
       ),
     );
@@ -185,22 +266,32 @@ class ScrollEdgeBlur extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final height = constraints.maxHeight;
+        final progressive = _progressive(height);
         return Stack(
           fit: StackFit.expand,
           children: [
-            for (final (start, end, sigma) in bands)
-              Positioned(
-                top: start * height,
-                height: (end - start) * height,
-                left: 0,
-                right: 0,
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-                    child: const SizedBox.expand(),
+            if (progressive != null)
+              ClipRect(
+                key: const ValueKey('scroll-edge-progressive'),
+                child: BackdropFilter(
+                  filter: progressive,
+                  child: const SizedBox.expand(),
+                ),
+              )
+            else
+              for (final (start, end, sigma) in ScrollEdgeBlur.bands)
+                Positioned(
+                  top: start * height,
+                  height: (end - start) * height,
+                  left: 0,
+                  right: 0,
+                  child: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+                      child: const SizedBox.expand(),
+                    ),
                   ),
                 ),
-              ),
             veil,
           ],
         );

@@ -3897,4 +3897,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Invite or share the code',
   'Les personnes qui ont Onyx ouvert reçoivent une invitation.':
       'People who have Onyx open get an invitation.',
+  'Premier épisode':
+      'First episode',
+  'Prochain épisode le {0}':
+      'Next episode {0}',
 };

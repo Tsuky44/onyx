@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/models.dart';
@@ -185,5 +187,48 @@ void main() {
     await pumpFade(tester, top: 0);
     expect(find.byType(ShaderMask), findsNothing);
     expect(tester.getRect(find.byKey(const ValueKey('image'))).top, 0);
+  });
+
+  test('le shader du flou se charge, ses réglages après la taille', () async {
+    final program =
+        await ui.FragmentProgram.fromAsset('shaders/scroll_edge_blur.frag');
+    final shader = program.fragmentShader();
+    addTearDown(shader.dispose);
+    // 0 et 1 : la taille, posée par le moteur ; puis hauteur, flou, axe.
+    for (var i = 2; i <= 5; i++) {
+      shader.setFloat(i, 1);
+    }
+    expect(() => shader.setFloat(6, 1), throwsA(anything));
+  });
+
+  testWidgets('hors Impeller, le flou se replie sur ses bandes',
+      (tester) async {
+    expect(ui.ImageFilter.isShaderFilterSupported, isFalse,
+        reason: 'le moteur des tests n’est pas Impeller');
+    await _pump(tester, scrolled: true);
+    expect(find.byKey(const ValueKey('scroll-edge-progressive')), findsNothing);
+    expect(
+      find.descendant(
+          of: find.byType(ScrollEdgeBlur),
+          matching: find.byType(BackdropFilter)),
+      findsNWidgets(ScrollEdgeBlur.bands.length),
+    );
+  });
+
+  test('le voile décroît sans coude et s’éteint en bas', () {
+    for (final blurs in [true, false]) {
+      var previous = ScrollEdgeBlur.veilAt(0, blurs: blurs);
+      var previousStep = 0.0;
+      for (var i = 1; i <= 100; i++) {
+        final alpha = ScrollEdgeBlur.veilAt(i / 100, blurs: blurs);
+        expect(alpha, lessThanOrEqualTo(previous));
+        final step = previous - alpha;
+        // Pas de saut d'une marche à la suivante : la pente varie peu.
+        expect((step - previousStep).abs(), lessThan(0.006));
+        previous = alpha;
+        previousStep = step;
+      }
+      expect(ScrollEdgeBlur.veilAt(1, blurs: blurs), 0);
+    }
   });
 }

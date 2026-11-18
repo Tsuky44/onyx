@@ -227,6 +227,11 @@ flutter:
     # hors ligne et sur un téléviseur sans navigateur (ADR-0046).
     - assets/legal/
 
+  # Le flou progressif du haut d'une page qui défile sous la barre du
+  # téléphone (ADR-0144), sous Impeller.
+  shaders:
+    - shaders/scroll_edge_blur.frag
+
   fonts:
     - family: Manrope
       fonts:

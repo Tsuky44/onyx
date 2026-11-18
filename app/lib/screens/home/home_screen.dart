@@ -5,6 +5,7 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
+import '../../services/hero_series_preview.dart';
 import '../../theme/app_colors.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
@@ -144,6 +145,8 @@ class _HomeScreenState extends State<HomeScreen>
       settings: const RouteSettings(name: SearchRouteObserver.playerRouteName),
       builder: (_) => PlayerScreen(media: media),
     );
+    // L'épisode à suivre d'une série du bandeau vient de changer (ADR-0147).
+    HeroSeriesPreviewCache.clear();
     if (!context.mounted) return;
     Provider.of<HomeProvider>(context, listen: false).loadHome(silent: true);
   }
@@ -156,6 +159,13 @@ class _HomeScreenState extends State<HomeScreen>
     if (slide.media.type == MediaType.movie) {
       _playMedia(context, slide.media);
     } else if (slide.media.type == MediaType.show) {
+      // L'épisode que le bandeau annonce (ADR-0147). Tant que le serveur ne
+      // l'a pas dit, la fiche, comme avant.
+      final next = HeroSeriesPreviewCache.peek(slide.media.id)?.next;
+      if (next != null) {
+        _playMedia(context, next);
+        return;
+      }
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => ShowDetailScreen(show: slide.media)),
       );

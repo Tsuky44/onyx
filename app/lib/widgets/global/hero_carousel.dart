@@ -3,10 +3,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../models/models.dart';
 import '../../theme/app_motion.dart';
-import '../../theme/app_colors.dart';
 import '../../tv/nav/tv_region.dart';
+import '../../tv/tv_mode.dart';
 import '../../utils/hero_slides.dart';
 import '../../utils/on_screen.dart';
+import 'hero/hero_living_backdrop.dart';
+import 'hero/hero_page_dashes.dart';
 import 'hero_banner.dart';
 
 class HeroCarousel extends StatefulWidget {
@@ -34,11 +36,31 @@ class HeroCarousel extends StatefulWidget {
   State<HeroCarousel> createState() => _HeroCarouselState();
 }
 
-class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
-  static const _autoInterval = Duration(seconds: 7);
+class _HeroCarouselState extends State<HeroCarousel>
+    with OnScreenState, SingleTickerProviderStateMixin {
+  /// Le temps d'une diapositive.
+  static const _defaultDwell = Duration(seconds: 7);
+
+  /// Le plus long qu'une diapositive au fond vivant reste à l'écran : quatre
+  /// images de quatre secondes (ADR-0147).
+  static const _maxDwell = Duration(seconds: 16);
 
   late final PageController _pageController;
   Timer? _autoTimer;
+
+  /// Ce que chaque diapositive demande de temps, quand son fond fait défiler
+  /// des images ; les autres prennent [_defaultDwell].
+  final Map<int, Duration> _dwell = {};
+
+  /// Le temps déjà passé sur la diapositive affichée : [_elapsedBefore] avant
+  /// la dernière pause, [_clock] depuis. Le survol suspend le défilement sans
+  /// le remettre à zéro.
+  Duration _elapsedBefore = Duration.zero;
+  final Stopwatch _clock = Stopwatch();
+
+  /// Le remplissage du trait de la diapositive affichée ([HeroPageDashes]).
+  late final AnimationController _fill =
+      AnimationController(vsync: this, value: 1);
   int _currentIndex = 0;
   bool _hovered = false;
 
@@ -64,6 +86,8 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.slides.length != widget.slides.length) {
       _currentIndex = 0;
+      _dwell.clear();
+      _restartClock();
       // L'accueil s'est rechargé sous la télécommande : le retour à la
       // première page ne doit pas lui faire perdre le focus.
       _refocusAfterPaging = _focused;
@@ -77,6 +101,7 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
   @override
   void dispose() {
     _autoTimer?.cancel();
+    _fill.dispose();
     _pageController.dispose();
     _observer.dispose();
     super.dispose();
@@ -87,32 +112,92 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
   /// inarrêtable.
   bool _touched = false;
 
+  /// Rien n'arrête le défilement pour l'instant.
+  bool get _advances =>
+      widget.slides.length > 1 &&
+      !_hovered &&
+      !_focused &&
+      !_touched &&
+      isOnScreen &&
+      // « Réduire les animations » : un fond plein écran qui défile seul
+      // est exactement ce que ce réglage demande d'éviter.
+      !AppMotion.reduced(context);
+
+  /// Plus rien ne fera défiler le bandeau tout seul : le trait reste plein
+  /// au lieu de rester à moitié rempli.
+  bool get _stopsForGood =>
+      widget.slides.length <= 1 || _touched || AppMotion.reduced(context);
+
+  Duration get _elapsed => _elapsedBefore + _clock.elapsed;
+
+  Duration _dwellOf(int index) => _dwell[index] ?? _defaultDwell;
+
+  void _restartClock() {
+    _elapsedBefore = Duration.zero;
+    _clock.reset();
+  }
+
+  /// Arme la diapositive affichée pour ce qui lui reste de temps, ou la met
+  /// en pause.
+  ///
+  /// Une minuterie par diapositive, et non plus une périodique : une série
+  /// au fond vivant reste plus longtemps qu'un film (ADR-0147).
   void _scheduleAutoAdvance() {
     _autoTimer?.cancel();
-    if (widget.slides.length <= 1 ||
-        _hovered ||
-        _focused ||
-        _touched ||
-        !isOnScreen ||
-        // « Réduire les animations » : un fond plein écran qui défile seul
-        // est exactement ce que ce réglage demande d'éviter.
-        AppMotion.reduced(context)) {
+    _autoTimer = null;
+    if (!_advances) {
+      _elapsedBefore = _elapsed;
+      _clock
+        ..stop()
+        ..reset();
+      _fill.stop();
+      if (_stopsForGood) _fill.value = 1;
       return;
     }
+    final dwell = _dwellOf(_currentIndex);
+    final elapsed = _elapsed < dwell ? _elapsed : dwell;
+    _elapsedBefore = elapsed;
+    _clock
+      ..reset()
+      ..start();
+    _autoTimer = Timer(dwell - elapsed, _advance);
+    // Le téléviseur garde ses traits immobiles : une animation de plus en
+    // continu sous chaque bandeau, pour une petite box, n'en valait pas le
+    // coût.
+    if (TvScope.of(context)) {
+      _fill.value = 1;
+    } else {
+      _fill.duration = dwell;
+      _fill.forward(from: elapsed.inMicroseconds / dwell.inMicroseconds);
+    }
+  }
 
-    _autoTimer = Timer.periodic(_autoInterval, (_) {
-      if (!mounted || _hovered || _focused || widget.slides.length <= 1) return;
-      final next = (_currentIndex + 1) % widget.slides.length;
-      _pageController.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 900),
-        curve: Curves.easeInOutCubic,
-      );
-    });
+  void _advance() {
+    _autoTimer = null;
+    if (!mounted || !_advances) return;
+    final next = (_currentIndex + 1) % widget.slides.length;
+    _pageController.animateToPage(
+      next,
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  /// Le fond de la diapositive [index] fera défiler [frames] images : elle
+  /// reste le temps de les montrer, sans dépasser [_maxDwell].
+  void _onFrameCount(int index, int frames) {
+    var dwell = HeroLivingBackdrop.frameDuration * frames;
+    if (dwell < _defaultDwell) dwell = _defaultDwell;
+    if (dwell > _maxDwell) dwell = _maxDwell;
+    if (_dwellOf(index) == dwell) return;
+    _dwell[index] = dwell;
+    // La diapositive est déjà à l'écran : elle garde le temps passé.
+    if (index == _currentIndex && _autoTimer != null) _scheduleAutoAdvance();
   }
 
   void _onPageChanged(int index) {
     setState(() => _currentIndex = index);
+    _restartClock();
     _scheduleAutoAdvance();
     if (!_refocusAfterPaging) return;
     _refocusAfterPaging = false;
@@ -203,12 +288,12 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
         onPointerDown: (event) {
           if (event.kind != PointerDeviceKind.touch || _touched) return;
           _touched = true;
-          _autoTimer?.cancel();
+          _scheduleAutoAdvance();
         },
         child: MouseRegion(
           onEnter: (_) {
             _hovered = true;
-            _autoTimer?.cancel();
+            _scheduleAutoAdvance();
           },
           onExit: (_) {
             _hovered = false;
@@ -250,6 +335,10 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
                           // PageView has built ahead would pull the focus off-screen.
                           autofocusPlay: widget.autofocusPlay && index == 0,
                           extendTop: widget.extendTop,
+                          continueItem: slide.continueItem,
+                          active: index == _currentIndex,
+                          onFrameCount: (frames) =>
+                              _onFrameCount(index, frames),
                         ),
                       ),
                     );
@@ -261,41 +350,15 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
                     // contenu qui, lui, est calé à gauche.
                     left: isCompact ? 16 : 48,
                     bottom: isCompact ? 20 : 36,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(widget.slides.length, (index) {
-                        final active = index == _currentIndex;
-                        // Des repères au toucher et à la souris, pas des
-                        // boutons : à la télécommande le bandeau change de
-                        // diapositive aux flèches (Droite au bord), et ces
-                        // points restent volontairement hors du parcours.
-                        return GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => _pageController.animateToPage(
-                            index,
-                            duration:
-                                AppMotion.move(context, AppMotion.emphasis),
-                            curve: AppMotion.curve,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 3, vertical: 10),
-                            child: AnimatedContainer(
-                              duration: AppMotion.move(context),
-                              curve: AppMotion.curve,
-                              width: active ? 20 : 6,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: active
-                                    ? AppColors.textPrimary
-                                    : AppColors.textPrimary
-                                        .withValues(alpha: 0.28),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
+                    child: HeroPageDashes(
+                      count: widget.slides.length,
+                      current: _currentIndex,
+                      progress: _fill,
+                      onTap: (index) => _pageController.animateToPage(
+                        index,
+                        duration: AppMotion.move(context, AppMotion.emphasis),
+                        curve: AppMotion.curve,
+                      ),
                     ),
                   ),
               ],
