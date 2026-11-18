@@ -260,7 +260,10 @@ class _PosterFlipStage<T> extends StatelessWidget {
                       child: front,
                     ),
                     _Face(
-                      angle: angle - math.pi,
+                      // Sans rotation (mode allégé des téléviseurs, « réduire
+                      // les animations »), `angle` reste à 0 : `angle - π`
+                      // posait le dos en miroir, textes à l'envers.
+                      angle: reduced ? 0.0 : angle - math.pi,
                       perspective: _perspective,
                       visible: backShown,
                       opacity: reduced ? t : 1,
