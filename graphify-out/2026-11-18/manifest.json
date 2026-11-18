@@ -666,9 +666,9 @@
     "semantic_hash": ""
   },
   "app/lib/desktop_window.dart": {
-    "mtime": 1794820424.2057006,
-    "seen": 1794990536.7652864,
-    "ast_hash": "b81aa3e71214ba8018eb4095435bda23",
+    "mtime": 1794994977.12272,
+    "seen": 1794995097.5771396,
+    "ast_hash": "06975e04aa7f0aedeca971df93590fa8",
     "semantic_hash": ""
   },
   "app/lib/l10n/app_language.dart": {
@@ -678,9 +678,9 @@
     "semantic_hash": ""
   },
   "app/lib/l10n/en.dart": {
-    "mtime": 1794992541.7345939,
-    "seen": 1794993052.7659364,
-    "ast_hash": "bf0d5fd97cbd36efadb297daa44238ed",
+    "mtime": 1794997138.4624112,
+    "seen": 1794997340.5730474,
+    "ast_hash": "4c0d8fca2491339121bfc9d8172f8fa3",
     "semantic_hash": ""
   },
   "app/lib/l10n/tr.dart": {
@@ -972,9 +972,9 @@
     "semantic_hash": ""
   },
   "app/lib/providers/search_provider.dart": {
-    "mtime": 1794820424.2277164,
-    "seen": 1794990536.7652864,
-    "ast_hash": "b9c3446975fcfe69aa9962bcb8f1b299",
+    "mtime": 1794996707.548779,
+    "seen": 1794997340.5730474,
+    "ast_hash": "5ef8a506925d885d0bc4bbd64b8f4bb4",
     "semantic_hash": ""
   },
   "app/lib/providers/watch_lists_provider.dart": {
@@ -1101,12 +1101,6 @@
     "mtime": 1793357545.0284245,
     "seen": 1794990536.7652864,
     "ast_hash": "6f072e52dbb31f50a5a35ae569c0f1c6",
-    "semantic_hash": ""
-  },
-  "app/lib/screens/library/search_results_screen.dart": {
-    "mtime": 1794820424.2497332,
-    "seen": 1794990536.7652864,
-    "ast_hash": "641107fce36f7618065c728d0056e6df",
     "semantic_hash": ""
   },
   "app/lib/screens/library/season_detail_screen.dart": {
@@ -1746,9 +1740,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_chrome_buttons.dart": {
-    "mtime": 1794989792.9272113,
-    "seen": 1794990536.7652864,
-    "ast_hash": "8bf15722a2fcb28a7582f8ca0848f9bd",
+    "mtime": 1794994942.6642814,
+    "seen": 1794995097.5771396,
+    "ast_hash": "b1e0c36d1314339f1b5a93e4515b83f3",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_chrome_theme.dart": {
@@ -2310,9 +2304,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/shell/mobile_top_bar.dart": {
-    "mtime": 1793195379.160535,
-    "seen": 1794990536.7652864,
-    "ast_hash": "592352577c1b49c100b0318c6ea739a4",
+    "mtime": 1794996695.125485,
+    "seen": 1794997340.5735512,
+    "ast_hash": "170601395e80f88e548a04ee1ec380a5",
     "semantic_hash": ""
   },
   "app/lib/screens/shell/pending_announcement.dart": {
@@ -2730,9 +2724,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/media_details_cache.dart": {
-    "mtime": 1789397727.7786934,
-    "seen": 1794990536.7652864,
-    "ast_hash": "68d293aae82dab4bdae1c37141c58d6c",
+    "mtime": 1794993448.8946164,
+    "seen": 1794993674.9022226,
+    "ast_hash": "eae139f0edde1eda3cb05a8f09caa584",
     "semantic_hash": ""
   },
   "app/lib/services/media_failover.dart": {
@@ -3354,9 +3348,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/glass_catalog_search.dart": {
-    "mtime": 1794924838.2199998,
-    "seen": 1794990536.76629,
-    "ast_hash": "2221083bdaf30b4bac428d5bb309f239",
+    "mtime": 1794996681.2480404,
+    "seen": 1794997340.5740464,
+    "ast_hash": "334a8293c8d67db6cb34a4a4a9cc25a4",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/glass_chrome.dart": {
@@ -3639,12 +3633,6 @@
     "mtime": 1794820424.5139782,
     "seen": 1794990536.76629,
     "ast_hash": "b564b4fc27108fd6d4887aecf5c0a05b",
-    "semantic_hash": ""
-  },
-  "app/lib/widgets/global/sticky_glass_search.dart": {
-    "mtime": 1791466207.6102555,
-    "seen": 1794990536.76629,
-    "ast_hash": "999e52ff88a1d53426ee3863b6a108b3",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/watch_badge.dart": {
@@ -9876,9 +9864,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/onyx-engineering/ui.md": {
-    "mtime": 1794949264.5156388,
-    "seen": 1794990536.767794,
-    "ast_hash": "6a32810c363bce700b12569a9ea0856d",
+    "mtime": 1794996707.5497794,
+    "seen": 1794997340.57656,
+    "ast_hash": "459b389791e0da75eac6e9d1fe294d14",
     "semantic_hash": ""
   },
   ".github/pull_request_template.md": {
@@ -12498,9 +12486,9 @@
     "semantic_hash": ""
   },
   "app/test/tv_glass_search_test.dart": {
-    "mtime": 1794820424.6746154,
-    "seen": 1794990536.7667944,
-    "ast_hash": "dc058ba7c51740f583c4e7b14b2d1d26",
+    "mtime": 1794996716.8476279,
+    "seen": 1794997340.5750463,
+    "ast_hash": "44808befd374b39204ad177fb857e1c6",
     "semantic_hash": ""
   },
   "app/test/tv_sections_test.dart": {
@@ -12513,12 +12501,6 @@
     "mtime": 1794820424.5029585,
     "seen": 1794990536.76629,
     "ast_hash": "937556dbd1c8f1eb693bffc019bf029c",
-    "semantic_hash": ""
-  },
-  "app/test/header_search_results_test.dart": {
-    "mtime": 1794924988.7877028,
-    "seen": 1794990536.76629,
-    "ast_hash": "8f31519f698a673bf4873311290629ea",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/poster_flip/poster_flip_back.dart": {
@@ -12810,9 +12792,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_spotlight.dart": {
-    "mtime": 1794990222.2363687,
-    "seen": 1794990536.7652864,
-    "ast_hash": "11046ac18a6abca798f11dc5c0acf411",
+    "mtime": 1794993449.0565493,
+    "seen": 1794993674.9012225,
+    "ast_hash": "fa7c8a0bf9e9c6fc7111243800905021",
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_tv_view.dart": {
@@ -13398,9 +13380,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_overlays.dart": {
-    "mtime": 1794989792.9252121,
-    "seen": 1794990536.7652864,
-    "ast_hash": "3bee4f3b0dafb76b366165f5e47e62b5",
+    "mtime": 1794994977.5966206,
+    "seen": 1794995097.5771396,
+    "ast_hash": "31b37ce844e14176a634a32c4f1fcd28",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/next_episode_page.dart": {
@@ -13596,9 +13578,9 @@
     "semantic_hash": ""
   },
   "app/test/search_unavailable_shelf_test.dart": {
-    "mtime": 1794924966.9981687,
-    "seen": 1794990536.7667944,
-    "ast_hash": "ebc6efd5c9fef15f56d609d8b0abe7df",
+    "mtime": 1794997060.490566,
+    "seen": 1794997340.5750463,
+    "ast_hash": "5b78bbdfb7430440412a3dac53ab92e4",
     "semantic_hash": ""
   },
   "app/test/support/search_catalog_fakes.dart": {
@@ -13980,21 +13962,21 @@
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_chips.dart": {
-    "mtime": 1794924659.423718,
-    "seen": 1794990536.7652864,
-    "ast_hash": "dfc37104f6936fd66a52ae9785c790bf",
+    "mtime": 1794996364.2875452,
+    "seen": 1794997340.5735512,
+    "ast_hash": "ec33afb7fccaecde4bad2d26d69ab0db",
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_controller.dart": {
-    "mtime": 1794924374.268667,
-    "seen": 1794990536.7652864,
-    "ast_hash": "357957af9a2087b2dc552b4f62affddf",
+    "mtime": 1794996800.7132492,
+    "seen": 1794997340.5735512,
+    "ast_hash": "db554fdc687005bb893a76c59d0ce454",
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_hits.dart": {
-    "mtime": 1794924356.920493,
-    "seen": 1794990536.7652864,
-    "ast_hash": "97144cd7ba3cbba03b835c1a43bd96e1",
+    "mtime": 1794996800.7142494,
+    "seen": 1794997340.5735512,
+    "ast_hash": "3d7cc44775b4a8e1cad9771ab93d57b9",
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_hotkey.dart": {
@@ -14010,27 +13992,21 @@
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_sheet.dart": {
-    "mtime": 1794926217.9223928,
-    "seen": 1794990536.7652864,
-    "ast_hash": "e9c3cdbb4dcefc4696a72ef69c210b71",
+    "mtime": 1794996369.374141,
+    "seen": 1794997340.5735512,
+    "ast_hash": "4cd740c6846fc80d83da72b5474a6128",
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_spotlight.dart": {
-    "mtime": 1794990222.2373757,
-    "seen": 1794990536.7652864,
-    "ast_hash": "72b94e93efeb38388577b213660be105",
-    "semantic_hash": ""
-  },
-  "app/lib/screens/search/desktop/recent_searches.dart": {
-    "mtime": 1794924385.5708554,
-    "seen": 1794990536.7652864,
-    "ast_hash": "f3cf3bdef4e01713efcc5fb110ef2ead",
+    "mtime": 1794996341.9071972,
+    "seen": 1794997340.5735512,
+    "ast_hash": "882055bc9e046f82b54f4abd92e090c9",
     "semantic_hash": ""
   },
   "app/lib/screens/shell/desktop_header_search.dart": {
-    "mtime": 1794926047.4515924,
-    "seen": 1794990536.7652864,
-    "ast_hash": "a17eac4a698e71f34beac55e3eef9283",
+    "mtime": 1794996572.399902,
+    "seen": 1794997340.5735512,
+    "ast_hash": "a48b146dfe50fb40c4b5467bf52c31bc",
     "semantic_hash": ""
   },
   "app/test/desktop_search_grid_test.dart": {
@@ -14040,9 +14016,9 @@
     "semantic_hash": ""
   },
   "app/test/desktop_search_test.dart": {
-    "mtime": 1794926165.2138875,
-    "seen": 1794990536.76629,
-    "ast_hash": "96a42bfcaceda04f505c8cd9a8c65970",
+    "mtime": 1794996866.7146115,
+    "seen": 1794997340.5745442,
+    "ast_hash": "eed71f57f69ae2011e2c01e4a96e58ff",
     "semantic_hash": ""
   },
   "docs/adr/0139-sur-le-bureau-la-recherche-s-ouvre-dans-l-en-tete-sous-un-voile-ctrl-k.md": {
@@ -14208,9 +14184,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/onyx/onyx_pointer_chrome.dart": {
-    "mtime": 1794989792.934718,
-    "seen": 1794990536.7652864,
-    "ast_hash": "c3f9a48f7be57f3f10eab14986c14e6e",
+    "mtime": 1794994977.3565845,
+    "seen": 1794995097.5771396,
+    "ast_hash": "bb6480ab810018983986e14b8c2d874d",
     "semantic_hash": ""
   },
   "app/test/onyx_segmented_bar_test.dart": {
@@ -14226,15 +14202,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_desktop_spotlight.dart": {
-    "mtime": 1794990210.1825168,
-    "seen": 1794990536.7652864,
-    "ast_hash": "65cf69ed28d52ebb91fe124bfa6403e9",
+    "mtime": 1794993449.523861,
+    "seen": 1794993674.9012225,
+    "ast_hash": "a1638bec3a8df566d3821e15006bfac2",
     "semantic_hash": ""
   },
   "app/test/library_desktop_spotlight_test.dart": {
-    "mtime": 1794990399.6532052,
-    "seen": 1794990536.76629,
-    "ast_hash": "0281d7cbed9176968b55e4cb90b0b22c",
+    "mtime": 1794993499.2337928,
+    "seen": 1794993674.9032223,
+    "ast_hash": "aba2f38a4664cedec5c6a0c360736202",
     "semantic_hash": ""
   },
   "docs/adr/0140-sur-le-bureau-les-bibliotheques-ont-le-volet-de-la-recherche.md": {
@@ -14259,6 +14235,66 @@
     "mtime": 1794992979.2368138,
     "seen": 1794993052.7689435,
     "ast_hash": "83e9a653d782f93a48a2e784d9a02403",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/library/widgets/library_spotlight_prefetch.dart": {
+    "mtime": 1794993437.9828565,
+    "seen": 1794993674.9012225,
+    "ast_hash": "8e33b5fdef61dc3c7f626f7526cc4cee",
+    "semantic_hash": ""
+  },
+  "app/test/library_spotlight_prefetch_test.dart": {
+    "mtime": 1794993491.5765033,
+    "seen": 1794993674.9032223,
+    "ast_hash": "e16cc049f9c63e807465ddb677cfcec1",
+    "semantic_hash": ""
+  },
+  "docs/adr/0142-le-volet-prepare-la-fiche-des-affiches-a-l-ecran.md": {
+    "mtime": 1794993564.576225,
+    "seen": 1794993674.906225,
+    "ast_hash": "45ecd56c8f89b7febf46ce43a2cce9c3",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/search/phone/phone_search_row.dart": {
+    "mtime": 1794996800.7277772,
+    "seen": 1794997340.5735512,
+    "ast_hash": "a819277cc08e1a330e6cf272b3c07429",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/search/phone/phone_search_screen.dart": {
+    "mtime": 1794997044.70834,
+    "seen": 1794997340.5735512,
+    "ast_hash": "9fb07892c5de27006eb709bb623c4aea",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/search/recent_searches.dart": {
+    "mtime": 1794996566.561415,
+    "seen": 1794997340.5735512,
+    "ast_hash": "c59708c228bb56698e472496e013d0b3",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/search/search_chips.dart": {
+    "mtime": 1794996364.202904,
+    "seen": 1794997340.5735512,
+    "ast_hash": "a6af7fd7849fe13e07a4bbef661e1f2a",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/search/search_layout.dart": {
+    "mtime": 1794996800.7402978,
+    "seen": 1794997340.5735512,
+    "ast_hash": "000c185ae70c198e62acfc2605f93674",
+    "semantic_hash": ""
+  },
+  "app/test/phone_search_screen_test.dart": {
+    "mtime": 1794997103.171027,
+    "seen": 1794997340.5745442,
+    "ast_hash": "07f3ecb25a41093f2eae2b24cafa0971",
+    "semantic_hash": ""
+  },
+  "docs/adr/0143-sur-telephone-la-recherche-est-une-page-ouverte-par-une-loupe.md": {
+    "mtime": 1794997157.7086596,
+    "seen": 1794997340.57656,
+    "ast_hash": "b316bc9dadb67d550ee213be7a3812b2",
     "semantic_hash": ""
   }
 }
