@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../l10n/tr.dart';
@@ -93,8 +94,10 @@ class PhoneSearchSession extends ChangeNotifier {
         onCovered: _setCovered,
         child: PhoneSearchScreen(session: this),
       ),
+      // Sur le web, pas d'opacité animée sur la page entière (ADR-0149) :
+      // elle apparaît d'un coup, la durée est courte.
       transitionsBuilder: (_, animation, __, child) =>
-          FadeTransition(opacity: animation, child: child),
+          kIsWeb ? child : FadeTransition(opacity: animation, child: child),
     );
     _route = route;
     navigator.push(route).whenComplete(() {
