@@ -57,11 +57,15 @@ class _SkeletonPulseState extends State<SkeletonPulse>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0.45, end: 1).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    // Son propre calque : la pulsation repeint le squelette, pas ses voisins.
+    // Le ticker suit `TickerMode` : une route recouverte ne l'anime plus.
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: Tween<double>(begin: 0.45, end: 1).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+        ),
+        child: widget.child,
       ),
-      child: widget.child,
     );
   }
 }

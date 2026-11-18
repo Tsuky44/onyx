@@ -70,6 +70,7 @@ import 'theme/lite_mode.dart';
 import 'desktop_window.dart';
 import 'widgets/global/lite_mode_suggestion.dart';
 import 'widgets/global/middle_click_autoscroll.dart';
+import 'widgets/global/smooth_wheel_scroll.dart';
 import 'widgets/global/resume_preview/hover_preview_preference.dart';
 import 'l10n/app_language.dart';
 import 'l10n/localized_asset.dart';
@@ -109,9 +110,12 @@ class AppScrollBehavior extends MaterialScrollBehavior {
   @override
   Widget buildScrollbar(
       BuildContext context, Widget child, ScrollableDetails details) {
-    return MiddleClickAutoScroll(
+    return SmoothWheelScroll(
       details: details,
-      child: super.buildScrollbar(context, child, details),
+      child: MiddleClickAutoScroll(
+        details: details,
+        child: super.buildScrollbar(context, child, details),
+      ),
     );
   }
 }

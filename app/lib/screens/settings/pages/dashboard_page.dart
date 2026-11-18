@@ -179,10 +179,12 @@ class _DashboardPageState extends State<DashboardPage> with OnScreenState {
             children: [
               SettingsTile(
                 icon: Icons.movie_outlined,
-                title:
-                    tr('{0} films · {1} séries · {2} épisodes', [server.movies, server.shows, server.episodes]),
-                subtitle:
-                    tr('{0} sur disque · {1} de contenu', [formatBytes(server.libraryBytes), formatWatchTime(server.libraryDurationSeconds)]),
+                title: tr('{0} films · {1} séries · {2} épisodes',
+                    [server.movies, server.shows, server.episodes]),
+                subtitle: tr('{0} sur disque · {1} de contenu', [
+                  formatBytes(server.libraryBytes),
+                  formatWatchTime(server.libraryDurationSeconds)
+                ]),
                 showChevron: false,
                 trailing: server.scanning
                     ? SettingsPill(tr('Analyse en cours'),
@@ -196,21 +198,24 @@ class _DashboardPageState extends State<DashboardPage> with OnScreenState {
             children: [
               SettingsTile(
                 icon: Icons.timer_outlined,
-                title: tr('En ligne depuis {0}', [_uptime(server.uptimeSeconds)]),
+                title:
+                    tr('En ligne depuis {0}', [_uptime(server.uptimeSeconds)]),
                 subtitle: tr('Démarré {0}', [relativeTime(server.startedAt)]),
                 showChevron: false,
               ),
               SettingsTile(
                 icon: Icons.developer_board_rounded,
-                title: tr('{0} · {1} · {2} cœurs', [server.os, server.arch, server.cpus]),
-                subtitle: tr('Go {0}', [server.goVersion.replaceFirst('go', '')]),
+                title: tr('{0} · {1} · {2} cœurs',
+                    [server.os, server.arch, server.cpus]),
+                subtitle:
+                    tr('Go {0}', [server.goVersion.replaceFirst('go', '')]),
                 showChevron: false,
               ),
               SettingsTile(
                 icon: Icons.storage_rounded,
                 title: tr('Mémoire {0}', [formatBytes(server.memoryBytes)]),
-                subtitle:
-                    tr('Base de données {0}', [formatBytes(server.databaseBytes)]),
+                subtitle: tr(
+                    'Base de données {0}', [formatBytes(server.databaseBytes)]),
                 showChevron: false,
               ),
             ],
@@ -297,14 +302,16 @@ class _LiveDotState extends State<_LiveDot>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FadeTransition(
-          opacity: Tween(begin: 0.35, end: 1.0).animate(_controller),
-          child: Container(
-            width: 7,
-            height: 7,
-            decoration: const BoxDecoration(
-              color: AppColors.success,
-              shape: BoxShape.circle,
+        RepaintBoundary(
+          child: FadeTransition(
+            opacity: Tween(begin: 0.35, end: 1.0).animate(_controller),
+            child: Container(
+              width: 7,
+              height: 7,
+              decoration: const BoxDecoration(
+                color: AppColors.success,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
         ),
@@ -377,7 +384,8 @@ class _NowPlayingCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        color: AppColors.textSecondary, fontSize: AppType.subhead),
+                        color: AppColors.textSecondary,
+                        fontSize: AppType.subhead),
                   ),
                 ],
                 const SizedBox(height: 10),
@@ -395,7 +403,8 @@ class _NowPlayingCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: AppType.footnote),
+                            color: AppColors.textSecondary,
+                            fontSize: AppType.footnote),
                       ),
                     ),
                     if (session.address.isNotEmpty) ...[
@@ -433,7 +442,8 @@ class _NowPlayingCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(3),
                         child: TweenAnimationBuilder<double>(
                           tween: Tween(end: session.progress),
-                          duration: AppMotion.move(context, const Duration(milliseconds: 600)),
+                          duration: AppMotion.move(
+                              context, const Duration(milliseconds: 600)),
                           builder: (_, value, __) => LinearProgressIndicator(
                             value: value,
                             minHeight: 4,
