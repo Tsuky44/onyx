@@ -88,40 +88,44 @@ extension _OnyxPointerChrome on OnyxControlsLayer {
           m.gutter,
           OnyxControlsLayer._topBarTail,
         ),
-        child: Row(
-          children: [
-            OnyxIconButton(
-              key: const ValueKey('onyx-back'),
-              icon: Icons.arrow_back_ios_new_rounded,
-              tooltip: tr('Retour'),
-              metrics: m,
-              glass: true,
-              onPressed: onBack,
-            ),
-            const SizedBox(width: 8),
-            // Transparent aux clics ([_buildTitleMark]) : on déplace la
-            // fenêtre en la tirant par son titre comme par l'image.
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: _buildTitleMark(m),
-              ),
-            ),
-            if (showVolume)
-              OnyxVolumeControl(
-                volume: volume,
-                onChanged: onVolumeChanged,
+        // La barre de titre de Windows qui sort au bord haut pousse la
+        // rangée vers le bas au lieu de la recouvrir.
+        child: CaptionPeekInset(
+          child: Row(
+            children: [
+              OnyxIconButton(
+                key: const ValueKey('onyx-back'),
+                icon: Icons.arrow_back_ios_new_rounded,
+                tooltip: tr('Retour'),
                 metrics: m,
                 glass: true,
-                showSlider: width >= _volumeSliderFrom,
+                onPressed: onBack,
               ),
-            ...onyxWindowButtons(
-              metrics: m,
-              glass: true,
-              onToggleFullscreen: onToggleFullscreen,
-              onTogglePictureInPicture: onTogglePictureInPicture,
-            ),
-          ],
+              const SizedBox(width: 8),
+              // Transparent aux clics ([_buildTitleMark]) : on déplace la
+              // fenêtre en la tirant par son titre comme par l'image.
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _buildTitleMark(m),
+                ),
+              ),
+              if (showVolume)
+                OnyxVolumeControl(
+                  volume: volume,
+                  onChanged: onVolumeChanged,
+                  metrics: m,
+                  glass: true,
+                  showSlider: width >= _volumeSliderFrom,
+                ),
+              ...onyxWindowButtons(
+                metrics: m,
+                glass: true,
+                onToggleFullscreen: onToggleFullscreen,
+                onTogglePictureInPicture: onTogglePictureInPicture,
+              ),
+            ],
+          ),
         ),
       ),
     );

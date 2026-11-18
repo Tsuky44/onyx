@@ -241,6 +241,11 @@ class OnyxVolumeControl extends StatefulWidget {
 }
 
 class _OnyxVolumeControlState extends State<OnyxVolumeControl> {
+  static const double _thumbRadius = 6;
+
+  /// Le verre entre le pouce à 100 % et le bout de la capsule.
+  static const double _capsuleTail = 16;
+
   double _lastAudible = 100;
   final OptimisticVolume _shown = OptimisticVolume();
 
@@ -269,7 +274,8 @@ class _OnyxVolumeControlState extends State<OnyxVolumeControl> {
     final m = widget.metrics;
     final volume = _shown.resolve(widget.volume);
 
-    final mute = OnyxIconButton(
+    final capsule = widget.glass && widget.showSlider;
+    Widget mute = OnyxIconButton(
       key: const ValueKey('onyx-mute'),
       icon: _icon(volume),
       tooltip: volume <= 0 ? tr('Rétablir le son') : tr('Couper le son'),
@@ -277,9 +283,15 @@ class _OnyxVolumeControlState extends State<OnyxVolumeControl> {
       // Seul, c'est un disque de verre comme ses voisins ; avec son curseur,
       // la capsule est le verre des deux.
       glass: widget.glass && !widget.showSlider,
-      size: widget.glass && widget.showSlider ? 20 : null,
+      size: capsule ? OnyxIconButton._glassIcon : null,
       onPressed: () => _toggleMute(volume),
     );
+    // Dans la capsule, le bouton muet est un carré de la hauteur du verre :
+    // son icône tombe au centre de l'arrondi gauche au lieu de flotter dans
+    // une case de 44 plus large que la pastille.
+    if (capsule) {
+      mute = SizedBox.square(dimension: OnyxIconButton.glassDisc, child: mute);
+    }
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -294,7 +306,8 @@ class _OnyxVolumeControlState extends State<OnyxVolumeControl> {
                 inactiveTrackColor: OnyxChromeTheme.progressTrack,
                 thumbColor: OnyxChromeTheme.progressPlayed,
                 overlayColor: Colors.white24,
-                thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
+                thumbShape:
+                    RoundSliderThumbShape(enabledThumbRadius: _thumbRadius),
                 overlayShape: RoundSliderOverlayShape(overlayRadius: 14),
               ),
               child: AppSlider(
@@ -310,13 +323,16 @@ class _OnyxVolumeControlState extends State<OnyxVolumeControl> {
           ),
       ],
     );
-    if (!widget.glass || !widget.showSlider) return row;
+    if (!capsule) return row;
     return SizedBox(
       height: OnyxIconButton.glassSize,
       child: Center(
         child: Container(
           height: OnyxIconButton.glassDisc,
-          padding: const EdgeInsets.only(right: 6),
+          // Le curseur se serre contre l'icône et laisse au pouce à 100 % une
+          // vraie marge avant l'arrondi droit : posé au centre de l'arrondi,
+          // il paraissait collé au bord.
+          padding: const EdgeInsets.only(right: _capsuleTail),
           decoration: const BoxDecoration(
             color: OnyxChromeTheme.glassControl,
             borderRadius: BorderRadius.all(
