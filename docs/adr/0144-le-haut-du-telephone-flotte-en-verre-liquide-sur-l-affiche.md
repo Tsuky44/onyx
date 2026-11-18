@@ -110,6 +110,29 @@ verre du tout. Choix de l'utilisateur : « fait moi la C ».
 - **Inchangés** : le fondu flou au défilement (point 2), et le verre liquide de la capsule du bas
   (point 4), qui n'est plus partagé avec le haut.
 
+## Troisième complément du 2026-11-18 : un flou continu au défilement
+
+Sur l'iPhone, les cinq bandes de flou du défilement se voyaient : « y'a des saccades dans le
+fondu, tu peux rendre ça parfait ». Chaque bande avait sa force, et leurs bords se lisaient en
+marches sur de vraies affiches ; le voile, un dégradé en trois droites, ajoutait ses coudes.
+
+- **Sous Impeller** (l'iPhone, et Android quand il le fait tourner), un flou dont la force baisse
+  en continu de haut en bas : `shaders/scroll_edge_blur.frag`, posé par `ImageFilter.shader`
+  sur le `BackdropFilter`, en deux passes composées (horizontale, puis verticale), seize pas de
+  chaque côté sur trois écarts types. Le flou suit `1 - smoothstep` de la hauteur : plein sous
+  l'heure (14 points), nul en bas, sans pente brusque à aucun bout. C'est le premier shader de
+  l'app : `pubspec.yaml` déclare `shaders:`, et l'outil Flutter le compile pour Metal, Vulkan,
+  OpenGL ES et SkSL (vérifié avec `impellerc`).
+- **Hors Impeller**, les bandes restent en repli : `ImageFilter.shader` n'y existe pas
+  (`ImageFilter.isShaderFilterSupported`). Le shader se charge une fois, de façon asynchrone ; les
+  bandes servent le temps qu'il arrive.
+- **Le voile** suit une courbe, `0,92 × (1 − t³)²`, échantillonnée en treize arrêts : elle
+  s'éteint en bas sans pente, donc sans ligne.
+
+Repère du shader, pris sur l'effet d'étirement de Flutter (`stretch_effect.frag`) :
+`FlutterFragCoord` part du haut, et seule la lecture de la texture s'inverse sous OpenGL ES. Le
+bord commence en haut de l'écran : la position du fragment y donne directement la hauteur.
+
 ## Conséquences
 
 - Cinq flous en haut de l'écran pendant le défilement, plus ceux du bas, et le flou du
@@ -127,7 +150,7 @@ verre du tout. Choix de l'utilisateur : « fait moi la C ».
 
 | Quoi | Pourquoi ici seulement |
 | --- | --- |
-| Les marches entre les bandes de flou | Elles se jugent à l'œil sur de vraies affiches qui défilent. |
+| Le flou continu du shader, à l'endroit | Les tests ne tournent pas sous Impeller : seul l'appareil le montre. |
 | Le coût des flous du haut et du bas ensemble | Il dépend du GPU. |
 | Le verre plus clair sur une affiche très claire | Les noms des onglets doivent rester lisibles. |
 | L'heure sur le prolongement d'une affiche claire | Le voile suffit-il sur un ciel blanc ? |
