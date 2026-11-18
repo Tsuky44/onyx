@@ -10,6 +10,7 @@ import 'package:onyx/screens/library/widgets/library_spotlight.dart';
 import 'package:onyx/screens/library/widgets/library_spotlight_prefetch.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/services/media_details_cache.dart';
+import 'package:onyx/utils/poster_grid_zoom.dart';
 import 'package:onyx/widgets/global/media_card.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,6 +79,37 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     MediaDetailsCache.clear();
     LibrarySpotlightPrefetch.resetForTest();
+    PosterGridZoom.instance.resetForTest();
+  });
+
+  int columns(WidgetTester tester) =>
+      (tester.widget<SliverGrid>(find.byType(SliverGrid)).gridDelegate
+              as SliverGridDelegateWithFixedCrossAxisCount)
+          .crossAxisCount;
+
+  // Le volet de l'Apple TV, sur 1920 px (ADR-0156) : un bon tiers de
+  // l'écran, et quatre affiches par ligne à côté. À taille réelle, il n'en
+  // prenait qu'un quart, à côté de six colonnes.
+  testWidgets('à 1920 px, le volet a les proportions de l’Apple TV',
+      (tester) async {
+    await _pumpAt(tester, const Size(1920, 1080));
+
+    final pane = tester.getRect(find.byType(LibrarySpotlight));
+    expect(pane.width, closeTo((48 + 374 + 48 + 170) * 1.5, 1));
+    expect(columns(tester), 4);
+    expect(tester.getTopLeft(find.byType(MediaCard).first).dx,
+        greaterThan(1920 / 3));
+  });
+
+  testWidgets('le choix « 6 par ligne » de la grille pleine reste le sien',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'poster_grid_columns': 6});
+    await _pumpAt(tester, const Size(1920, 1080));
+    expect(columns(tester), 4,
+        reason: 'à côté du volet, la grille a ses propres modes');
+
+    await _pumpAt(tester, const Size(1000, 1000));
+    expect(columns(tester), 6);
   });
 
   testWidgets('sur un grand écran, le volet présente le titre survolé',
@@ -91,8 +123,8 @@ void main() {
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     addTearDown(mouse.removePointer);
     await mouse.addPointer(location: Offset.zero);
-    final third = find.byWidgetPredicate(
-        (w) => w is MediaCard && w.media.title == 'Film 3');
+    final third = find
+        .byWidgetPredicate((w) => w is MediaCard && w.media.title == 'Film 3');
     await mouse.moveTo(tester.getCenter(third));
     await tester.pumpAndSettle();
 

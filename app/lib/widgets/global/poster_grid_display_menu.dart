@@ -31,7 +31,9 @@ class PosterGridDisplayMenu extends StatelessWidget {
   /// Plus il y a d'affiches par ligne, plus l'icône du mode est dense : à
   /// partir de 8 sur grand écran, de 4 sur téléphone, où c'est le maximum.
   static IconData _iconFor(int columns, {required bool phone}) =>
-      columns >= (phone ? 4 : 8) ? AppIcons.postersSmall : AppIcons.postersLarge;
+      columns >= (phone ? 4 : 8)
+          ? AppIcons.postersSmall
+          : AppIcons.postersLarge;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +45,9 @@ class PosterGridDisplayMenu extends StatelessWidget {
       tooltip: tr('Affichage'),
       onSelected: zoom.select,
       items: [
-        for (final columns in PosterGridZoom.presetsFor(phone: phone))
+        for (final columns in zoom.split
+            ? PosterGridZoom.splitPresets
+            : PosterGridZoom.presetsFor(phone: phone))
           OnyxMenuItem<int>(
             value: columns,
             icon: _iconFor(columns, phone: phone),

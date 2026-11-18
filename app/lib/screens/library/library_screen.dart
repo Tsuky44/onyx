@@ -178,7 +178,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   LibraryDesktopSpotlight.fits(box.maxWidth);
               final grid = _grid(
                   context, lp, entries, loading, count, sortOptions,
-                  spotlight: spotlight);
+                  spotlight: spotlight,
+                  // À côté du volet, les affiches du mur d'un téléviseur
+                  // (ADR-0156).
+                  tileScale: spotlight
+                      ? LibraryDesktopSpotlight.tileScaleFor(box.maxWidth)
+                      : 1);
               if (!spotlight) return grid;
               return LibraryDesktopSpotlight(
                 entries: entries,
@@ -197,11 +202,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     int count,
     Map<_SortOption, String> sortOptions, {
     required bool spotlight,
+    double tileScale = 1,
   }) {
     final library = widget.library;
     final horizontalPadding = AppLayout.pagePadding(context);
     final compact = AppLayout.isCompact(context);
     return PosterGridZoomRegion(
+      split: spotlight,
       child: CustomScrollView(
         scrollCacheExtent: AppLayout.imageCacheExtent(context),
         slivers: [
@@ -265,6 +272,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     constraints.crossAxisExtent,
                     compact: compact,
                     withMeta: false,
+                    tileScale: tileScale,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
