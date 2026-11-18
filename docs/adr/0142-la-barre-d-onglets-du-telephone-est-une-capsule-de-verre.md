@@ -74,8 +74,35 @@ recherche en quatre images : le rond s'étire, le clavier monte, le champ se pos
   ouverte par la frappe dans la barre) reste, sans appelant sur un téléphone.
 - Épinglé par `test/phone_tab_bar_test.dart` (la capsule et le rond, la bulle pleine largeur et
   la page derrière, la croix, Retour, la bulle au-dessus du clavier, la capsule réduite, le
-  défilement, la place des pages) et `test/touch_keyboard_test.dart` (la barre sous un autre
+  défilement, la place des pages, la lentille qui glisse, la fermeture à l'envers, la fiche
+  ouverte depuis les résultats) et `test/touch_keyboard_test.dart` (la barre sous un autre
   clavier).
+
+## Complément du 2026-11-18 : les gestes après l'essai sur l'iPhone
+
+Après l'essai de la release test sur un iPhone (« c'est très bien »), l'utilisateur a demandé
+trois mouvements :
+
+1. **La lentille glisse d'un onglet à l'autre** (`_TabRow`). Une seule lentille pour toute la
+   capsule, et non plus une par onglet : ses deux bords partent ensemble, celui de devant sur une
+   courbe plus vive (`easeOutCubic`) que celui qui suit (`easeInOutCubic`), si bien qu'elle
+   s'étire en chemin et se resserre en se posant. [AppMotion.emphasis] (260 ms), et interrompue
+   elle repart d'où elle est. Sous « réduire les animations », elle se pose d'un coup.
+2. **La fermeture joue l'ouverture à l'envers.** La croix, Retour ou un onglet touché : le clavier
+   descend d'abord, la bulle posée sur lui, puis elle redevient un rond et les onglets
+   reviennent. Avant, la barre se cachait tant que le clavier était encore là (la règle de
+   l'ADR-0141 pour un autre champ), puis réapparaissait d'un coup. La bulle attend que la vue
+   dise que le clavier est parti, 450 ms au plus.
+3. **Une fiche ouverte depuis les résultats rend la capsule.** La page des résultats prévient la
+   session quand une page la recouvre ([PhoneSearchSession.isCovered]) : la bulle redevient un
+   rond, de la même façon qu'à la fermeture, et la capsule revient avec ses onglets. Au retour
+   sur les résultats, la bulle se redéploie **sans rouvrir le clavier**, qui cacherait les
+   résultats retrouvés. Le rond touché depuis la fiche ramène aux résultats, et là le champ prend
+   la main. Un onglet touché depuis la fiche referme tout, comme avant.
+
+La coquille ne laisse la place de la bulle sous ses pages que lorsqu'elle est déployée
+([PhoneSearchSession.isExpanded]) ; une fiche ouverte depuis les résultats a la marge normale
+de la capsule.
 
 ## À vérifier sur l'appareil
 
@@ -85,3 +112,5 @@ recherche en quatre images : le rond s'étire, le clavier monte, le champ se pos
 | La bulle qui monte avec le clavier, sans saut | Le rythme du clavier d'iOS ne se simule pas. |
 | La capsule contre l'indicateur d'accueil | Les zones sûres réelles, pas celles d'un test. |
 | La réduction au défilement sur une longue page | La cadence d'un vrai doigt. |
+| La lentille qui s'étire entre deux onglets | L'effet se juge à l'œil, à 60 ou 120 Hz. |
+| La bulle qui attend la descente du clavier | Le clavier réel annonce sa fin, pas celui du test. |

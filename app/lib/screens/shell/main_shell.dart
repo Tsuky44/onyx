@@ -364,7 +364,7 @@ class _MainShellState extends State<MainShell> {
       final reserve = MobileBottomNav.reserveFor(
         MediaQuery.paddingOf(context),
         keyboardOpen: MediaQuery.viewInsetsOf(context).bottom > 0,
-        searching: _phoneSearch.isOpen,
+        searching: _phoneSearch.isExpanded,
       );
       media = media.copyWith(
         padding: media.padding.copyWith(

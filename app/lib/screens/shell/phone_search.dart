@@ -19,7 +19,10 @@ import '../search/desktop/recent_searches.dart';
 /// laissaient le doute sur celui qui commande.
 ///
 /// Un seul état pour la barre, qui dessine, et pour la coquille, qui laisse la
-/// place à la bulle sous ses pages : [isOpen].
+/// place à la bulle sous ses pages : [isOpen], et [isExpanded] tant que les
+/// résultats sont au premier plan. Une fiche ouverte depuis les résultats les
+/// recouvre ([isCovered]) : la bulle rend la place à la capsule, et revient
+/// au retour.
 class PhoneSearchSession extends ChangeNotifier {
   PhoneSearchSession({required this.provider, required this.navigatorKey}) {
     controller.addListener(() => provider.setQuery(controller.text));
@@ -40,7 +43,17 @@ class PhoneSearchSession extends ChangeNotifier {
   static const Duration expand = Duration(milliseconds: 320);
 
   bool _open = false;
+  bool _covered = false;
+
+  /// La page des résultats est dans la pile, au premier plan ou non.
   bool get isOpen => _open;
+
+  /// Une fiche ouverte depuis les résultats les recouvre.
+  bool get isCovered => _open && _covered;
+
+  /// La bulle est déployée : la recherche est ouverte et ses résultats sont
+  /// au premier plan.
+  bool get isExpanded => _open && !_covered;
 
   Route<void>? _route;
   RecentSearches? _recents;
@@ -58,20 +71,32 @@ class PhoneSearchSession extends ChangeNotifier {
   /// Le rond de recherche est touché : la bulle s'étire, la page des
   /// résultats s'ouvre derrière elle. La barre donne le focus au champ quand
   /// la bulle a fini de s'étirer.
+  ///
+  /// Touché depuis une fiche ouverte des résultats, il y ramène.
   void open({required bool reduced}) {
-    if (_open) return;
     final navigator = navigatorKey.currentState;
     if (navigator == null) return;
+    if (_open) {
+      final route = _route;
+      if (_covered && route != null && route.isActive) {
+        route.navigator!.popUntil((r) => r == route);
+      }
+      return;
+    }
     _open = true;
+    _covered = false;
     notifyListeners();
 
     final duration = reduced ? Duration.zero : AppMotion.standard;
     final route = PageRouteBuilder<void>(
       transitionDuration: duration,
       reverseTransitionDuration: duration,
-      pageBuilder: (_, __, ___) => SearchResultsScreen.docked(
-        recents: _recents,
-        onRecent: useRecent,
+      pageBuilder: (_, __, ___) => _CoverWatch(
+        onCovered: _setCovered,
+        child: SearchResultsScreen.docked(
+          recents: _recents,
+          onRecent: useRecent,
+        ),
       ),
       transitionsBuilder: (_, animation, __, child) =>
           FadeTransition(opacity: animation, child: child),
@@ -98,6 +123,15 @@ class PhoneSearchSession extends ChangeNotifier {
     _reset();
   }
 
+  /// Une fiche s'ouvre par-dessus les résultats, ou s'en va.
+  void _setCovered(bool covered) {
+    if (_disposed || !_open || covered == _covered) return;
+    _covered = covered;
+    // Le clavier descend avec la bulle : la fiche n'en a pas l'usage.
+    if (covered) focusNode.unfocus();
+    notifyListeners();
+  }
+
   /// La touche « Rechercher » : la recherche a servi.
   void submit(String query) => _recents?.remember(query);
 
@@ -112,6 +146,7 @@ class PhoneSearchSession extends ChangeNotifier {
   void _reset() {
     if (!_open || _disposed) return;
     _open = false;
+    _covered = false;
     focusNode.unfocus();
     controller.clear();
     provider.clear();
@@ -126,6 +161,40 @@ class PhoneSearchSession extends ChangeNotifier {
     _recents?.dispose();
     super.dispose();
   }
+}
+
+/// Prévient la recherche quand une fiche recouvre sa page de résultats, et
+/// quand elle s'en va.
+class _CoverWatch extends StatefulWidget {
+  const _CoverWatch({required this.onCovered, required this.child});
+
+  final ValueChanged<bool> onCovered;
+  final Widget child;
+
+  @override
+  State<_CoverWatch> createState() => _CoverWatchState();
+}
+
+class _CoverWatchState extends State<_CoverWatch> {
+  bool _covered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    // Une page qui se referme n'est pas recouverte : elle s'en va.
+    final covered = route != null && route.isActive && !route.isCurrent;
+    if (covered == _covered) return;
+    _covered = covered;
+    // Les dépendances changent pendant la construction : la barre, elle, se
+    // redessine après.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onCovered(_covered);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Le champ dans la bulle : la loupe, la frappe, la croix qui referme.

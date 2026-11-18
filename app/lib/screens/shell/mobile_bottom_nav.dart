@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -24,9 +25,12 @@ import 'shell_tabs.dart';
 /// - **la page défile vers le bas** ([minimized]), la capsule se réduit à
 ///   l'onglet affiché et la recherche reste ; elle revient en entier au
 ///   premier geste vers le haut ;
+/// - **un onglet est touché**, la lentille glisse jusqu'à lui ;
 /// - **la recherche s'ouvre** ([search]), le rond s'étire sur toute la
 ///   largeur et devient le champ, pendant que les onglets s'effacent dessous ;
-///   le clavier monte ensuite et le champ monte avec lui ;
+///   le clavier monte ensuite et le champ monte avec lui. Elle se referme à
+///   l'envers : le clavier descend, puis la bulle redevient un rond. Une fiche
+///   ouverte depuis les résultats rend la capsule de la même façon ;
 /// - **un autre champ ouvre le clavier**, la barre lui laisse la place
 ///   (ADR-0141).
 ///
@@ -118,12 +122,26 @@ class _MobileBottomNavState extends State<MobileBottomNav>
   late final AnimationController _searchOpening = AnimationController(
     vsync: this,
     duration: PhoneSearchSession.expand,
-    value: widget.search?.isOpen ?? false ? 1 : 0,
+    value: widget.search?.isExpanded ?? false ? 1 : 0,
   )..addStatusListener(_onSearchStatus);
 
   bool _keyboardOpen = false;
 
-  bool get _searching => widget.search?.isOpen ?? false;
+  /// Le rond vient d'être touché : le champ prend la main quand la bulle a
+  /// pris toute la largeur. Pas au retour d'une fiche vers les résultats : le
+  /// clavier les cacherait.
+  bool _focusOnExpand = false;
+
+  /// La bulle attend que le clavier soit descendu pour redevenir un rond.
+  bool _collapsePending = false;
+  Timer? _collapseFallback;
+
+  /// Assez pour que le clavier d'iOS ou d'Android soit descendu. Un clavier
+  /// qui ne dit pas qu'il est parti ne retient pas la bulle au-delà.
+  static const Duration _keyboardWait = Duration(milliseconds: 450);
+
+  /// La bulle est déployée : les résultats sont au premier plan.
+  bool get _searching => widget.search?.isExpanded ?? false;
 
   @override
   void initState() {
@@ -155,24 +173,57 @@ class _MobileBottomNavState extends State<MobileBottomNav>
   void didChangeMetrics() {
     if (!mounted) return;
     final open = _readKeyboard();
-    if (open != _keyboardOpen) setState(() => _keyboardOpen = open);
+    if (open == _keyboardOpen) return;
+    setState(() => _keyboardOpen = open);
+    if (!open && _collapsePending) _collapse();
   }
+
+  Duration? get _duration => AppMotion.reduced(context) ? Duration.zero : null;
 
   void _onSearchChanged() {
     if (!mounted) return;
-    final duration = AppMotion.reduced(context) ? Duration.zero : null;
     if (_searching) {
-      _searchOpening.animateTo(1, duration: duration, curve: Curves.easeOutCubic);
-    } else {
-      _searchOpening.animateBack(0, duration: duration, curve: Curves.easeOutCubic);
+      _cancelCollapse();
+      _searchOpening.animateTo(1,
+          duration: _duration, curve: Curves.easeOutCubic);
+    } else if (!_searchOpening.isDismissed && !_collapsePending) {
+      // L'ouverture à l'envers : le clavier descend d'abord, la bulle posée
+      // sur lui, puis elle redevient un rond et les onglets reviennent.
+      if (_keyboardOpen) {
+        _collapsePending = true;
+        _collapseFallback = Timer(_keyboardWait, _collapse);
+      } else {
+        _collapse();
+      }
     }
     setState(() {});
   }
 
-  /// La bulle a pris toute la largeur : le champ prend la main, et le clavier
-  /// monte.
+  void _collapse() {
+    _cancelCollapse();
+    if (!mounted || _searching) return;
+    _searchOpening.animateBack(0,
+        duration: _duration, curve: Curves.easeOutCubic);
+  }
+
+  void _cancelCollapse() {
+    _collapsePending = false;
+    _collapseFallback?.cancel();
+    _collapseFallback = null;
+  }
+
   void _onSearchStatus(AnimationStatus status) {
+    // Redevenue un rond : la barre peut de nouveau céder sa place au clavier
+    // d'un autre champ.
+    if (status == AnimationStatus.dismissed) {
+      if (mounted) setState(() {});
+      return;
+    }
+    // La bulle a pris toute la largeur : le champ prend la main, et le
+    // clavier monte.
     if (status != AnimationStatus.completed || !_searching) return;
+    if (!_focusOnExpand) return;
+    _focusOnExpand = false;
     widget.search?.focusNode.requestFocus();
   }
 
@@ -180,6 +231,7 @@ class _MobileBottomNavState extends State<MobileBottomNav>
   void dispose() {
     widget.search?.removeListener(_onSearchChanged);
     WidgetsBinding.instance.removeObserver(this);
+    _cancelCollapse();
     _searchOpening.dispose();
     super.dispose();
   }
@@ -217,8 +269,11 @@ class _MobileBottomNavState extends State<MobileBottomNav>
   Widget build(BuildContext context) {
     // Un autre champ a ouvert le clavier : la barre lui laisse la place, et
     // ne se posait plus sur lui (ADR-0141). Le champ de la recherche, lui, est
-    // dans la barre : il monte avec le clavier.
-    if (_keyboardOpen && !_searching) return const SizedBox.shrink();
+    // dans la barre : il monte avec le clavier, et elle le garde le temps de
+    // redevenir un rond.
+    final bubble =
+        _searching || _collapsePending || !_searchOpening.isDismissed;
+    if (_keyboardOpen && !bubble) return const SizedBox.shrink();
     final bottom = MobileBottomNav.bottomFor(MediaQuery.paddingOf(context));
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -308,7 +363,10 @@ class _MobileBottomNavState extends State<MobileBottomNav>
       child: GestureDetector(
         key: const ValueKey('phone-search-round'),
         behavior: HitTestBehavior.opaque,
-        onTap: () => search.open(reduced: AppMotion.reduced(context)),
+        onTap: () {
+          _focusOnExpand = true;
+          search.open(reduced: AppMotion.reduced(context));
+        },
         child: const Center(
           child: Icon(
             AppIcons.search,
@@ -351,23 +409,10 @@ class _MobileBottomNavState extends State<MobileBottomNav>
   }
 
   Widget _buildTabs(BuildContext context) {
-    final tabs = _tabs();
     return Padding(
       key: const ValueKey('phone-tab-bar-tabs'),
       padding: const EdgeInsets.all(_GlassPill.inset),
-      child: Row(
-        children: [
-          for (final tab in tabs)
-            Expanded(
-              child: tab.anchor == null
-                  ? _BottomNavItem(tab: tab)
-                  : TourTarget(
-                      anchor: tab.anchor!,
-                      child: _BottomNavItem(tab: tab),
-                    ),
-            ),
-        ],
-      ),
+      child: _TabRow(tabs: _tabs()),
     );
   }
 
@@ -459,6 +504,114 @@ class _Tab {
   final TourAnchor? anchor;
 }
 
+/// Les onglets de la capsule, et la lentille qui glisse de l'un à l'autre.
+///
+/// La lentille ne saute pas : ses deux bords partent ensemble, celui de devant
+/// plus vif, si bien qu'elle s'étire en chemin et se resserre en se posant,
+/// comme une goutte de verre. Touchée à nouveau en route, elle repart d'où
+/// elle est. Sous « réduire les animations », elle se pose d'un coup.
+class _TabRow extends StatefulWidget {
+  const _TabRow({required this.tabs});
+
+  final List<_Tab> tabs;
+
+  @override
+  State<_TabRow> createState() => _TabRowState();
+}
+
+class _TabRowState extends State<_TabRow> with SingleTickerProviderStateMixin {
+  late final AnimationController _slide =
+      AnimationController(vsync: this, value: 1);
+
+  /// Les bords de la lentille, comptés en onglets : de [_from] vers [_to].
+  (double, double) _from = (0, 1);
+  (double, double) _to = (0, 1);
+
+  int get _selected => widget.tabs.indexWhere((t) => t.selected);
+
+  @override
+  void initState() {
+    super.initState();
+    final i = _selected;
+    if (i >= 0) _from = _to = (i.toDouble(), i + 1.0);
+  }
+
+  @override
+  void didUpdateWidget(_TabRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final i = _selected;
+    if (i < 0) return;
+    final target = (i.toDouble(), i + 1.0);
+    if (target == _to) return;
+    _from = _edges(_slide.value);
+    _to = target;
+    _slide.duration = AppMotion.move(context, AppMotion.emphasis);
+    _slide.forward(from: 0);
+  }
+
+  /// Les bords à l'instant [t] : celui qui mène suit une courbe plus vive,
+  /// l'autre le rattrape.
+  (double, double) _edges(double t) {
+    final lead = Curves.easeOutCubic.transform(t);
+    final follow = Curves.easeInOutCubic.transform(t);
+    final rightward = _to.$1 >= _from.$1;
+    return (
+      lerpDouble(_from.$1, _to.$1, rightward ? follow : lead)!,
+      lerpDouble(_from.$2, _to.$2, rightward ? lead : follow)!,
+    );
+  }
+
+  @override
+  void dispose() {
+    _slide.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = widget.tabs;
+    final hasLens = _selected >= 0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final unit = constraints.maxWidth / tabs.length;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasLens)
+              AnimatedBuilder(
+                animation: _slide,
+                builder: (context, _) {
+                  final (left, right) = _edges(_slide.value);
+                  return Positioned(
+                    key: const ValueKey('phone-tab-lens'),
+                    left: left * unit,
+                    width: (right - left) * unit,
+                    top: 0,
+                    bottom: 0,
+                    child: const _Lens(),
+                  );
+                },
+              ),
+            Row(
+              children: [
+                for (final tab in tabs)
+                  Expanded(
+                    child: tab.anchor == null
+                        ? _BottomNavItem(tab: tab)
+                        : TourTarget(
+                            anchor: tab.anchor!,
+                            child: _BottomNavItem(tab: tab),
+                          ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// Le verre de la capsule et du rond : un voile clair dégradé sur un flou de
 /// ce qui passe dessous, un liseré et une ombre qui le détachent de la page.
 /// En mode léger et sur un téléviseur LG, un fond dense sans flou
@@ -523,7 +676,7 @@ class _GlassPill extends StatelessWidget {
 
 /// La lentille de verre clair sous l'onglet affiché.
 class _Lens extends StatelessWidget {
-  const _Lens({required this.child});
+  const _Lens({this.child = const SizedBox.expand()});
 
   final Widget child;
 
@@ -584,7 +737,7 @@ class _BottomNavItem extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: tab.onTap,
-        child: selected ? _Lens(child: content) : content,
+        child: content,
       ),
     );
   }

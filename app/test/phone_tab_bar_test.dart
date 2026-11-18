@@ -35,6 +35,7 @@ class _FakeApiClient extends ApiClient {
 }
 
 const _phone = Size(390, 844);
+const _films = MediaLibrary(id: 1, name: 'Films', kind: LibraryKind.movies);
 
 class _Harness {
   _Harness(this.session, this.navigatorKey);
@@ -47,6 +48,7 @@ Future<_Harness> _pump(
   WidgetTester tester, {
   bool minimized = false,
   VoidCallback? onExpand,
+  ValueNotifier<String>? selected,
 }) async {
   tester.view.devicePixelRatio = 3;
   tester.view.physicalSize = _phone * 3;
@@ -85,17 +87,18 @@ Future<_Harness> _pump(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: MobileBottomNav(
-                  selected: ShellTabs.home,
-                  onTabSelected: (_) {},
-                  libraries: const [
-                    MediaLibrary(id: 1, name: 'Films', kind: LibraryKind.movies),
-                  ],
-                  canRequestMedia: true,
-                  canDownload: true,
-                  search: session,
-                  minimized: minimized,
-                  onExpand: onExpand,
+                child: ValueListenableBuilder<String>(
+                  valueListenable: selected ?? ValueNotifier(ShellTabs.home),
+                  builder: (context, tab, _) => MobileBottomNav(
+                    selected: tab,
+                    onTabSelected: (next) => selected?.value = next,
+                    libraries: const [_films],
+                    canRequestMedia: true,
+                    canDownload: true,
+                    search: session,
+                    minimized: minimized,
+                    onExpand: onExpand,
+                  ),
                 ),
               ),
             ],
@@ -109,6 +112,8 @@ Future<_Harness> _pump(
 }
 
 final _round = find.byKey(const ValueKey('phone-search-round'));
+final _lens = find.byKey(const ValueKey('phone-tab-lens'));
+final _field = find.byType(PhoneSearchField);
 
 void main() {
   testWidgets('une capsule qui flotte, le rond de la recherche à côté',
@@ -186,6 +191,109 @@ void main() {
 
     expect(h.session.isOpen, isFalse);
     expect(_round, findsOneWidget);
+  });
+
+  testWidgets('la lentille glisse d’un onglet à l’autre, en s’étirant',
+      (tester) async {
+    final selected = ValueNotifier(ShellTabs.home);
+    addTearDown(selected.dispose);
+    await _pump(tester, selected: selected);
+
+    final home = tester.getRect(_lens);
+    expect(home.center.dx,
+        closeTo(tester.getCenter(find.text('Accueil').last).dx, 1));
+
+    await tester.tap(find.text('Demandes'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 90));
+    final moving = tester.getRect(_lens);
+    // En route : partie de l'accueil, pas encore arrivée, et plus large
+    // qu'un onglet.
+    expect(moving.left, greaterThan(home.left));
+    expect(moving.width, greaterThan(home.width + 4));
+
+    await tester.pumpAndSettle();
+    final requests = tester.getRect(_lens);
+    expect(requests.width, closeTo(home.width, 0.5));
+    expect(requests.center.dx,
+        closeTo(tester.getCenter(find.text('Demandes')).dx, 1));
+  });
+
+  testWidgets(
+      'la croix referme à l’envers de l’ouverture : le clavier descend, puis '
+      'la bulle redevient un rond', (tester) async {
+    final h = await _pump(tester);
+    await tester.tap(_round);
+    await tester.pumpAndSettle();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 1008);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Fermer la recherche'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
+    // Le clavier n'est pas encore descendu : la bulle reste entière, sur lui.
+    expect(h.session.isOpen, isFalse);
+    expect(_field, findsOneWidget);
+    expect(tester.getRect(_field).left, closeTo(MobileBottomNav.side, 1));
+
+    tester.view.resetViewInsets();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+    // Il est parti : elle se resserre vers le rond, en route.
+    final shrinking = tester
+        .getSize(find.ancestor(of: _round, matching: find.byType(ClipRRect)))
+        .width;
+    expect(shrinking, greaterThan(MobileBottomNav.height + 10));
+    expect(shrinking, lessThan(_phone.width - 2 * MobileBottomNav.side));
+
+    await tester.pumpAndSettle();
+    expect(_round, findsOneWidget);
+    expect(find.text('Demandes').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets(
+      'une fiche ouverte depuis les résultats rend la capsule ; le retour '
+      'redéploie la bulle sans rouvrir le clavier', (tester) async {
+    final h = await _pump(tester);
+    await tester.tap(_round);
+    await tester.pumpAndSettle();
+    expect(h.session.focusNode.hasFocus, isTrue);
+
+    h.navigatorKey.currentState!.push(MaterialPageRoute<void>(
+      builder: (_) => const Scaffold(body: Text('Fiche')),
+    ));
+    await tester.pumpAndSettle();
+    expect(h.session.isOpen, isTrue);
+    expect(h.session.isCovered, isTrue);
+    expect(h.session.focusNode.hasFocus, isFalse);
+    expect(_round, findsOneWidget);
+    expect(_field, findsNothing);
+    expect(find.text('Demandes').hitTestable(), findsOneWidget);
+
+    h.navigatorKey.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(h.session.isExpanded, isTrue);
+    expect(_field, findsOneWidget);
+    expect(h.session.focusNode.hasFocus, isFalse,
+        reason: 'le clavier cacherait les résultats retrouvés');
+  });
+
+  testWidgets('le rond touché depuis une fiche ramène aux résultats',
+      (tester) async {
+    final h = await _pump(tester);
+    await tester.tap(_round);
+    await tester.pumpAndSettle();
+    h.navigatorKey.currentState!.push(MaterialPageRoute<void>(
+      builder: (_) => const Scaffold(body: Text('Fiche')),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_round);
+    await tester.pumpAndSettle();
+    expect(find.text('Fiche'), findsNothing);
+    expect(find.byType(SearchResultsScreen), findsOneWidget);
+    expect(h.session.isExpanded, isTrue);
+    expect(h.session.focusNode.hasFocus, isTrue);
   });
 
   testWidgets('pendant la recherche, la bulle reste au-dessus du clavier',
