@@ -43,6 +43,10 @@ dependencies:
   # Already pulled in by cached_network_image; declared so the app can widen the
   # default 200-file image store (see services/app_image_cache.dart).
   flutter_cache_manager: ^3.4.1
+  # Déjà tiré par cached_network_image ; déclaré pour nommer
+  # ImageRenderMethodForWeb (HttpGet, ADR-0151). Doit rester dans la plage que
+  # cached_network_image 4.0.x accepte.
+  cached_network_image_platform_interface: ^5.0.0
   intl: ^0.20.2
   audio_video_progress_bar: ^2.0.3
   flutter_animate: ^4.5.0

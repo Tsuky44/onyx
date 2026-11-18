@@ -10,6 +10,7 @@ import '../models/app_download.dart';
 import '../models/device_pairing.dart';
 import '../models/server_account.dart';
 import '../models/server_capabilities.dart';
+import '../models/watch_party_invite.dart';
 import '../l10n/app_language.dart';
 import 'client_identity.dart';
 import 'client_log.dart';
@@ -49,6 +50,7 @@ export 'api_types.dart';
 
 part 'api/account_admin.dart';
 part 'api/watch_party.dart';
+part 'api/watch_party_invites.dart';
 part 'api/libraries.dart';
 part 'api/library_admin.dart';
 part 'api/activity.dart';
@@ -79,6 +81,7 @@ class ApiClient
     with
         _AccountAdminEndpoints,
         _WatchPartyEndpoints,
+        _WatchPartyInviteEndpoints,
         _LibraryEndpoints,
         _LibraryAdminEndpoints,
         _ActivityEndpoints,

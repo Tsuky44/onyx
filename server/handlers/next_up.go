@@ -46,6 +46,9 @@ type upcomingEpisodePayload struct {
 	StillURL       string `json:"still_url,omitempty"`
 	AirDate        string `json:"air_date,omitempty"`
 	SeasonEpisodes int    `json:"season_episodes,omitempty"`
+	// MissingCount is set only when the server holds a later episode of the
+	// same season: how many episodes playing it would skip (ADR-0147).
+	MissingCount int `json:"missing_count,omitempty"`
 }
 
 // GetNextEpisode answers "what comes after this episode?" (GET /api/episodes/:id/next).
@@ -90,12 +93,20 @@ func GetNextEpisode(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	// 1. Next episode within the same season.
 	if item, ok := findEpisodeInSeason(userID, seasonID, currentEpisodeNum); ok {
 		lang.items(&item)
-		_ = json.NewEncoder(w).Encode(nextEpisodeResponse{
+		response := nextEpisodeResponse{
 			HasNext:           true,
 			Episode:           &item,
 			EpisodeAudioLangs: episodeAudioLanguages(item.ID),
-			NextSeason:        lookaheadMissingSeason(userID, item.ID, lang),
-		})
+		}
+		// A hole between this episode and the next one held (2 → 4) goes
+		// through the card, like a hole before a later season: skipping an
+		// episode has to be a deliberate act, never an auto-advance.
+		if skipped := describeSkippedEpisode(seasonID, currentEpisodeNum, item.EpisodeNumber, lang); skipped != nil {
+			response.UpcomingEpisode = skipped
+		} else {
+			response.NextSeason = lookaheadMissingSeason(userID, item.ID, lang)
+		}
+		_ = json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -276,6 +287,65 @@ func describeUpcomingEpisode(showID, seasonNumber, afterEpisodeNumber int, lang 
 	}
 	if next.StillPath != "" {
 		payload.StillURL = "https://image.tmdb.org/t/p/w780" + next.StillPath
+	}
+	return payload
+}
+
+// describeSkippedEpisode describes the first episode missing between
+// currentNumber and nextNumber, the next one the server holds in the same
+// season — the one auto-advancing would silently skip.
+//
+// When TMDB knows the season, it has the last word: a hole it does not list
+// (numbering that differs from TMDB's) is no hole, and the count is the
+// episodes it does list in between. When TMDB cannot be reached, the local
+// numbering alone is trusted — a false alarm costs a tap, a silent skip an
+// episode.
+func describeSkippedEpisode(seasonID, currentNumber, nextNumber int, lang mediaLanguage) *upcomingEpisodePayload {
+	if currentNumber <= 0 || nextNumber <= currentNumber+1 {
+		return nil
+	}
+	showID, seasonNumber := seasonPosition(seasonID)
+	if showID == 0 || seasonNumber <= 0 {
+		return nil
+	}
+
+	payload := &upcomingEpisodePayload{
+		ShowID:       showID,
+		ShowTitle:    lang.showTitle(showID, showTitle(showID)),
+		SeasonNumber: seasonNumber,
+		Number:       currentNumber + 1,
+		MissingCount: nextNumber - currentNumber - 1,
+	}
+
+	episodes := FetchTMDBSeasonEpisodes(showTMDBID(showID), seasonNumber, lang)
+	if len(episodes) == 0 {
+		return payload
+	}
+
+	var first *TMDBEpisodeSummary
+	missing := 0
+	for i := range episodes {
+		number := episodes[i].Number
+		if number <= currentNumber || number >= nextNumber {
+			continue
+		}
+		missing++
+		if first == nil || number < first.Number {
+			first = &episodes[i]
+		}
+	}
+	if first == nil {
+		return nil
+	}
+
+	payload.Number = first.Number
+	payload.MissingCount = missing
+	payload.Name = first.Name
+	payload.Overview = first.Overview
+	payload.AirDate = first.AirDate
+	payload.SeasonEpisodes = len(episodes)
+	if first.StillPath != "" {
+		payload.StillURL = "https://image.tmdb.org/t/p/w780" + first.StillPath
 	}
 	return payload
 }

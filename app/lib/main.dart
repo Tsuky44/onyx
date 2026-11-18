@@ -70,10 +70,12 @@ import 'theme/lite_mode.dart';
 import 'desktop_window.dart';
 import 'widgets/global/lite_mode_suggestion.dart';
 import 'widgets/global/middle_click_autoscroll.dart';
+import 'widgets/global/smooth_wheel_scroll.dart';
 import 'widgets/global/resume_preview/hover_preview_preference.dart';
 import 'l10n/app_language.dart';
 import 'l10n/localized_asset.dart';
 import 'l10n/tr.dart';
+import 'services/watch_party_invites.dart';
 
 /// Les licences de ce qu'aucun paquet Dart ne déclare : les polices embarquées
 /// — Manrope (OFL) et les icônes Phosphor (MIT) — et les moteurs de lecture
@@ -109,9 +111,12 @@ class AppScrollBehavior extends MaterialScrollBehavior {
   @override
   Widget buildScrollbar(
       BuildContext context, Widget child, ScrollableDetails details) {
-    return MiddleClickAutoScroll(
+    return SmoothWheelScroll(
       details: details,
-      child: super.buildScrollbar(context, child, details),
+      child: MiddleClickAutoScroll(
+        details: details,
+        child: super.buildScrollbar(context, child, details),
+      ),
     );
   }
 }
@@ -299,6 +304,9 @@ void main() async {
 
   final authProvider = AuthProvider(apiClient);
   final reachability = ServerReachability(apiClient);
+  // L'app ouverte attend ses invitations « Regarder ensemble », ce qui la
+  // rend invitable (ADR-0148).
+  WatchPartyInviteInbox.install(authProvider);
 
   // Les réglages de lecture suivent le compte (ADR-0043) : dès qu'on sait qui
   // est connecté, et sur quel serveur, l'appareil s'aligne sur lui. La clé ne

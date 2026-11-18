@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 
 import '../../../models/models.dart';
 import '../../../services/api_client.dart';
+import '../../../models/watch_party_invite.dart';
 import '../../../services/watch_party.dart';
+import '../../../services/watch_party_invites.dart';
 import 'use_player_controller.dart';
 
 /// Le lecteur dans une séance « Regarder ensemble » : à quelle séance il est
@@ -120,6 +122,19 @@ class PlayerWatchParty extends ChangeNotifier {
       position: controller.position,
       playing: controller.isPlaying,
     );
+  }
+
+  /// Rejoint la séance d'une invitation (ADR-0148). Elle devient la séance
+  /// active, et [sync] y accroche ce lecteur : s'il lit autre chose, la
+  /// séance lui fait ouvrir son média, comme pour un épisode suivant. Une
+  /// séance déjà en cours ici est quittée.
+  Future<void> joinInvite(
+      WatchPartyInvite invite, WatchPartyInviteInbox inbox) async {
+    final client = api();
+    if (client == null) {
+      throw StateError('Aucun serveur pour rejoindre la séance');
+    }
+    await inbox.accept(invite, api: client, accountId: accountKey());
   }
 
   /// Quitter de soi-même : les autres continuent.

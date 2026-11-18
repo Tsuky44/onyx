@@ -6,6 +6,7 @@ import 'package:onyx/models/announcement.dart';
 import 'package:onyx/models/models.dart';
 import 'package:onyx/models/watch_list.dart';
 import 'package:onyx/models/server_capabilities.dart';
+import 'package:onyx/models/watch_party_invite.dart';
 import 'package:onyx/models/media_request.dart';
 import 'package:onyx/models/my_request.dart';
 import 'package:onyx/models/request_feed.dart';
@@ -99,6 +100,8 @@ void main() {
     expect(next.episodeAudioLangs, ['episode_audio_langs-value']);
     expect(next.nextSeason, isNotNull);
     expect(next.upcomingEpisode, isNotNull);
+    expect(next.upcomingEpisode!.missingCount, 35);
+    expect(next.upcomingEpisode!.isSkipped, isTrue);
 
     final none = NextEpisodeResponse.fromJson(_contract('next_episode_none'));
     expect(none.hasNext, isFalse);
@@ -339,5 +342,36 @@ void main() {
     final ticket = MediaHubTicket.fromJson(_contract('mediahub_sso'));
     expect(ticket.url, isNotEmpty);
     expect(ticket.expiresIn, greaterThan(0));
+  });
+
+  test('invitations à regarder ensemble, et qui inviter (ADR-0148)', () {
+    expect(
+        ServerCapabilities.tryParse(_contract('ping'))!
+            .supports(ServerCapabilities.watchPartyInvites),
+        isTrue);
+
+    final box = WatchPartyInvites.fromJson(_contract('watch_party_invites'));
+    expect(box.version, greaterThan(0));
+    final invite = box.invites.single;
+    expect(invite.id, isNotEmpty);
+    expect(invite.code, isNotEmpty);
+    expect(invite.from, isNotEmpty);
+    expect(invite.mediaId, greaterThan(0));
+    expect(invite.media, isNotNull,
+        reason: 'la carte montre le titre et l’affiche de la séance');
+    expect(invite.expiresIn, greaterThan(Duration.zero));
+
+    final people = (_contract('watch_party_invitees')['invitees'] as List)
+        .cast<Map<String, dynamic>>()
+        .map(WatchPartyInvitee.fromJson)
+        .toList();
+    expect(people.single.userId, greaterThan(0));
+    expect(people.single.username, isNotEmpty);
+    expect(people.single.avatar, isNotEmpty);
+    expect(WatchPartyInviteStatus.parse('pending'),
+        WatchPartyInviteStatus.pending);
+    expect(WatchPartyInviteStatus.parse('declined'),
+        WatchPartyInviteStatus.declined);
+    expect(WatchPartyInviteStatus.parse(''), WatchPartyInviteStatus.none);
   });
 }

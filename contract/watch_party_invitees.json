@@ -1,0 +1,10 @@
+{
+  "invitees": [
+    {
+      "user_id": 1,
+      "username": "username-value",
+      "avatar": "avatar-value",
+      "invite_status": "invite_status-value"
+    }
+  ]
+}

@@ -624,16 +624,23 @@ class EpisodeNavigationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// « Fermer » sur la carte d'un épisode manquant. Quand un épisode plus
+  /// loin attend derrière le trou, fermer veut dire « ne saute pas » : ni
+  /// compte à rebours, ni page de l'épisode suivant, ni enchaînement en fin de
+  /// fichier (ADR-0147). Le bouton « Épisode suivant » du chrome reste.
   void dismissUpcomingEpisodeCard() {
     _upcomingDismissed = true;
-    if (showNextEpisodeOutro &&
-        nextEpisode != null &&
-        !showEndCard &&
-        !_nextEpisodeDeferred) {
-      _startOutroAutoPlay();
+    if (nextEpisode != null) {
+      _nextEpisodeDeferred = true;
+      _cancelOutroAutoPlay();
     }
     notifyListeners();
   }
+
+  /// Vrai quand on a refusé de franchir un trou : la fin du fichier quitte
+  /// le lecteur au lieu d'enchaîner sur l'épisode d'après le trou.
+  bool get upcomingGapDeclined =>
+      _upcomingDismissed && upcomingEpisode != null && nextEpisode != null;
 
   /// Flips the card to its confirmed state after a request went through.
   void markNextSeasonRequested() {

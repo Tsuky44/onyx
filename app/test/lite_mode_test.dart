@@ -160,6 +160,14 @@ void main() {
       expect(find.text('b'), findsOneWidget);
     });
 
+    test('le verre ne floute pas sur le web, ordinateur compris (ADR-0153)',
+        () {
+      expect(glassBlursFor(isWeb: false, isLite: false), isTrue);
+      expect(glassBlursFor(isWeb: false, isLite: true), isFalse);
+      expect(glassBlursFor(isWeb: true, isLite: false), isFalse);
+      expect(glassBlursFor(isWeb: true, isLite: true), isFalse);
+    });
+
     testWidgets('le mouvement géométrique tombe à zéro, le fondu reste',
         (tester) async {
       late Duration move;

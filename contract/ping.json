@@ -25,6 +25,7 @@
     "mediahub_sso",
     "mediahub_directory",
     "mediahub_storage",
-    "request_services"
+    "request_services",
+    "watch_party_invites"
   ]
 }

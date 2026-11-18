@@ -75,6 +75,8 @@ extension _PlayerOverlays on _PlayerScreenState {
               onStart: _party.start,
               onLeave: () =>
                   _party.leave(notice: tr('Vous avez quitté la séance')),
+              loadInvitees: party?.invitees,
+              invite: party?.invite,
             ),
           ),
         ),
@@ -275,6 +277,7 @@ extension _PlayerOverlays on _PlayerScreenState {
           episode: nav.upcomingEpisode!,
           onDismiss: () => nav.dismissUpcomingEpisodeCard(),
           onPlayNext: nav.nextEpisode != null ? _goToNextEpisode : null,
+          nextEpisodeNumber: nav.nextEpisode?.media.episodeNumber,
           videoInset: videoInset,
         )),
       if (nav != null &&
@@ -298,6 +301,40 @@ extension _PlayerOverlays on _PlayerScreenState {
           open: _tabs.open!,
           onChanged: _tabs.show,
         ),
+      // Une invitation à regarder ensemble, dix secondes en haut à droite,
+      // par-dessus tout le reste : on doit pouvoir y répondre quelle que soit
+      // la page ouverte (ADR-0148).
+      if (_invite.shown case final invite?)
+        page(Positioned(
+          top: macOSWindowControlsTopInset + 20,
+          right: 20,
+          child: SafeArea(
+            left: false,
+            bottom: false,
+            child: PlayerInviteOverlay(
+              key: ValueKey(invite.id),
+              invite: invite,
+              serverBaseUrl: _apiClient?.baseUrl,
+              joining: _invite.joining,
+              onAccept: () => unawaited(_invite.accept()),
+              onDecline: _invite.decline,
+              onTimeout: _invite.timeout,
+            ),
+          ),
+        )),
     ];
+  }
+
+  /// La carte d'invitation s'en va : si elle avait la télécommande, le
+  /// lecteur la reprend, sans quoi OK ne répondrait plus à rien.
+  void _restoreFocusAfterInvite() {
+    final focused = FocusManager.instance.primaryFocus?.context;
+    if (focused == null ||
+        focused.findAncestorWidgetOfExactType<PlayerInviteOverlay>() == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposing) _keyboardFocusNode.requestFocus();
+    });
   }
 }

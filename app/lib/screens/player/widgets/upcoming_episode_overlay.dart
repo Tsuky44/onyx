@@ -26,6 +26,10 @@ class UpcomingEpisodeOverlay extends StatelessWidget {
   /// since it replaces the auto-advance pill it would otherwise sit on top of.
   final VoidCallback? onPlayNext;
 
+  /// Number of the episode [onPlayNext] leads to, so the button can say what
+  /// it skips to when the page stands for a hole in the season (ADR-0147).
+  final int? nextEpisodeNumber;
+
   /// Width reserved on the left for the shrunk video.
   final double videoInset;
 
@@ -34,6 +38,7 @@ class UpcomingEpisodeOverlay extends StatelessWidget {
     required this.episode,
     required this.onDismiss,
     this.onPlayNext,
+    this.nextEpisodeNumber,
     this.videoInset = 0,
   });
 
@@ -43,12 +48,28 @@ class UpcomingEpisodeOverlay extends StatelessWidget {
       backdropUrl: episode.stillUrl,
       videoInset: videoInset,
       eyebrow: EndCardEyebrow(
-        label: tr('ÉPISODE {0} PAS ENCORE DISPONIBLE', [episode.number]),
+        label: _eyebrow(episode),
         onDismiss: onDismiss,
       ),
       body: _Body(episode: episode),
-      actions: _Actions(onDismiss: onDismiss, onPlayNext: onPlayNext),
+      actions: _Actions(
+        onDismiss: onDismiss,
+        onPlayNext: onPlayNext,
+        playNextLabel: episode.isSkipped && nextEpisodeNumber != null
+            ? tr('Passer à l’épisode {0}', [nextEpisodeNumber!])
+            : null,
+      ),
     );
+  }
+
+  static String _eyebrow(UpcomingEpisode episode) {
+    if (episode.missingCount > 1) {
+      return tr('{0} ÉPISODES MANQUANTS AVANT LE SUIVANT', [episode.missingCount]);
+    }
+    if (episode.isSkipped) {
+      return tr('ÉPISODE {0} MANQUANT', [episode.number]);
+    }
+    return tr('ÉPISODE {0} PAS ENCORE DISPONIBLE', [episode.number]);
   }
 }
 
@@ -131,6 +152,10 @@ class _Body extends StatelessWidget {
   /// there, and whether waiting is all there is to do.
   static String _description(UpcomingEpisode episode) {
     if (episode.overview?.isNotEmpty == true) return episode.overview!;
+    if (episode.isSkipped) {
+      return tr('Cet épisode n’est pas sur le serveur. Passer à la suite vous '
+          'le ferait sauter.');
+    }
     if (episode.isUnaired) {
       return tr('Cet épisode n’est pas encore sorti. Il rejoindra le serveur peu '
           'après sa diffusion.');
@@ -182,15 +207,20 @@ class _MetaRow extends StatelessWidget {
 class _Actions extends StatelessWidget {
   final VoidCallback onDismiss;
   final VoidCallback? onPlayNext;
+  final String? playNextLabel;
 
-  const _Actions({required this.onDismiss, this.onPlayNext});
+  const _Actions({required this.onDismiss, this.onPlayNext, this.playNextLabel});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         if (onPlayNext != null) ...[
-          EndCardNextEpisodeButton(onTap: onPlayNext!, primary: true),
+          EndCardNextEpisodeButton(
+            onTap: onPlayNext!,
+            primary: true,
+            label: playNextLabel,
+          ),
           const SizedBox(width: 8),
         ],
         TextButton(

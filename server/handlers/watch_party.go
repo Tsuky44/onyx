@@ -424,6 +424,10 @@ func RunWatchParties(ctx context.Context) {
 			if now.Sub(lastReap) >= watchPartyReaperInterval {
 				lastReap = now
 				watchParties.reap(now)
+				watchPartyInvites.reap(now, func(code string) bool {
+					_, ok := watchParties.mediaOf(code)
+					return ok
+				})
 			}
 		}
 	}
@@ -632,6 +636,9 @@ func JoinWatchParty(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		writeWatchPartyError(w, err)
 		return
 	}
+	// Rejoint, par l'invitation ou par le code : l'invitation n'a plus à
+	// s'afficher sur ses autres appareils (ADR-0148).
+	watchPartyInvites.clear(userID, code)
 	watchParties.mu.Lock()
 	party, ok := watchParties.parties[code]
 	var v watchPartyView

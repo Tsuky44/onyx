@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 
 import '../../../../l10n/tr.dart';
 import '../../../../models/watch_party.dart';
+import '../../../../models/watch_party_invite.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_type.dart';
 import '../../../../tv/tv_mode.dart';
 import '../onyx/onyx_capsule_button.dart';
 import '../onyx/onyx_chrome_theme.dart';
+import 'player_watch_party_invitees.dart';
 
 /// L'onglet « Regarder ensemble » du lecteur : démarrer une séance, ou en voir
 /// le code et les participants, et la quitter (ADR-0130).
@@ -20,6 +22,8 @@ class PlayerWatchPartyTab extends StatefulWidget {
     required this.members,
     required this.onStart,
     required this.onLeave,
+    this.loadInvitees,
+    this.invite,
   });
 
   /// Nul hors séance : l'onglet propose alors d'en démarrer une.
@@ -29,6 +33,11 @@ class PlayerWatchPartyTab extends StatefulWidget {
   /// Ouvre la séance sur le média en cours. Lève en cas d'échec.
   final Future<void> Function() onStart;
   final VoidCallback onLeave;
+
+  /// Les personnes qui ont Onyx ouvert, et de quoi les inviter (ADR-0148).
+  /// Nuls hors séance.
+  final Future<List<WatchPartyInvitee>> Function()? loadInvitees;
+  final Future<void> Function(int userId)? invite;
 
   @override
   State<PlayerWatchPartyTab> createState() => _PlayerWatchPartyTabState();
@@ -148,8 +157,8 @@ class _PlayerWatchPartyTabState extends State<PlayerWatchPartyTab> {
         const SizedBox(height: 10),
         _row('1', tr('Démarrez la séance'),
             tr('Depuis ce panneau, pendant la lecture.')),
-        _row('2', tr('Partagez le code'),
-            tr('Il s’affiche ici une fois la séance ouverte.')),
+        _row('2', tr('Invitez ou partagez le code'),
+            tr('Les personnes qui ont Onyx ouvert reçoivent une invitation.')),
         _row('3', tr('Chacun la rejoint'),
             tr('Menu du compte › Rejoindre une séance.')),
       ],
@@ -245,6 +254,13 @@ class _PlayerWatchPartyTabState extends State<PlayerWatchPartyTab> {
                     trailing: member.isHost ? tr('Hôte') : null,
                   );
                 }(),
+              if (widget.loadInvitees case final load?)
+                if (widget.invite case final invite?)
+                  PlayerWatchPartyInvitees(
+                    key: ValueKey('player-party-invitees-${widget.code}'),
+                    load: load,
+                    invite: invite,
+                  ),
             ],
           ),
         ),

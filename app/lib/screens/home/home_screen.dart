@@ -21,6 +21,7 @@ import '../../widgets/global/live_progress_state.dart';
 import '../../widgets/global/media_row.dart';
 import '../../widgets/global/poster_launch_route.dart';
 import '../../widgets/global/remote_playback_banner.dart';
+import '../../widgets/global/watch_party_invite_banner.dart';
 import '../../widgets/global/skeleton.dart';
 import '../../widgets/global/hero_banner.dart' show HeroBanner;
 import '../library/movie_detail_screen.dart';
@@ -360,14 +361,22 @@ class _HomeScreenState extends State<HomeScreen>
                     // maintenant lecture/pause. La Siri Remote a toujours
                     // cette touche ; les autres télécommandes pas toutes, ou
                     // ne savent pas la tenir, et la notification y prend
-                    // aussi le focus, pour OK (ADR-0136).
+                    // aussi le focus, pour OK (ADR-0136). Une invitation à
+                    // regarder ensemble s'empile dessous (ADR-0148).
                     if (!isPhone)
                       Positioned(
                         top: headerInset + 6,
                         right: AppLayout.pagePadding(context),
-                        child: RemotePlaybackBanner.notice(
-                          hold: isTv,
-                          selectable: isTv && !AppPlatform.isTvOS,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            RemotePlaybackBanner.notice(
+                              hold: isTv,
+                              selectable: isTv && !AppPlatform.isTvOS,
+                            ),
+                            const WatchPartyInviteBanner(),
+                          ],
                         ),
                       ),
                     if (isPhone)
@@ -377,7 +386,15 @@ class _HomeScreenState extends State<HomeScreen>
                         bottom: 14,
                         child: SafeArea(
                           top: false,
-                          child: Center(child: RemotePlaybackBanner()),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Center(
+                                child: WatchPartyInviteBanner(compact: true),
+                              ),
+                              Center(child: RemotePlaybackBanner()),
+                            ],
+                          ),
                         ),
                       ),
                   ],
