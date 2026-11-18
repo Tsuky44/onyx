@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/library_screen.dart": {
-    "mtime": 1795022101.9861627,
-    "seen": 1795022506.7520385,
-    "ast_hash": "93c310ecfa8aa5181153ca036c5ae944",
+    "mtime": 1795023217.8117666,
+    "seen": 1795023640.687399,
+    "ast_hash": "9ebf7a6238744d58f46d93857f0e37d1",
     "semantic_hash": ""
   },
   "app/lib/screens/library/movie_detail_screen.dart": {
@@ -13872,15 +13872,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_sheet.dart": {
-    "mtime": 1795013856.1832447,
-    "seen": 1795020837.491969,
-    "ast_hash": "4cd740c6846fc80d83da72b5474a6128",
+    "mtime": 1795023241.1821797,
+    "seen": 1795023640.6876972,
+    "ast_hash": "9cde059dcd8c03366936498720b029c4",
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_spotlight.dart": {
-    "mtime": 1795013856.1832447,
-    "seen": 1795020837.49197,
-    "ast_hash": "882055bc9e046f82b54f4abd92e090c9",
+    "mtime": 1795023241.1817992,
+    "seen": 1795023640.6876984,
+    "ast_hash": "c87604b3feb838731926bef861d4261e",
     "semantic_hash": ""
   },
   "app/lib/screens/shell/desktop_header_search.dart": {
@@ -13896,9 +13896,9 @@
     "semantic_hash": ""
   },
   "app/test/desktop_search_test.dart": {
-    "mtime": 1795013856.200442,
-    "seen": 1795020837.4925432,
-    "ast_hash": "eed71f57f69ae2011e2c01e4a96e58ff",
+    "mtime": 1795023317.3276222,
+    "seen": 1795023640.688174,
+    "ast_hash": "adf9bd7f3782d919182e197b6f5c7f26",
     "semantic_hash": ""
   },
   "docs/adr/0139-sur-le-bureau-la-recherche-s-ouvre-dans-l-en-tete-sous-un-voile-ctrl-k.md": {
@@ -14082,9 +14082,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_desktop_spotlight.dart": {
-    "mtime": 1795022092.2878766,
-    "seen": 1795022506.7520626,
-    "ast_hash": "422d7e2c0e67e1f541089383a1c09290",
+    "mtime": 1795023217.8113043,
+    "seen": 1795023640.68742,
+    "ast_hash": "58b15f0006fc7ed4dca67d5376358827",
     "semantic_hash": ""
   },
   "app/test/library_desktop_spotlight_test.dart": {
@@ -14496,9 +14496,15 @@
     "semantic_hash": ""
   },
   "docs/adr/0156-sur-le-bureau-le-volet-d-une-bibliotheque-prend-les-proportions-de-l-apple-tv.md": {
-    "mtime": 1795022184.1145031,
-    "seen": 1795022506.754548,
-    "ast_hash": "466ec60eb74a3609a1ff7a6bee7f2379",
+    "mtime": 1795023338.463535,
+    "seen": 1795023640.6894815,
+    "ast_hash": "5b7664e8075114d9d4c4c14d4a1f4ddb",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/library/widgets/spotlight_scale.dart": {
+    "mtime": 1795023207.1056163,
+    "seen": 1795023640.6874335,
+    "ast_hash": "72a97ff9152198d71122f8f32494f78e",
     "semantic_hash": ""
   }
 }
