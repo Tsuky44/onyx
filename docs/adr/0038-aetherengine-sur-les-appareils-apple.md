@@ -61,8 +61,8 @@ plus qu'à la qualité réduite choisie à la main, qu'AetherEngine lit comme n'
   mais aucun correctif de ce cas précis n'est nommé dans le changelog. Si la 7.42 plante encore,
   le repli en HLS de `aether_failure.dart` prend le relais.
   **Ne pas monter au-delà de la 7.42 pour l'instant** : dès la 7.43, `AetherEngine.swift` capture
-  un pointeur `codecpar` dans une fermeture (`forcesSoftware`), et Xcode 26.6 (celui de la CI à
-  l'époque ; iOS et tvOS sont passés sur Xcode 27, ADR-0143) refuse de compiler (« sending 'codecpar' risks causing data races »), sur iOS, macOS et tvOS.
+  un pointeur `codecpar` dans une fermeture (`forcesSoftware`), et Xcode 26.6 (celui de la CI)
+  refuse de compiler (« sending 'codecpar' risks causing data races »), sur iOS, macOS et tvOS.
   La 7.47.0 a échoué à la CI de cette façon. À retenter quand le moteur publie un correctif.
 
 ## Conséquences

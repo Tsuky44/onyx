@@ -1,7 +1,10 @@
 # ADR-0143 — Les builds iPhone et Apple TV passent sur Xcode 27
 
-- **Statut :** accepté, demandé par l'utilisateur (2026-11-18 : « fais le passage à Xcode 27 dans le
-  workflow »). Premier build sur la nouvelle image : la release test Android + iOS qui suit.
+- **Statut :** **suspendu** le 2026-11-18. Demandé par l'utilisateur (« fais le passage à Xcode 27
+  dans le workflow »), le premier build sous Xcode 27 a cassé (release run 154, job `build-ios`) ;
+  consigne de l'utilisateur : « si le build avec xcode 27 casse ne cherche pas a trouvé de solution
+  reste sur 26.6 on verra ca plus tard ». Les jobs Apple sont revenus sur `macos-latest`
+  (Xcode 26.6) et les gardes de SDK sont retirées. **À reprendre avant avril 2027.**
 - **Date :** 2026-11-18
 - **Portée :** `.github/workflows/release.yml` (jobs `build-ios` et `build-tvos`),
   `.github/workflows/tvos.yml`, `docs/release-ci.md`.
@@ -29,6 +32,18 @@ image `20261104.0337.1`).
    défaut, le build s'arrête au lieu de repartir en silence avec un SDK qu'Apple refusera.
 3. **Le DMG macOS reste sur `macos-latest` (Xcode 26).** Il ne passe pas par App Store Connect,
    la règle ne le concerne pas. Il suivra quand `macos-latest` passera à Xcode 27.
+
+## L'échec, à reprendre
+
+`flutter build ios` sous Xcode 27.1 s'arrête sur l'intégrité de la cible, dans
+`app/ios/Pods/Pods.xcodeproj` :
+
+> The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 13.0, but the range of
+> supported deployment target versions is 15.0 to 27.1.x.
+
+Un des Pods (les plugins encore sans Swift Package Manager sont `media_kit_libs_ios_video` et
+`media_kit_video`) garde un plancher iOS 13.0, qu'Xcode 27 refuse. Pas cherché plus loin, à la
+demande de l'utilisateur. La décision ci-dessus reste celle à appliquer quand ce sera réglé.
 
 ## Conséquences
 
