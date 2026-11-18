@@ -2298,9 +2298,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/shell/mobile_bottom_nav.dart": {
+<<<<<<< HEAD
     "mtime": 1795010171.9142506,
     "seen": 1795012563.8247252,
     "ast_hash": "4ccec40cf543171cf5356e6b1e9f7e67",
+=======
+    "mtime": 1795009981.8729546,
+    "seen": 1795010024.901756,
+    "ast_hash": "6e8cdfe9e2860a72db891003c3a5e4ff",
+>>>>>>> claude/web-blur-b5c846
     "semantic_hash": ""
   },
   "app/lib/screens/shell/mobile_top_bar.dart": {
@@ -14382,9 +14388,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/shell/phone_more_menu.dart": {
+<<<<<<< HEAD
     "mtime": 1795010171.9152505,
     "seen": 1795012563.8247252,
     "ast_hash": "a174cf5aa211bf51561e3cfa9f13181a",
+=======
+    "mtime": 1795009981.8726637,
+    "seen": 1795010024.9017658,
+    "ast_hash": "4045ff192288ddfbccc9b8dc9aa88945",
+>>>>>>> claude/web-blur-b5c846
     "semantic_hash": ""
   },
   "app/lib/widgets/global/hero_top_fade.dart": {
@@ -14394,6 +14406,7 @@
     "semantic_hash": ""
   },
   "docs/adr/0146-listes-et-hors-ligne-derriere-l-onglet-plus.md": {
+<<<<<<< HEAD
     "mtime": 1795010171.9237614,
     "seen": 1795012563.8267345,
     "ast_hash": "b75b4f1c4faf9abf680e2871c81dde55",
@@ -14403,6 +14416,11 @@
     "mtime": 1795012154.7978284,
     "seen": 1795012563.8267345,
     "ast_hash": "8f407101cf0cbfd6dd74e823d0411291",
+=======
+    "mtime": 1795009981.872246,
+    "seen": 1795010024.9060338,
+    "ast_hash": "cb36aa0863702f7903f6d9ea20be8913",
+>>>>>>> claude/web-blur-b5c846
     "semantic_hash": ""
   }
 }

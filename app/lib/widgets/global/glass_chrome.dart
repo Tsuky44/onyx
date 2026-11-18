@@ -28,8 +28,22 @@ import '../../theme/app_type.dart';
 ///
 /// Ni en mode léger (ADR-0086) : une Apple TV HD paie le même prix pour la
 /// même raison, et un Direct Play derrière garde la puce pour lui.
+///
+/// Ni sur le web, quel qu'il soit (ADR-0148) : le webOS n'est que le cas le
+/// pire d'un même moteur. CanvasKit relit et refloute l'écran de chaque
+/// `BackdropFilter` à chaque image, sur la carte graphique du navigateur, et
+/// un ordinateur aussi saccadait dès que la barre du haut flottait sur une
+/// rangée d'affiches. Le verre y est le voile dense, déjà dessiné pour le
+/// webOS. `ImageFiltered` (flou d'image) est aussi coupé : sur le web il se
+/// refait à chaque image, au lieu d'être rastérisé une fois.
 bool glassBlurs(BuildContext context) =>
-    !AppPlatform.isWebOS && !LiteScope.of(context);
+    glassBlursFor(isWeb: AppPlatform.isWeb, isLite: LiteScope.of(context));
+
+/// La règle de [glassBlurs], sans contexte ni plateforme : le test la joue
+/// sur une machine qui n'est pas un navigateur.
+@visibleForTesting
+bool glassBlursFor({required bool isWeb, required bool isLite}) =>
+    !isWeb && !isLite;
 
 /// Un flou de ce qui est dessous, qui s'efface là où le verre ne floute pas
 /// ([glassBlurs]). Pour les panneaux posés sur le film : leur fond est déjà

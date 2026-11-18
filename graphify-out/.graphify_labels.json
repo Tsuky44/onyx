@@ -1,6 +1,7 @@
 {
   "0": "../../../utils/app_platform.dart",
   "1": "seedRequestUser",
+<<<<<<< HEAD
   "2": "remote_playback_notice.dart",
   "3": "State",
   "4": "../../models/models.dart",
@@ -16,24 +17,49 @@
   "14": "detail_navigation_map_test.dart",
   "15": "player_screen.dart",
   "16": "account_menu_panel.dart",
+=======
+  "2": "mobile_bottom_nav.dart",
+  "3": "requests_screen.dart",
+  "4": "../../models/models.dart",
+  "5": "net/http.ResponseWriter",
+  "6": "settings_navigation_map_test.dart",
+  "7": "player_episodes_tab.dart",
+  "8": "setupAuthDB",
+  "9": "_",
+  "10": "main.go",
+  "11": "phone_top_bar_test.dart",
+  "12": "playback_logs_export.go",
+  "13": "live-commit-manual-edits.mjs",
+  "14": "poster_flip_back.dart",
+  "15": "player_screen.dart",
+  "16": "player_status_panels.dart",
+>>>>>>> claude/web-blur-b5c846
   "17": "material.dart",
   "18": "live-browser.js",
   "19": "metadata.go",
   "20": "use_player_controller.dart",
   "21": "tv_link_host_io.dart",
-  "22": "server_switch_catalog_test.dart",
+  "22": "tv_touchpad.dart",
   "23": "media_request.dart",
   "24": "avatar_picker_screen.dart",
   "25": "app_slider.dart",
   "26": "checks.mjs",
+<<<<<<< HEAD
   "27": "package:provider/provider.dart",
   "28": "tv_poster_wall.dart",
   "29": "InitDB",
   "30": "tv_region.dart",
+=======
+  "27": "tv_detail_bench.dart",
+  "28": "setupActivityTestDB",
+  "29": "totp.go",
+  "30": "shell_desktop_header.dart",
+>>>>>>> claude/web-blur-b5c846
   "31": "tv_arrow_gate.dart",
   "32": "material_desktop.dart",
-  "33": "ApiClient",
+  "33": "State",
   "34": "context.mjs",
+<<<<<<< HEAD
   "35": "show_resolve.go",
   "36": "ADR-0132 — La fiche range ses actions secondaires dans un menu « Plus »",
   "37": "playback_reporter.dart",
@@ -42,6 +68,16 @@
   "40": "onyx_progress_bar.dart",
   "41": "app · lib #32",
   "42": "player_remote_bench.dart",
+=======
+  "35": "introdb_test.go",
+  "36": "ADR-0132 — La fiche range ses actions secondaires dans un menu « Plus »",
+  "37": "playback_reporter.dart",
+  "38": "MediaRequestsProvider",
+  "39": "app_update_dialog.dart",
+  "40": "onyx_chrome_buttons.dart",
+  "41": "app · lib #32",
+  "42": "shell_tv_header_test.dart",
+>>>>>>> claude/web-blur-b5c846
   "43": "app · lib #34",
   "44": "writeVideo",
   "45": "app · lib #36",
@@ -52,8 +88,13 @@
   "50": "desktop_window.dart",
   "51": "api_client.dart",
   "52": "app · lib #40",
+<<<<<<< HEAD
   "53": "tv_modal_focus_test.dart",
   "54": "libraryMonitor",
+=======
+  "53": "settings_choice_tile_tv_test.dart",
+  "54": "indexer.go",
+>>>>>>> claude/web-blur-b5c846
   "55": "aether_playback_session.dart",
   "56": "download_manager_io.dart",
   "57": "season_bubbles.dart",
@@ -61,7 +102,11 @@
   "59": "mpv_playback_session.dart",
   "60": "onyx_controls_layer.dart",
   "61": "playback_session.dart",
+<<<<<<< HEAD
   "62": "phone_sign_in_panel_test.dart",
+=======
+  "62": "package:flutter/foundation.dart",
+>>>>>>> claude/web-blur-b5c846
   "63": "onyx_player_apple/pigeons/messages.dart",
   "64": "exo_playback_session.dart",
   "65": "Feuille de route — lecture au quotidien",
@@ -69,11 +114,15 @@
   "67": "List",
   "68": "onyx_player_android/pigeons/messages.dart",
   "69": "live-manual-edit-evidence.mjs",
+<<<<<<< HEAD
   "70": "native_video_controller/real.dart",
+=======
+  "70": "otp_code_dialog.dart",
+>>>>>>> claude/web-blur-b5c846
   "71": "resumeSession",
   "72": "app · lib #54",
   "73": "impeccable-paths.mjs",
-  "74": "svelte-component.mjs",
+  "74": "HomeMediaItem",
   "75": "touchpad_motion.dart",
   "76": "app · lib #57",
   "77": "use_episode_navigation.dart",
@@ -82,9 +131,15 @@
   "80": "video_web.dart",
   "81": "live-server.mjs",
   "82": "playback_page.dart",
+<<<<<<< HEAD
   "83": "shell_tv_header_test.dart",
   "84": "mpv_native_surface.dart",
   "85": "package:onyx/tv/tv_mode.dart",
+=======
+  "83": "static const double",
+  "84": "adaptive_panel.dart",
+  "85": "request_detail_screen.dart",
+>>>>>>> claude/web-blur-b5c846
   "86": "setLiveState",
   "87": "package:onyx/services/api_client.dart",
   "88": "responsive.dart",
@@ -94,22 +149,33 @@
   "92": "doctor.mjs",
   "93": "new_episode_watch.dart",
   "94": "webos_playback_session_web.dart",
+<<<<<<< HEAD
   "95": "detect-antipatterns.mjs",
   "96": "shared_link_guest.dart",
+=======
+  "95": "player_remote_bench.dart",
+  "96": "ApiClient",
+>>>>>>> claude/web-blur-b5c846
   "97": "provision.mjs",
   "98": "app · lib #73",
   "99": "hook-before-edit.mjs",
   "100": "TextureHW",
   "101": "player_controller_tracks.dart",
   "102": "_VideoOutput",
+<<<<<<< HEAD
   "103": "request_filters_sheet.dart",
   "104": "_",
+=======
+  "103": "resume_preview_anchor.dart",
+  "104": "settings_category_body.dart",
+>>>>>>> claude/web-blur-b5c846
   "105": "hero_slides.dart",
   "106": "4. Component Stylings",
   "107": "Design System Inspired by Mastercard",
   "108": "_",
   "109": "server_registry.dart",
   "110": "WatchList",
+<<<<<<< HEAD
   "111": "request_filters_bottom_sheet.dart",
   "112": "tv_sections.dart",
   "113": "playback_stats.dart",
@@ -120,21 +186,43 @@
   "118": "initPageChat",
   "119": "season_hover_preview.dart",
   "120": "models/request_feed.dart",
+=======
+  "111": "StatefulWidget",
+  "112": "time.Time",
+  "113": "playback_stats.dart",
+  "114": "shared_link_client.dart",
+  "115": "tv_sections.dart",
+  "116": "bool get",
+  "117": "detect-antipatterns-browser.js",
+  "118": "initPageChat",
+  "119": "api_types.dart",
+  "120": "player_controller_tracks.dart",
+>>>>>>> claude/web-blur-b5c846
   "121": "use_auto_quality.dart",
-  "122": "InheritedWidget",
+  "122": "settings_page.dart",
   "123": "TextureHW",
   "124": "ADR-0048 Un seul lecteur : le Chrome Onyx",
   "125": "package.cpp",
   "126": "Design System Inspired by OpenCode",
   "127": "manual-apply.mjs",
+<<<<<<< HEAD
   "128": "String get",
   "129": "Store",
+=======
+  "128": "desktop_search_test.dart",
+  "129": "poster_flip_menu.dart",
+>>>>>>> claude/web-blur-b5c846
   "130": "win32_window.cpp",
   "131": "concept-seed.mjs",
   "132": "requests_screen.dart",
   "133": "live_subtitles.dart",
+<<<<<<< HEAD
   "134": "keyframes_test.go",
   "135": "onyx_player_apple/Sources/onyx_player_apple/PlayerSurface.swift",
+=======
+  "134": "tv_key_repeat.dart",
+  "135": "PlayerSurfaceFactory",
+>>>>>>> claude/web-blur-b5c846
   "136": "_",
   "137": "server · streaming #5",
   "138": "el",
@@ -149,7 +237,11 @@
   "147": "SpaceArrivalHop",
   "148": "auth_provider.dart",
   "149": "hook-admin.mjs",
+<<<<<<< HEAD
   "150": "poster_card.dart",
+=======
+  "150": "VoidCallback?",
+>>>>>>> claude/web-blur-b5c846
   "151": "offline_download.dart",
   "152": ".setUp",
   "153": "auto_download_test.dart",
@@ -164,10 +256,17 @@
   "162": "UI/UX Pro Max - Design Intelligence",
   "163": "services/watch_party_invites.dart",
   "164": "auto_probe_main.dart",
+<<<<<<< HEAD
   "165": "app_network_image.dart",
   "166": "Design System Inspired by Bugatti",
   "167": "Design System Inspired by Ferrari",
   "168": "time.Time",
+=======
+  "165": "onyx_dialog.dart",
+  "166": "Design System Inspired by Bugatti",
+  "167": "Design System Inspired by Ferrari",
+  "168": "libraryMonitor",
+>>>>>>> claude/web-blur-b5c846
   "169": "server · streaming #6",
   "170": "server · streaming #7",
   "171": "download_preferences.dart",
@@ -184,8 +283,13 @@
   "182": "releasedl_test.go",
   "183": "Design System Inspired by Tesla",
   "184": "app_motion.dart",
+<<<<<<< HEAD
   "185": "request_season_panel.dart",
   "186": "tv_dpad_focusable.dart",
+=======
+  "185": "request_filter_popover.dart",
+  "186": "detail_unified_design_test.dart",
+>>>>>>> claude/web-blur-b5c846
   "187": "generated_plugin_registrant.cc",
   "188": "5. Procédures sur vraie machine",
   "189": "episode_navigation.dart",
@@ -203,8 +307,13 @@
   "201": "MediaKitVideoPlugin",
   "202": "go_pkg_io",
   "203": "models/storage_admin.dart",
+<<<<<<< HEAD
   "204": "MessagesPigeonUtils",
   "205": "app_update_dialog.dart",
+=======
+  "204": "OnyxPlayerStatus",
+  "205": "api/media.dart",
+>>>>>>> claude/web-blur-b5c846
   "206": "app · lib #154",
   "207": "pending_announcement_test.dart",
   "208": "app · lib #156",
@@ -220,20 +329,34 @@
   "218": "AetherPlayer",
   "219": "AetherPlayer",
   "220": "Design System Inspired by Superhuman",
+<<<<<<< HEAD
   "221": "library_spotlight.dart",
   "222": "MainActivity",
   "223": "ref_node_path",
+=======
+  "221": "net/http.Client",
+  "222": "MainActivity.kt",
+  "223": "context-signals.mjs",
+>>>>>>> claude/web-blur-b5c846
   "224": "css-cascade.mjs",
   "225": "poster_grid_zoom.dart",
   "226": "client_log.dart",
   "227": "SystemSearchPosterCell",
+<<<<<<< HEAD
   "228": "sharelinks.go",
+=======
+  "228": "request_release_sheet.dart",
+>>>>>>> claude/web-blur-b5c846
   "229": "detail_hero.dart",
   "230": "ADR-0009 ExoPlayer sur Android mpv ailleurs",
   "231": "docs · adr #7",
   "232": "VideoOutput",
   "233": "_",
+<<<<<<< HEAD
   "234": "poster_picker_sheet.dart",
+=======
+  "234": "web_playback_web.dart",
+>>>>>>> claude/web-blur-b5c846
   "235": "tv_deferred_keyboard.dart",
   "236": "ffmpeg_test.go",
   "237": "PlayerHost.kt",
@@ -245,31 +368,49 @@
   "243": "user.dart",
   "244": "playback_preferences_storage.dart",
   "245": "steps",
+<<<<<<< HEAD
   "246": "media_transfer_io.dart",
   "247": "coverage_test.go",
   "248": "Design System Inspired by Warp",
   "249": "fetchMediaHubAvailabilityBatch",
   "250": "use_player_tabs.dart",
+=======
+  "246": "carried_subtitle.dart",
+  "247": "fetchTMDBDiscoverMixed",
+  "248": "Design System Inspired by Warp",
+  "249": "tv_modal_focus_test.dart",
+  "250": "ChangeNotifier",
+>>>>>>> claude/web-blur-b5c846
   "251": "app · lib #192",
   "252": "app · lib #193",
   "253": "library_spotlight_prefetch.dart",
   "254": "package:flutter/services.dart",
   "255": "Design System Inspired by Meta (Store)",
+<<<<<<< HEAD
   "256": "window_controls_web.dart",
+=======
+  "256": "player_key_routing.dart",
+>>>>>>> claude/web-blur-b5c846
   "257": "device_library_io.dart",
   "258": "series_track_memory_test.dart",
   "259": "onyx_apple_player.dart",
   "260": "_",
   "261": "VideoOutput",
-  "262": "storage_page.dart",
+  "262": "onyx_dpad.dart",
   "263": "FlutterWindow",
   "264": "ADR-0092 — La goutte des saisons, peinte sans filtre de fusion",
-  "265": "still_watching_settings.dart",
+  "265": "playback_still_watching_group.dart",
   "266": "Design System Inspired by NVIDIA",
   "267": "settings_categories.dart",
+<<<<<<< HEAD
   "268": "onyx_dpad.dart",
   "269": "tv_focusable.dart",
   "270": "tv_key_repeat.dart",
+=======
+  "268": "critique-storage.mjs",
+  "269": "tv_focusable.dart",
+  "270": "player_screen_overlays.dart",
+>>>>>>> claude/web-blur-b5c846
   "271": "ADR-0144 — Le haut du téléphone flotte en verre liquide sur l'affiche",
   "272": "Design System Inspired by The Verge",
   "273": "Design System Inspired by Notion",
@@ -277,23 +418,38 @@
   "275": "PlayerHost",
   "276": "generate-image.mjs",
   "277": "0130-les-menus-surgissants-prennent-la-matiere-du-menu-du-compte.md",
+<<<<<<< HEAD
   "278": "captureElementToBlob",
   "279": "go_pkg_strings",
   "280": "request_catalog_filters.dart",
   "281": "no_parallel_focus_system_test.dart",
+=======
+  "278": "media_requests_provider.dart",
+  "279": "go_pkg_time",
+  "280": "pause_info_content.dart",
+  "281": "tv_dpad_focusable.dart",
+>>>>>>> claude/web-blur-b5c846
   "282": "app_colors.dart",
   "283": "platform_video_controller.dart",
   "284": "tvos/Sources/onyx_player_apple/Messages.g.swift",
+<<<<<<< HEAD
   "285": "web_playback_web.dart",
   "286": "package:flutter/material.dart",
   "287": "playback_capabilities.dart",
   "288": "request_release.dart",
   "289": "middle_click_autoscroll.dart",
+=======
+  "285": "resume_preview_stills.dart",
+  "286": "package:flutter/material.dart",
+  "287": "playback_capabilities.dart",
+  "288": "request_release.dart",
+  "289": "onyx_menu_panel.dart",
+>>>>>>> claude/web-blur-b5c846
   "290": "FlutterStandardReader",
   "291": "impeccable/SKILL.md",
   "292": "format.dart",
-  "293": "shell_navigation_map_test.dart",
-  "294": "release_tag.dart",
+  "293": "library_tv_view_test.dart",
+  "294": "detail_navigation_map_test.dart",
   "295": "angle_surface_manager.h",
   "296": "render-video.cjs",
   "297": "animate.md",
@@ -303,6 +459,7 @@
   "301": "app · lib #227",
   "302": "settings_sections.dart",
   "303": "texture_video_surface.dart",
+<<<<<<< HEAD
   "304": "shared_link_screen.dart",
   "305": "tv_focus.dart",
   "306": "0105-lecteur-natif-sur-apple-tv.md",
@@ -317,6 +474,22 @@
   "315": "Design System Inspired by Clay",
   "316": "fullscreen_inherited_widget.dart",
   "317": "request_season_list.dart",
+=======
+  "304": "share_media_dialog.dart",
+  "305": "tv_focus.dart",
+  "306": "0105-lecteur-natif-sur-apple-tv.md",
+  "307": "auto_download_test.dart",
+  "308": "device_library_web.dart",
+  "309": "Design System Inspired by VoltAgent",
+  "310": "DialogueForwardDownmixTest",
+  "311": "linux/media_kit_video_plugin.cc",
+  "312": "vtt_cues.dart",
+  "313": "Design System Inspired by Composio",
+  "314": "tv_link_scanner_screen.dart",
+  "315": "Design System Inspired by Clay",
+  "316": "video_state_inherited_widget.dart",
+  "317": "tv_focus_scroll.dart",
+>>>>>>> claude/web-blur-b5c846
   "318": "server_capabilities.dart",
   "319": "hls_session.dart",
   "320": "texture_sw_copy_pixels",
@@ -325,8 +498,13 @@
   "323": "Design System Inspired by Nike",
   "324": "handleManualEditActivity",
   "325": "Source",
+<<<<<<< HEAD
   "326": "0123-la-bibliotheque-d-un-televiseur-presente-le-titre-focalise-en-tete.md",
   "327": ".cleanup",
+=======
+  "326": "permissions_sheet.dart",
+  "327": "testing.T",
+>>>>>>> claude/web-blur-b5c846
   "328": "Design System Inspired by Shopify",
   "329": "models/watch_party.dart",
   "330": "glass_chrome.dart",
@@ -337,19 +515,28 @@
   "335": "Design System Inspired by Binance.US",
   "336": "Design System Inspired by PlayStation",
   "337": "request_progress.dart",
+<<<<<<< HEAD
   "338": "Media",
+=======
+  "338": "account_menu_route.dart",
+>>>>>>> claude/web-blur-b5c846
   "339": "Design System Inspired by Uber",
   "340": "media_failover.dart",
   "341": "DownloadKeepAliveService",
-  "342": "remote_poster.dart",
+  "342": "String get",
   "343": "Design System Inspired by Cal.com",
   "344": "Design System Inspired by Linear",
   "345": "auto_quality_pilot_test.dart",
   "346": "image_cache_extent_guard_test.dart",
   "347": "serve-question.mjs",
   "348": "critique.md",
+<<<<<<< HEAD
   "349": "bool get",
   "350": "native_video_framing.dart",
+=======
+  "349": "poster_launch_route.dart",
+  "350": "request_catalog_filters.dart",
+>>>>>>> claude/web-blur-b5c846
   "351": "EngineLogRelay",
   "352": "Design System Inspired by Mintlify",
   "353": "None #15",
@@ -373,13 +560,21 @@
   "371": "Design System Inspired by Cohere",
   "372": "onyx_player_apple/Sources/onyx_player_apple/Messages.g.swift",
   "373": "StallGuardLoadControl",
+<<<<<<< HEAD
   "374": "account_admin.dart",
   "375": "static const",
   "376": "Design System Inspired by Ollama",
   "377": "media_details_cache.dart",
   "378": "api/otp.dart",
+=======
+  "374": "caches_directory_repository_io.dart",
+  "375": "tv_control_rows.dart",
+  "376": "Design System Inspired by Ollama",
+  "377": "media_details_cache.dart",
+  "378": "downloads_navigation_map_test.dart",
+>>>>>>> claude/web-blur-b5c846
   "379": "Design System Inspired by Replicate",
-  "380": "aether_video_fit_test.dart",
+  "380": "playback_profile.dart",
   "381": "Design System Inspired by Together AI",
   "382": "keyframes_mp4.go",
   "383": "Future",
@@ -389,7 +584,7 @@
   "387": "use_episodes_panel.dart",
   "388": "Design System Inspired by IBM",
   "389": "Design System Inspired by ElevenLabs",
-  "390": "onyx_dialog.dart",
+  "390": "onyx_progress_bar.dart",
   "391": "lite_mode.dart",
   "392": "Design System Inspired by MiniMax",
   "393": "activity.dart",
@@ -399,6 +594,7 @@
   "397": "onyx_mpv_macos/pubspec.yaml",
   "398": "modern-screenshot.umd.js",
   "399": "Design System Inspired by HashiCorp",
+<<<<<<< HEAD
   "400": "tv_focus_panes.dart",
   "401": "runHook",
   "402": "playback_logs_export.go",
@@ -408,6 +604,17 @@
   "406": "AppDelegate",
   "407": "MainActivity.kt",
   "408": "pause_info_content.dart",
+=======
+  "400": "tv_pane_region.dart",
+  "401": "tv_focus_memory.dart",
+  "402": "searchCatalog",
+  "403": "windows",
+  "404": "DialogueForwardDownmixTest.kt",
+  "405": "members_test.go",
+  "406": "AppDelegate",
+  "407": "_VideoOutputManager",
+  "408": "desktop_search_controller.dart",
+>>>>>>> claude/web-blur-b5c846
   "409": "live-wrap.mjs",
   "410": "OnyxPlayerAndroidPlugin",
   "411": "Design System Inspired by MongoDB",
@@ -425,6 +632,7 @@
   "423": "ADR-0037 Liens de partage publics sans compte",
   "424": "MediaKitVideoPlugin",
   "425": "MediaKitVideoPlugin",
+<<<<<<< HEAD
   "426": "mobile_bottom_nav.dart",
   "427": "playback_logs_screen.dart",
   "428": ".sizeFor",
@@ -435,6 +643,18 @@
   "433": "Design System Inspired by Pinterest",
   "434": "Handle `generate`",
   "435": "search_match.dart",
+=======
+  "426": "main_shell.dart",
+  "427": "captureElementToBlob",
+  "428": ".sizeFor",
+  "429": "no_parallel_focus_system_test.dart",
+  "430": "media_delete.go",
+  "431": "Design System Inspired by Supabase",
+  "432": "Refonte de la navigation TV sur dpad 3.3.0 — plan de migration",
+  "433": "Design System Inspired by Pinterest",
+  "434": "live.md",
+  "435": "_TextureGL",
+>>>>>>> claude/web-blur-b5c846
   "436": "Design System Inspired by SpaceX",
   "437": "steps",
   "438": "jobs",
@@ -444,18 +664,26 @@
   "442": "onAnnotDown",
   "443": "media_kit_video/CHANGELOG.md",
   "444": "install_origin_formats.dart",
-  "445": "newFakeSeerr",
+  "445": "app_platform_web.dart",
   "446": "my_requests.dart",
   "447": "new_episode_alerts.dart",
   "448": "Design System Inspired by Spotify",
   "449": "index_test.go",
+<<<<<<< HEAD
   "450": "phone_sign_in_panel.dart",
   "451": "release.yml",
   "452": "build-tvos",
   "453": "peerRow",
   "454": "ADR-0110 — Un seul système de focus : dpad",
+=======
+  "450": "duration.dart",
+  "451": "release.yml",
+  "452": "build-tvos",
+  "453": "desktop_search_hotkey.dart",
+  "454": "ADR-0028 Cible Apple TV (flutter-tvos et AVPlayer)",
+>>>>>>> claude/web-blur-b5c846
   "455": "series_track_memory.dart",
-  "456": "AetherEngine",
+  "456": "Flutter",
   "457": "Design System Inspired by BMW",
   "458": "MediaKitVideoPlugin.java",
   "459": "updates",
@@ -465,13 +693,20 @@
   "463": "ADR-0057 Attendre sa langue : une serie suit les episodes de la langue ecoutee",
   "464": "Design System Inspired by Figma",
   "465": "seerrRequest",
-  "466": "tv_touchpad.dart",
+  "466": "@visibleForTesting",
   "467": "NowPlayingController",
   "468": "tv_system_search.dart",
+<<<<<<< HEAD
   "469": "DateTime",
   "470": "tr.dart",
   "471": "README.md",
   "472": "premium_polish_test.dart",
+=======
+  "469": "previewGenerator",
+  "470": "progress_revision_watch.dart",
+  "471": "README.md",
+  "472": "interface_tour.dart",
+>>>>>>> claude/web-blur-b5c846
   "473": "app_type.dart",
   "474": "ADR-0025 Cout de l'interface sous Windows",
   "475": "request_detail_navigation_map_test.dart",
@@ -489,7 +724,11 @@
   "487": "backend",
   "488": "ADR-0010 Telechargements hors ligne",
   "489": "Réponses",
+<<<<<<< HEAD
   "490": "app_platform_web.dart",
+=======
+  "490": "new_episode_watch.dart",
+>>>>>>> claude/web-blur-b5c846
   "491": "libraries.dart",
   "492": "PlayerSurfaceFactory.kt",
   "493": "GENERIC_FONTS",
@@ -500,7 +739,11 @@
   "498": "Relais CONNECT local (stream_proxy_io.dart, 127.0.0.1)",
   "499": "ADR-0052 Des fichiers decoupes par sujet, et une limite qui tient",
   "500": "server.yml",
+<<<<<<< HEAD
   "501": "vtt_cues.dart",
+=======
+  "501": ".bitmap",
+>>>>>>> claude/web-blur-b5c846
   "502": "build-legal-site.py",
   "503": "SwappableObjectManager",
   "504": "SwappableObjectManager",
@@ -512,15 +755,24 @@
   "510": "steps",
   "511": "home_response.dart",
   "512": "ThreadPool",
+<<<<<<< HEAD
   "513": "onyx_menu_style.dart",
   "514": "SystemSearchResultsController",
   "515": "library_admin.dart",
   "516": "dependency_overrides",
   "517": "desktop_search_controller.dart",
+=======
+  "513": "api/otp.dart",
+  "514": "SystemSearchResultsController",
+  "515": "library_admin.dart",
+  "516": "dependency_overrides",
+  "517": "ref_node_path",
+>>>>>>> claude/web-blur-b5c846
   "518": "ADR-0042 L'adresse du serveur est deduite de l'origine de l'installeur",
   "519": "build-releases.sh",
   "520": "PROJECT_DESIGN — Onyx Quiet Premium",
   "521": "interface",
+<<<<<<< HEAD
   "522": "storage_query.dart",
   "523": "network_status.dart",
   "524": "player_key_routing.dart",
@@ -533,6 +785,20 @@
   "531": "ADR-0030 Mises a jour Windows par programme maison",
   "532": "tv_focus_rows.dart",
   "533": "video_state_inherited_widget.dart",
+=======
+  "522": "unavailable_titles_search.dart",
+  "523": "downloads_test.go",
+  "524": "player_shortcuts.dart",
+  "525": "flutter",
+  "526": "Design System Inspired by Intercom",
+  "527": "Les trois chromes du lecteur apparaissent et disparaissent par le même fondu",
+  "528": "DateTime",
+  "529": "Design System Inspired by Miro",
+  "530": "ClientLog (client_log.dart)",
+  "531": "ADR-0030 Mises a jour Windows par programme maison",
+  "532": "use_pause_info.dart",
+  "533": "player_screen_remote.dart",
+>>>>>>> claude/web-blur-b5c846
   "534": "build",
   "535": "tag",
   "536": "VideoOutputConfiguration",
@@ -548,32 +814,55 @@
   "546": "onboard.md",
   "547": "onyx_menu_panel.dart",
   "548": "Any",
+<<<<<<< HEAD
   "549": "dart:async",
   "550": "build-windows",
   "551": "subtitle_view.dart",
+=======
+  "549": "frame_budget_watch.dart",
+  "550": "build-windows",
+  "551": "search_match.dart",
+>>>>>>> claude/web-blur-b5c846
   "552": "MPVHelpers",
   "553": "MPVHelpers",
   "554": "MPVHelpers",
   "555": "build-tvos-ipa.sh",
+<<<<<<< HEAD
   "556": "app_theme.dart",
   "557": "onyx_background_downloads.dart",
+=======
+  "556": "dart:async",
+  "557": "linux/video_output.cc",
+>>>>>>> claude/web-blur-b5c846
   "558": "dev_dependencies",
   "559": "keyframeTimesFromIndex (lecture stss, stts, cues)",
   "560": "build-android",
   "561": "outputs",
+<<<<<<< HEAD
   "562": "media_transfer_test.dart",
+=======
+  "562": "embedded_subtitle_pairing.dart",
+>>>>>>> claude/web-blur-b5c846
   "563": "errors",
   "564": "MediaKitUtils",
-  "565": "New visual work",
+  "565": "inbox.mjs",
   "566": "OnyxApplePlaybackState",
   "567": "build-ios-ipa.sh",
   "568": "skip_segments.dart",
   "569": "interface",
+<<<<<<< HEAD
   "570": "watch_party_invites_test.dart",
   "571": "track_label.dart",
   "572": "tv_focus_memory.dart",
   "573": "package:flutter/widgets.dart",
   "574": "watch_party_invite.dart",
+=======
+  "570": "macos_now_playing.dart",
+  "571": "track_label.dart",
+  "572": "0123-la-bibliotheque-d-un-televiseur-presente-le-titre-focalise-en-tete.md",
+  "573": "package:flutter/widgets.dart",
+  "574": "tv_nav_harness.dart",
+>>>>>>> claude/web-blur-b5c846
   "575": "ADR-0104 — Une bibliothèque des vidéos de l'appareil, sans serveur",
   "576": "Audit UX — Onyx (app Flutter : desktop, mobile, web, TV)",
   "577": "TvTouchpad.addMoveListener (deplacements bruts du doigt)",
@@ -581,7 +870,7 @@
   "579": "Fiches stores et notes de review — Onyx",
   "580": "static const Duration",
   "581": "Design System Inspired by Airtable",
-  "582": "_",
+  "582": "image_cache_extent_guard_test.dart",
   "583": "MPVVideoOutParams",
   "584": "MPVVideoOutParams",
   "585": "real.dart",
@@ -596,7 +885,11 @@
   "594": "macos/create_framework_symlinks.sh",
   "595": "The Toolkit",
   "596": "onyx_mpv_macos.dart",
+<<<<<<< HEAD
   "597": "downloads_navigation_map_test.dart",
+=======
+  "597": "downloads_screen_desktop_test.dart",
+>>>>>>> claude/web-blur-b5c846
   "598": "publish-image.sh script",
   "599": "stage-downloads.sh script",
   "600": "app/build.gradle.kts",
@@ -604,7 +897,7 @@
   "602": "web_playback.dart",
   "603": "app_updater.dart",
   "604": "caches_directory_repository.dart",
-  "605": "use_gesture_hints.dart",
+  "605": "app_network_image.dart",
   "606": "dns_warmup_web.dart",
   "607": "download_manager.dart",
   "608": "hls_preload.dart",
@@ -667,12 +960,20 @@
   "665": "run-windows.ps1",
   "666": "generate-installer-art.ps1",
   "667": "AccountLink",
+<<<<<<< HEAD
   "668": "server_reachability.dart",
+=======
+  "668": "peerRow",
+>>>>>>> claude/web-blur-b5c846
   "669": "bool?",
   "670": "CatalogItem",
   "671": "double?",
   "672": "Duration",
+<<<<<<< HEAD
   "673": "profile_avatar.dart",
+=======
+  "673": "texture_gl_populate_texture",
+>>>>>>> claude/web-blur-b5c846
   "674": "HomeMediaItem",
   "675": "int?",
   "676": "Intent",
@@ -703,17 +1004,29 @@
   "701": "onyx_background_downloads/android/build.gradle.kts",
   "702": "onyx_player_android/android/build.gradle.kts",
   "703": "project-player/server",
+<<<<<<< HEAD
   "704": "UpdateProgress",
+=======
+  "704": "playback_logs_test.go",
+>>>>>>> claude/web-blur-b5c846
   "705": "build-releases.ps1",
   "706": "build-web.ps1",
   "707": "build-webos.ps1",
   "708": "doc.go",
   "709": "media_subtitle_track.dart",
+<<<<<<< HEAD
   "710": "User",
   "711": "MediaHubStorageDetails",
   "712": "quick reference",
   "713": "UIColor",
   "714": "settings_screen.dart",
+=======
+  "710": "on_screen.dart",
+  "711": "mediahub_storage_details.go",
+  "712": "quick reference",
+  "713": "SystemSearchPalette",
+  "714": "FastStart",
+>>>>>>> claude/web-blur-b5c846
   "715": "manifest.json",
   "716": "hls_playlist.dart",
   "717": "quick reference",
@@ -730,8 +1043,13 @@
   "728": "net/url.Values",
   "729": "tv_control_rows.dart",
   "730": "Generate Report",
+<<<<<<< HEAD
   "731": "ValueChanged",
   "732": "MessagesPigeonStreamHandler",
+=======
+  "731": "tv_poster_wall.dart",
+  "732": "static const",
+>>>>>>> claude/web-blur-b5c846
   "733": "Findings",
   "734": "locale_formats.dart",
   "735": "seerr/README.md",
@@ -755,7 +1073,11 @@
   "753": "models/series_track_preferences.dart",
   "754": "Nielsen's 10 Heuristics",
   "755": "onyx_controls_rows.dart",
+<<<<<<< HEAD
   "756": "player_screen_pause_info.dart",
+=======
+  "756": "FastStart",
+>>>>>>> claude/web-blur-b5c846
   "757": "polish.md",
   "758": "quieter.md",
   "759": "Improve UI",
@@ -767,27 +1089,43 @@
   "765": "L'onglet Demandes rend les tokens Quiet Premium au lieu de sa palette parallèle",
   "766": "StatusMapping",
   "767": "Étapes",
+<<<<<<< HEAD
   "768": "player_shortcuts.dart",
+=======
+  "768": "onyx_pointer_chrome.dart",
+>>>>>>> claude/web-blur-b5c846
   "769": "announcements.dart",
   "770": "Account",
   "771": "setupShareTest",
   "772": "Les cartes répondent à l'appui, pas seulement au survol",
-  "773": "chunk_plan.dart",
+  "773": "int get",
   "774": "🚀 Projet : Mon Serveur de Médias Personnalisé",
   "775": "brightness",
   "776": "playback.dart",
   "777": "Tasteful UI",
+<<<<<<< HEAD
   "778": "touchpad_motion_test.dart",
   "779": "Décision",
   "780": "player_controller_startup.dart",
   "781": "OnyxPlayerStatus",
+=======
+  "778": "siri_remote_touches_io.dart",
+  "779": "Décision",
+  "780": "PlayerController",
+  "781": "tr.dart",
+>>>>>>> claude/web-blur-b5c846
   "782": "Operate mode depth (and Read notes)",
   "783": "Logique de l'app Flutter",
   "784": "player_controller_hls.dart",
   "785": "OnyxTrack",
   "786": "VideoOutputManager",
+<<<<<<< HEAD
   "787": "player_controller_dolby_vision.dart",
   "788": "qt",
+=======
+  "787": "iOS platform",
+  "788": "localized_asset.dart",
+>>>>>>> claude/web-blur-b5c846
   "789": "Taste Exploration",
   "790": "SAFE_TAGS",
   "791": "Issue tracker: GitHub",
@@ -804,7 +1142,11 @@
   "802": "ADR-0095 — Recopie systématique du décodage matériel sous Windows",
   "803": "ADR-0099 — Une seule fiche et une seule affiche : la disposition de la bibliothèque, l'habillage de Demander",
   "804": "Domain Docs",
+<<<<<<< HEAD
   "805": "player_screen_remote.dart",
+=======
+  "805": "FlutterStandardWriter",
+>>>>>>> claude/web-blur-b5c846
   "806": "UI Result Critique",
   "807": "Mode: Production UI Implementation",
   "808": "Anti-Generic Rules",
@@ -814,8 +1156,13 @@
   "812": "Marque Onyx",
   "813": "ADR-0067 — L'aperçu au survol de « Reprendre » est un diaporama des images de la barre",
   "814": "Les cartes poster partagent un seul rayon et un seul traitement de survol",
+<<<<<<< HEAD
   "815": "tv_sections_scroll.dart",
   "816": "tv_focus_guard.dart",
+=======
+  "815": "bolder.md",
+  "816": "4. Component Stylings",
+>>>>>>> claude/web-blur-b5c846
   "817": "ADR-0075 — Le contrat avec OnyxHub tient dans contract/onyxhub/, et le compte voyage par son identifiant",
   "818": "ADR-0080 — L'app passe en HTTPS dès que le serveur le parle",
   "819": "Dialect",
@@ -823,6 +1170,7 @@
   "821": "ADR-0088 — Une image déjà sur disque se pose sans fondu, et les listes d'images construisent une fenêtre d'avance",
   "822": "NotWritableError",
   "823": "ADR-0091 — `onyx://play` : « Lire sur Onyx » depuis MediaHub, avec reprise",
+<<<<<<< HEAD
   "824": "readConfig",
   "825": "ADR-0093 — Piste audio et premier segment sur Apple",
   "826": "ADR-0097 — Sous-titres et pistes audio sur un téléviseur LG : la liste du serveur, la langue pour désigner",
@@ -833,6 +1181,18 @@
   "831": "pull_request_template.md",
   "832": "api/storage_admin.dart",
   "833": "desktop_search_hits.dart",
+=======
+  "824": "player_controller_dolby_vision.dart",
+  "825": "ADR-0093 — Piste audio et premier segment sur Apple",
+  "826": "ADR-0097 — Sous-titres et pistes audio sur un téléviseur LG : la liste du serveur, la langue pour désigner",
+  "827": "player_controller_language.dart",
+  "828": "Directives Globales du Projet Onyx",
+  "829": "ADR-0148 — Pas de flou de fond sur le web",
+  "830": "Mode: Taste First Redesign",
+  "831": "pull_request_template.md",
+  "832": "PlaybackStats",
+  "833": "_VeilClipper",
+>>>>>>> claude/web-blur-b5c846
   "834": "ADR-0115 — Le stockage se gère aussi depuis l'administration d'Onyx",
   "835": "mountSvelteComponentVariant",
   "836": "[package:media_kit_libs_ios_video](https://github.com/media-kit/media-kit)",
@@ -858,6 +1218,7 @@
   "856": "ADR-0083 — Sur Android, Retour passe par le système et lui seul",
   "857": "onyx_player_apple/analysis_options.yaml",
   "858": "ADR-0140 — Sur le bureau, les bibliothèques ont le volet de la recherche",
+<<<<<<< HEAD
   "859": "settings_choice_focus.dart",
   "860": "tv_card_directions.dart",
   "861": "_",
@@ -878,10 +1239,32 @@
   "876": "FlutterTexture",
   "877": "Décision",
   "878": "syncEmby",
+=======
+  "859": "CaptionBarPeek",
+  "860": "WindowCaptionBar",
+  "861": "WindowControlPills",
+  "862": "_CustomTrackShape",
+  "863": "_InterfaceTourOverlayState",
+  "864": "L'app a un owner de mouvement, et il respecte « réduire les animations »",
+  "865": "ADR-0098 — Recherche interactive des demandes : choisir soi-même la release",
+  "866": "_TourButton",
+  "867": ".Releases",
+  "868": "player_screen_startup.dart",
+  "869": "VideoOutputManager",
+  "870": "_BackwardSeekIndicator",
+  "871": "_ForwardSeekIndicator",
+  "872": "ADR-0101 — Le mode léger reconnaît les ordinateurs modestes",
+  "873": "MaterialPlayOrPauseButtonState",
+  "874": "MaterialPositionIndicator",
+  "875": "device_library.dart",
+  "876": "FlutterTexture",
+  "877": "_MaterialVideoControls",
+>>>>>>> claude/web-blur-b5c846
   "879": "request_releases.dart",
   "880": "live-accept.mjs",
   "881": "Décision",
   "882": "ADR-0129 — Sur l'Apple TV, la recherche est l'écran du système, et toute recherche montre aussi les titres que le serveur n'a pas",
+<<<<<<< HEAD
   "883": "Forever",
   "884": "player_screen_overlays.dart",
   "885": "ADR-0129 — Un invité peut remplir une liste, ou seulement la voir",
@@ -892,9 +1275,17 @@
   "890": "update_checker.dart",
   "891": "runMigration",
   "892": "live_subtitles.go (WebVTT ecrit par le FFmpeg de la session)",
+=======
+  "883": "season_download_plan_test.dart",
+  "884": "MaterialSeekBar",
+  "886": "ADR-0135 — La recherche des demandes complète les titres connus, depuis l'export quotidien de TMDB",
+  "889": "artwork.dart",
+  "890": "static bool get",
+>>>>>>> claude/web-blur-b5c846
   "893": "ADR-0114 — MediaHub gère le stockage d'Onyx",
   "894": "FlutterStandardWriter",
   "895": "ADR-0003 Android TV pilotage a la telecommande et appairage par QR",
+<<<<<<< HEAD
   "896": "Request",
   "897": "onyx_player_view.dart",
   "898": "u",
@@ -903,12 +1294,19 @@
   "901": "ADR-0141 — Les saccades proposent le mode léger, sans l'imposer",
   "902": "Messages.g.kt",
   "903": "pending_announcement.dart",
+=======
+  "896": "hook.mjs",
+  "899": "State",
+  "901": "ADR-0141 — Les saccades proposent le mode léger, sans l'imposer",
+  "902": "Messages.g.kt",
+>>>>>>> claude/web-blur-b5c846
   "904": "pinch_zoom_fit.dart",
   "905": "A. Parcours et droits",
   "906": "BinaryMessenger?",
   "907": "EventChannel",
   "908": "MethodChannel",
   "909": "StandardMessageCodec",
+<<<<<<< HEAD
   "910": "5. Layout Principles",
   "911": "Audit UI — Playeur (app Flutter : desktop, mobile, web)",
   "912": "Design plans — Onyx",
@@ -919,6 +1317,15 @@
   "917": "OnyxTrack",
   "918": "OnyxVideoSize",
   "919": "hook.mjs",
+=======
+  "910": "Common Cognitive Load Violations",
+  "911": "Persona-Based Design Testing",
+  "912": "Cognitive Load Assessment",
+  "913": "context.Context",
+  "914": "settings_choice_focus.dart",
+  "915": "ADR-0090 — Se connecter à MediaHub avec son compte Onyx",
+  "917": "Heuristics Scoring Guide",
+>>>>>>> claude/web-blur-b5c846
   "920": "ADR-0127 — La lecture d'un autre appareil s'annonce en notification, et se reprend en maintenant Lecture",
   "921": "AutoDownloadCatalog",
   "922": "AutoDownloadLibrary",
@@ -937,10 +1344,13 @@
   "945": "ADR-0137 — Un film laissé en pause montre ce qu'on regarde",
   "946": "ADR-0134 — La recherche des demandes est rangée par pertinence, pas dans l'ordre de TMDB",
   "947": "SystemSearchChannel",
-  "948": "../playback_profile.dart",
   "953": "onyx_chrome_layout.dart",
   "966": "checkHeadingRhythmDOM",
   "982": "tmdb_watch_providers.go",
+<<<<<<< HEAD
+=======
+  "983": "Store",
+>>>>>>> claude/web-blur-b5c846
   "985": "ADR-0127 — Le propriétaire d'une liste invite des comptes à la remplir",
   "990": "ADR-0072 — La liaison avec OnyxHub se teste depuis le serveur, et le catalogue lit ses disponibilités par page",
   "991": "ADR-0074 — Un import annoncé par OnyxHub s'indexe sans attendre le moniteur",

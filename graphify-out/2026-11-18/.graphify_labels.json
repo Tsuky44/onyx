@@ -88,7 +88,7 @@
   "86": "setLiveState",
   "87": "package:onyx/services/api_client.dart",
   "88": "responsive.dart",
-  "89": "Flutter",
+  "89": "NSObject",
   "90": "home_provider.dart",
   "91": "design-system.mjs",
   "92": "doctor.mjs",
@@ -331,7 +331,7 @@
   "329": "models/watch_party.dart",
   "330": "glass_chrome.dart",
   "331": "docs · adr #24",
-  "332": "VideoOutput",
+  "332": "TextureSW",
   "333": "TextureSW",
   "334": "TextureSW",
   "335": "Design System Inspired by Binance.US",
@@ -371,7 +371,7 @@
   "369": "shared_show.dart",
   "370": "context-signals.mjs",
   "371": "Design System Inspired by Cohere",
-  "372": ".setUp",
+  "372": "onyx_player_apple/Sources/onyx_player_apple/Messages.g.swift",
   "373": "StallGuardLoadControl",
   "374": "caches_directory_repository_io.dart",
   "375": "static const",
@@ -401,8 +401,13 @@
   "399": "Design System Inspired by HashiCorp",
   "400": "request_alert_watch.dart",
   "401": "macos_update_signature_io.dart",
+<<<<<<< HEAD
   "402": "rankSearchRows",
   "403": "NSObject",
+=======
+  "402": "match.go",
+  "403": "OnyxMpvMacosPlugin",
+>>>>>>> claude/web-blur-b5c846
   "404": "DialogueForwardDownmixTest.kt",
   "405": "members_test.go",
   "406": "AppDelegate",
@@ -455,7 +460,7 @@
   "453": "int get",
   "454": "0110-un-seul-systeme-de-focus-dpad.md",
   "455": "series_track_memory.dart",
-  "456": ".bitmap",
+  "456": "AetherEngine",
   "457": "Design System Inspired by BMW",
   "458": "MediaKitVideoPlugin.java",
   "459": "updates",
@@ -546,9 +551,15 @@
   "544": "watched_verdict.dart",
   "545": "app/pubspec.yaml",
   "546": "onboard.md",
+<<<<<<< HEAD
   "547": "onyx_menu_panel.dart",
   "548": "onyx_player_apple/Sources/onyx_player_apple/Messages.g.swift",
   "549": "duration.dart",
+=======
+  "547": "metadata_fix_sheet.dart",
+  "548": "Any",
+  "549": "stream_cut_recovery.dart",
+>>>>>>> claude/web-blur-b5c846
   "550": "build-windows",
   "551": "ADR-0042 L'adresse du serveur est deduite de l'origine de l'installeur",
   "552": "MPVHelpers",
@@ -569,7 +580,11 @@
   "567": "build-ios-ipa.sh",
   "568": "skip_segments.dart",
   "569": "interface",
+<<<<<<< HEAD
   "570": "staleness-notice.mjs",
+=======
+  "570": "VideoOutput",
+>>>>>>> claude/web-blur-b5c846
   "571": "track_label.dart",
   "572": "FastStart",
   "573": "package:flutter/widgets.dart",
@@ -872,10 +887,18 @@
   "870": "MaterialPositionIndicator",
   "871": "pointer_click_zone.dart",
   "872": "ADR-0101 — Le mode léger reconnaît les ordinateurs modestes",
+<<<<<<< HEAD
   "873": "_MaterialVideoControls",
   "874": "playback_access.dart",
   "875": "device_library.dart",
   "876": "FlutterTexture",
+=======
+  "873": "runMigration",
+  "874": "playback_access.dart",
+  "875": "device_library.dart",
+  "876": "ResizableTextureProtocol",
+  "877": "use_window_focus.dart",
+>>>>>>> claude/web-blur-b5c846
   "878": "ADR-0041 Validation en deux etapes par code TOTP",
   "879": "request_releases.dart",
   "880": "live-accept.mjs",
@@ -893,13 +916,25 @@
   "901": "ADR-0141 — Les saccades proposent le mode léger, sans l'imposer",
   "902": "Messages.g.kt",
   "904": "pinch_zoom_fit.dart",
+  "905": "Generate Combined Critique Report",
   "906": "BinaryMessenger?",
   "907": "EventChannel",
   "908": "MethodChannel",
   "909": "StandardMessageCodec",
+<<<<<<< HEAD
   "913": "context.Context",
   "915": "ADR-0090 — Se connecter à MediaHub avec son compte Onyx",
   "916": "Visualize: Direction Comps & Asset Production",
+=======
+  "910": "Common Cognitive Load Violations",
+  "911": "Persona-Based Design Testing",
+  "912": "Cognitive Load Assessment",
+  "913": ".ProbeSeerr",
+  "914": "settings_choice_focus.dart",
+  "915": "ADR-0090 — Se connecter à MediaHub avec son compte Onyx",
+  "916": "Visualize: Direction Comps & Asset Production",
+  "917": "Heuristics Scoring Guide",
+>>>>>>> claude/web-blur-b5c846
   "920": "ADR-0127 — La lecture d'un autre appareil s'annonce en notification, et se reprend en maintenant Lecture",
   "923": "audio_language_gap.dart",
   "924": "ADR-0001 Droits utilisateur et invitations",
