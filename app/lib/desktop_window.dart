@@ -69,6 +69,11 @@ double shellTabTopInset(BuildContext context, {required bool embedded}) {
 final ValueNotifier<bool> showDesktopCaption =
     ValueNotifier<bool>(AppPlatform.isWindows);
 
+/// Vrai tant que la barre de titre sort par-dessus le lecteur
+/// ([CaptionBarPeek]) : les boutons du haut du lecteur descendent d'autant
+/// ([CaptionPeekInset]) au lieu de passer dessous.
+final ValueNotifier<bool> desktopCaptionPeeking = ValueNotifier<bool>(false);
+
 /// Barre de titre maison de Windows, affichée tant que [showDesktopCaption]
 /// est vrai. La zone vide déplace la fenêtre (double-clic : agrandir) et les
 /// contrôles restent en haut à droite, dans l'ordre Windows, sous forme de
@@ -145,7 +150,9 @@ class _WindowCaptionBarState extends State<WindowCaptionBar> {
 /// seule poignée de la fenêtre (fermer, réduire, déplacer).
 ///
 /// La barre se pose en surimpression au lieu de repousser la vidéo, qui ne
-/// bouge donc pas d'un pixel. Elle sort quand la souris touche le bord haut de
+/// bouge donc pas d'un pixel ; seuls les boutons du haut du lecteur
+/// descendent de sa hauteur ([CaptionPeekInset]) pour rester visibles. Elle
+/// sort quand la souris touche le bord haut de
 /// la fenêtre, y reste tant que la souris est dessus, et repart un moment
 /// après qu'elle s'en est éloignée.
 ///
@@ -177,9 +184,31 @@ class _CaptionBarPeekState extends State<CaptionBarPeek> {
   Timer? _hideTimer;
 
   @override
+  void initState() {
+    super.initState();
+    showDesktopCaption.addListener(_onCaptionInLayout);
+  }
+
+  @override
   void dispose() {
     _hideTimer?.cancel();
+    showDesktopCaption.removeListener(_onCaptionInLayout);
+    desktopCaptionPeeking.value = false;
     super.dispose();
+  }
+
+  /// La barre reprend sa place dans la colonne (on quitte le lecteur) : plus
+  /// rien ne sort par-dessus, et rien ne doit rester décalé.
+  void _onCaptionInLayout() {
+    if (!showDesktopCaption.value) return;
+    _hideTimer?.cancel();
+    _hideTimer = null;
+    _setShown(false);
+  }
+
+  void _setShown(bool shown) {
+    desktopCaptionPeeking.value = shown;
+    if (_shown != shown) setState(() => _shown = shown);
   }
 
   void _onHover(PointerHoverEvent event) {
@@ -196,14 +225,14 @@ class _CaptionBarPeekState extends State<CaptionBarPeek> {
   void _reveal() {
     _hideTimer?.cancel();
     _hideTimer = null;
-    if (!_shown) setState(() => _shown = true);
+    _setShown(true);
   }
 
   void _scheduleHide() {
     if (!_shown || _hideTimer != null) return;
     _hideTimer = Timer(CaptionBarPeek.lingerDelay, () {
       _hideTimer = null;
-      if (mounted) setState(() => _shown = false);
+      if (mounted) _setShown(false);
     });
   }
 
@@ -248,6 +277,30 @@ class _CaptionBarPeekState extends State<CaptionBarPeek> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Descend [child] de la hauteur de la barre de titre tant qu'elle sort
+/// par-dessus le lecteur ([desktopCaptionPeeking]), au même rythme qu'elle :
+/// les boutons du haut glissent sous la barre au lieu d'être recouverts.
+class CaptionPeekInset extends StatelessWidget {
+  final Widget child;
+
+  const CaptionPeekInset({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!useDesktopCaptionBar) return child;
+    return ValueListenableBuilder<bool>(
+      valueListenable: desktopCaptionPeeking,
+      builder: (context, peeking, child) => AnimatedPadding(
+        padding: EdgeInsets.only(top: peeking ? WindowCaptionBar.height : 0),
+        duration: AppMotion.fade(context, AppMotion.micro),
+        curve: AppMotion.curve,
+        child: child,
+      ),
+      child: child,
     );
   }
 }

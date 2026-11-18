@@ -108,6 +108,31 @@ void main() {
       expect((back.center - poster.center).distance, lessThan(2));
     });
 
+    // Un texte en miroir a son coin « gauche » à droite de son coin « droit ».
+    void expectReadable(WidgetTester tester) {
+      final label = find.text('Reprendre');
+      expect(tester.getTopLeft(label).dx, lessThan(tester.getTopRight(label).dx),
+          reason: 'le dos ne doit pas être peint en miroir');
+    }
+
+    testWidgets('le dos se lit à l’endroit', (tester) async {
+      await pumpCard(tester, engine);
+      await openMenu(tester);
+      expectReadable(tester);
+    });
+
+    testWidgets('le dos se lit à l’endroit sans animations', (tester) async {
+      // Le mode allégé des téléviseurs passe par le même chemin : sans
+      // rotation, le dos restait tourné d'un demi-tour.
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await pumpCard(tester, engine);
+      await openMenu(tester);
+      expectReadable(tester);
+    });
+
     testWidgets('les flèches parcourent le dos et OK lance l’action',
         (tester) async {
       var watched = 0;

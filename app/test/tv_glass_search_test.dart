@@ -5,7 +5,7 @@ import 'package:onyx/models/models.dart';
 import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/library_provider.dart';
 import 'package:onyx/providers/search_provider.dart';
-import 'package:onyx/screens/library/search_results_screen.dart';
+import 'package:onyx/screens/search/phone/phone_search_screen.dart';
 import 'package:onyx/screens/search/tv_search_screen.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/tv/tv_mode.dart';
@@ -191,11 +191,11 @@ void main() {
         await tester.sendKeyEvent(LogicalKeyboardKey.select);
         await tester.pumpAndSettle();
 
-        // La page de recherche d'un téléviseur, et non la grille du bureau.
+        // La page de recherche d'un téléviseur, et non celle du téléphone.
         // Un seul OK : le clavier du système s'ouvre avec elle. Son parcours
         // est épinglé par `tv_search_screen_test.dart`.
         expect(find.byType(TvSearchScreen), findsOneWidget);
-        expect(find.byType(SearchResultsScreen), findsNothing);
+        expect(find.byType(PhoneSearchScreen), findsNothing);
         expect(calls, contains('TextInput.show'));
         // Le catalogue est déjà là : le film du serveur est proposé.
         expect(find.byType(MediaCard), findsOneWidget);

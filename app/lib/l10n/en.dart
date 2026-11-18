@@ -2160,8 +2160,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Revenue',
   'Revoir le lien':
       'Show the link again',
-  'Rien dans la bibliothèque':
-      'Nothing in the library',
   'Rien ne descend sans que vous le demandiez.':
       'Nothing is downloaded unless you ask for it.',
   'Rien n’a été gardé de ce serveur : reconnectez-vous.':
@@ -2900,8 +2898,6 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} is no longer the main server.',
   '{0} reçue(s) d’Emby, {1} envoyée(s) à Emby.':
       '{0} received from Emby, {1} sent to Emby.',
-  '{0} résultat{1}':
-      '{0} result{1}',
   '{0} sur {1}':
       '{0} of {1}',
   '{0} % vu':
@@ -3320,8 +3316,14 @@ const Map<String, String> kEnglish = <String, String>{
       'Removes blur, motion and shadows to keep the interface and playback smooth on a small device. The file still plays as is. {0}',
   'Actif : cet appareil a peu de ressources.':
       'On: this device has few resources.',
-  'Actif : l’interface saccadait sur cet appareil.':
-      'On: the interface stuttered on this device.',
+  'L’interface saccade sur cet appareil':
+      'The interface is stuttering on this device',
+  'Le mode léger retire le flou, les mouvements et les ombres pour que l’interface reste fluide. Le fichier reste lu tel quel. Vous pourrez changer d’avis dans Réglages › Cet appareil.':
+      'Lite mode removes blur, motion and shadows so the interface stays smooth. The file still plays as is. You can change your mind in Settings › This device.',
+  'Garder l’interface complète':
+      'Keep the full interface',
+  'Passer en mode léger':
+      'Switch to lite mode',
   'Actif.':
       'On.',
   'Inactif.':

@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/tr.dart';
-import '../../providers/search_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_type.dart';
 import '../../tv/tv_deferred_keyboard.dart';
-import '../library/search_results_screen.dart';
-import '../search/desktop/recent_searches.dart';
+import '../search/phone/phone_search_screen.dart';
+import '../search/recent_searches.dart';
 
 /// La recherche du téléphone (ADR-0142) : le rond de verre de la barre
 /// d'onglets s'étire sur toute la largeur et devient le champ, posé juste
-/// au-dessus du clavier ; la page des résultats s'ouvre derrière lui et suit
-/// la frappe ([SearchResultsScreen.docked]).
+/// au-dessus du clavier ; la page de recherche s'ouvre derrière lui et suit
+/// la frappe ([PhoneSearchScreen], ADR-0145) : recherches récentes et
+/// derniers ajouts avant de taper, puis pastilles et lignes de résultats.
 ///
 /// La barre du haut n'a plus de champ : deux champs de recherche à l'écran
 /// laissaient le doute sur celui qui commande.
@@ -24,12 +24,7 @@ import '../search/desktop/recent_searches.dart';
 /// recouvre ([isCovered]) : la bulle rend la place à la capsule, et revient
 /// au retour.
 class PhoneSearchSession extends ChangeNotifier {
-  PhoneSearchSession({required this.provider, required this.navigatorKey}) {
-    controller.addListener(() => provider.setQuery(controller.text));
-  }
-
-  /// La recherche que la page des résultats suit.
-  final SearchProvider provider;
+  PhoneSearchSession({required this.navigatorKey});
 
   /// Le navigateur des pages de la coquille : les résultats s'y ouvrent, sous
   /// la barre, qui reste au-dessus d'eux.
@@ -58,6 +53,9 @@ class PhoneSearchSession extends ChangeNotifier {
   Route<void>? _route;
   RecentSearches? _recents;
   bool _disposed = false;
+
+  /// Les recherches récentes chargées par [recentsFor], null avant.
+  RecentSearches? get recents => _recents;
 
   /// Les recherches récentes du profil connecté (`"<serveur>:<profil>"`) :
   /// les mêmes que celles du bureau, rangées par profil.
@@ -93,10 +91,7 @@ class PhoneSearchSession extends ChangeNotifier {
       reverseTransitionDuration: duration,
       pageBuilder: (_, __, ___) => _CoverWatch(
         onCovered: _setCovered,
-        child: SearchResultsScreen.docked(
-          recents: _recents,
-          onRecent: useRecent,
-        ),
+        child: PhoneSearchScreen(session: this),
       ),
       transitionsBuilder: (_, animation, __, child) =>
           FadeTransition(opacity: animation, child: child),
@@ -149,7 +144,6 @@ class PhoneSearchSession extends ChangeNotifier {
     _covered = false;
     focusNode.unfocus();
     controller.clear();
-    provider.clear();
     notifyListeners();
   }
 

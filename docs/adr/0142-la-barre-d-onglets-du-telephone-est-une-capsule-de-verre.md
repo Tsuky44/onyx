@@ -7,7 +7,8 @@
 - **Portée :** `screens/shell/mobile_bottom_nav.dart` (réécrit), `screens/shell/phone_search.dart`
   (nouveau : `PhoneSearchSession`, `PhoneSearchField`, `TabBarScrollWatch`),
   `screens/shell/main_shell.dart`, `screens/shell/mobile_top_bar.dart`,
-  `screens/library/search_results_screen.dart` (`SearchResultsScreen.docked`),
+  `screens/library/search_results_screen.dart` (`SearchResultsScreen.docked`, remplacée depuis par
+  `PhoneSearchScreen`, [ADR-0145](0145-sur-telephone-la-recherche-est-une-page-sous-la-bulle.md)),
   `widgets/global/sliver_scroll_end.dart` (nouveau), la fin des pages qui défilent (accueil,
   bibliothèques, demandes, listes, hors ligne, fiches) ; `widgets/global/sticky_glass_search.dart`
   est retiré.

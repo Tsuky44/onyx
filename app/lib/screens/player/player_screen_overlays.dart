@@ -245,7 +245,9 @@ extension _PlayerOverlays on _PlayerScreenState {
         Positioned(
           top: macOSWindowControlsTopInset + 12,
           left: 20,
-          child: PlayerBackButton(onTap: _leavePlayer),
+          child: CaptionPeekInset(
+            child: PlayerBackButton(onTap: _leavePlayer),
+          ),
         ),
       // Une seule page à la fois : la question de la langue se pose au moment
       // d'enchaîner, donc à la place de celle qui l'a lancée.

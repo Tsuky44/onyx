@@ -7,7 +7,6 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
-import '../../providers/search_provider.dart';
 import '../../providers/watch_lists_provider.dart';
 import '../../services/api_client.dart';
 import '../../services/auto_updater_service.dart';
@@ -37,6 +36,7 @@ import '../requests/requests_screen.dart';
 import '../lists/lists_screen.dart';
 import 'mobile_bottom_nav.dart';
 import 'mobile_top_bar.dart';
+import '../search/recent_searches.dart';
 import 'phone_search.dart';
 import 'pending_announcement.dart';
 import 'shell_desktop_header.dart';
@@ -314,7 +314,6 @@ class _MainShellState extends State<MainShell> {
   /// La recherche du téléphone : le rond de la barre d'onglets, sa bulle, sa
   /// page de résultats (ADR-0142).
   late final PhoneSearchSession _phoneSearch = PhoneSearchSession(
-    provider: context.read<SearchProvider>(),
     navigatorKey: shellNavigatorKey,
   )..addListener(_onPhoneSearchChanged);
 
@@ -447,14 +446,6 @@ class _MainShellState extends State<MainShell> {
         child: navigator,
       ),
     );
-  }
-
-  /// `"<serveur>:<profil>"`, la clé des recherches récentes ; null avant la
-  /// connexion.
-  static String? _profileKey(AuthProvider auth) {
-    final server = auth.activeServer?.id;
-    final user = auth.currentUser?.id;
-    return server == null || user == null ? null : '$server:$user';
   }
 
   /// Les onglets dont la liste a quitté son haut : la barre du haut mobile y
@@ -596,7 +587,7 @@ class _MainShellState extends State<MainShell> {
                   canDownload: downloads.isSupported,
                   canUseLists: canUseLists,
                   search: _phoneSearch
-                    ..recentsFor(_profileKey(authProvider)),
+                    ..recentsFor(RecentSearches.watchProfileKey(context)),
                   minimized: minimized,
                   onExpand: () => _barMinimized.value = false,
                 ),

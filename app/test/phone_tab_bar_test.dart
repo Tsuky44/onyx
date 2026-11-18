@@ -4,7 +4,8 @@ import 'package:onyx/models/models.dart';
 import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/library_provider.dart';
 import 'package:onyx/providers/search_provider.dart';
-import 'package:onyx/screens/library/search_results_screen.dart';
+import 'package:onyx/screens/search/phone/phone_search_row.dart';
+import 'package:onyx/screens/search/phone/phone_search_screen.dart';
 import 'package:onyx/screens/shell/mobile_bottom_nav.dart';
 import 'package:onyx/screens/shell/phone_more_menu.dart';
 import 'package:onyx/screens/shell/phone_search.dart';
@@ -60,7 +61,6 @@ Future<_Harness> _pump(
   final search = SearchProvider();
   final navigatorKey = GlobalKey<NavigatorState>();
   final session = PhoneSearchSession(
-    provider: search,
     navigatorKey: navigatorKey,
   );
   addTearDown(session.dispose);
@@ -158,12 +158,12 @@ void main() {
 
     // Le champ a la main : le clavier monte.
     expect(h.session.focusNode.hasFocus, isTrue);
-    expect(find.byType(SearchResultsScreen), findsOneWidget);
+    expect(find.byType(PhoneSearchScreen), findsOneWidget);
 
     // La page suit la frappe.
     await tester.enterText(field, 'dune');
     await tester.pumpAndSettle();
-    expect(find.text('Résultats pour « dune »'), findsOneWidget);
+    expect(find.widgetWithText(PhoneSearchRow, 'Dune'), findsOneWidget);
   });
 
   testWidgets('la croix referme : page partie, frappe effacée, rond revenu',
@@ -179,7 +179,7 @@ void main() {
 
     expect(h.session.isOpen, isFalse);
     expect(h.session.controller.text, isEmpty);
-    expect(find.byType(SearchResultsScreen), findsNothing);
+    expect(find.byType(PhoneSearchScreen), findsNothing);
     expect(_round, findsOneWidget);
     expect(find.text('Demandes').hitTestable(), findsOneWidget);
   });
@@ -294,7 +294,7 @@ void main() {
     await tester.tap(_round);
     await tester.pumpAndSettle();
     expect(find.text('Fiche'), findsNothing);
-    expect(find.byType(SearchResultsScreen), findsOneWidget);
+    expect(find.byType(PhoneSearchScreen), findsOneWidget);
     expect(h.session.isExpanded, isTrue);
     expect(h.session.focusNode.hasFocus, isTrue);
   });

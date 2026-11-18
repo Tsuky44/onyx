@@ -40,6 +40,9 @@ class MediaDetailsCache {
     return entry != null && DateTime.now().difference(entry.storedAt) < ttl;
   }
 
+  /// True while a [load] for [mediaId] is on the network.
+  static bool isLoading(int mediaId) => _pending.containsKey(mediaId);
+
   /// Files a payload obtained elsewhere.
   ///
   /// Indexed under both ids because the server resolves a duplicate show or
