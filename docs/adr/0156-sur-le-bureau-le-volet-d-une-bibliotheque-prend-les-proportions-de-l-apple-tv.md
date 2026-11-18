@@ -1,15 +1,19 @@
-# ADR-0156 — Sur le bureau, le volet d'une bibliothèque prend les proportions de l'Apple TV
+# ADR-0156 — Sur le bureau, le volet d'une bibliothèque et de la recherche prend les proportions de l'Apple TV
 
 - **Statut :** accepté, à la demande de l'utilisateur (2026-11-18, captures du bureau et de
   l'Apple TV à l'appui : « la c'est tout petit, reprends les proportions comme sur Apple TV »).
+  Étendu le même jour à la recherche du bureau (« fais pareil pour le volet de la recherche »).
   Vérifié en test et sur un rendu à 1920 × 1080, **pas encore vu dans l'app lancée**.
 - **Date :** 2026-11-18
-- **Portée :** `screens/library/widgets/library_desktop_spotlight.dart` (`scaleFor`,
-  `tileScaleFor`, `_ScaledPane`), `screens/library/library_screen.dart`,
+- **Portée :** `screens/library/widgets/spotlight_scale.dart` (nouveau : `SpotlightScale`,
+  `factorFor`, `tileScaleFor`), `screens/library/widgets/library_desktop_spotlight.dart`,
+  `screens/library/library_screen.dart`, `screens/search/desktop/desktop_search_spotlight.dart`,
+  `screens/search/desktop/desktop_search_sheet.dart`,
   `utils/poster_grid_zoom.dart` (`PosterGridZoom.split`, `splitPresets`),
   `widgets/global/poster_grid_zoom_region.dart`, `widgets/global/poster_grid_display_menu.dart`,
   `utils/responsive.dart` (`posterGridDelegate`, `tileScale`).
-- **Amende** l'[ADR-0140](0140-sur-le-bureau-les-bibliotheques-ont-le-volet-de-la-recherche.md).
+- **Amende** l'[ADR-0140](0140-sur-le-bureau-les-bibliotheques-ont-le-volet-de-la-recherche.md) et
+  l'[ADR-0139](0139-sur-le-bureau-la-recherche-s-ouvre-dans-l-en-tete-sous-un-voile-ctrl-k.md).
 
 ## Contexte
 
@@ -21,7 +25,8 @@ Affichage, fait pour la grille pleine largeur, s'appliquait aussi à la grille r
 
 ## Décision
 
-1. **Le volet se met en page comme au téléviseur, puis grandit avec la fenêtre** :
+1. **Le volet se met en page comme au téléviseur, puis grandit avec la fenêtre**, dans une
+   bibliothèque comme dans la recherche (`SpotlightScale`, une seule règle pour les deux) :
    ×(largeur / 1280), entre 1 et 2. Le principe de `TvUiScale`, pour le volet seul : la page vue
    par le volet garde la largeur de l'écran divisée d'autant (marges et points de rupture d'un
    téléviseur), et la densité suit, pour que l'image de fond se décode à sa taille affichée.
@@ -34,7 +39,7 @@ Affichage, fait pour la grille pleine largeur, s'appliquait aussi à la grille r
 
 - À 1100 px, au seuil du volet, rien ne grandit : le volet garde sa taille d'avant, et la grille
   perd une colonne (trois au lieu de quatre).
-- La recherche du bureau (ADR-0139) garde son volet à taille réelle : à aligner si l'utilisateur le
-  demande.
+- La grille de la recherche, à côté de son volet, prend elle aussi les modes de la vue partagée.
 - Épinglé par `test/library_desktop_spotlight_test.dart` (les proportions à 1920 px, le choix de
-  la grille pleine qui ne s'applique pas à côté du volet).
+  la grille pleine qui ne s'applique pas à côté du volet) et `test/desktop_search_test.dart` (les
+  proportions à 1920 px).

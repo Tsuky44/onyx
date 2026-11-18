@@ -18,6 +18,7 @@ import '../../tv/tv_mode.dart';
 import 'widgets/catalog_header.dart';
 import 'widgets/catalog_sort_capsule.dart';
 import 'widgets/library_desktop_spotlight.dart';
+import 'widgets/spotlight_scale.dart';
 import 'widgets/library_tv_view.dart';
 import '../../widgets/global/sliver_scroll_end.dart';
 
@@ -182,7 +183,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   // À côté du volet, les affiches du mur d'un téléviseur
                   // (ADR-0156).
                   tileScale: spotlight
-                      ? LibraryDesktopSpotlight.tileScaleFor(box.maxWidth)
+                      ? SpotlightScale.tileScaleFor(box.maxWidth)
                       : 1);
               if (!spotlight) return grid;
               return LibraryDesktopSpotlight(

@@ -32,6 +32,7 @@ import 'desktop_search_chips.dart';
 import 'desktop_search_controller.dart';
 import '../search_layout.dart';
 import 'desktop_search_spotlight.dart';
+import '../../library/widgets/spotlight_scale.dart';
 import '../recent_searches.dart';
 
 /// Les résultats de la recherche du bureau, sous le voile de
@@ -266,17 +267,24 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
                     filter,
                   );
             widget.controller.show(layout);
-            final results = _results(context, query, layout, filter);
             // À gauche, le titre sélectionné, comme le volet d'une
             // bibliothèque sur téléviseur ; les affiches commencent après
             // lui, par-dessus son image qui déborde et s'efface. Toujours la
             // même pile, volet ou non : la grille garde son défilement quand
             // la fenêtre passe le seuil.
-            final pane = DesktopSearchSpotlight.paneWidth(context);
             return LayoutBuilder(
               builder: (context, box) {
                 final spotlight = layout.hits.isNotEmpty &&
                     box.maxWidth >= DesktopSearchSheet.spotlightMinWidth;
+                // Aux proportions de l'Apple TV, et les affiches d'à côté
+                // celles de son mur (ADR-0156).
+                final scale = SpotlightScale.factorFor(box.maxWidth);
+                final pane = DesktopSearchSpotlight.paneWidth(context) * scale;
+                final results = _results(context, query, layout, filter,
+                    spotlight: spotlight,
+                    tileScale: spotlight
+                        ? SpotlightScale.tileScaleFor(box.maxWidth)
+                        : 1);
                 return Stack(
                   children: [
                     if (spotlight)
@@ -285,10 +293,11 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
                         left: 0,
                         top: 0,
                         bottom: 0,
-                        width: pane + DesktopSearchSpotlight.overhang,
+                        width: pane + DesktopSearchSpotlight.overhang * scale,
                         child: IgnorePointer(
                           child: DesktopSearchSpotlight(
                             controller: widget.controller,
+                            scale: scale,
                           ),
                         ),
                       ),
@@ -314,8 +323,10 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
     BuildContext context,
     String query,
     SearchLayout layout,
-    SearchFilter filter,
-  ) {
+    SearchFilter filter, {
+    required bool spotlight,
+    double tileScale = 1,
+  }) {
     if (query.isNotEmpty && layout.total == 0) {
       return EmptyStateView(
         icon: AppIcons.search,
@@ -333,6 +344,7 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
       playKey: (query.isEmpty, filter),
       maxAnimated: 12,
       child: PosterGridZoomRegion(
+        split: spotlight,
         child: CustomScrollView(
           controller: _scroll,
           scrollCacheExtent: AppLayout.imageCacheExtent(context),
@@ -363,6 +375,7 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
             if (library.isNotEmpty)
               _grid(
                 padding: padding,
+                tileScale: tileScale,
                 start: 0,
                 count: library.length,
                 builder: (index, highlight) {
@@ -392,6 +405,7 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
               ),
               _grid(
                 padding: padding,
+                tileScale: tileScale,
                 start: library.length,
                 count: unavailable.length,
                 builder: (index, highlight) => RequestMediaCard(
@@ -417,6 +431,7 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
   /// [start] + [count] - 1 de la sélection.
   Widget _grid({
     required double padding,
+    required double tileScale,
     required int start,
     required int count,
     required Widget Function(int index, PosterHighlight highlight) builder,
@@ -430,6 +445,7 @@ class _DesktopSearchSheetState extends State<DesktopSearchSheet> {
             constraints.crossAxisExtent,
             compact: false,
             withMeta: false,
+            tileScale: tileScale,
           );
           final columns = grid is SliverGridDelegateWithFixedCrossAxisCount
               ? grid.crossAxisCount
