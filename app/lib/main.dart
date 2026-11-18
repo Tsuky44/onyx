@@ -68,6 +68,7 @@ import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 import 'theme/lite_mode.dart';
 import 'desktop_window.dart';
+import 'widgets/global/lite_mode_suggestion.dart';
 import 'widgets/global/middle_click_autoscroll.dart';
 import 'widgets/global/resume_preview/hover_preview_preference.dart';
 import 'l10n/app_language.dart';
@@ -258,6 +259,8 @@ void main() async {
 
   await Future.wait(independent);
   AppImageCache.configure(lite: LiteMode.isLite);
+  // Des saccades mesurées proposent le mode léger, sans l'imposer (ADR-0141).
+  LiteModeSuggestion.attach(rootNavigatorKey);
   // Sans attendre : il ne sert qu'à poser sans fondu les images déjà sur
   // disque, et la première image n'a pas à patienter derrière lui (ADR-0088).
   unawaited(AppImageCache.loadDiskIndex());
