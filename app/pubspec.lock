@@ -90,7 +90,7 @@ packages:
     source: hosted
     version: "4.0.3"
   cached_network_image_platform_interface:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: cached_network_image_platform_interface
       sha256: a6de45d11286a05e8a6df3e8d158f51c2833b86b83521d21d3375bb3fb20fc5f

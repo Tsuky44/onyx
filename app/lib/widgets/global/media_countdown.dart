@@ -61,7 +61,8 @@ class CountdownModel {
   /// Formate la légende d'un épisode (« Saison X · Épisode Y »).
   static String episodeCaption(EpisodeAirRef ep) {
     if (ep.seasonNumber > 0 && ep.episodeNumber > 0) {
-      return tr('Saison {0} · Épisode {1}', [ep.seasonNumber, ep.episodeNumber]);
+      return tr(
+          'Saison {0} · Épisode {1}', [ep.seasonNumber, ep.episodeNumber]);
     }
     if (ep.episodeNumber > 0) {
       return tr('Épisode {0}', [ep.episodeNumber]);
@@ -310,22 +311,24 @@ class _MediaCountdownState extends State<MediaCountdown>
         clipBehavior: Clip.none,
         children: [
           if (!reduced)
-            AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Container(
-                    width: dotSize,
-                    height: dotSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          dotColor.withValues(alpha: _opacityAnimation.value),
+            RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Container(
+                      width: dotSize,
+                      height: dotSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            dotColor.withValues(alpha: _opacityAnimation.value),
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           Container(
             width: dotSize,
@@ -377,9 +380,8 @@ class _MediaCountdownState extends State<MediaCountdown>
       line2 = dayMonth;
     } else {
       big = tr('J-{0}', [left]);
-      line1 = left == 1
-          ? tr('demain')
-          : tr(_frenchWeekdays[target.weekday - 1]);
+      line1 =
+          left == 1 ? tr('demain') : tr(_frenchWeekdays[target.weekday - 1]);
       line2 = dayMonth;
     }
 

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart'
+    show ImageRenderMethodForWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -77,6 +79,15 @@ class AppNetworkImage extends StatelessWidget {
   /// handful of shared buckets instead.
   static const int _decodeStep = 128;
 
+  /// Sur le web, `HtmlImage` (le défaut du paquet) confie le décodage à
+  /// `createImageCodecFromUrl`, qui ignore `memCacheWidth` : chaque image est
+  /// décodée à sa taille source. `HttpGet` télécharge les octets puis les passe
+  /// au décodeur de Flutter, qui respecte la largeur demandée. Le cache HTTP du
+  /// navigateur sert toujours de magasin (aucun cache disque côté web). Voir
+  /// ADR-0151.
+  static const ImageRenderMethodForWeb webRenderMethod =
+      ImageRenderMethodForWeb.HttpGet;
+
   /// The provider [AppNetworkImage] ends up drawing for [url] at
   /// [memCacheWidth] — the same one `CachedNetworkImage` builds internally, so
   /// resolving it ahead of time fills the exact memory-cache entry the widget
@@ -88,6 +99,7 @@ class AppNetworkImage extends StatelessWidget {
       CachedNetworkImageProvider(
         url.trim(),
         cacheManager: AppImageCache.imageCacheManager,
+        imageRenderMethodForWeb: webRenderMethod,
       ),
     );
   }
@@ -215,6 +227,7 @@ class AppNetworkImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: source.url,
       cacheManager: AppImageCache.imageCacheManager,
+      imageRenderMethodForWeb: webRenderMethod,
       width: width,
       height: height,
       fit: fit,
