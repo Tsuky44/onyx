@@ -1,7 +1,7 @@
 # Graph Report - onyx  (2026-11-18)
 
 ## Corpus Check
-- 2227 files · ~5,013,430 words
+- 2251 files · ~1,968,437 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 168 file(s) not represented in the graph (top: (none) 33, .csv 24, .xml 20)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `59f8d2f1`
+- Built from commit: `ece90693`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -887,8 +887,8 @@
   docs/traduction-anglais.md → packages/onyx_background_downloads/android/src/main/kotlin/com/projectplayer/onyx_background_downloads/DownloadKeepAliveService.kt
 - `Step 1: Load current state` --references--> `shape()`  [INFERRED]
   .agents/skills/impeccable/reference/init.md → scripts/discord/inbox.mjs
-- `5.11 L'app réelle en `dpad` : lire les traces `[DPAD]` (phase 6)` --references--> `x()`  [INFERRED]
-  docs/refonte-navigation-dpad-phase0.md → .agents/skills/impeccable/scripts/modern-screenshot.umd.js
+- `À vérifier sur l'appareil` --references--> `SystemSearchResultsController`  [INFERRED]
+  docs/adr/0129-sur-l-apple-tv-la-recherche-est-l-ecran-du-systeme-et-montre-les-titres-absents.md → app/tvos/Runner/SystemSearchScreen.swift
 
 ## Import Cycles
 - None detected.
@@ -3879,7 +3879,7 @@ Cohesion: 0.50
 Nodes (3): Ce que MediaHub lit chez Onyx avec la clé (ADR-0102), Contrat Onyx ↔ MediaHub (API d'intégration v1), Se connecter à MediaHub avec son compte Onyx (ADR-0090)
 
 ## Knowledge Gaps
-- **13704 isolated node(s):** `UserNotifications`, `useDesktopCaptionBar`, `useHiddenNativeTitleBar`, `macOSWindowControlsTopInset`, `tvShellHeaderTopGap` (+13699 more)
+- **13704 isolated node(s):** `top`, `image`, `shift`, `fade`, `build` (+13699 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 19953 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **184 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -3887,16 +3887,16 @@ Nodes (3): Ce que MediaHub lit chez Onyx avec la clé (ADR-0102), Contrat Onyx �
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Handle `generate`` connect `Handle `generate`` to `DesignSystemGenerator`, `SpaceArrivalHop`, `live.md`?**
-  _High betweenness centrality (0.102) - this node is a cross-community bridge._
-- **What connects `UserNotifications`, `useDesktopCaptionBar`, `useHiddenNativeTitleBar` to the rest of the system?**
+  _High betweenness centrality (0.119) - this node is a cross-community bridge._
+- **What connects `top`, `image`, `shift` to the rest of the system?**
   _13704 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `../../../utils/app_platform.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.012344976675389691 - nodes in this community are weakly interconnected._
 - **Why does `2. Wrap the element` connect `Handle `generate`` to `hook.mjs`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+  _High betweenness centrality (0.112) - this node is a cross-community bridge._
 - **Should `seedRequestUser` be split into smaller, more focused modules?**
   _Cohesion score 0.028929940745904496 - nodes in this community are weakly interconnected._
 - **Why does `done()` connect `hook.mjs` to `Handle `generate``, `hook-before-edit.mjs`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+  _High betweenness centrality (0.112) - this node is a cross-community bridge._
 - **Should `server_choice_card.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.019367991845056064 - nodes in this community are weakly interconnected._
