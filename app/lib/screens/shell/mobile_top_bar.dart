@@ -9,20 +9,18 @@ import '../../theme/app_motion.dart';
 import '../../widgets/global/account_menu.dart';
 import '../../widgets/global/app_download_button.dart';
 import '../../widgets/global/glass_chrome.dart';
-import '../../widgets/global/liquid_glass.dart';
 import '../../widgets/global/onyx_mark.dart';
 import '../../widgets/global/onyx_wordmark.dart';
 
 /// La barre du haut du téléphone, la même sur chaque onglet (ADR-0144) : la
-/// marque dans une pilule de verre liquide (elle ramène à l'accueil), le
-/// compte dans un rond du même verre, la matière de la capsule du bas.
-/// La recherche est en bas, dans le rond de la barre d'onglets (ADR-0142).
+/// marque (elle ramène à l'accueil) et le compte, posés sans verre sur le noir
+/// de la page, comme l'app Apple TV. La recherche est en bas, dans le rond de
+/// la barre d'onglets (ADR-0142).
 ///
-/// Pas de bandeau : l'affiche de l'accueil monte sous l'heure et sous la
-/// barre, et les deux pièces de verre flottent dessus. Quand la page a quitté
-/// son haut ([scrolled]), rien ne s'allume non plus : ce qui défile se floute
-/// et s'assombrit en fondu sous elles ([ScrollEdgeBlur]), comme dans les apps
-/// d'iOS 26.
+/// Pas de bandeau : sur l'accueil, l'affiche se fond dans ce noir juste sous
+/// eux. Quand la page a quitté son haut ([scrolled]), rien ne s'allume non
+/// plus : ce qui défile se floute et s'assombrit en fondu sous eux
+/// ([ScrollEdgeBlur]), comme dans les apps d'iOS 26.
 class MobileTopBar extends StatelessWidget {
   final bool scrolled;
   final AuthProvider authProvider;
@@ -37,7 +35,7 @@ class MobileTopBar extends StatelessWidget {
     required this.onLogoTap,
   });
 
-  /// La rangée des pièces de verre, sous la barre d'état.
+  /// La rangée de la marque et du compte, sous la barre d'état.
   static const double rowHeight = 56;
 
   /// Jusqu'où le flou descend sous la rangée avant de s'éteindre.
@@ -88,7 +86,7 @@ class MobileTopBar extends StatelessWidget {
                     ),
                   const AppDownloadButton(),
                   const SizedBox(width: 4),
-                  AccountMenu(authProvider: authProvider, liquid: true),
+                  AccountMenu(authProvider: authProvider, plain: true),
                 ],
               ),
             ),
@@ -99,8 +97,10 @@ class MobileTopBar extends StatelessWidget {
   }
 }
 
-/// La marque dans une pilule de verre liquide : la lentille et le nom
-/// dessiné. La toucher ramène à l'accueil.
+/// La marque : la lentille et le nom dessiné, en blanc, avec une ombre douce
+/// qui les garde lisibles sur une affiche claire. Sans verre : posée sur le
+/// noir, une pilule transparente laissait voir l'affiche à travers le logo.
+/// La toucher ramène à l'accueil.
 class BrandPill extends StatelessWidget {
   const BrandPill({super.key, required this.onTap});
 
@@ -115,20 +115,27 @@ class BrandPill extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: const SizedBox(
-          height: AccountMenu.liquidSize,
-          child: LiquidGlass(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(9, 0, 16, 0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  OnyxMark(size: 26),
-                  SizedBox(width: 8),
-                  OnyxWordmark(height: 12, shadow: true),
-                ],
+        child: SizedBox(
+          height: AccountMenu.plainTarget,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: const OnyxMark(size: 26),
               ),
-            ),
+              const SizedBox(width: 8),
+              const OnyxWordmark(height: 12, shadow: true),
+            ],
           ),
         ),
       ),

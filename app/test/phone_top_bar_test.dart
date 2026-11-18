@@ -5,9 +5,8 @@ import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/home_provider.dart';
 import 'package:onyx/screens/shell/mobile_top_bar.dart';
 import 'package:onyx/services/api_client.dart';
-import 'package:onyx/theme/lite_mode.dart';
 import 'package:onyx/widgets/global/account_menu.dart';
-import 'package:onyx/widgets/global/backdrop_extension.dart';
+import 'package:onyx/widgets/global/hero_top_fade.dart';
 import 'package:onyx/widgets/global/hero_banner.dart';
 import 'package:onyx/widgets/global/liquid_glass.dart';
 import 'package:onyx/widgets/global/onyx_mark.dart';
@@ -15,11 +14,10 @@ import 'package:onyx/widgets/global/onyx_wordmark.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// La barre du haut du téléphone (ADR-0144) : la marque dans une pilule de
-/// verre liquide et le compte dans un rond du même verre, sans bandeau ; au
-/// défilement, le haut de la page se floute en fondu sous elles. L'affiche
-/// de l'accueil garde son cadrage sous la barre et se prolonge au-dessus en
-/// miroir flou.
+/// La barre du haut du téléphone (ADR-0144) : la marque et le compte posés
+/// sans verre, sans bandeau ; au défilement, le haut de la page se floute en
+/// fondu sous eux. L'affiche de l'accueil garde son cadrage sous la barre et
+/// se fond dans le noir par le haut.
 class _FakeApiClient extends ApiClient {
   @override
   String get baseUrl => 'http://localhost:8080';
@@ -81,8 +79,8 @@ double _edgeOpacity(WidgetTester tester) => tester
 
 void main() {
   testWidgets(
-      'au repos, la marque dans une pilule de verre, le compte dans un rond, '
-      'et pas de bandeau', (tester) async {
+      'au repos, la marque et le compte posés sans verre, et pas de bandeau',
+      (tester) async {
     var home = 0;
     await _pump(tester, scrolled: false, onLogoTap: () => home++);
 
@@ -91,20 +89,18 @@ void main() {
         find.descendant(of: pill, matching: find.byType(OnyxMark)), findsOne);
     expect(find.descendant(of: pill, matching: find.byType(OnyxWordmark)),
         findsOne);
-    expect(find.descendant(of: pill, matching: find.byType(LiquidGlass)),
-        findsOne);
-    final account = find.byType(AccountMenu);
-    expect(find.descendant(of: account, matching: find.byType(LiquidGlass)),
-        findsOne);
+    expect(find.byType(LiquidGlass), findsNothing,
+        reason: 'un verre transparent laissait voir l’affiche à travers');
+    final disc = find.byKey(const ValueKey('account-plain-disc'));
+    expect(tester.getSize(disc).width, AccountMenu.plainSize);
 
-    // Les deux pièces de verre ont la même hauteur, sous la barre d'état.
+    // Des cibles de 44 points, sous la barre d'état.
     final pillRect = tester.getRect(pill);
-    final accountRect = tester.getRect(
-        find.descendant(of: account, matching: find.byType(LiquidGlass)));
-    expect(pillRect.height, AccountMenu.liquidSize);
-    expect(accountRect.height, AccountMenu.liquidSize);
+    final account = tester.getRect(find.byType(AccountMenu));
+    expect(pillRect.height, AccountMenu.plainTarget);
+    expect(account.height, AccountMenu.plainTarget);
     expect(pillRect.top, greaterThanOrEqualTo(54));
-    expect(accountRect.right, closeTo(_phone.width - 16, 0.5));
+    expect(account.right, closeTo(_phone.width - 16, 0.5));
 
     expect(_edgeOpacity(tester), 0, reason: 'pas de bandeau en haut de page');
 
@@ -152,21 +148,17 @@ void main() {
     expect(tester.getSize(find.byType(HeroBanner)).height, natural! + 110);
   });
 
-  Future<void> pumpExtension(WidgetTester tester,
-      {required double extendTop, bool lite = false}) {
+  Future<void> pumpFade(WidgetTester tester, {required double top}) {
     return tester.pumpWidget(MaterialApp(
-      home: LiteScope(
-        isLite: lite,
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: SizedBox(
-            width: 390,
-            height: 464 + extendTop,
-            child: BackdropExtension(
-              extendTop: extendTop,
-              image: () => const ColoredBox(
-                  key: ValueKey('image'), color: Color(0xFF884422)),
-            ),
+      home: Align(
+        alignment: Alignment.topCenter,
+        child: SizedBox(
+          width: 390,
+          height: 464 + top,
+          child: HeroTopFade(
+            top: top,
+            image: const ColoredBox(
+                key: ValueKey('image'), color: Color(0xFF884422)),
           ),
         ),
       ),
@@ -174,35 +166,23 @@ void main() {
   }
 
   testWidgets(
-      'l’image nette garde son cadrage sous la barre, prolongée au-dessus '
-      'en miroir flou', (tester) async {
-    await pumpExtension(tester, extendTop: 110);
-    final sharp = find.descendant(
-        of: find.byType(ShaderMask),
-        matching: find.byKey(const ValueKey('image')));
-    expect(tester.getRect(sharp).top, 110);
-    expect(tester.getRect(sharp).height, 464);
-
-    final extension = find.byKey(const ValueKey('backdrop-extension'));
-    expect(tester.getRect(extension).height, 110 + BackdropExtension.blend);
-    expect(find.descendant(of: extension, matching: find.byType(ImageFiltered)),
-        findsOne);
-    // Le miroir au-dessus de la ligne, l'image elle-même dessous.
+      'l’image garde sa taille, un peu plus bas, et sort du noir par le haut',
+      (tester) async {
+    await pumpFade(tester, top: 110);
+    final image = find.byKey(const ValueKey('image'));
+    expect(tester.getRect(image).top, 110 + HeroTopFade.shift);
+    expect(tester.getRect(image).height, 464,
+        reason: 'la même taille, donc le même cadrage');
     expect(
-        find.descendant(
-            of: extension, matching: find.byKey(const ValueKey('image'))),
-        findsNWidgets(2));
-  });
-
-  testWidgets('sans flou, pas de miroir : un voile sombre', (tester) async {
-    await pumpExtension(tester, extendTop: 110, lite: true);
-    expect(find.byKey(const ValueKey('backdrop-extension')), findsNothing);
+        find.ancestor(of: image, matching: find.byType(ShaderMask)), findsOne);
+    // Ni miroir ni flou : un flou sur l'arête brouillait les visages.
+    expect(image, findsOne);
     expect(find.byType(ImageFiltered), findsNothing);
-    expect(find.byKey(const ValueKey('image')), findsOne);
+    expect(find.byType(BackdropFilter), findsNothing);
   });
 
-  testWidgets('sans prolongement, l’image seule', (tester) async {
-    await pumpExtension(tester, extendTop: 0);
+  testWidgets('sans barre au-dessus, l’image seule', (tester) async {
+    await pumpFade(tester, top: 0);
     expect(find.byType(ShaderMask), findsNothing);
     expect(tester.getRect(find.byKey(const ValueKey('image'))).top, 0);
   });

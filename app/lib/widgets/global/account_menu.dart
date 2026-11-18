@@ -14,7 +14,6 @@ import 'account_menu_route.dart';
 import 'glass_chrome.dart';
 import 'interface_tour/tour_anchor.dart';
 import 'join_watch_party_dialog.dart';
-import 'liquid_glass.dart';
 import 'profile_disc.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -28,17 +27,20 @@ import '../../l10n/tr.dart';
 class AccountMenu extends StatefulWidget {
   final AuthProvider authProvider;
 
-  /// Le rond de verre liquide de la barre du haut du téléphone (ADR-0144),
-  /// de la taille de la pilule de la marque à côté de lui.
-  final bool liquid;
+  /// Le compte de la barre du haut du téléphone (ADR-0144) : un disque
+  /// plein, sans verre, posé sur le noir où l'affiche se fond.
+  final bool plain;
 
-  /// Le diamètre du rond [liquid] : les 44 points de cible qu'Apple demande.
-  static const double liquidSize = 44;
+  /// La cible du disque [plain] : les 44 points qu'Apple demande.
+  static const double plainTarget = 44;
+
+  /// Le diamètre du disque [plain].
+  static const double plainSize = 36;
 
   const AccountMenu({
     super.key,
     required this.authProvider,
-    this.liquid = false,
+    this.plain = false,
   });
 
   @override
@@ -137,8 +139,8 @@ class _AccountMenuState extends State<AccountMenu> {
       anchor: TourAnchor.account,
       child: Tooltip(
         message: tr('Menu'),
-        child: widget.liquid
-            ? _buildLiquid()
+        child: widget.plain
+            ? _buildPlain()
             : GlassIconButton(
                 key: _anchorKey,
                 size: 34,
@@ -149,18 +151,33 @@ class _AccountMenuState extends State<AccountMenu> {
     );
   }
 
-  Widget _buildLiquid() {
+  Widget _buildPlain() {
     return SizedBox.square(
       key: _anchorKey,
-      dimension: AccountMenu.liquidSize,
-      child: LiquidGlass(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: _open,
-            child: Center(
-              child: _avatarOrInitial(AccountMenu.liquidSize - 6),
+      dimension: AccountMenu.plainTarget,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: _open,
+          child: Center(
+            child: Container(
+              key: const ValueKey('account-plain-disc'),
+              width: AccountMenu.plainSize,
+              height: AccountMenu.plainSize,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.border,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: _avatarOrInitial(AccountMenu.plainSize),
             ),
           ),
         ),

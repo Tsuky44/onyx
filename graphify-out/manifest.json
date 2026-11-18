@@ -2304,15 +2304,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/shell/mobile_bottom_nav.dart": {
-    "mtime": 1795000342.5384114,
-    "seen": 1795000657.8945732,
-    "ast_hash": "697bfbf21b6338c1e2e8dfb3336b88d4",
+    "mtime": 1795008277.580112,
+    "seen": 1795009527.8542833,
+    "ast_hash": "1a0262d2d175c7206e1e9b9552c4d3cb",
     "semantic_hash": ""
   },
   "app/lib/screens/shell/mobile_top_bar.dart": {
-    "mtime": 1795000509.9664721,
-    "seen": 1795000657.8945749,
-    "ast_hash": "64922083badb8f386aba36fc79ab0edc",
+    "mtime": 1795008369.319149,
+    "seen": 1795009527.854285,
+    "ast_hash": "d152f744c3bf88515cf74035f5dfcdf3",
     "semantic_hash": ""
   },
   "app/lib/screens/shell/pending_announcement.dart": {
@@ -3264,9 +3264,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/account_menu.dart": {
-    "mtime": 1795000390.3882282,
-    "seen": 1795000657.8948207,
-    "ast_hash": "a42915c64ad96b9898aef369533827c6",
+    "mtime": 1795008369.316656,
+    "seen": 1795009527.8545318,
+    "ast_hash": "62989caf648671f1395d87e8f389ccc3",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/add_to_list_button.dart": {
@@ -3366,9 +3366,9 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/hero_banner.dart": {
-    "mtime": 1795003912.364373,
-    "seen": 1795004295.1793113,
-    "ast_hash": "4edbd2a21d4cca4980e99a08a2f1ba8b",
+    "mtime": 1795008789.3115883,
+    "seen": 1795009527.8545682,
+    "ast_hash": "9987c786bb25e2a10ca54283d559b5d4",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/hero_carousel.dart": {
@@ -14268,9 +14268,9 @@
     "semantic_hash": ""
   },
   "app/test/phone_tab_bar_test.dart": {
-    "mtime": 1794999763.6098328,
-    "seen": 1795000107.9789796,
-    "ast_hash": "18382d2091d6ac9497047dc7ad2ff0de",
+    "mtime": 1795008313.0697734,
+    "seen": 1795009527.8548446,
+    "ast_hash": "3f2bbe47fa9d7794411c000c771ef72f",
     "semantic_hash": ""
   },
   "docs/adr/0142-la-barre-d-onglets-du-telephone-est-une-capsule-de-verre.md": {
@@ -14292,21 +14292,33 @@
     "semantic_hash": ""
   },
   "app/test/phone_top_bar_test.dart": {
-    "mtime": 1795003929.5496573,
-    "seen": 1795004295.1795874,
-    "ast_hash": "1f035763f3d6aa02693f93befed79c51",
+    "mtime": 1795009156.3248625,
+    "seen": 1795009527.854846,
+    "ast_hash": "02064936280c5673eddfda0637e8fbd1",
     "semantic_hash": ""
   },
   "docs/adr/0144-le-haut-du-telephone-flotte-en-verre-liquide-sur-l-affiche.md": {
-    "mtime": 1795003966.3565764,
-    "seen": 1795004295.1807878,
-    "ast_hash": "2d539ac529c6936f4345733a15f41550",
+    "mtime": 1795009179.0012949,
+    "seen": 1795009527.8560376,
+    "ast_hash": "1b7e5771cb166e92a25b7251dc33f2e5",
     "semantic_hash": ""
   },
-  "app/lib/widgets/global/backdrop_extension.dart": {
-    "mtime": 1795003912.4336567,
-    "seen": 1795004295.1792834,
-    "ast_hash": "d8920173aba20a301b4289e18e466ea5",
+  "app/lib/screens/shell/phone_more_menu.dart": {
+    "mtime": 1795008223.4697702,
+    "seen": 1795009527.8542883,
+    "ast_hash": "a64dfc28f2df69e147d210bf915120c9",
+    "semantic_hash": ""
+  },
+  "app/lib/widgets/global/hero_top_fade.dart": {
+    "mtime": 1795009167.517804,
+    "seen": 1795009527.8545702,
+    "ast_hash": "a842f80f514ae5d7a5c55c0a9201c4b3",
+    "semantic_hash": ""
+  },
+  "docs/adr/0145-listes-et-hors-ligne-derriere-l-onglet-plus.md": {
+    "mtime": 1795008476.7377791,
+    "seen": 1795009527.8560388,
+    "ast_hash": "2b95e3d57a4730b7d3013c96aadea8c1",
     "semantic_hash": ""
   }
 }

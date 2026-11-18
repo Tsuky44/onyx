@@ -1,13 +1,15 @@
 # ADR-0144 — Le haut du téléphone flotte en verre liquide sur l'affiche
 
-- **Statut :** accepté. Maquettes « Le haut de l'écran » choisies par l'utilisateur le 2026-11-18 :
+- **Statut :** accepté, **révisé deux fois le même jour** (voir les compléments : l'image garde son
+  cadrage, puis la C, sans verre). Maquettes « Le haut de l'écran » choisies par l'utilisateur le 2026-11-18 :
   « pour le haut normal je veux la C et ensuite au défilement je veux la A ca floute », et pour
   la capsule du bas « un poil plus transparente […] plus proche du liquid glass ». Rendu vérifié
   sur des images 390 × 844 en test, **pas encore vu sur un iPhone**.
 - **Date :** 2026-11-18
 - **Portée :** `screens/shell/mobile_top_bar.dart` (réécrit : `BrandPill`, `ScrollEdgeBlur`),
-  `widgets/global/liquid_glass.dart` et `backdrop_extension.dart` (nouveaux), `widgets/global/account_menu.dart` (le rond
-  `liquid`), `screens/shell/mobile_bottom_nav.dart` (la capsule prend `LiquidGlass`),
+  `widgets/global/liquid_glass.dart` et `hero_top_fade.dart` (nouveaux),
+  `widgets/global/account_menu.dart` (le disque `plain`), `screens/shell/mobile_bottom_nav.dart`
+  (la capsule prend `LiquidGlass`),
   `screens/home/home_screen.dart`, `widgets/global/hero_carousel.dart` et `hero_banner.dart`
   (`extendTop`) ; `GlassBarSurface` est retiré de `glass_chrome.dart`.
 - **Prolonge** l'[ADR-0142](0142-la-barre-d-onglets-du-telephone-est-une-capsule-de-verre.md)
@@ -28,7 +30,8 @@ une bande de verre.
 
 ## Décision
 
-1. **Au repos, la C.** Pas de bandeau. La marque (lentille et nom dessiné, `OnyxMark` +
+1. **Au repos, la C** (le verre est retiré du haut, voir le second complément). Pas de bandeau.
+   La marque (lentille et nom dessiné, `OnyxMark` +
    `OnyxWordmark`) dans une pilule de verre liquide, le compte dans un rond du même verre, tous
    deux de 44 points (la cible d'Apple), sous la barre d'état. La pilule ramène à l'accueil. Le
    nom revient sur le téléphone : il en était parti pour laisser la place au champ de recherche,
@@ -38,7 +41,8 @@ une bande de verre.
    barre d'état, la rangée, et 36 points sous elle. Flutter ne sait pas dégrader un flou : cinq
    bandes de flou de plus en plus léger (16 à 1,2), et par-dessus un voile vers la couleur de la
    page qui fond leurs marches. Sans flou (mode léger, webOS), le voile seul, plus dense.
-3. **L'affiche de l'accueil se prolonge sous la barre** sur téléphone : le carrousel commence en
+3. **L'affiche de l'accueil se prolonge sous la barre** sur téléphone (le miroir flou est remplacé
+   par un fondu dans le noir, voir le second complément) : le carrousel commence en
    haut de l'écran et le bandeau grandit de la hauteur de la barre (`extendTop`). Le titre, les
    boutons et la suite de la page restent où ils étaient. L'image nette garde **le cadrage
    qu'elle avait sous la barre** ; au-dessus, le haut de l'image en miroir, très flou et
@@ -85,6 +89,27 @@ la couleur de l'affiche, et rien de net ne se lit à travers leur verre.
 sombres), et un verre plus dense en haut qu'en bas (la même matière partout était le choix de
 l'utilisateur).
 
+## Second complément du 2026-11-18 : sans verre, l'affiche se fond dans le noir (la C)
+
+Le miroir flou de la release 157 a été trouvé « un peu bizarre, c'est plus le flou/transparent qui
+est bizarre ». Nouvelles maquettes, sur la vraie affiche cette fois (la capture de l'utilisateur) :
+A, l'affiche fondue dans le noir et un verre fumé ; B, la même sur la teinte de l'affiche ; C, sans
+verre du tout. Choix de l'utilisateur : « fait moi la C ».
+
+- **Plus de miroir flou** (`BackdropExtension` retiré) : l'image nette garde sa taille sous la
+  barre, donc son cadrage, et sort du noir de la page (`HeroTopFade`). À la demande de
+  l'utilisateur (« que l'image derrière soit un peu plus basse, triche un peu avec le flou/noir
+  pour qu'on voie pas, mais qu'on voie quand même les têtes »), puis « le fondu doit commencer
+  au niveau du front environ » : elle descend de 24 points (son bas, déjà fondu dans la page,
+  sort du bandeau) et sort du noir sur 40 points seulement, ce qui ne prend que le haut des
+  têtes. Un flou posé sur l'arête a été essayé puis retiré : il brouillait les visages. Le voile
+  sombre du haut du bandeau ne se pose plus sous la barre : il cachait les têtes.
+- **Plus de verre en haut** : la lentille et le nom en blanc, avec une ombre douce
+  (`BrandPill`) ; le compte dans un disque plein de 36 points (`AccountMenu.plain`). Les cibles
+  restent de 44 points. Le point 1 plus haut (la pilule et le rond de verre liquide) est remplacé.
+- **Inchangés** : le fondu flou au défilement (point 2), et le verre liquide de la capsule du bas
+  (point 4), qui n'est plus partagé avec le haut.
+
 ## Conséquences
 
 - Cinq flous en haut de l'écran pendant le défilement, plus ceux du bas, et le flou du
@@ -95,7 +120,7 @@ l'utilisateur).
   du rond du compte.
 - Épinglé par `test/phone_top_bar_test.dart` (la pilule et le rond, la même hauteur, pas de
   bandeau au repos, le fondu au défilement et sa hauteur, le bandeau qui grandit, l'image nette à
-  son cadrage sous le prolongement, sans miroir quand rien ne floute) et
+  son cadrage qui sort du noir, sans miroir ni verre) et
   `test/phone_tab_bar_test.dart`.
 
 ## À vérifier sur l'appareil
@@ -106,4 +131,4 @@ l'utilisateur).
 | Le coût des flous du haut et du bas ensemble | Il dépend du GPU. |
 | Le verre plus clair sur une affiche très claire | Les noms des onglets doivent rester lisibles. |
 | L'heure sur le prolongement d'une affiche claire | Le voile suffit-il sur un ciel blanc ? |
-| La couture entre l'image nette et son prolongement | Elle se juge sur de vraies affiches. |
+| Le fondu au niveau du front | Il dépend du cadrage de chaque affiche. |

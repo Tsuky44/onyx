@@ -13,6 +13,7 @@ import '../../widgets/global/interface_tour/tour_anchor.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 import '../library/library_screen.dart';
+import 'phone_more_menu.dart';
 import 'phone_search.dart';
 import 'shell_tabs.dart';
 
@@ -26,6 +27,9 @@ import 'shell_tabs.dart';
 ///   l'onglet affiché et la recherche reste ; elle revient en entier au
 ///   premier geste vers le haut ;
 /// - **un onglet est touché**, la lentille glisse jusqu'à lui ;
+/// - **Listes et Hors ligne** se rangent derrière un onglet « Plus » quand
+///   les deux existent (ADR-0145) : il ouvre un petit menu de verre, et sur
+///   l'une des deux pages il passe directement à l'autre ;
 /// - **la recherche s'ouvre** ([search]), le rond s'étire sur toute la
 ///   largeur et devient le champ, pendant que les onglets s'effacent dessous ;
 ///   le clavier monte ensuite et le champ monte avec lui. Elle se referme à
@@ -126,6 +130,13 @@ class _MobileBottomNavState extends State<MobileBottomNav>
   )..addStatusListener(_onSearchStatus);
 
   bool _keyboardOpen = false;
+
+  /// Le menu de l'onglet « Plus » est ouvert : la lentille est sur lui.
+  bool _moreOpen = false;
+
+  /// La capsule et le rond de la recherche, que le voile du menu épargne.
+  final GlobalKey _capsuleKey = GlobalKey();
+  final GlobalKey _roundKey = GlobalKey();
 
   /// Le rond vient d'être touché : le champ prend la main quand la bulle a
   /// pris toute la largeur. Pas au retour d'une fiche vers les résultats : le
@@ -318,6 +329,7 @@ class _MobileBottomNavState extends State<MobileBottomNav>
                 scale: 1 - 0.1 * opening,
                 alignment: Alignment.centerLeft,
                 child: AnimatedContainer(
+                  key: _capsuleKey,
                   duration: AppMotion.move(context, AppMotion.emphasis),
                   curve: AppMotion.curve,
                   width: minimized ? round : capsuleWidth,
@@ -341,6 +353,7 @@ class _MobileBottomNavState extends State<MobileBottomNav>
             bottom: 0,
             width: lerpDouble(round, width, opening),
             child: TourTarget(
+              key: _roundKey,
               anchor: TourAnchor.search,
               child: _GlassPill(
                 child: opening < 0.5
@@ -459,24 +472,95 @@ class _MobileBottomNavState extends State<MobileBottomNav>
           onTap: () => widget.onTabSelected(ShellTabs.requests),
           anchor: TourAnchor.requests,
         ),
-      if (widget.canUseLists)
-        _Tab(
-          icon: AppIcons.lists,
-          selectedIcon: AppIcons.listsSelected,
-          label: tr('Listes'),
-          selected: selected == ShellTabs.lists,
-          onTap: () => widget.onTabSelected(ShellTabs.lists),
-        ),
-      if (widget.canDownload)
-        _Tab(
-          icon: AppIcons.offline,
-          selectedIcon: AppIcons.offlineSelected,
-          label: tr('Hors ligne'),
-          selected: selected == ShellTabs.downloads,
-          onTap: () => widget.onTabSelected(ShellTabs.downloads),
-          anchor: TourAnchor.downloads,
-        ),
+      ..._overflowTabs(),
     ];
+  }
+
+  /// Les pages qui se rangent derrière « Plus » quand il y en a au moins
+  /// deux (ADR-0145).
+  List<PhoneMoreItem> _overflow() => [
+        if (widget.canUseLists)
+          PhoneMoreItem(
+            tab: ShellTabs.lists,
+            icon: AppIcons.lists,
+            selectedIcon: AppIcons.listsSelected,
+            label: tr('Listes'),
+          ),
+        if (widget.canDownload)
+          PhoneMoreItem(
+            tab: ShellTabs.downloads,
+            icon: AppIcons.offline,
+            selectedIcon: AppIcons.offlineSelected,
+            label: tr('Hors ligne'),
+            anchor: TourAnchor.downloads,
+          ),
+      ];
+
+  /// Une seule page : un onglet à elle, comme avant. Deux ou plus : l'onglet
+  /// « Plus », qui prend l'icône et le nom de celle qui est affichée.
+  List<_Tab> _overflowTabs() {
+    final items = _overflow();
+    if (items.length < 2) {
+      return [
+        for (final item in items)
+          _Tab(
+            icon: item.icon,
+            selectedIcon: item.selectedIcon,
+            label: item.label,
+            selected: widget.selected == item.tab,
+            onTap: () => widget.onTabSelected(item.tab),
+            anchor: item.anchor,
+          ),
+      ];
+    }
+    PhoneMoreItem? current;
+    for (final item in items) {
+      if (item.tab == widget.selected) current = item;
+    }
+    TourAnchor? anchor;
+    for (final item in items) {
+      anchor ??= item.anchor;
+    }
+    return [
+      _Tab(
+        icon: current?.icon ?? AppIcons.more,
+        selectedIcon: current?.selectedIcon ?? AppIcons.more,
+        label: current?.label ?? tr('Plus'),
+        selected: current != null || _moreOpen,
+        onTap: () => _onMore(items, current),
+        anchor: anchor,
+      ),
+    ];
+  }
+
+  /// L'onglet « Plus » est touché. Sur l'une de ses deux pages, il passe à
+  /// l'autre : un menu pour un seul choix serait un geste de trop. Sinon, il
+  /// ouvre son menu.
+  Future<void> _onMore(List<PhoneMoreItem> items, PhoneMoreItem? current) async {
+    if (current != null && items.length == 2) {
+      widget.onTabSelected(items.firstWhere((i) => i.tab != current.tab).tab);
+      return;
+    }
+    final capsule = _rectOf(_capsuleKey);
+    if (capsule == null || _moreOpen) return;
+    final round = _rectOf(_roundKey);
+    setState(() => _moreOpen = true);
+    final picked = await showPhoneMoreMenu(
+      context,
+      capsule: capsule,
+      clear: [capsule, if (round != null) round],
+      items: items,
+      selected: widget.selected,
+    );
+    if (!mounted) return;
+    setState(() => _moreOpen = false);
+    if (picked != null) widget.onTabSelected(picked);
+  }
+
+  Rect? _rectOf(GlobalKey key) {
+    final box = key.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
   }
 }
 

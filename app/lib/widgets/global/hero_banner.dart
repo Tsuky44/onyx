@@ -11,7 +11,7 @@ import '../../utils/format.dart';
 import '../../utils/poster_url.dart';
 import '../../tv/tv_mode.dart';
 import 'app_network_image.dart';
-import 'backdrop_extension.dart';
+import 'hero_top_fade.dart';
 import 'media_logo_display.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
@@ -162,10 +162,10 @@ class _HeroBannerState extends State<HeroBanner> {
           const ColoredBox(color: AppColors.background),
           if (backgroundUrl != null)
             // Sous la barre du téléphone, l'image garde son cadrage et se
-            // prolonge en miroir flou au-dessus d'elle (ADR-0144).
-            BackdropExtension(
-              extendTop: widget.extendTop,
-              image: () => AppNetworkImage(
+            // fond dans le noir par le haut (ADR-0144).
+            HeroTopFade(
+              top: widget.extendTop,
+              image: AppNetworkImage(
                 url: backgroundUrl,
                 fit: BoxFit.cover,
                 alignment: Alignment.topCenter,
@@ -207,8 +207,11 @@ class _HeroBannerState extends State<HeroBanner> {
                   end: Alignment.bottomCenter,
                   colors: [
                     // Un voile en haut, pour que l'en-tête reste lisible sur un
-                    // fond clair.
-                    AppColors.background.withValues(alpha: 0.45),
+                    // fond clair. Pas sous la barre du téléphone : elle est
+                    // sur le noir, et le voile cachait les têtes que l'image
+                    // fait sortir du fondu (ADR-0144).
+                    AppColors.background
+                        .withValues(alpha: widget.extendTop > 0 ? 0 : 0.45),
                     AppColors.background.withValues(alpha: 0),
                     AppColors.background.withValues(alpha: 0.35),
                     AppColors.background,

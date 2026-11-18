@@ -6,6 +6,7 @@ import 'package:onyx/providers/library_provider.dart';
 import 'package:onyx/providers/search_provider.dart';
 import 'package:onyx/screens/library/search_results_screen.dart';
 import 'package:onyx/screens/shell/mobile_bottom_nav.dart';
+import 'package:onyx/screens/shell/phone_more_menu.dart';
 import 'package:onyx/screens/shell/phone_search.dart';
 import 'package:onyx/screens/shell/shell_tabs.dart';
 import 'package:onyx/services/api_client.dart';
@@ -49,6 +50,7 @@ Future<_Harness> _pump(
   bool minimized = false,
   VoidCallback? onExpand,
   ValueNotifier<String>? selected,
+  bool lists = false,
 }) async {
   tester.view.devicePixelRatio = 3;
   tester.view.physicalSize = _phone * 3;
@@ -95,6 +97,7 @@ Future<_Harness> _pump(
                     libraries: const [_films],
                     canRequestMedia: true,
                     canDownload: true,
+                    canUseLists: lists,
                     search: session,
                     minimized: minimized,
                     onExpand: onExpand,
@@ -327,7 +330,8 @@ void main() {
     expect(expanded, 1);
   });
 
-  testWidgets('la page qui défile vers le bas réduit la capsule, remonter la '
+  testWidgets(
+      'la page qui défile vers le bas réduit la capsule, remonter la '
       'rend', (tester) async {
     final minimized = ValueNotifier(false);
     addTearDown(minimized.dispose);
@@ -335,7 +339,9 @@ void main() {
       home: TabBarScrollWatch(
         minimized: minimized,
         child: ListView(
-          children: [for (var i = 0; i < 60; i++) SizedBox(height: 80, child: Text('$i'))],
+          children: [
+            for (var i = 0; i < 60; i++) SizedBox(height: 80, child: Text('$i'))
+          ],
         ),
       ),
     ));
@@ -381,5 +387,76 @@ void main() {
       0,
       reason: 'un autre champ a le clavier : la barre s’efface',
     );
+  });
+
+  testWidgets(
+      'Listes et Hors ligne se rangent derrière « Plus », qui ouvre leur menu',
+      (tester) async {
+    final selected = ValueNotifier(ShellTabs.home);
+    addTearDown(selected.dispose);
+    await _pump(tester, selected: selected, lists: true);
+
+    expect(find.text('Plus'), findsOneWidget);
+    expect(find.text('Listes'), findsNothing);
+    expect(find.text('Hors ligne'), findsNothing);
+    expect(find.text('Demandes'), findsOneWidget);
+
+    await tester.tap(find.text('Plus'));
+    await tester.pumpAndSettle();
+    final menu = find.byType(PhoneMoreMenu);
+    expect(menu, findsOneWidget);
+    // Au-dessus de la capsule, aligné sur son bord droit.
+    final capsuleRight = _phone.width -
+        MobileBottomNav.side -
+        MobileBottomNav.height -
+        MobileBottomNav.gap;
+    expect(tester.getRect(menu).right, closeTo(capsuleRight, 1));
+    expect(tester.getRect(menu).bottom, lessThan(tester.getRect(_round).top));
+
+    await tester
+        .tap(find.descendant(of: menu, matching: find.text('Hors ligne')));
+    await tester.pumpAndSettle();
+    expect(selected.value, ShellTabs.downloads);
+    expect(find.byType(PhoneMoreMenu), findsNothing);
+    // L'onglet prend le nom de la page affichée.
+    expect(find.text('Plus'), findsNothing);
+    expect(find.text('Hors ligne'), findsOneWidget);
+  });
+
+  testWidgets('sur l’une des deux pages, « Plus » passe à l’autre sans menu',
+      (tester) async {
+    final selected = ValueNotifier(ShellTabs.lists);
+    addTearDown(selected.dispose);
+    await _pump(tester, selected: selected, lists: true);
+
+    await tester.tap(find.text('Listes'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PhoneMoreMenu), findsNothing);
+    expect(selected.value, ShellTabs.downloads);
+
+    await tester.tap(find.text('Hors ligne'));
+    await tester.pumpAndSettle();
+    expect(selected.value, ShellTabs.lists);
+  });
+
+  testWidgets('toucher à côté du menu le referme sans changer de page',
+      (tester) async {
+    final selected = ValueNotifier(ShellTabs.home);
+    addTearDown(selected.dispose);
+    await _pump(tester, selected: selected, lists: true);
+    await tester.tap(find.text('Plus'));
+    await tester.pumpAndSettle();
+
+    await tester.tapAt(const Offset(60, 200));
+    await tester.pumpAndSettle();
+    expect(find.byType(PhoneMoreMenu), findsNothing);
+    expect(selected.value, ShellTabs.home);
+  });
+
+  testWidgets('une seule de ces pages : son onglet, sans « Plus »',
+      (tester) async {
+    await _pump(tester);
+    expect(find.text('Plus'), findsNothing);
+    expect(find.text('Hors ligne'), findsOneWidget);
   });
 }
