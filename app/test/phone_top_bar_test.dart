@@ -5,7 +5,9 @@ import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/home_provider.dart';
 import 'package:onyx/screens/shell/mobile_top_bar.dart';
 import 'package:onyx/services/api_client.dart';
+import 'package:onyx/theme/lite_mode.dart';
 import 'package:onyx/widgets/global/account_menu.dart';
+import 'package:onyx/widgets/global/backdrop_extension.dart';
 import 'package:onyx/widgets/global/hero_banner.dart';
 import 'package:onyx/widgets/global/liquid_glass.dart';
 import 'package:onyx/widgets/global/onyx_mark.dart';
@@ -16,7 +18,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// La barre du haut du téléphone (ADR-0144) : la marque dans une pilule de
 /// verre liquide et le compte dans un rond du même verre, sans bandeau ; au
 /// défilement, le haut de la page se floute en fondu sous elles. L'affiche
-/// de l'accueil monte sous l'heure et sous la barre.
+/// de l'accueil garde son cadrage sous la barre et se prolonge au-dessus en
+/// miroir flou.
 class _FakeApiClient extends ApiClient {
   @override
   String get baseUrl => 'http://localhost:8080';
@@ -73,8 +76,7 @@ Future<void> _pump(
 }
 
 double _edgeOpacity(WidgetTester tester) => tester
-    .widget<AnimatedOpacity>(
-        find.byKey(const ValueKey('mobile-top-bar-edge')))
+    .widget<AnimatedOpacity>(find.byKey(const ValueKey('mobile-top-bar-edge')))
     .opacity;
 
 void main() {
@@ -133,8 +135,12 @@ void main() {
           natural = HeroBanner.heightFor(context);
           return SingleChildScrollView(
             child: HeroBanner(
-              media: Media.fromJson(
-                  {'id': 1, 'type': 'movie', 'title': 'Dune', 'duration': 6000}),
+              media: Media.fromJson({
+                'id': 1,
+                'type': 'movie',
+                'title': 'Dune',
+                'duration': 6000
+              }),
               onPlay: () {},
               extendTop: 110,
             ),
@@ -144,5 +150,60 @@ void main() {
     ));
     await tester.pump();
     expect(tester.getSize(find.byType(HeroBanner)).height, natural! + 110);
+  });
+
+  Future<void> pumpExtension(WidgetTester tester,
+      {required double extendTop, bool lite = false}) {
+    return tester.pumpWidget(MaterialApp(
+      home: LiteScope(
+        isLite: lite,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: 390,
+            height: 464 + extendTop,
+            child: BackdropExtension(
+              extendTop: extendTop,
+              image: () => const ColoredBox(
+                  key: ValueKey('image'), color: Color(0xFF884422)),
+            ),
+          ),
+        ),
+      ),
+    ));
+  }
+
+  testWidgets(
+      'l’image nette garde son cadrage sous la barre, prolongée au-dessus '
+      'en miroir flou', (tester) async {
+    await pumpExtension(tester, extendTop: 110);
+    final sharp = find.descendant(
+        of: find.byType(ShaderMask),
+        matching: find.byKey(const ValueKey('image')));
+    expect(tester.getRect(sharp).top, 110);
+    expect(tester.getRect(sharp).height, 464);
+
+    final extension = find.byKey(const ValueKey('backdrop-extension'));
+    expect(tester.getRect(extension).height, 110 + BackdropExtension.blend);
+    expect(find.descendant(of: extension, matching: find.byType(ImageFiltered)),
+        findsOne);
+    // Le miroir au-dessus de la ligne, l'image elle-même dessous.
+    expect(
+        find.descendant(
+            of: extension, matching: find.byKey(const ValueKey('image'))),
+        findsNWidgets(2));
+  });
+
+  testWidgets('sans flou, pas de miroir : un voile sombre', (tester) async {
+    await pumpExtension(tester, extendTop: 110, lite: true);
+    expect(find.byKey(const ValueKey('backdrop-extension')), findsNothing);
+    expect(find.byType(ImageFiltered), findsNothing);
+    expect(find.byKey(const ValueKey('image')), findsOne);
+  });
+
+  testWidgets('sans prolongement, l’image seule', (tester) async {
+    await pumpExtension(tester, extendTop: 0);
+    expect(find.byType(ShaderMask), findsNothing);
+    expect(tester.getRect(find.byKey(const ValueKey('image'))).top, 0);
   });
 }
