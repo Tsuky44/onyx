@@ -2730,9 +2730,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/media_details_cache.dart": {
-    "mtime": 1789397727.7786934,
-    "seen": 1794990536.7652864,
-    "ast_hash": "68d293aae82dab4bdae1c37141c58d6c",
+    "mtime": 1794993448.8946164,
+    "seen": 1794993674.9022226,
+    "ast_hash": "eae139f0edde1eda3cb05a8f09caa584",
     "semantic_hash": ""
   },
   "app/lib/services/media_failover.dart": {
@@ -12810,9 +12810,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_spotlight.dart": {
-    "mtime": 1794990222.2363687,
-    "seen": 1794990536.7652864,
-    "ast_hash": "11046ac18a6abca798f11dc5c0acf411",
+    "mtime": 1794993449.0565493,
+    "seen": 1794993674.9012225,
+    "ast_hash": "fa7c8a0bf9e9c6fc7111243800905021",
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_tv_view.dart": {
@@ -14010,9 +14010,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_sheet.dart": {
-    "mtime": 1794926217.9223928,
-    "seen": 1794990536.7652864,
-    "ast_hash": "e9c3cdbb4dcefc4696a72ef69c210b71",
+    "mtime": 1794993464.3563168,
+    "seen": 1794993674.9017231,
+    "ast_hash": "8732c7106cbdc568c88af0206f9698a1",
     "semantic_hash": ""
   },
   "app/lib/screens/search/desktop/desktop_search_spotlight.dart": {
@@ -14226,15 +14226,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_desktop_spotlight.dart": {
-    "mtime": 1794990210.1825168,
-    "seen": 1794990536.7652864,
-    "ast_hash": "65cf69ed28d52ebb91fe124bfa6403e9",
+    "mtime": 1794993449.523861,
+    "seen": 1794993674.9012225,
+    "ast_hash": "a1638bec3a8df566d3821e15006bfac2",
     "semantic_hash": ""
   },
   "app/test/library_desktop_spotlight_test.dart": {
-    "mtime": 1794990399.6532052,
-    "seen": 1794990536.76629,
-    "ast_hash": "0281d7cbed9176968b55e4cb90b0b22c",
+    "mtime": 1794993499.2337928,
+    "seen": 1794993674.9032223,
+    "ast_hash": "aba2f38a4664cedec5c6a0c360736202",
     "semantic_hash": ""
   },
   "docs/adr/0140-sur-le-bureau-les-bibliotheques-ont-le-volet-de-la-recherche.md": {
@@ -14259,6 +14259,24 @@
     "mtime": 1794992979.2368138,
     "seen": 1794993052.7689435,
     "ast_hash": "83e9a653d782f93a48a2e784d9a02403",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/library/widgets/library_spotlight_prefetch.dart": {
+    "mtime": 1794993437.9828565,
+    "seen": 1794993674.9012225,
+    "ast_hash": "8e33b5fdef61dc3c7f626f7526cc4cee",
+    "semantic_hash": ""
+  },
+  "app/test/library_spotlight_prefetch_test.dart": {
+    "mtime": 1794993491.5765033,
+    "seen": 1794993674.9032223,
+    "ast_hash": "e16cc049f9c63e807465ddb677cfcec1",
+    "semantic_hash": ""
+  },
+  "docs/adr/0142-le-volet-prepare-la-fiche-des-affiches-a-l-ecran.md": {
+    "mtime": 1794993564.576225,
+    "seen": 1794993674.906225,
+    "ast_hash": "45ecd56c8f89b7febf46ce43a2cce9c3",
     "semantic_hash": ""
   }
 }
