@@ -1,5 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
@@ -69,7 +70,9 @@ class DesktopSearchRoute<T> extends PageRoute<T> {
       curve: AppMotion.curve,
       reverseCurve: AppMotion.curve.flipped,
     );
-    final fading = FadeTransition(opacity: eased, child: child);
+    // Sur le web, pas d'opacité animée sur le voile : elle forcerait un
+    // `saveLayer` plein écran par image autour du flou (ADR-0149).
+    final fading = kIsWeb ? child : FadeTransition(opacity: eased, child: child);
     if (AppMotion.reduced(context)) return fading;
     return AnimatedBuilder(
       animation: eased,

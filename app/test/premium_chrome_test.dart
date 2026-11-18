@@ -202,7 +202,12 @@ void main() {
   group('transition de page', () {
     const builder = OnyxPageTransitionsBuilder();
 
-    Widget build(WidgetTester tester, {String? name, bool reduced = false}) {
+    Widget build(
+      WidgetTester tester, {
+      String? name,
+      bool reduced = false,
+      PageTransitionsBuilder? using,
+    }) {
       late Widget built;
       final route = MaterialPageRoute<void>(
         settings: RouteSettings(name: name),
@@ -212,7 +217,7 @@ void main() {
         data: MediaQueryData(disableAnimations: reduced),
         child: Builder(
           builder: (context) {
-            built = builder.buildTransitions(
+            built = (using ?? builder).buildTransitions(
               route,
               context,
               const AlwaysStoppedAnimation(0.5),
@@ -247,6 +252,32 @@ void main() {
       await tester.pumpWidget(build(tester, reduced: true));
       expect(find.byType(SlideTransition), findsNothing);
       expect(find.byType(FadeTransition), findsOneWidget);
+    });
+
+    group('sur le web', () {
+      const web = OnyxPageTransitionsBuilder(cheap: true);
+
+      testWidgets('une fiche glisse sans opacité animée', (tester) async {
+        await tester.pumpWidget(build(tester, using: web));
+        expect(find.byType(SlideTransition), findsOneWidget);
+        expect(find.byType(FadeTransition), findsNothing);
+      });
+
+      testWidgets('le lecteur garde son fondu, sans géométrie', (tester) async {
+        await tester.pumpWidget(
+          build(tester, name: SearchRouteObserver.playerRouteName, using: web),
+        );
+        expect(find.byType(SlideTransition), findsNothing);
+        expect(find.byType(FadeTransition), findsOneWidget);
+      });
+
+      testWidgets('« réduire les animations » : la page apparaît d’un coup', (
+        tester,
+      ) async {
+        await tester.pumpWidget(build(tester, reduced: true, using: web));
+        expect(find.byType(SlideTransition), findsNothing);
+        expect(find.byType(FadeTransition), findsNothing);
+      });
     });
 
     test('la même transition partout, sauf le glissé natif d’iOS', () {
