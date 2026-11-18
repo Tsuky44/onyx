@@ -31,6 +31,11 @@ class HeroBanner extends StatefulWidget {
 
   final bool autofocusPlay;
 
+  /// La hauteur ajoutée au-dessus du bandeau pour que l'image monte sous la
+  /// barre d'état et la barre du haut du téléphone (ADR-0144). Le texte et
+  /// les boutons, calés en bas, ne bougent pas.
+  final double extendTop;
+
   const HeroBanner({
     super.key,
     required this.media,
@@ -42,6 +47,7 @@ class HeroBanner extends StatefulWidget {
     this.onInfo,
     this.detailsMediaId,
     this.autofocusPlay = false,
+    this.extendTop = 0,
   });
 
   static double heightFor(BuildContext context) {
@@ -138,7 +144,7 @@ class _HeroBannerState extends State<HeroBanner> {
     final isCompact = screenWidth < 600;
     final isTv = TvScope.of(context);
     final horizontalPadding = isCompact ? 16.0 : 48.0;
-    final bannerHeight = HeroBanner.heightFor(context);
+    final bannerHeight = HeroBanner.heightFor(context) + widget.extendTop;
     final detailsOverview = _details?.overview;
     final overview = media.type != MediaType.episode &&
             detailsOverview != null &&

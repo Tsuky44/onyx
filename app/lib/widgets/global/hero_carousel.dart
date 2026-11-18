@@ -18,12 +18,16 @@ class HeroCarousel extends StatefulWidget {
   /// see [HeroBanner.autofocusPlay].
   final bool autofocusPlay;
 
+  /// Voir [HeroBanner.extendTop].
+  final double extendTop;
+
   const HeroCarousel({
     super.key,
     required this.slides,
     required this.onPlay,
     this.onInfo,
     this.autofocusPlay = false,
+    this.extendTop = 0,
   });
 
   @override
@@ -182,7 +186,7 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
 
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < 600;
-    final bannerHeight = HeroBanner.heightFor(context);
+    final bannerHeight = HeroBanner.heightFor(context) + widget.extendTop;
 
     return Focus(
       // A pure observer: it reports that something below it holds the focus,
@@ -245,6 +249,7 @@ class _HeroCarouselState extends State<HeroCarousel> with OnScreenState {
                           // Only the slide on screen: an autofocus on a page the
                           // PageView has built ahead would pull the focus off-screen.
                           autofocusPlay: widget.autofocusPlay && index == 0,
+                          extendTop: widget.extendTop,
                         ),
                       ),
                     );

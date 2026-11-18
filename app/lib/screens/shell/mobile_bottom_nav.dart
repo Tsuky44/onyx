@@ -8,7 +8,7 @@ import '../../models/models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_motion.dart';
-import '../../widgets/global/glass_chrome.dart';
+import '../../widgets/global/liquid_glass.dart';
 import '../../widgets/global/interface_tour/tour_anchor.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -612,10 +612,8 @@ class _TabRowState extends State<_TabRow> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Le verre de la capsule et du rond : un voile clair dégradé sur un flou de
-/// ce qui passe dessous, un liseré et une ombre qui le détachent de la page.
-/// En mode léger et sur un téléviseur LG, un fond dense sans flou
-/// ([glassBlurs]).
+/// Le verre de la capsule et du rond : le verre liquide du téléphone
+/// ([LiquidGlass]), partagé avec la barre du haut.
 class _GlassPill extends StatelessWidget {
   const _GlassPill({required this.child});
 
@@ -624,54 +622,8 @@ class _GlassPill extends StatelessWidget {
   /// Le retrait des onglets dans la capsule.
   static const double inset = 3;
 
-  static const BorderRadius _radius =
-      BorderRadius.all(Radius.circular(MobileBottomNav.height / 2));
-
   @override
-  Widget build(BuildContext context) {
-    final blurs = glassBlurs(context);
-    final glass = DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: _radius,
-        color: blurs ? null : const Color(0xF22A2A2E),
-        gradient: blurs
-            ? LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withValues(alpha: 0.16),
-                  Colors.white.withValues(alpha: 0.06),
-                ],
-              )
-            : null,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-      ),
-      child: child,
-    );
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: _radius,
-        boxShadow: [
-          // Une ombre courte : longue et dense, elle dessinait une tache
-          // sombre sous la capsule, sur l'indicateur d'accueil.
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: _radius,
-        child: blurs
-            ? BackdropFilter.grouped(
-                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                child: glass,
-              )
-            : glass,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => LiquidGlass(child: child);
 }
 
 /// La lentille de verre clair sous l'onglet affiché.
@@ -684,9 +636,9 @@ class _Lens extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withValues(alpha: 0.17),
         borderRadius: const BorderRadius.all(Radius.circular(23)),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: child,
     );

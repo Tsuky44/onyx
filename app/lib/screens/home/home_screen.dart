@@ -180,8 +180,14 @@ class _HomeScreenState extends State<HomeScreen>
     final isPhone = !isTv && AppLayout.isCompact(context);
     // Sur téléviseur, l'image du bandeau part du haut de l'écran, derrière
     // la pilule des onglets (ADR-0118) : la barre n'est plus une bande
-    // opaque, et le texte du bandeau est calé en bas, loin d'elle.
-    final heroTop = isTv ? 0.0 : headerInset;
+    // opaque, et le texte du bandeau est calé en bas, loin d'elle. Sur
+    // téléphone aussi (ADR-0144) : l'image monte sous l'heure et sous les
+    // pièces de verre de la barre du haut, et le bandeau grandit d'autant
+    // ([heroExtend]) pour que son texte et la suite de la page restent où
+    // ils étaient.
+    final heroUnderBar = isTv || !widget.embedded;
+    final heroTop = heroUnderBar ? 0.0 : headerInset;
+    final heroExtend = !isTv && !widget.embedded ? headerInset : 0.0;
     final data = homeProvider.homeData;
     final discovery = data == null
         ? const <Media>[]
@@ -198,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen>
       backgroundColor: AppColors.background,
       body: homeProvider.isLoading
           ? HomeSkeleton(
-              heroHeight: HeroBanner.heightFor(context),
+              heroHeight: HeroBanner.heightFor(context) + heroExtend,
               topInset: heroTop,
             )
           : homeProvider.errorMessage != null
@@ -217,11 +223,11 @@ class _HomeScreenState extends State<HomeScreen>
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
-                          // Le carrousel commence sous la barre du haut, pas
-                          // derrière elle : posée sur l'affiche, elle masquait
-                          // le haut du poster et le titre. Sauf sur
-                          // téléviseur ([heroTop]), et sans bandeau, où le
-                          // texte d'accueil passerait sous la barre.
+                          // Le carrousel commence derrière la barre du haut
+                          // sur téléviseur et sur téléphone ([heroTop]) ; sur
+                          // grand écran, sous l'en-tête de verre. Sans
+                          // bandeau, le texte d'accueil passerait sous la
+                          // barre : il garde sa marge.
                           SliverToBoxAdapter(
                             child: SizedBox(
                               height:
@@ -234,6 +240,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 slides: heroSlides,
                                 onPlay: (slide) => _onHeroPlay(context, slide),
                                 onInfo: (slide) => _onHeroInfo(context, slide),
+                                extendTop: heroExtend,
                                 // On a television the banner is where the
                                 // remote starts. See below for why it is not
                                 // the first row.

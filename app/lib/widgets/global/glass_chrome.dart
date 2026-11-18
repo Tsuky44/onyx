@@ -88,46 +88,6 @@ class GlassHeaderStrip extends StatelessWidget {
   }
 }
 
-/// Le verre sombre et dense des barres du téléphone — onglets en bas, barre
-/// du haut des catalogues.
-///
-/// Plus opaque que [GlassHeaderStrip] : sur un écran de 6 pouces la barre
-/// couvre des affiches en pleine couleur, et un voile léger laissait leurs
-/// couleurs passer sous les libellés. Le filet clair se pose du côté du
-/// contenu, [edge].
-class GlassBarSurface extends StatelessWidget {
-  final Widget child;
-  final AxisDirection edge;
-
-  const GlassBarSurface({
-    super.key,
-    required this.child,
-    this.edge = AxisDirection.up,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final blurs = glassBlurs(context);
-    final hairline = BorderSide(color: Colors.white.withValues(alpha: 0.08));
-    final veil = DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.background.withValues(alpha: blurs ? 0.72 : 0.94),
-        border: edge == AxisDirection.up
-            ? Border(top: hairline)
-            : Border(bottom: hairline),
-      ),
-      child: child,
-    );
-    if (!blurs) return veil;
-    return ClipRect(
-      child: BackdropFilter.grouped(
-        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-        child: veil,
-      ),
-    );
-  }
-}
-
 /// Frosted panel for dropdowns and floating elements.
 ///
 /// [dense] pour un panneau qui porte du texte secondaire : le voile léger
