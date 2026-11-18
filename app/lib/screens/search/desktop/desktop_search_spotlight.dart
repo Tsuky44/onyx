@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../../l10n/tr.dart';
 import '../../../models/media_request.dart';
 import '../../../models/models.dart';
-import '../../../providers/library_provider.dart';
-import '../../../utils/format.dart';
 import '../../../utils/poster_url.dart';
 import '../../../utils/responsive.dart';
 import '../../../widgets/global/unavailable_badge.dart';
@@ -59,7 +56,7 @@ class DesktopSearchSpotlight extends StatelessWidget {
                 // l'image d'un titre se fond dans la suivante.
                 key: const ValueKey('library'),
                 media: media,
-                eyebrow: _libraryEyebrow(context, media),
+                eyebrow: librarySpotlightEyebrow(context, media),
                 textWidth: textWidth,
               ),
             UnavailableHit(:final item) => _unavailable(item),
@@ -98,24 +95,5 @@ class DesktopSearchSpotlight extends StatelessWidget {
       textWidth: textWidth,
       backdropUrl: backdrop,
     );
-  }
-
-  /// Le surtitre d'un titre de la bibliothèque : son type, puis où on en est.
-  String _libraryEyebrow(BuildContext context, Media media) {
-    final isMovie = media.type == MediaType.movie;
-    final parts = <String>[isMovie ? tr('Film') : tr('Série')];
-    if (isMovie) {
-      final item = context.read<LibraryProvider>().movieItemFor(media.id);
-      final position = item?.currentPositionSeconds ?? 0;
-      if (item?.isFinished ?? false) {
-        parts.add(tr('Vu'));
-      } else if (item != null && position > 0) {
-        final remaining = formatRemaining(item.duration - position);
-        if (remaining != null) parts.add(remaining);
-      }
-    } else if (media.isFullyWatched) {
-      parts.add(tr('Vu'));
-    }
-    return parts.join(' · ');
   }
 }

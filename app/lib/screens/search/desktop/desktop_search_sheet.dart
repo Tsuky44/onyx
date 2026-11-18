@@ -21,6 +21,7 @@ import '../../../widgets/global/poster_card.dart';
 import '../../../widgets/global/poster_grid_display_menu.dart';
 import '../../../widgets/global/poster_grid_zoom_region.dart';
 import '../../../widgets/global/staggered_entrance.dart';
+import '../../library/widgets/library_spotlight_prefetch.dart';
 import '../../player/player_screen.dart';
 import '../../requests/request_availability.dart';
 import '../../requests/request_detail_launch.dart';
@@ -474,7 +475,9 @@ class _SelectableCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
+    final hits = controller.hits;
+    final hit = index < hits.length ? hits[index] : null;
+    final cell = MouseRegion(
       onEnter: (_) => controller.point(index),
       child: ListenableBuilder(
         listenable: controller,
@@ -491,6 +494,12 @@ class _SelectableCell extends StatelessWidget {
         },
       ),
     );
+    // La fiche du volet et son logo sont prêts avant le survol (ADR-0142).
+    return switch (hit) {
+      LibraryHit(:final media) =>
+        LibrarySpotlightWarmup(media: media, child: cell),
+      _ => cell,
+    };
   }
 }
 

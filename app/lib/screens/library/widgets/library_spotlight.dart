@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../l10n/tr.dart';
 import '../../../models/models.dart';
+import '../../../providers/library_provider.dart';
 import '../../../services/api_client.dart';
 import '../../../services/media_details_cache.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_motion.dart';
 import '../../../theme/app_type.dart';
+import '../../../utils/format.dart';
 import '../../../utils/poster_url.dart';
 import '../../../utils/responsive.dart';
 import '../../../widgets/global/app_network_image.dart';
@@ -141,7 +144,13 @@ class _LibrarySpotlightState extends State<LibrarySpotlight> {
       return;
     }
     if (id <= 0 || MediaDetailsCache.isFresh(id)) return;
-    _settle = Timer(LibrarySpotlight.settle, () async {
+    // Une fiche déjà en route (`LibrarySpotlightPrefetch`, le survol d'une
+    // carte) ne coûte rien de plus : on la rejoint sans attendre que le focus
+    // se pose, et le logo suit dès qu'elle arrive.
+    final wait = MediaDetailsCache.isLoading(id)
+        ? Duration.zero
+        : LibrarySpotlight.settle;
+    _settle = Timer(wait, () async {
       try {
         final details = await MediaDetailsCache.load(api, id);
         if (!mounted || turn != _turn) return;
@@ -365,4 +374,25 @@ class _LibrarySpotlightState extends State<LibrarySpotlight> {
       );
     });
   }
+}
+
+/// Le surtitre de la fiche d'un titre de la bibliothèque : son type, puis où
+/// on en est. Celui de la recherche du bureau et du volet d'une bibliothèque
+/// sur le bureau.
+String librarySpotlightEyebrow(BuildContext context, Media media) {
+  final isMovie = media.type == MediaType.movie;
+  final parts = <String>[isMovie ? tr('Film') : tr('Série')];
+  if (isMovie) {
+    final item = context.read<LibraryProvider>().movieItemFor(media.id);
+    final position = item?.currentPositionSeconds ?? 0;
+    if (item?.isFinished ?? false) {
+      parts.add(tr('Vu'));
+    } else if (item != null && position > 0) {
+      final remaining = formatRemaining(item.duration - position);
+      if (remaining != null) parts.add(remaining);
+    }
+  } else if (media.isFullyWatched) {
+    parts.add(tr('Vu'));
+  }
+  return parts.join(' · ');
 }
