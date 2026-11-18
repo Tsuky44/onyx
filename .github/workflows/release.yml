@@ -404,7 +404,10 @@ jobs:
   build-ios:
     needs: prepare
     if: contains(fromJSON(needs.prepare.outputs.builds), 'ios')
-    runs-on: macos-latest
+    # Image Xcode 27 (ADR-0143) : App Store Connect refuse, a partir d'avril
+    # 2027, les apps construites avant le SDK iOS 27 (avertissement 90725).
+    # macos-latest reste sur Xcode 26.
+    runs-on: xcode-27
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -421,6 +424,19 @@ jobs:
       - name: flutter pub get
         working-directory: app
         run: flutter pub get
+
+      # Echoue plutot que de construire en silence avec un SDK plus ancien si
+      # l'image change de Xcode par defaut.
+      - name: Xcode 27
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          SDK="$(xcrun --sdk iphoneos --show-sdk-version)"
+          echo "SDK iOS $SDK"
+          if [ "${SDK%%.*}" -lt 27 ]; then
+            echo "::error::SDK iOS $SDK : Xcode 27 ou plus requis par App Store Connect."
+            exit 1
+          fi
 
       - name: Build iOS
         working-directory: app
@@ -510,7 +526,8 @@ jobs:
   build-tvos:
     needs: prepare
     if: contains(fromJSON(needs.prepare.outputs.builds), 'tvos')
-    runs-on: macos-latest
+    # Meme image que l'iPhone (ADR-0143) : meme fiche App Store Connect.
+    runs-on: xcode-27
     continue-on-error: true
     env:
       FLUTTER_TVOS_VERSION: v3.44.9-tvos.1.5.1
@@ -529,6 +546,11 @@ jobs:
             xcodebuild -downloadPlatform tvOS
           fi
           xcodebuild -showsdks | grep appletv
+          SDK="$(xcrun --sdk appletvos --show-sdk-version)"
+          if [ "${SDK%%.*}" -lt 27 ]; then
+            echo "::error::SDK tvOS $SDK : Xcode 27 ou plus requis par App Store Connect."
+            exit 1
+          fi
 
       - name: Installer flutter-tvos
         run: |

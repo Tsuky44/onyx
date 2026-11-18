@@ -582,9 +582,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/release.yml": {
-    "mtime": 1794958149.1958911,
-    "seen": 1794958195.4591103,
-    "ast_hash": "bac53e7f1c8d29d78441a189851c1bf1",
+    "mtime": 1794997552.1313593,
+    "seen": 1794997619.221909,
+    "ast_hash": "69d7a9b389efd6dd18e7568cf2b9882e",
     "semantic_hash": ""
   },
   ".github/workflows/server.yml": {
@@ -10314,9 +10314,9 @@
     "semantic_hash": ""
   },
   "docs/adr/0038-aetherengine-sur-les-appareils-apple.md": {
-    "mtime": 1794953725.8090024,
-    "seen": 1794958195.4592223,
-    "ast_hash": "6eeb0c3d2418a4a21ee3aef281ddea3a",
+    "mtime": 1794997582.4706738,
+    "seen": 1794997619.2219975,
+    "ast_hash": "510fc17b5bae3fd7ef345a540e1560fd",
     "semantic_hash": ""
   },
   "docs/adr/0039-force-du-geste-sur-le-trackpad-de-l-apple-tv.md": {
@@ -10722,9 +10722,9 @@
     "semantic_hash": ""
   },
   "docs/release-ci.md": {
-    "mtime": 1794958149.207891,
-    "seen": 1794958195.4595075,
-    "ast_hash": "dcf4d759ec70979698679ce6070f40ff",
+    "mtime": 1794997577.0139766,
+    "seen": 1794997619.2222333,
+    "ast_hash": "7649a58f2453787e87c450ea8e404e0c",
     "semantic_hash": ""
   },
   "docs/roadmap-lecture.md": {
@@ -13374,9 +13374,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/tvos.yml": {
-    "mtime": 1794958149.1958911,
-    "seen": 1794958195.4591131,
-    "ast_hash": "6c8fa7bd76baf22627d2c033dfa1441e",
+    "mtime": 1794997552.1316113,
+    "seen": 1794997619.2219129,
+    "ast_hash": "fb5ca5977d0ff65202c1b58a2aa183db",
     "semantic_hash": ""
   },
   "app/lib/screens/player/hooks/use_player_stats.dart": {
@@ -14277,6 +14277,12 @@
     "mtime": 1794997207.1881945,
     "seen": 1794997238.023186,
     "ast_hash": "05a8e38497646a067f4c82a7da8fc9f4",
+    "semantic_hash": ""
+  },
+  "docs/adr/0143-les-builds-iphone-et-apple-tv-passent-sur-xcode-27.md": {
+    "mtime": 1794997573.0547054,
+    "seen": 1794997619.2222214,
+    "ast_hash": "4a1dfc5be74d1a94e0c8fdb817663c6f",
     "semantic_hash": ""
   }
 }

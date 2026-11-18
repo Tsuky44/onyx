@@ -59,7 +59,9 @@ jobs:
 
   build:
     needs: test
-    runs-on: macos-latest
+    # Image Xcode 27, comme release.yml (ADR-0143) : App Store Connect refuse,
+    # a partir d'avril 2027, les builds faits avant le SDK 27.
+    runs-on: xcode-27
     env:
       FLUTTER_TVOS_VERSION: v3.44.9-tvos.1.5.1
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -116,6 +118,11 @@ jobs:
             xcodebuild -downloadPlatform tvOS
           fi
           xcodebuild -showsdks | grep appletv
+          SDK="$(xcrun --sdk appletvos --show-sdk-version)"
+          if [ "${SDK%%.*}" -lt 27 ]; then
+            echo "::error::SDK tvOS $SDK : Xcode 27 ou plus requis par App Store Connect."
+            exit 1
+          fi
 
       - name: Installer flutter-tvos
         run: |
