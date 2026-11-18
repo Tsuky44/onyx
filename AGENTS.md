@@ -39,7 +39,7 @@ La source de vérité complète pour les standards d'ingénierie, l'architecture
 ## Agent skills
 
 ### Standards d'ingénierie
-Pour tout code de ce dépôt, charger le skill `onyx-engineering` (`.agents/skills/onyx-engineering/`).
+Pour tout code de ce dépôt, charger le skill `onyx-engineering` (`.claude/skills/onyx-engineering/`).
 
 ### Issue tracker
 Issues and PRDs live as GitHub issues in this repo. See `docs/agents/issue-tracker.md`.

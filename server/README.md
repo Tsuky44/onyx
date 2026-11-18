@@ -1,37 +1,34 @@
 # 🚀 Onyx — Serveur Média (Back-End Go)
 
-Un serveur multimédia ultra-léger écrit en Go, conçu exclusivement pour du **Direct Play pur à 100 %**, avec une consommation de RAM minimale (inférieure à 20 Mo) et des performances exceptionnelles.
+Le serveur d'Onyx : un binaire Go et une base SQLite. Il indexe vos dossiers, sert les fichiers en **Direct Play** (requêtes HTTP Range, `206 Partial Content`) et ne transcode qu'en repli, avec FFmpeg, quand l'appareil ne sait pas lire le fichier.
 
 ---
 
-## 🛠 Architecture & Choix Techniques
+## 🛠 Choix techniques
 
-- **Langage :** Go (Golang) pour sa rapidité et sa gestion native du streaming HTTP par morceaux (`http.ServeFile`).
-- **Base de données :** SQLite (avec pilote pur Go `modernc.org/sqlite` — pas besoin de compilateur CGO/gcc).
-- **Mode WAL activé :** Toutes les écritures de progression et de synchronisation s'effectuent sans bloquer la lecture grâce au mode *Write-Ahead Logging* (`PRAGMA journal_mode=WAL;`).
-- **Indexeur Intelligent :** Scanne automatiquement les disques, structure de manière hiérarchique les séries/saisons/épisodes, nettoie la base de données des fichiers supprimés et filtre le "bruit" des noms de fichiers.
-- **Direct Play :** Utilise le protocole natif des *HTTP Range Requests* (code HTTP `206 Partial Content`), permettant des sauts temporels instantanés sans solliciter le CPU ou la mémoire du serveur.
+- **Go sans CGO** : SQLite par le pilote pur Go `modernc.org/sqlite`, en mode WAL (les écritures de progression ne bloquent pas les lectures).
+- **Direct Play d'abord** ; le transcodage HLS suit une échelle de débits (ADR-0022), l'encodeur matériel reste facultatif (ADR-0023).
+- **Léger** : objectif de moins de 20 Mo de RAM au repos.
 
 ---
 
-## 📂 Structure du Code Source
+## 📂 Organisation du code
 
-```
-server/
-├── Dockerfile               # Image Docker multi-stage optimisée (< 20 Mo)
-├── go.mod                   # Gestionnaire des dépendances
-├── main.go                  # Point d'entrée, configuration & routage API
-├── database/
-│   └── database.go          # Initialisation SQLite, PRAGMA WAL & migrations
-├── models/
-│   └── models.go            # Structs Go (User, Media, Progression, etc.)
-├── indexer/
-│   └── indexer.go           # Indexation intelligente, regex SxxExx, auto-nettoyage
-└── handlers/
-    ├── auth.go              # Inscription, Connexion, Profil, Middleware d'Auth
-    ├── media.go             # Dashboard, Progressions & Navigation Bibliothèque
-    └── stream.go            # Streaming de fichiers par morceaux (Direct Play)
-```
+| Dossier | Rôle |
+|---|---|
+| `main.go` | Point d'entrée : réglages, routes de l'API, tâches de fond. |
+| `handlers/` | HTTP : décoder, autoriser, appeler, encoder. |
+| `indexer/` | Parcours des disques, identification, métadonnées, surveillance des dossiers. |
+| `libraries/` | Les bibliothèques et les dossiers proposés à leur création. |
+| `streaming/` | Sondage ffprobe, plan de lecture, HLS, transcodage, aperçus. |
+| `subtitles/`, `playbackauth/`, `streamcache/` | Sous-titres extraits, tickets de lecture, cache de flux. |
+| `database/` | Ouverture de la base, PRAGMA, migrations. |
+| `models/` | Structures partagées et leur JSON. |
+| `mediahub/`, `tmdb/`, `httpx/` | Services externes et les seuls clients HTTP sortants. |
+| `codeguard/` | Tests qui relisent tout le serveur pour faire tenir une convention. |
+| `Dockerfile`, `docker-entrypoint.sh` | L'image et son démarrage (`PUID`/`PGID`). |
+
+Les décisions d'architecture sont dans [`docs/adr/`](../docs/adr/).
 
 ---
 
