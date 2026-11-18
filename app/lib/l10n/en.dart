@@ -446,6 +446,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Change',
   'Chapitre {0}':
       'Chapter {0}',
+  'Chargement':
+      'Loading',
   'Chapitres':
       'Chapters',
   'Chapitres MKV':

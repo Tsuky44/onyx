@@ -278,14 +278,15 @@ extension _OnyxControlsRows on OnyxControlsLayer {
           tr('Infos'),
           onOpenInfo!,
         ),
-      menu(
-        OnyxMenuSection.subtitles,
-        'subtitles',
-        Icons.closed_caption_rounded,
-        tr('Sous-titres'),
-        fallback: onToggleSubtitles,
-        buttonKey: subtitlesButtonKey,
-      ),
+      if (hasSubtitles)
+        menu(
+          OnyxMenuSection.subtitles,
+          'subtitles',
+          Icons.closed_caption_rounded,
+          tr('Sous-titres'),
+          fallback: onToggleSubtitles,
+          buttonKey: subtitlesButtonKey,
+        ),
       menu(
         OnyxMenuSection.audio,
         'audio',

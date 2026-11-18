@@ -33,6 +33,7 @@ import 'widgets/request_status_badge.dart';
 import '../../l10n/tr.dart';
 import '../../widgets/global/media_countdown.dart';
 import '../../models/watch_list.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 class RequestDetailScreen extends StatefulWidget {
   final RequestMediaItem item;
@@ -440,7 +441,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
                   ),
                 ),
               ),
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+          const SliverScrollEnd(base: 56),
         ],
       ),
     );

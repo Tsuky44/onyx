@@ -7,10 +7,14 @@ import '../../../services/client_log.dart';
 import '../playback/playback_session.dart';
 import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
+import 'onyx/onyx_loading_ring.dart';
 import 'player_question_window.dart';
 
-/// Le cercle d'attente du lecteur : démarrage, recherche, changement de
-/// qualité.
+/// L'attente du lecteur : démarrage, recherche, changement de qualité.
+///
+/// Un anneau blanc ([OnyxLoadingRing], ADR-0140), au milieu de l'écran ou, sur
+/// un écran tenu en main, là où est lecture/pause ([centreAt]) : il prend la
+/// place du bouton au lieu de se poser dessous.
 ///
 /// IgnorePointer, not AbsorbPointer: it covers the whole screen and sits above
 /// the controls, so absorbing taps made every player button dead for as long
@@ -18,17 +22,30 @@ import 'player_question_window.dart';
 /// want to pause, seek again or go back, so the spinner has to be purely
 /// decorative.
 class PlayerLoadingSpinner extends StatelessWidget {
-  const PlayerLoadingSpinner({super.key});
+  const PlayerLoadingSpinner({super.key, this.centreAt = 0.5, this.scale = 1});
 
-  /// Le bleu du cercle, un seul pour toutes les attentes du lecteur.
-  static const Color color = Color(0xFF00A4DC);
+  /// Où tombe son milieu, en fraction de la hauteur.
+  final double centreAt;
+
+  /// Le facteur de taille : celui du lecteur sur un téléviseur
+  /// (`PlayerTvScale.factorFor`), 1 ailleurs.
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
-    return const Positioned.fill(
+    final size = OnyxLoadingRing.defaultSize * scale;
+    return Positioned.fill(
       child: IgnorePointer(
-        child: Center(
-          child: CircularProgressIndicator(color: color, strokeWidth: 3),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Stack(
+            children: [
+              Positioned(
+                left: (constraints.maxWidth - size) / 2,
+                top: constraints.maxHeight * centreAt - size / 2,
+                child: OnyxLoadingRing(size: size),
+              ),
+            ],
+          ),
         ),
       ),
     );

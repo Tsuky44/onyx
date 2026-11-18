@@ -404,6 +404,7 @@ jobs:
   build-ios:
     needs: prepare
     if: contains(fromJSON(needs.prepare.outputs.builds), 'ios')
+    # Xcode 26.6 : le passage a Xcode 27 est suspendu (ADR-0143).
     runs-on: macos-latest
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

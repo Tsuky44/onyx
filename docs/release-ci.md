@@ -186,6 +186,10 @@ write` — pas de PAT à créer, contrairement au script local.
   Developer à 99 $/an. Même situation qu'avec le script local.
 - **DMG arm64.** `macos-latest` est un runner Apple Silicon. Les Mac Intel ne
   sont pas couverts sans un job supplémentaire sur `macos-13`.
+- **Xcode 26.6, pas encore 27.** Les jobs Apple tournent sur `macos-latest`
+  (Xcode 26.6, SDK iOS 26.5). App Store Connect refusera ces builds à partir
+  d'avril 2027 (avertissement 90725). Le passage à l'image `xcode-27` est
+  suspendu : le premier build y a cassé (ADR-0143).
 - **IPA non signé.** Il ne s'installe pas tel quel : Sideloadly ou AltStore
   le resignent avec un identifiant Apple à l'installation. Sans compte
   développeur payant, l'app expire au bout de 7 jours. Un IPA signé (Ad Hoc,

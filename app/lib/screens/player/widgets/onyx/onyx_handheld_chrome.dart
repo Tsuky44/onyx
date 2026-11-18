@@ -207,15 +207,21 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
           onPressed: onRewind,
         ),
         gap,
-        OnyxIconButton(
-          key: const ValueKey('onyx-play-pause'),
-          icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          tooltip: isPlaying ? tr('Pause') : tr('Lecture'),
-          metrics: m,
-          size: m.playIconSize,
-          focusNode: playPauseFocusNode,
-          onPicture: true,
-          onPressed: onPlayPause,
+        // Sous l'anneau d'attente, posé au même endroit par l'écran du
+        // lecteur : le bouton s'efface sans quitter sa place.
+        AnimatedOpacity(
+          opacity: isLoading ? 0 : 1,
+          duration: AppMotion.micro,
+          child: OnyxIconButton(
+            key: const ValueKey('onyx-play-pause'),
+            icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            tooltip: isPlaying ? tr('Pause') : tr('Lecture'),
+            metrics: m,
+            size: m.playIconSize,
+            focusNode: playPauseFocusNode,
+            onPicture: true,
+            onPressed: onPlayPause,
+          ),
         ),
         gap,
         OnyxIconButton(

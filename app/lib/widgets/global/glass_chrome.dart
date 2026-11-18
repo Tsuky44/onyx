@@ -8,6 +8,7 @@ import '../../theme/lite_mode.dart';
 import '../../tv/input/tv_field_key_handler.dart';
 import '../../tv/nav/onyx_dpad.dart' show TvNavScope;
 import '../../tv/nav/tv_focusable.dart';
+import '../../tv/tv_deferred_keyboard.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/responsive.dart';
@@ -81,46 +82,6 @@ class GlassHeaderStrip extends StatelessWidget {
     return ClipRect(
       child: BackdropFilter.grouped(
         filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-        child: veil,
-      ),
-    );
-  }
-}
-
-/// Le verre sombre et dense des barres du téléphone — onglets en bas, barre
-/// du haut des catalogues.
-///
-/// Plus opaque que [GlassHeaderStrip] : sur un écran de 6 pouces la barre
-/// couvre des affiches en pleine couleur, et un voile léger laissait leurs
-/// couleurs passer sous les libellés. Le filet clair se pose du côté du
-/// contenu, [edge].
-class GlassBarSurface extends StatelessWidget {
-  final Widget child;
-  final AxisDirection edge;
-
-  const GlassBarSurface({
-    super.key,
-    required this.child,
-    this.edge = AxisDirection.up,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final blurs = glassBlurs(context);
-    final hairline = BorderSide(color: Colors.white.withValues(alpha: 0.08));
-    final veil = DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.background.withValues(alpha: blurs ? 0.72 : 0.94),
-        border: edge == AxisDirection.up
-            ? Border(top: hairline)
-            : Border(bottom: hairline),
-      ),
-      child: child,
-    );
-    if (!blurs) return veil;
-    return ClipRect(
-      child: BackdropFilter.grouped(
-        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
         child: veil,
       ),
     );
@@ -248,6 +209,13 @@ class GlassSearchInput extends StatelessWidget {
               final query = controller.text.trim();
               if (query.isNotEmpty) {
                 onSubmitted?.call(query);
+              }
+              // La touche « Rechercher » d'un clavier à l'écran le referme :
+              // c'est le geste par défaut de Flutter, que fournir
+              // `onEditingComplete` retire. Sur un iPhone, le clavier restait
+              // donc ouvert sur les résultats (ADR-0141).
+              if (TvDeferredKeyboard.usesTouchKeyboard(context)) {
+                focusNode.unfocus();
               }
             },
             textInputAction: TextInputAction.search,
