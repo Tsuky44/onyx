@@ -160,7 +160,7 @@ void main() {
       expect(find.text('b'), findsOneWidget);
     });
 
-    test('le verre ne floute pas sur le web, ordinateur compris (ADR-0148)',
+    test('le verre ne floute pas sur le web, ordinateur compris (ADR-0153)',
         () {
       expect(glassBlursFor(isWeb: false, isLite: false), isTrue);
       expect(glassBlursFor(isWeb: false, isLite: true), isFalse);

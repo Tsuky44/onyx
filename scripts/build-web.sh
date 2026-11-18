@@ -36,7 +36,7 @@ echo -e "${YELLOW}1. Build du bundle Flutter Web...${NC}"
 # --wasm produit un build WasmGC/skwasm (rendu multi-thread, bien plus fluide que
 # CanvasKit en JS) ET la version JS de repli : le chargeur de Flutter choisit au
 # demarrage selon la prise en charge de WasmGC par le navigateur. Les navigateurs
-# sans WasmGC (webOS, Safari ancien) gardent donc CanvasKit. Voir ADR-0147.
+# sans WasmGC (webOS, Safari ancien) gardent donc CanvasKit. Voir ADR-0152.
 (cd "$APP_DIR" && flutter build web --wasm --release --no-web-resources-cdn --pwa-strategy=none)
 
 echo -e "${YELLOW}2. Copie vers server/webui/dist/...${NC}"

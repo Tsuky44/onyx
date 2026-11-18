@@ -24,7 +24,7 @@ Write-Host "1. Build du bundle Flutter Web..." -ForegroundColor Yellow
 # et sans signaler chaque visiteur à un tiers.
 Push-Location $AppDir
 try {
-    # --wasm : build WasmGC/skwasm + repli JS (webOS, navigateurs sans WasmGC). ADR-0147.
+    # --wasm : build WasmGC/skwasm + repli JS (webOS, navigateurs sans WasmGC). ADR-0152.
     flutter build web --wasm --release --no-web-resources-cdn
     if ($LASTEXITCODE -ne 0) { throw "flutter build web a échoué" }
 }

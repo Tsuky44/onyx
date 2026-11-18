@@ -172,7 +172,7 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, name string)
 	// ne peut pas utiliser SharedArrayBuffer et retombe sur un seul thread.
 	// « credentialless » plutot que « require-corp » : les affiches TMDB et les
 	// flux d'un autre serveur Onyx se chargent sans en-tete CORP, mais sans
-	// cookies. Voir ADR-0147.
+	// cookies. Voir ADR-0152.
 	w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
 	w.Header().Set("Cross-Origin-Embedder-Policy", "credentialless")
 	w.Header().Set("ETag", etag)

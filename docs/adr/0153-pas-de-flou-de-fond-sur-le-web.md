@@ -1,4 +1,4 @@
-# ADR-0148 — Pas de flou de fond sur le web
+# ADR-0153 — Pas de flou de fond sur le web
 
 - **Statut :** accepté. Vérifié en test (la règle) ; l'effet sur la fluidité est attendu, pas mesuré.
 - **Date :** 2026-11-18

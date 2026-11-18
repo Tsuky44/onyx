@@ -25,7 +25,7 @@ func TestServeFileRefusesToBeFramed(t *testing.T) {
 }
 
 // skwasm exige l'isolation inter-origines pour tourner en multi-thread ; sans
-// ces deux en-tetes, crossOriginIsolated reste faux. Voir ADR-0147.
+// ces deux en-tetes, crossOriginIsolated reste faux. Voir ADR-0152.
 func TestServeFileIsCrossOriginIsolated(t *testing.T) {
 	h := &Handler{
 		files: fstest.MapFS{"index.html": {Data: []byte("<html></html>")}},

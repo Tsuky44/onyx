@@ -1,4 +1,4 @@
-# ADR-0147 — La version web passe en WebAssembly (skwasm), avec isolation inter-origines
+# ADR-0152 — La version web passe en WebAssembly (skwasm), avec isolation inter-origines
 
 - **Statut :** accepté. Build vérifié ; voir « Vérifications » pour ce qui l'a été dans le navigateur.
 - **Date :** 2026-11-18
