@@ -11,7 +11,7 @@ import '../../widgets/global/glass_chrome.dart';
 import '../../widgets/global/interface_tour/tour_anchor.dart';
 
 /// Une page rangée derrière l'onglet « Plus » de la capsule du téléphone
-/// (ADR-0145) : Listes, Hors ligne.
+/// (ADR-0146) : Listes, Hors ligne.
 class PhoneMoreItem {
   const PhoneMoreItem({
     required this.tab,

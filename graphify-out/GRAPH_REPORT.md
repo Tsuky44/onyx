@@ -6,12 +6,12 @@
 - Unclassified: 167 file(s) not represented in the graph (top: (none) 33, .csv 24, .xml 20)
 
 ## Summary
-- 33165 nodes · 65476 edges · 941 communities (747 shown, 194 thin omitted)
+- 33165 nodes · 65476 edges · 947 communities (751 shown, 196 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 2676 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7d761bd8`
+- Built from commit: `4444effc`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -105,7 +105,7 @@
 - setLiveState
 - package:onyx/services/api_client.dart
 - responsive.dart
-- Flutter
+- NSObject
 - home_provider.dart
 - design-system.mjs
 - doctor.mjs
@@ -347,9 +347,9 @@
 - models/watch_party.dart
 - Widget
 - docs · adr #24
-- VideoOutput
 - TextureSW
-- VideoOutput
+- TextureSW
+- TextureSW
 - Design System Inspired by Binance.US
 - Design System Inspired by PlayStation
 - request_progress.dart
@@ -387,7 +387,7 @@
 - shared_show.dart
 - onyx_menu_style.dart
 - Design System Inspired by Cohere
-- .setUp
+- onyx_player_apple/Sources/onyx_player_apple/Messages.g.swift
 - StallGuardLoadControl
 - caches_directory_repository_io.dart
 - staggered_entrance.dart
@@ -401,7 +401,7 @@
 - VideoOutputManager
 - search_route_observer.dart
 - OnyxBackgroundDownloadsPlugin
-- FastStart
+- DesignSystemGenerator
 - use_episodes_panel.dart
 - Design System Inspired by IBM
 - Design System Inspired by ElevenLabs
@@ -418,7 +418,7 @@
 - install_origin_io.dart
 - macos_update_signature_io.dart
 - match.go
-- NSObject
+- OnyxMpvMacosPlugin
 - DialogueForwardDownmixTest.kt
 - members_test.go
 - AppDelegate
@@ -470,7 +470,7 @@
 - int get
 - ADR-0110 — Un seul système de focus : dpad
 - series_track_memory.dart
-- .bitmap
+- AetherEngine
 - Design System Inspired by BMW
 - MediaKitVideoPlugin.java
 - updates
@@ -561,7 +561,7 @@
 - app/pubspec.yaml
 - onboard.md
 - metadata_fix_sheet.dart
-- onyx_player_apple/Sources/onyx_player_apple/Messages.g.swift
+- Any
 - stream_cut_recovery.dart
 - build-windows
 - avoid_cutouts_test.dart
@@ -583,7 +583,7 @@
 - build-ios-ipa.sh
 - skip_segments.dart
 - interface
-- FastStart
+- VideoOutput
 - track_label.dart
 - detect-csp.mjs
 - package:flutter/widgets.dart
@@ -706,7 +706,7 @@
 - quieter.md
 - Improve UI
 - tasteful-ui/SKILL.md
-- Extract Flow
+- VideoOutput
 - server/README.md (back-end Go Onyx)
 - VideoOutputManager
 - Une seule marque, conforme aux tokens, et un chrome d'Accueil qui réutilise les owners du shell
@@ -817,8 +817,8 @@
 - pointer_click_zone.dart
 - ADR-0101 — Le mode léger reconnaît les ordinateurs modestes
 - runMigration
-- CSP detection (first-time only)
-- FlutterTexture
+- playback_access.dart
+- ResizableTextureProtocol
 - use_window_focus.dart
 - ADR-0041 Validation en deux etapes par code TOTP
 - request_releases.dart
@@ -847,9 +847,15 @@
 - Messages.g.kt
 - standardmessagecodec
 - pinch_zoom_fit.dart
+- Generate Combined Critique Report
+- Common Cognitive Load Violations
+- Persona-Based Design Testing
+- Cognitive Load Assessment
 - .ProbeSeerr
 - settings_choice_focus.dart
 - ADR-0090 — Se connecter à MediaHub avec son compte Onyx
+- Visualize: Direction Comps & Asset Production
+- Heuristics Scoring Guide
 - ADR-0127 — La lecture d'un autre appareil s'annonce en notification, et se reprend en maintenant Lecture
 - audio_language_gap.dart
 - ADR-0001 Droits utilisateur et invitations
@@ -918,7 +924,7 @@
 - **Telechargement en arriere-plan (ecran verrouille)** — docs_adr_0027_reserve_de_telechargements_et_reseau_facture, docs_adr_0040_telechargements_ecran_verrouille, docs_adr_0040_telechargements_ecran_verrouille_service_premier_plan_android, docs_adr_0040_telechargements_ecran_verrouille_urlsession_arriere_plan, docs_adr_0040_telechargements_ecran_verrouille_ticket_telechargement_6h [INFERRED 0.85]
 - **Appairage television par lien local et QR code** — docs_adr_0003_android_tv_et_appairage_par_qr_code_pairing_flow, docs_adr_0007_appairage_tv_par_lien_local_reverse_listener, docs_adr_0007_appairage_tv_par_lien_local_tv_own_session, docs_adr_0020_connexion_par_qr_sur_le_web_et_le_desktop_web_pairing [INFERRED 0.85]
 
-## Communities (941 total, 194 thin omitted)
+## Communities (947 total, 196 thin omitted)
 
 ### Community 0 - "package:flutter/foundation.dart"
 Cohesion: 0.02
@@ -1276,9 +1282,9 @@ Nodes (186): authErrorText, errorStr, tr, ConditionalGetCache, linkAccounts, lin
 Cohesion: 0.07
 Nodes (26): AppBreakpoints, AppLayout, compact, expanded, imageCacheExtent, isCompact, isMedium, isWide (+18 more)
 
-### Community 89 - "Flutter"
-Cohesion: 0.06
-Nodes (21): AetherEngine, SceneDelegate, RunnerTests, RunnerTests, SceneDelegate, AVFoundation, AVKit, Cocoa (+13 more)
+### Community 89 - "NSObject"
+Cohesion: 0.03
+Nodes (26): SceneDelegate, RunnerTests, RunnerTests, SceneDelegate, Cocoa, Flutter, FlutterMacOS, MediaPlayer (+18 more)
 
 ### Community 90 - "home_provider.dart"
 Cohesion: 0.05
@@ -1310,7 +1316,7 @@ Nodes (42): _Actions, _apply, build, _canChooseService, configured, controller, 
 
 ### Community 97 - "provision.mjs"
 Cohesion: 0.07
-Nodes (54): 5. Record the decision, Commands, api(), bare(), findGuild(), token, announcement(), betaFeedback() (+46 more)
+Nodes (53): Commands, api(), bare(), findGuild(), token, announcement(), betaFeedback(), block() (+45 more)
 
 ### Community 98 - "app · lib #73"
 Cohesion: 0.03
@@ -2037,8 +2043,8 @@ Cohesion: 0.09
 Nodes (14): MessagesPigeonCodec, MessagesPigeonCodecReader, MessagesPigeonCodecReaderWriter, MessagesPigeonCodecWriter, OnyxApplePlayerApiSetup, .codec, PigeonError, .localizedDescription (+6 more)
 
 ### Community 291 - "impeccable/SKILL.md"
-Cohesion: 0.05
-Nodes (40): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Apply at system scale, Audit before choosing, Choose a strategy (+32 more)
+Cohesion: 0.04
+Nodes (44): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Craft (deprecated alias), Craft floor, Refuse (+36 more)
 
 ### Community 292 - "format.dart"
 Cohesion: 0.07
@@ -2196,14 +2202,6 @@ Nodes (137): build, child, gradient, OnyxScrim, build, child, visible, build (+1
 Cohesion: 0.08
 Nodes (24): BUILD_ANDROID, BUILD_IOS, BUILD_MACOS, BUILD_TVOS, BUILD_WEBOS, BUILD_WINDOWS, BUMP_INPUT, CMAKE_GENERATOR (+16 more)
 
-### Community 332 - "VideoOutput"
-Cohesion: 0.08
-Nodes (4): TextureSW, TextureSWContext, VideoOutput, .videoSize
-
-### Community 334 - "VideoOutput"
-Cohesion: 0.08
-Nodes (4): TextureSW, TextureSWContext, VideoOutput, .videoSize
-
 ### Community 335 - "Design System Inspired by Binance.US"
 Cohesion: 0.05
 Nodes (39): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+31 more)
@@ -2253,8 +2251,8 @@ Cohesion: 0.10
 Nodes (19): build, createState, details, didChangeOnScreen, dispose, failed, initState, interval (+11 more)
 
 ### Community 348 - "critique.md"
-Cohesion: 0.09
-Nodes (21): Action Summary, Ask the User, Assessment A: Design Review, Assessment B: Detector + Browser Evidence, Assessment Orchestration, Design Health Score, Design Specificity Verdict, Generate Combined Critique Report (+13 more)
+Cohesion: 0.18
+Nodes (10): Action Summary, Ask the User, Assessment A: Design Review, Assessment B: Detector + Browser Evidence, Assessment Orchestration, Hard Invariants, Persist the Snapshot, Purpose (+2 more)
 
 ### Community 349 - "bool get"
 Cohesion: 0.01
@@ -2344,9 +2342,9 @@ Nodes (20): checkSize, checkSlot, current, detailSize, headerHeight, headerSize,
 Cohesion: 0.05
 Nodes (37): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+29 more)
 
-### Community 372 - ".setUp"
-Cohesion: 0.17
-Nodes (3): OnyxApplePlaybackStats, .description, OnyxApplePlayerApi
+### Community 372 - "onyx_player_apple/Sources/onyx_player_apple/Messages.g.swift"
+Cohesion: 0.09
+Nodes (22): EngineLogStreamHandler, OnyxApplePictureInPicture, .description, OnyxApplePlaybackStats, .description, OnyxApplePlayerApi, OnyxApplePlayerStatus, .description (+14 more)
 
 ### Community 374 - "caches_directory_repository_io.dart"
 Cohesion: 0.09
@@ -2391,6 +2389,10 @@ Nodes (6): VideoOutputManager, mutex_, registrar_, thread_pool_, video_outputs_,
 ### Community 384 - "search_route_observer.dart"
 Cohesion: 0.11
 Nodes (17): build, child, createState, didPop, didPush, didRemove, didReplace, navigatorKey (+9 more)
+
+### Community 386 - "DesignSystemGenerator"
+Cohesion: 0.14
+Nodes (3): Handle `steer`, The contract (read once), DesignSystemGenerator
 
 ### Community 387 - "use_episodes_panel.dart"
 Cohesion: 0.11
@@ -2456,9 +2458,9 @@ Nodes (15): bundleDigest, _compareBytes, convert, digest, key, lines, message, r
 Cohesion: 0.12
 Nodes (19): fakeTitles, suggestTitles(), exportURL(), Refresher, readExport(), ftsPrefixQuery(), Hit, Open() (+11 more)
 
-### Community 403 - "NSObject"
-Cohesion: 0.04
-Nodes (14): MediaKitLibsIosVideoPlugin, MediaKitLibsMacosVideoPlugin, ResizableTextureProtocol, UtilsProtocol, MediaKitVideoPlugin, UtilsProtocol, MediaKitVideoPlugin, UtilsProtocol (+6 more)
+### Community 403 - "OnyxMpvMacosPlugin"
+Cohesion: 0.13
+Nodes (3): MpvHostView, MpvHostViewFactory, OnyxMpvMacosPlugin
 
 ### Community 405 - "members_test.go"
 Cohesion: 0.14
@@ -2557,8 +2559,8 @@ Cohesion: 0.06
 Nodes (34): 1. Visual Theme & Atmosphere, 2. Color Palette & Roles, 3. Typography Rules, 4. Component Stylings, 5. Layout Principles, 6. Depth & Elevation, 7. Do's and Don'ts, 8. Responsive Behavior (+26 more)
 
 ### Community 434 - "live.md"
-Cohesion: 0.05
-Nodes (34): 1. Read the screenshot (if present), 2. Wrap the element, 3. Load the action's reference, 4. Plan three variants: identity first, then mode, then axes, 5. Apply the freeform prompt (if present), 6. Deliver variants, 8. Signal done, Aborting an in-flight session (+26 more)
+Cohesion: 0.04
+Nodes (45): Apply at system scale, Audit before choosing, Choose a strategy, Contrast and perception, Live-mode signature params, Verify, Visitor mode, 1. Read the screenshot (if present) (+37 more)
 
 ### Community 435 - "media_failover.dart"
 Cohesion: 0.07
@@ -2639,6 +2641,10 @@ Nodes (41): ADR-0039 Force du geste sur le trackpad de l'Apple TV, TvFocusScroll
 ### Community 455 - "series_track_memory.dart"
 Cohesion: 0.07
 Nodes (29): _acceptedKey, acceptedWithout, acceptOtherLanguage, _api, _audioField, _awaitedAudioField, _CachedChoice, _cacheKey (+21 more)
+
+### Community 456 - "AetherEngine"
+Cohesion: 0.06
+Nodes (12): AetherEngine, AVFoundation, AVKit, Combine, CoreGraphics, CoreMedia, Foundation, ImageIO (+4 more)
 
 ### Community 457 - "Design System Inspired by BMW"
 Cohesion: 0.06
@@ -2797,7 +2803,7 @@ Cohesion: 0.12
 Nodes (14): close, _closed, describe, _elapsed, isRunning, mark, _note, notePlaying (+6 more)
 
 ### Community 502 - "build-legal-site.py"
-Cohesion: 0.13
+Cohesion: 0.14
 Nodes (7): lowpass(), reverb(), inline(), main(), page(), render(), bundle_digest()
 
 ### Community 506 - "build_release.sh"
@@ -2865,8 +2871,8 @@ Cohesion: 0.15
 Nodes (11): apply, _compare, copyWith, idle, _keeps, kind, sort, StorageIdle (+3 more)
 
 ### Community 523 - "duration.dart"
-Cohesion: 0.07
-Nodes (25): AutoTrust, _carriedAt, directShortfall, noteCarried, reset, slopeCounts, _stalls, stallTolerated (+17 more)
+Cohesion: 0.09
+Nodes (18): AutoTrust, _carriedAt, directShortfall, noteCarried, reset, slopeCounts, _stalls, stallTolerated (+10 more)
 
 ### Community 524 - "player_shortcuts.dart"
 Cohesion: 0.12
@@ -2885,8 +2891,8 @@ Cohesion: 0.08
 Nodes (24): Assess Adaptation Challenge, Content Adaptation, Desktop Adaptation (Mobile → Desktop), Detect Input Method, Not Just Screen Size, Email Adaptation (Web → Email), Implement Adaptations, Layout Adaptation Patterns, Layout Adaptation Techniques (+16 more)
 
 ### Community 528 - "DateTime"
-Cohesion: 0.06
-Nodes (27): AppDownload, builtAt, file, fromJson, label, platform, size, url (+19 more)
+Cohesion: 0.08
+Nodes (20): AppDownload, builtAt, file, fromJson, label, platform, size, url (+12 more)
 
 ### Community 529 - "Design System Inspired by Miro"
 Cohesion: 0.08
@@ -2948,10 +2954,6 @@ Nodes (22): Assess Onboarding Needs, Context Over Ceremony, Contextual Help, Des
 Cohesion: 0.02
 Nodes (105): asset, build, createState, dispose, document, LegalDocument, _load, _onKey (+97 more)
 
-### Community 548 - "onyx_player_apple/Sources/onyx_player_apple/Messages.g.swift"
-Cohesion: 0.07
-Nodes (25): EngineLogStreamHandler, MessagesPigeonInternal, nilOrValue(), OnyxApplePictureInPicture, .description, OnyxApplePlayerErrorKind, source, unknown (+17 more)
-
 ### Community 549 - "stream_cut_recovery.dart"
 Cohesion: 0.18
 Nodes (10): endTolerance, isCut, isRecovering, recover, _recoveredAt, _recovering, retryDelays, steadyDelay (+2 more)
@@ -3005,12 +3007,12 @@ Cohesion: 0.47
 Nodes (3): MediaKitUtils, MediaKitUtils::Platform, MediaKitUtils::Type
 
 ### Community 565 - "New visual work"
-Cohesion: 0.20
-Nodes (10): 1. Decide what is already true, 2. Ask what will change the work, 3. Choose the right amount of invention, 4. Commit the world, 6. Build with full commitment, 7. Inspect and finish, Create a whole surface inside an established world, Create or replace the visual world (+2 more)
+Cohesion: 0.18
+Nodes (11): 1. Decide what is already true, 2. Ask what will change the work, 3. Choose the right amount of invention, 4. Commit the world, 5. Record the decision, 6. Build with full commitment, 7. Inspect and finish, Create a whole surface inside an established world (+3 more)
 
 ### Community 566 - "OnyxApplePlaybackState"
-Cohesion: 0.10
-Nodes (17): OnyxApplePlaybackState, buffering, ended, idle, ready, OnyxApplePlaybackState, buffering, ended (+9 more)
+Cohesion: 0.09
+Nodes (21): OnyxApplePlaybackState, buffering, ended, idle, ready, OnyxApplePlayerErrorKind, source, unknown (+13 more)
 
 ### Community 567 - "build-ios-ipa.sh"
 Cohesion: 0.53
@@ -3309,8 +3311,8 @@ Cohesion: 0.38
 Nodes (4): LoginStep, TestPolicyDecidesWhatTheLoginStillAsks(), Policy, ParsePolicy()
 
 ### Community 754 - "Nielsen's 10 Heuristics"
-Cohesion: 0.05
-Nodes (39): 10. Help and Documentation, 1. Impatient Power User: "Alex", 1. The Wall of Options, 1. Visibility of System Status, 2. Confused First-Timer: "Jordan", 2. Match Between System and Real World, 2. The Memory Bridge, 3. Accessibility-Dependent User: "Sam" (+31 more)
+Cohesion: 0.18
+Nodes (11): 10. Help and Documentation, 1. Visibility of System Status, 2. Match Between System and Real World, 3. User Control and Freedom, 4. Consistency and Standards, 5. Error Prevention, 6. Recognition Rather Than Recall, 7. Flexibility and Efficiency of Use (+3 more)
 
 ### Community 755 - "onyx_controls_rows.dart"
 Cohesion: 0.25
@@ -3335,10 +3337,6 @@ Nodes (9): Design plan template, 1. Select the surface, 2. Reconstruct the local
 ### Community 760 - "tasteful-ui/SKILL.md"
 Cohesion: 0.18
 Nodes (6): Behavior, Load, Mode: Design Critique Only, Direction Format, Process, Variation First Workflow
-
-### Community 761 - "Extract Flow"
-Cohesion: 0.25
-Nodes (7): Extract Flow, Step 1: Discover the Design System, Step 2: Identify Patterns, Step 3: Plan Extraction, Step 4: Extract & Enrich, Step 5: Migrate, Step 6: Document
 
 ### Community 762 - "server/README.md (back-end Go Onyx)"
 Cohesion: 0.04
@@ -3409,8 +3407,8 @@ Cohesion: 0.33
 Nodes (6): finding, calleeName(), foldString(), scanServer(), stringLit(), TestEveryServerMessageHasItsEnglishEntry()
 
 ### Community 782 - "Operate mode depth (and Read notes)"
-Cohesion: 0.10
-Nodes (18): Craft floor, Refuse, Verify, Constraints, Failure modes, Flow, $impeccable hooks, Intentional findings (+10 more)
+Cohesion: 0.22
+Nodes (9): Color, Components, Layout, Motion, Operate mode depth (and Read notes), Product constraints, Product permissions, The product slop test (+1 more)
 
 ### Community 783 - "Logique de l'app Flutter"
 Cohesion: 0.06
@@ -3708,13 +3706,13 @@ Nodes (5): ADR-0101 — Le mode léger reconnaît les ordinateurs modestes, Cons
 Cohesion: 0.29
 Nodes (7): migration, legacyDir(), seedLibrariesFromLegacyDirs(), firstLine(), isAlreadyAppliedColumn(), runMigration(), hashStoredSessionTokens()
 
-### Community 874 - "CSP detection (first-time only)"
-Cohesion: 0.29
-Nodes (7): append-arrays, append-string, Consent prompt template, CSP detection (first-time only), Drift-heal warning, First-time setup (config missing or invalid), Troubleshooting
+### Community 874 - "playback_access.dart"
+Cohesion: 0.13
+Nodes (14): close, _closed, _expiresAt, isLegacy, mediaId, origin, PlaybackAccess, protect (+6 more)
 
-### Community 876 - "FlutterTexture"
-Cohesion: 0.07
-Nodes (5): SafeResizableTexture, ResizableTextureProtocol, SafeResizableTexture, ResizableTextureProtocol, SafeResizableTexture
+### Community 876 - "ResizableTextureProtocol"
+Cohesion: 0.08
+Nodes (3): SafeResizableTexture, SafeResizableTexture, SafeResizableTexture
 
 ### Community 877 - "use_window_focus.dart"
 Cohesion: 0.29
@@ -3792,6 +3790,22 @@ Nodes (7): FlutterError, MessagesPigeonCodec, OnyxDeviceCapabilities, OnyxVideoF
 Cohesion: 0.12
 Nodes (14): apply, down, end, move, PinchZoom, PinchZoomFit, _pointers, resolve (+6 more)
 
+### Community 905 - "Generate Combined Critique Report"
+Cohesion: 0.18
+Nodes (11): Design Health Score, Design Specificity Verdict, Generate Combined Critique Report, Minor Observations, Overall Impression, Persona Red Flags, Priority Issues, Questions to Consider (+3 more)
+
+### Community 910 - "Common Cognitive Load Violations"
+Cohesion: 0.22
+Nodes (9): 1. The Wall of Options, 2. The Memory Bridge, 3. The Hidden Navigation, 4. The Jargon Barrier, 5. The Visual Noise Floor, 6. The Inconsistent Pattern, 7. The Multi-Task Demand, 8. The Context Switch (+1 more)
+
+### Community 911 - "Persona-Based Design Testing"
+Cohesion: 0.25
+Nodes (8): 1. Impatient Power User: "Alex", 2. Confused First-Timer: "Jordan", 3. Accessibility-Dependent User: "Sam", 4. Deliberate Stress Tester: "Riley", 5. Distracted Mobile User: "Casey", Persona-Based Design Testing, Project-Specific Personas, Selecting Personas
+
+### Community 912 - "Cognitive Load Assessment"
+Cohesion: 0.29
+Nodes (7): Cognitive Load Assessment, Cognitive Load Checklist, Extraneous Load: Bad Design, Germane Load: Learning Effort, Intrinsic Load: The Task Itself, The Working Memory Rule, Three Types of Cognitive Load
+
 ### Community 913 - ".ProbeSeerr"
 Cohesion: 0.19
 Nodes (6): seerrDirectory, seerrIdentity, SeerrLink, seerrUser, StatusError, Client
@@ -3803,6 +3817,14 @@ Nodes (11): build, child, createState, dispose, _edge, _inside, _node, _onFocusC
 ### Community 915 - "ADR-0090 — Se connecter à MediaHub avec son compte Onyx"
 Cohesion: 0.40
 Nodes (4): ADR-0090 — Se connecter à MediaHub avec son compte Onyx, Conséquences, Contexte, Décision
+
+### Community 916 - "Visualize: Direction Comps & Asset Production"
+Cohesion: 0.33
+Nodes (5): Generate three compositional options, Inventory implementation fidelity, One approval point, Produce only the assets the build needs, Visualize: Direction Comps & Asset Production
+
+### Community 917 - "Heuristics Scoring Guide"
+Cohesion: 0.50
+Nodes (4): Heuristics Scoring Guide, Issue Severity (P0–P3), Reference Material, Score Summary
 
 ### Community 920 - "ADR-0127 — La lecture d'un autre appareil s'annonce en notification, et se reprend en maintenant Lecture"
 Cohesion: 0.33
@@ -3911,12 +3933,12 @@ Nodes (3): Ce que MediaHub lit chez Onyx avec la clé (ADR-0102), Contrat Onyx �
 ## Knowledge Gaps
 - **13355 isolated node(s):** `UserNotifications`, `useDesktopCaptionBar`, `useHiddenNativeTitleBar`, `macOSWindowControlsTopInset`, `tvShellHeaderTopGap` (+13350 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 19588 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **194 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **196 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Handle `generate`` connect `live.md` to `SpaceArrivalHop`?**
+- **Why does `Handle `generate`` connect `live.md` to `DesignSystemGenerator`, `SpaceArrivalHop`?**
   _High betweenness centrality (0.105) - this node is a cross-community bridge._
 - **What connects `UserNotifications`, `useDesktopCaptionBar`, `useHiddenNativeTitleBar` to the rest of the system?**
   _13355 weakly-connected nodes found - possible documentation gaps or missing edges._

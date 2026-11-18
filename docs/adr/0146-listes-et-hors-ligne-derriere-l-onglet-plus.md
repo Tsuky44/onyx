@@ -1,4 +1,4 @@
-# ADR-0145 — Listes et Hors ligne derrière l'onglet « Plus » de la capsule
+# ADR-0146 — Listes et Hors ligne derrière l'onglet « Plus » de la capsule
 
 - **Statut :** accepté. Maquettes « Un bouton « Plus » pour Listes et Hors ligne » : la A choisie
   par l'utilisateur le 2026-11-18 (« ok parfait »), avec sa règle : « si on est dans listes et

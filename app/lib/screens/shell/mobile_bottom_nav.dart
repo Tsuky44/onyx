@@ -28,7 +28,7 @@ import 'shell_tabs.dart';
 ///   premier geste vers le haut ;
 /// - **un onglet est touché**, la lentille glisse jusqu'à lui ;
 /// - **Listes et Hors ligne** se rangent derrière un onglet « Plus » quand
-///   les deux existent (ADR-0145) : il ouvre un petit menu de verre, et sur
+///   les deux existent (ADR-0146) : il ouvre un petit menu de verre, et sur
 ///   l'une des deux pages il passe directement à l'autre ;
 /// - **la recherche s'ouvre** ([search]), le rond s'étire sur toute la
 ///   largeur et devient le champ, pendant que les onglets s'effacent dessous ;
@@ -477,7 +477,7 @@ class _MobileBottomNavState extends State<MobileBottomNav>
   }
 
   /// Les pages qui se rangent derrière « Plus » quand il y en a au moins
-  /// deux (ADR-0145).
+  /// deux (ADR-0146).
   List<PhoneMoreItem> _overflow() => [
         if (widget.canUseLists)
           PhoneMoreItem(
