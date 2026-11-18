@@ -3866,4 +3866,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Recently added',
   'Revenir à {0}':
       'Back to {0}',
+  'Premier épisode':
+      'First episode',
+  'Prochain épisode le {0}':
+      'Next episode {0}',
 };
