@@ -21,6 +21,8 @@ import '../../services/picture_in_picture.dart';
 import '../../services/player_presence.dart';
 import '../../services/screen_brightness_control.dart';
 import '../../services/watch_party.dart';
+import '../../services/watch_party_invites.dart';
+import '../../widgets/global/watch_party_invite_banner.dart' show watchPartyInviteFailure;
 import 'chrome_auto_hide.dart';
 import 'display_cutouts.dart';
 import 'video_display_mode.dart';
@@ -41,6 +43,7 @@ import 'hooks/use_player_popup.dart';
 import 'hooks/use_player_stats.dart';
 import 'hooks/use_player_tabs.dart';
 import 'hooks/use_player_watch_party.dart';
+import 'hooks/use_player_invite.dart';
 import 'hooks/use_pause_info.dart';
 import 'hooks/use_window_focus.dart';
 import 'widgets/desktop_pip_overlay.dart';
@@ -69,6 +72,7 @@ import 'widgets/tabs/player_info_tab.dart';
 import 'widgets/tabs/player_stats_tab.dart';
 import 'widgets/tabs/player_watch_party_tab.dart';
 import 'widgets/watch_party_overlay.dart';
+import 'widgets/player_invite_overlay.dart';
 import 'playback/live_subtitles.dart';
 import 'playback/relay_trigger.dart';
 import 'playback/remote_seek.dart';
@@ -140,6 +144,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _nextEpisodePageWasVisible = false;
   late final PlaybackHandoffWatch _handoff;
   late final PlayerWatchParty _party;
+  late final PlayerInviteWatch _invite;
   late final PauseInfoWatch _pauseInfo = _createPauseInfo();
   /// L'écran natif d'Apple TV, ou null là où l'interface Onyx reste seule.
   final GestureHints _hints = GestureHints();
@@ -392,6 +397,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
     )
       ..addListener(_rebuild)
       ..listen();
+    _invite = PlayerInviteWatch(
+      join: (invite) async {
+        final inbox = WatchPartyInviteInbox.instance;
+        if (inbox != null) await _party.joinInvite(invite, inbox);
+      },
+      isGone: () => _isLeaving || _isDisposing || !mounted,
+      restoreFocus: _restoreFocusAfterInvite,
+      showFailure: (e) => _party.showNotice(watchPartyInviteFailure(e)),
+    )
+      ..addListener(_rebuild)
+      ..listen();
     _handoff = PlaybackHandoffWatch(
       api: () => _apiClient,
       controller: _playerController,
@@ -457,6 +473,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     SleepTimer.instance.release();
     StillWatching.instance.release();
     _party.dispose();
+    _invite.dispose();
     _keyboardFocusNode.dispose();
     _playPauseFocusNode.dispose();
     _progressFocusNode.dispose();

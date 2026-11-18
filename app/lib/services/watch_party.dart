@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/models.dart';
 import '../models/watch_party.dart';
+import '../models/watch_party_invite.dart';
 import 'api_client.dart';
 import '../l10n/tr.dart';
 
@@ -237,6 +238,17 @@ class WatchPartySession extends ChangeNotifier {
     _reportLoading();
     _reconcile();
   }
+
+  // --- Invitations (ADR-0148) ---------------------------------------------
+
+  /// Les personnes qui ont Onyx ouvert et ne sont pas encore là.
+  Future<List<WatchPartyInvitee>> invitees() =>
+      api.listWatchPartyInvitees(code, memberId: _snapshot.memberId);
+
+  /// Invite [userId] : une carte s'affiche sur ses appareils ouverts. Lève
+  /// si la personne vient de fermer Onyx (409).
+  Future<void> invite(int userId) => api.inviteToWatchParty(code,
+      memberId: _snapshot.memberId, userId: userId);
 
   // --- Gestes locaux -------------------------------------------------------
 

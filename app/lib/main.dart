@@ -74,6 +74,7 @@ import 'widgets/global/resume_preview/hover_preview_preference.dart';
 import 'l10n/app_language.dart';
 import 'l10n/localized_asset.dart';
 import 'l10n/tr.dart';
+import 'services/watch_party_invites.dart';
 
 /// Les licences de ce qu'aucun paquet Dart ne déclare : les polices embarquées
 /// — Manrope (OFL) et les icônes Phosphor (MIT) — et les moteurs de lecture
@@ -299,6 +300,9 @@ void main() async {
 
   final authProvider = AuthProvider(apiClient);
   final reachability = ServerReachability(apiClient);
+  // L'app ouverte attend ses invitations « Regarder ensemble », ce qui la
+  // rend invitable (ADR-0148).
+  WatchPartyInviteInbox.install(authProvider);
 
   // Les réglages de lecture suivent le compte (ADR-0043) : dès qu'on sait qui
   // est connecté, et sur quel serveur, l'appareil s'aligne sur lui. La clé ne

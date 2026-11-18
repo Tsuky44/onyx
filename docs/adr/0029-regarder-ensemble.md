@@ -1,6 +1,8 @@
 # ADR-0029 — Regarder ensemble : une séance partagée, synchronisée par long-polling
 
 - **Statut :** accepté, réalisé — pas encore essayé à deux appareils sur un vrai serveur
+  Prolongé par l'[ADR-0148](0148-on-invite-a-une-seance-les-personnes-qui-ont-onyx-ouvert.md) :
+  en plus du code, on invite les personnes qui ont Onyx ouvert.
 - **Date :** 2026-09-23
 - **Portée :** le serveur (`server/handlers/watch_party.go`, cinq routes `/api/watch-parties`) et le
   lecteur (`app/lib/services/watch_party.dart`, `player_screen.dart`, le menu du compte)

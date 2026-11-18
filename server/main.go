@@ -335,6 +335,10 @@ func main() {
 	router.POST("/api/watch-parties/:code/join", handlers.RequireAuth(handlers.JoinWatchParty))
 	router.POST("/api/watch-parties/:code/state", handlers.RequireAuth(handlers.UpdateWatchParty))
 	router.POST("/api/watch-parties/:code/leave", handlers.RequireAuth(handlers.LeaveWatchParty))
+	router.GET("/api/watch-parties/:code/invitees", handlers.RequireAuth(handlers.ListWatchPartyInvitees))
+	router.POST("/api/watch-parties/:code/invite", handlers.RequireAuth(handlers.InviteToWatchParty))
+	router.GET("/api/me/watch-party-invites", handlers.RequireAuth(handlers.PollWatchPartyInvites))
+	router.POST("/api/me/watch-party-invites/:id/decline", handlers.RequireAuth(handlers.DeclineWatchPartyInvite))
 	// Liens de partage publics (ADR-0037). Les créer fait lire le serveur par
 	// un inconnu : c'est un droit à part, share_media.
 	router.GET("/api/shares", handlers.RequirePermission(models.PermShareMedia, handlers.ListMediaShares))

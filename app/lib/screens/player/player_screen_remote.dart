@@ -243,9 +243,10 @@ extension _PlayerRemote on _PlayerScreenState {
           _showControlsTransient();
           break;
         }
-        // Innermost first: a menu opened from the chrome, then the tab
-        // panel, then the next-episode page, then the control bar, and only
-        // then the player itself.
+        // Innermost first: an invitation card, a menu opened from the
+        // chrome, then the tab panel, then the next-episode page, then the
+        // control bar, and only then the player itself.
+        if (_invite.back()) break;
         if (_popups.back()) break;
         if (_tabs.isOpen) {
           _closeTabs();
@@ -287,6 +288,7 @@ extension _PlayerRemote on _PlayerScreenState {
     // The remote's Back arrives here, not as a key event — and it has to
     // unwind the same stack the key path does, innermost first, or it
     // walks out of the film with a menu still open on top of it.
+    if (_invite.back()) return;
     if (_popups.back()) return;
     if (_tabs.isOpen) {
       _closeTabs();

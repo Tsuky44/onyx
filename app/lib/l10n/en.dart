@@ -714,8 +714,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Genres · {0}',
   'Cochez les saisons à demander.':
       'Tick the seasons to request.',
-  'Il s’affiche ici une fois la séance ouverte.':
-      'It appears here once the session is open.',
   'Impossible de charger les genres.':
       'Could not load genres.',
   'Impossible de charger les services.':
@@ -738,8 +736,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Mexico',
   'Norvège':
       'Norway',
-  'Partagez le code':
-      'Share the code',
   'Pays-Bas':
       'Netherlands',
   'Prochain épisode':
@@ -2992,6 +2988,14 @@ const Map<String, String> kEnglish = <String, String>{
       'Send it separately, not with the link.',
   'ÉPISODE {0} PAS ENCORE DISPONIBLE':
       'EPISODE {0} NOT AVAILABLE YET',
+  'ÉPISODE {0} MANQUANT':
+      'EPISODE {0} MISSING',
+  '{0} ÉPISODES MANQUANTS AVANT LE SUIVANT':
+      '{0} EPISODES MISSING BEFORE THE NEXT ONE',
+  'Passer à l’épisode {0}':
+      'Skip to episode {0}',
+  'Cet épisode n’est pas sur le serveur. Passer à la suite vous le ferait sauter.':
+      'This episode is not on the server. Moving on would skip it.',
   'Échap':
       'Esc',
   'Échec de l\'enregistrement.':
@@ -3866,4 +3870,31 @@ const Map<String, String> kEnglish = <String, String>{
       'Recently added',
   'Revenir à {0}':
       'Back to {0}',
+  // Inviter à une séance « Regarder ensemble » (ADR-0148).
+  'Invitation à regarder ensemble':
+      'Watch party invitation',
+  '{0} vous invite':
+      '{0} invited you',
+  '{0} vous invite à regarder {1} ensemble.':
+      '{0} invited you to watch {1} together.',
+  'Cette séance est terminée.':
+      'This watch party has ended.',
+  'Les personnes qui ont Onyx ouvert en ce moment.':
+      'People who have Onyx open right now.',
+  'Personne d’autre n’a Onyx ouvert. Partagez le code.':
+      'No one else has Onyx open. Share the code.',
+  'Envoyée':
+      'Sent',
+  'Réinviter':
+      'Invite again',
+  'A refusé':
+      'Declined',
+  '{0} vient de fermer Onyx.':
+      '{0} just closed Onyx.',
+  'L’invitation n’est pas partie. Réessayez.':
+      'The invitation wasn’t sent. Try again.',
+  'Invitez ou partagez le code':
+      'Invite or share the code',
+  'Les personnes qui ont Onyx ouvert reçoivent une invitation.':
+      'People who have Onyx open get an invitation.',
 };

@@ -80,6 +80,9 @@ const (
 	// Le compagnon de demandes se choisit : MediaHub, Overseerr ou Jellyseerr
 	// (request_service dans les réglages et le test de liaison, ADR-0136).
 	CapabilityRequestServices = "request_services"
+	// Une séance « Regarder ensemble » invite les comptes qui ont Onyx ouvert,
+	// et l'app attend ses invitations (/api/me/watch-party-invites, ADR-0148).
+	CapabilityWatchPartyInvites = "watch_party_invites"
 )
 
 type pingResponse struct {
@@ -121,6 +124,7 @@ func pingPayload() pingResponse {
 			CapabilityMediaHubDirectory,
 			CapabilityMediaHubStorage,
 			CapabilityRequestServices,
+			CapabilityWatchPartyInvites,
 		},
 	}
 }
