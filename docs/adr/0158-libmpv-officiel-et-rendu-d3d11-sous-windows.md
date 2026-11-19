@@ -234,3 +234,32 @@ Le relais est suivi : la phase continue.
 **Reste avant la porte** : la ligne de base, puis la version de test, la liste de parité complète
 sur la machine de référence et une semaine chez un utilisateur Windows en HTTPS. Le statut reste
 « proposé ».
+
+### 2026-11-19 — phase 1, premier essai sur la machine de Tsuky, fusion locale dans `tsuky`
+
+Build profile (`STORE_BUILD=true`), DLL chargée vérifiée : `libmpv-2.dll` **v0.42.0**. Décodage
+`d3d11va-copy` partout, comme prévu.
+
+| Fichier | Audio | `shown` | ticket → `shown` |
+|---|---|---|---|
+| H.264 1080p, 1re ouverture | DTS 2ch | 5 812 ms | 879 ms |
+| le même, 2e ouverture | DTS 2ch | 883 ms | 698 ms |
+| HEVC 1080p | E-AC-3 6ch → 2ch | 577 ms | 426 ms |
+| HEVC 1080p 25 i/s, piste VF choisie au démarrage | E-AC-3 2ch | 1 153 ms | 457 ms |
+| HEVC 3832×1600 | E-AC-3 5.1 | 629 ms | 442 ms |
+
+Un seul point de comparaison avec shinchiro, le même fichier H.264 dans la même journée :
+`shown=2158ms`, ticket → `shown` 1 020 ms. Ce n'est pas la ligne de base : celle-ci n'a pas été
+mesurée avant la fusion, par choix de Tsuky.
+
+Les attentes vues pendant ces lectures ne viennent pas de libmpv :
+- le ticket à 4,9 s de la première ouverture, et les `connectionTimeout` de l'API, viennent du DNS
+  de ce poste (11 s par nom, quel que soit le domaine : des cartes réseau sans DNS IPv6 réel
+  interrogent les adresses `fec0:0:0:ffff::*` par défaut) ;
+- les vidages de cache en pleine lecture (« 2 s regarnies en 7 s, par rafales ») sur le fichier
+  H.264, comme avec shinchiro : la ligne mesurée (6,9 à 19 Mbit/s, instable) ne tient pas son débit.
+
+Le changement est fusionné en local dans `tsuky`, sans poussée ni version de test. **Reste avant
+la porte** : TrueHD, DTS-HD MA, sous-titres PGS/ASS/VobSub, HDR10 avec tone mapping, fenêtre DV5,
+HLS transcodé, séance de 2 h, puis la version de test d'une semaine chez un utilisateur Windows en
+HTTPS.
