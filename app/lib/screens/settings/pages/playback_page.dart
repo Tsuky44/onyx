@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../../providers/auth_provider.dart';
 import '../../../services/playback_preferences_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/app_platform.dart';
@@ -53,13 +51,6 @@ class _PlaybackPageState extends State<PlaybackPage> {
         });
       }
     });
-  }
-
-  /// Le même critère que le rendu effectif (`main.dart`) : propriétaire, ou
-  /// tous les droits.
-  bool _isAdmin(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    return auth.isOwner || auth.permissions.isAdmin;
   }
 
   Future<void> _setAudioLang(String? lang) async {
@@ -169,8 +160,13 @@ class _PlaybackPageState extends State<PlaybackPage> {
               SettingsChoiceTile<HardwareDecodingPreference>(
                 icon: Icons.memory_rounded,
                 title: tr('Décodage matériel'),
-                subtitle:
-                    tr('Passez sur « Compatible » si l’image est noire ou '
+                // Sous Windows, le rendu Direct3D 11 décode toujours sans
+                // copie (ADR-0158) : « Compatible » ne vaut que pour l'ancien.
+                subtitle: AppPlatform.isWindows
+                    ? tr('Passez sur « Compatible » si l’image est noire ou '
+                        'verte alors que le son fonctionne. Avec le rendu '
+                        'vidéo Nouveau, il décode sans copie lui aussi.')
+                    : tr('Passez sur « Compatible » si l’image est noire ou '
                         'verte alors que le son fonctionne.'),
                 footnote: tr('Prend effet à la prochaine lecture.'),
                 value: HardwareDecoding.preference,
@@ -184,19 +180,17 @@ class _PlaybackPageState extends State<PlaybackPage> {
                   if (mounted) setState(() {});
                 },
               ),
-              // Les deux rendus de Windows cohabitent le temps des essais
-              // (ADR-0158, phase 2) : le choix n'est montré qu'aux admins, et
-              // tout autre compte reste sur l'ancien, quoi qu'il soit
-              // enregistré.
-              if (AppPlatform.isWindows && _isAdmin(context))
+              // Les deux rendus de Windows cohabitent (ADR-0158, phase 2) :
+              // le choix est ouvert à tous, Automatique par défaut.
+              if (AppPlatform.isWindows)
                 SettingsChoiceTile<WindowsVideoRenderChoice>(
                   icon: Icons.layers_rounded,
                   title: tr('Rendu vidéo'),
-                  subtitle: tr('Réservé aux admins, pour comparer les deux '
-                      'rendus. Ancien : ANGLE et la recopie de chaque image. '
-                      'Nouveau : mpv dessine lui-même en Direct3D 11, sans '
-                      'recopie. Automatique : le nouveau, et l’ancien dès '
-                      'qu’il ne montre rien.'),
+                  subtitle: tr('Ancien : ANGLE, avec la recopie de chaque '
+                      'image. Nouveau : mpv dessine lui-même en Direct3D 11, '
+                      'sans recopie, quel que soit le décodage matériel. '
+                      'Automatique : le nouveau, et l’ancien dès qu’il ne '
+                      'montre rien.'),
                   footnote: tr('Prend effet à la prochaine lecture.'),
                   value: WindowsVideoRender.stored,
                   options: [

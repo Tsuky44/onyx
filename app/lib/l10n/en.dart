@@ -146,6 +146,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Scanning, maintenance',
   'Ancien':
       'Legacy',
+  'Ancien : ANGLE, avec la recopie de chaque image. Nouveau : mpv dessine lui-même en Direct3D 11, sans recopie, quel que soit le décodage matériel. Automatique : le nouveau, et l’ancien dès qu’il ne montre rien.':
+      'Legacy: ANGLE, with every frame copied back. New: mpv draws in Direct3D 11 itself, with no copy, whatever the hardware decoding. Automatic: the new one, and the legacy one as soon as it shows nothing.',
   'Anglais':
       'English',
   'Annuler':
@@ -1944,6 +1946,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Skip the intro automatically',
   'Passer sur {0}':
       'Switch to {0}',
+  'Passez sur « Compatible » si l’image est noire ou verte alors que le son fonctionne. Avec le rendu vidéo Nouveau, il décode sans copie lui aussi.':
+      'Switch to “Compatible” if the picture is black or green while the sound works. With the New video rendering, it decodes without a copy too.',
   'Passez sur « Compatible » si l’image est noire ou verte alors que le son fonctionne.':
       'Switch to “Compatible” if the picture is black or green while the sound works.',
   'Pause':
@@ -2112,8 +2116,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Fill height',
   'Rendu vidéo':
       'Video rendering',
-  'Réservé aux admins, pour comparer les deux rendus. Ancien : ANGLE et la recopie de chaque image. Nouveau : mpv dessine lui-même en Direct3D 11, sans recopie. Automatique : le nouveau, et l’ancien dès qu’il ne montre rien.':
-      'Admins only, to compare the two renderers. Legacy: ANGLE, with every frame copied back. New: mpv draws in Direct3D 11 itself, with no copy. Automatic: the new one, and the legacy one as soon as it shows nothing.',
   'Renommer':
       'Rename',
   'Renseignez l’adresse du serveur pour afficher le code.':

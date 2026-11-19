@@ -27,7 +27,7 @@ extension PlayerControllerDiagnostics on PlayerController {
     debugPrint('Playback: ${params.width}x${params.height} '
         '${info.videoCodec ?? '?'} @ ${fps > 0 ? '${fps.toStringAsFixed(3)}fps' : 'fps inconnu'} '
         '· hwdec=${info.hardwareDecoder} '
-        '(asked ${HardwareDecoding.describe()}) · '
+        '(asked ${HardwareDecoding.describe(WindowsVideoRender.active)}) · '
         '$render'
         'buffers=${PlaybackProfiles.current.label}'
         '${DisplayFrameRate.requested != null ? ' · display=${DisplayFrameRate.requested}Hz' : ''}');

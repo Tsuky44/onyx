@@ -1,28 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:onyx/screens/player/playback/mpv_d3d11_fallback.dart';
 import 'package:onyx/screens/player/windows_video_render.dart';
 
-// ADR-0158, phase 2 : les deux rendus de Windows cohabitent, un admin choisit,
-// et tout le monde reste sur l'ancien par défaut.
+// ADR-0158, phase 2 : les deux rendus de Windows cohabitent, le réglage est
+// ouvert à tous et vaut Automatique par défaut (décisions de Tsuky).
 void main() {
   tearDown(WindowsVideoRender.reset);
 
-  group('only an admin on Windows leaves the legacy path', () {
-    test('a member stays on legacy, whatever is stored', () {
-      for (final stored in WindowsVideoRenderChoice.values) {
-        expect(
-          WindowsVideoRender.effectiveChoice(
-              stored: stored, isWindows: true, isAdmin: false),
-          WindowsVideoRenderChoice.legacy,
-        );
-      }
+  group('everyone on Windows gets the stored choice', () {
+    test('the default is Automatic, for someone who never touched it', () {
+      WindowsVideoRender.reset();
+      expect(WindowsVideoRender.stored, WindowsVideoRenderChoice.auto);
     });
 
-    test('an admin gets what they chose', () {
+    test('on Windows, the stored choice applies as is', () {
       for (final stored in WindowsVideoRenderChoice.values) {
         expect(
-          WindowsVideoRender.effectiveChoice(
-              stored: stored, isWindows: true, isAdmin: true),
+          WindowsVideoRender.effectiveChoice(stored: stored, isWindows: true),
           stored,
         );
       }
@@ -31,9 +26,7 @@ void main() {
     test('another platform is never touched', () {
       expect(
         WindowsVideoRender.effectiveChoice(
-            stored: WindowsVideoRenderChoice.d3d11,
-            isWindows: false,
-            isAdmin: true),
+            stored: WindowsVideoRenderChoice.d3d11, isWindows: false),
         WindowsVideoRenderChoice.legacy,
       );
       for (final choice in WindowsVideoRenderChoice.values) {
@@ -42,10 +35,6 @@ void main() {
           isNull,
         );
       }
-    });
-
-    test('the default is legacy', () {
-      expect(WindowsVideoRender.stored, WindowsVideoRenderChoice.legacy);
     });
   });
 
@@ -58,7 +47,7 @@ void main() {
       );
     });
 
-    test('new asks for D3D11, even after a blank texture', () {
+    test('new asks for D3D11, even on a machine caught failing', () {
       for (final failed in [false, true]) {
         expect(
           WindowsVideoRender.requestFor(
@@ -86,33 +75,86 @@ void main() {
     });
   });
 
-  group('a D3D11 texture without a picture', () {
-    test('is one where no render ever succeeded', () {
+  group('a failure is remembered per adapter and driver', () {
+    test('the key names the adapter and its driver version', () {
       expect(
-        WindowsVideoRender.isBlankD3D11(
-            {'renderApi': 'd3d11', 'renderedFrames': 0, 'failedFrames': 12}),
-        isTrue,
-      );
-      expect(
-        WindowsVideoRender.isBlankD3D11(
-            {'renderApi': 'd3d11', 'renderedFrames': 0, 'failedFrames': 0}),
-        isTrue,
+        WindowsVideoRender.adapterKeyFor({
+          'description': 'NVIDIA GeForce RTX 3070',
+          'vendorId': 0x10de,
+          'deviceId': 0x2484,
+          'driverVersion': '32.0.15.6094',
+        }),
+        '10de:2484:32.0.15.6094',
       );
     });
 
-    test('is not one that rendered, or another path, or no answer', () {
+    test('a new driver is a new key, so D3D11 is tried again', () {
+      Map<String, Object?> adapter(String driver) =>
+          {'vendorId': 0x8086, 'deviceId': 0x9a49, 'driverVersion': driver};
       expect(
-        WindowsVideoRender.isBlankD3D11(
-            {'renderApi': 'd3d11', 'renderedFrames': 40, 'failedFrames': 2}),
-        isFalse,
+        WindowsVideoRender.adapterKeyFor(adapter('31.0.101.4502')),
+        isNot(WindowsVideoRender.adapterKeyFor(adapter('31.0.101.5186'))),
       );
+    });
+
+    test('no key without a driver version', () {
+      expect(WindowsVideoRender.adapterKeyFor(null), isNull);
       expect(
-        WindowsVideoRender.isBlankD3D11(
-            {'renderApi': 'angle', 'renderedFrames': 0}),
-        isFalse,
+        WindowsVideoRender.adapterKeyFor(
+            {'vendorId': 0x1002, 'deviceId': 0x73bf, 'driverVersion': ''}),
+        isNull,
       );
-      expect(WindowsVideoRender.isBlankD3D11(null), isFalse);
-      expect(WindowsVideoRender.isBlankD3D11({'renderApi': 'd3d11'}), isFalse);
+      expect(WindowsVideoRender.adapterKeyFor({'vendorId': 0x1002}), isNull);
+    });
+  });
+
+  group('the D3D11 texture is judged on its render counters', () {
+    D3D11Health judge(Map<String, Object?>? info,
+            {Map<String, Object?>? previous,
+            Duration since = const Duration(seconds: 3)}) =>
+        MpvD3D11Fallback.judge(
+            info: info, previous: previous, sinceFirstFrame: since);
+
+    Map<String, Object?> d3d11(int rendered, int failed, {int removed = 0}) => {
+          'renderApi': 'd3d11',
+          'renderedFrames': rendered,
+          'failedFrames': failed,
+          'deviceRemovedReason': removed,
+        };
+
+    test('no render ever succeeded past the grace period: blank', () {
+      expect(judge(d3d11(0, 12)), D3D11Health.blank);
+      expect(judge(d3d11(0, 0)), D3D11Health.blank);
+    });
+
+    test('nothing is judged blank before the grace period', () {
+      expect(judge(d3d11(0, 0), since: const Duration(seconds: 1)),
+          D3D11Health.ok);
+    });
+
+    test('a removed device is lost, whatever was rendered', () {
+      expect(judge(d3d11(500, 3, removed: 0x887a0005)), D3D11Health.deviceLost);
+    });
+
+    test('renders that keep failing with none succeeding: failing', () {
+      expect(
+          judge(d3d11(500, 40), previous: d3d11(500, 20)), D3D11Health.failing);
+    });
+
+    test('a pause renders nothing and fails nothing: ok', () {
+      expect(judge(d3d11(500, 0), previous: d3d11(500, 0)), D3D11Health.ok);
+    });
+
+    test('a few stray failures among renders: ok', () {
+      expect(judge(d3d11(560, 22), previous: d3d11(500, 20)), D3D11Health.ok);
+      expect(judge(d3d11(500, 25), previous: d3d11(500, 20)), D3D11Health.ok);
+    });
+
+    test('another path, or no answer, is never judged', () {
+      expect(
+          judge({'renderApi': 'angle', 'renderedFrames': 0, 'failedFrames': 9}),
+          D3D11Health.ok);
+      expect(judge(null), D3D11Health.ok);
     });
   });
 

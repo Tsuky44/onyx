@@ -12,6 +12,7 @@ import '../player_engine.dart';
 import '../playback_profile.dart';
 import '../windows_video_render.dart';
 import 'cache_pause_policy.dart';
+import 'mpv_d3d11_fallback.dart';
 import 'mpv_diagnostics.dart';
 import 'mpv_dolby_vision.dart';
 import 'mpv_fast_rendering.dart';
@@ -63,6 +64,15 @@ class MpvPlaybackSession implements PlaybackSession {
   /// du moteur : il décide du décodeur.
   VideoRenderPath? _renderPath;
 
+  /// La retombée sur ANGLE d'une texture D3D11 qui ne montre rien.
+  late final MpvD3D11Fallback _d3d11 = MpvD3D11Fallback(
+    engine: _engine,
+    read: (name) => _read(_player.platform as dynamic, name),
+    set: (name, value) => _set(_player.platform as dynamic, name, value),
+    suspended: () => _dolbyVision.active,
+    onPath: (path) => _renderPath = WindowsVideoRender.active = path,
+  );
+
   /// Le moteur mpv sous-jacent.
   ///
   /// Exposé pour ce qui ne peut pas encore passer par le port : la mise en
@@ -77,6 +87,7 @@ class MpvPlaybackSession implements PlaybackSession {
   Future<void> dispose() async {
     _endSeekWatch(log: false);
     _startup.cancel();
+    _d3d11.stop();
     await _stopObserving();
     // Rendu plutôt que détruit : la lecture suivante réutilise cette instance
     // libmpv et sa texture au lieu de payer leur construction.
@@ -725,12 +736,8 @@ class MpvPlaybackSession implements PlaybackSession {
       final platform = _player.platform as dynamic;
       await MpvDolbyVisionOutput.log((name) => _read(platform, name));
     }
-    // Une texture D3D11 qui ne rend rien fait passer les lectures suivantes
-    // sur ANGLE (ADR-0158). Pas pour un profil 5 : sa fenêtre mpv a pris la
-    // place de la texture, qui n'a plus rien à rendre.
-    if (_renderPath == VideoRenderPath.d3d11 && !_dolbyVision.active) {
-      unawaited(WindowsVideoRender.verifyFirstFrames(_engine.renderInfo));
-    }
+    // Une texture D3D11 qui ne montre rien passe sur ANGLE (ADR-0158).
+    if (_renderPath == VideoRenderPath.d3d11) _d3d11.watch();
     if (AppPlatform.isWeb) return;
     if (_softwareDecodeHandled) return;
     // Les plateformes où le chemin sans copie peut échouer vers le logiciel :
@@ -741,7 +748,14 @@ class MpvPlaybackSession implements PlaybackSession {
         (AppPlatform.isMacOS && MpvNativeView.enabled) ||
         _renderPath == VideoRenderPath.d3d11;
     if (!zeroCopyAsked) return;
-    if (HardwareDecoding.preference != HardwareDecodingPreference.auto) return;
+    // Sur la texture D3D11, « Compatible » décode aussi sans copie : seul
+    // « Logiciel » y échappe.
+    final preference = HardwareDecoding.preference;
+    if (preference == HardwareDecodingPreference.off) return;
+    if (preference != HardwareDecodingPreference.auto &&
+        _renderPath != VideoRenderPath.d3d11) {
+      return;
+    }
 
     final platform = _player.platform as dynamic;
     final height = _player.state.videoParams.h;

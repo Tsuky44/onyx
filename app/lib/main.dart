@@ -305,13 +305,6 @@ void main() async {
   if (AppPlatform.isAndroid) DownloadKeepAlive(downloads).start();
 
   final authProvider = AuthProvider(apiClient);
-  // Le choix du rendu vidéo de Windows est réservé aux admins (ADR-0158) : il
-  // suit le compte connecté, et tout autre compte reste sur l'ancien chemin.
-  void syncVideoRenderAdmin() =>
-      WindowsVideoRender.adminAllowed = authProvider.isAuthenticated &&
-          (authProvider.isOwner || authProvider.permissions.isAdmin);
-  syncVideoRenderAdmin();
-  authProvider.addListener(syncVideoRenderAdmin);
   final reachability = ServerReachability(apiClient);
   // L'app ouverte attend ses invitations « Regarder ensemble », ce qui la
   // rend invitable (ADR-0148).

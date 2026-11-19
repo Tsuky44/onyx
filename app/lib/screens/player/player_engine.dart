@@ -48,10 +48,10 @@ class PlayerEngine {
   bool reusable = true;
 
   /// Le chemin de rendu demandé à la sortie Windows à la création (ADR-0158,
-  /// phase 2), null ailleurs. Il ne change plus de la vie du moteur : un
-  /// réglage changé depuis ne s'applique qu'à un moteur neuf
-  /// ([PlayerEnginePool.acquire]).
-  final String? requestedRenderApi;
+  /// phase 2), null ailleurs. Un réglage changé depuis ne s'applique qu'à un
+  /// moteur neuf ([PlayerEnginePool.acquire]) ; seule une bascule vers ANGLE
+  /// en pleine lecture ([fallbackToAngle]) le change en route.
+  String? requestedRenderApi;
 
   PlayerEngine._(this.player, this.videoController, {this.requestedRenderApi});
 
@@ -78,6 +78,16 @@ class PlayerEngine {
     final controller = videoController;
     if (controller == null || !AppPlatform.isWindows) return null;
     return (await controller.platform.future).renderInfo();
+  }
+
+  /// Fait passer la sortie de D3D11 à ANGLE sans changer de lecteur, et rend
+  /// le chemin retenu (ADR-0158, phase 2, point 4).
+  Future<String?> fallbackToAngle() async {
+    final controller = videoController;
+    if (controller == null || !AppPlatform.isWindows) return null;
+    final api = await (await controller.platform.future).fallbackToAngle();
+    if (api != null && api != 'd3d11') requestedRenderApi = 'angle';
+    return api;
   }
 
   factory PlayerEngine._create() {

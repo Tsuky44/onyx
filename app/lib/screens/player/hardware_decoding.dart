@@ -119,6 +119,10 @@ abstract final class HardwareDecoding {
       case HardwareDecodingPreference.copy:
         if (isAndroid) return 'mediacodec-copy';
         if (isMacOS) return 'videotoolbox-copy';
+        if (isWindows) {
+          return windowsValue(windowsRenderPath,
+              zeroCopyFailed: zeroCopyFailed);
+        }
         return 'auto-copy-safe';
       case HardwareDecodingPreference.auto:
         // Android: the zero-copy path, explicitly. `auto-safe` leaves the choice
@@ -146,24 +150,28 @@ abstract final class HardwareDecoding {
               : 'videotoolbox-copy';
         }
         if (isWindows) {
-          return windowsAuto(windowsRenderPath, zeroCopyFailed: zeroCopyFailed);
+          return windowsValue(windowsRenderPath,
+              zeroCopyFailed: zeroCopyFailed);
         }
         return 'auto-safe';
     }
   }
 
-  /// Le décodeur « auto » de Windows selon le chemin de rendu retenu
-  /// (ADR-0158, phase 2, point 3).
+  /// Le décodeur matériel de Windows (« Rapide » comme « Compatible ») selon
+  /// le chemin de rendu retenu (ADR-0158, phase 2, point 3).
   ///
-  /// - D3D11 : `auto-safe`, le `d3d11va` de mpv seul. Il recopie lui-même la
-  ///   zone utile sur le GPU (`CopySubresourceRegion1`) : ni bande verte, ni
-  ///   passage par la mémoire vive. Sauf si cet appareil a déjà été pris à
-  ///   décoder en logiciel : la copie, comme sur Android.
+  /// - D3D11 : `auto-safe`, le `d3d11va` de mpv seul, quelle que soit la
+  ///   préférence (décision de Tsuky : le nouveau rendu force le sans-copie).
+  ///   Il recopie lui-même la zone utile sur le GPU (`CopySubresourceRegion1`) :
+  ///   ni bande verte, ni passage par la mémoire vive. Sauf si cet appareil a
+  ///   déjà été pris à décoder en logiciel : la copie, comme sur Android.
   /// - ANGLE : `auto-copy-safe`, la recopie de l'ADR-0095. Sans copie, mpv
   ///   dessinait depuis la surface du décodeur, que FFmpeg alloue plus grande
   ///   que l'image, et une bande verte apparaissait sur certains fichiers.
   /// - Logiciel, ou chemin inconnu : inchangé, `auto-copy-safe`.
-  static String windowsAuto(VideoRenderPath? renderPath,
+  ///
+  /// « Logiciel » (`no`) ne passe pas par ici : il vaut partout.
+  static String windowsValue(VideoRenderPath? renderPath,
           {bool zeroCopyFailed = false}) =>
       renderPath == VideoRenderPath.d3d11 && !zeroCopyFailed
           ? 'auto-safe'
@@ -173,7 +181,10 @@ abstract final class HardwareDecoding {
   /// et celle du rattrapage logiciel → copie.
   static const int zeroCopyMinHeight = 1440;
 
-  static String describe() => '${_preference.name} → $mpvValue';
+  /// `auto → auto-safe` : la préférence et ce que mpv reçoit vraiment, pour
+  /// le chemin de rendu de la lecture ([renderPath], Windows).
+  static String describe([VideoRenderPath? renderPath]) =>
+      '${_preference.name} → ${mpvValueFor(renderPath)}';
 
   @visibleForTesting
   static void overrideWith(HardwareDecodingPreference value) {
