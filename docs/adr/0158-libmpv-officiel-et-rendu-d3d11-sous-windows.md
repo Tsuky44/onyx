@@ -1,8 +1,8 @@
 # ADR-0158 — Sous Windows, le libmpv officiel de mpv, puis le rendu D3D11 de libmpv
 
 - **Statut :** proposé. Phase 1 en cours : le changement de libmpv est prêt, la porte n'est pas
-  franchie. Phase 2 commencée en parallèle, derrière un réglage réservé aux admins (voir le
-  journal d'avancement en fin de page).
+  franchie. Phase 2 commencée en parallèle, puis ouverte à tous en Automatique pour un essai à
+  grande échelle (voir le journal d'avancement en fin de page).
 - **Date :** 2026-11-19
 - **Portée :** le libmpv livré sous Windows (`packages/media_kit_libs_windows_video`), la sortie
   vidéo du plugin (`packages/media_kit_video/windows`), le choix du décodeur
@@ -114,10 +114,14 @@ puis version de prod.
 
    La règle est une fonction pure, testée sur les trois cas.
 4. **Retombée sur panne.** On rétablit pour Windows le rattrapage « décodé en logiciel → copie »
-   que l'ADR-0095 avait retiré. Une texture qui ne montre aucune image dans le délai de démarrage
-   marque l'appareil, comme `zeroCopyFailed` sur Android, et la lecture suivante prend ANGLE.
-5. **Un réglage « Rendu vidéo : automatique / compatibilité »** dans les réglages de lecture, en
-   français et en anglais, pour qu'un utilisateur se débloque sans nous attendre.
+   que l'ADR-0095 avait retiré. Une texture qui ne montre aucune image dans le délai de démarrage,
+   ou un périphérique perdu (TDR), fait passer **la lecture en cours** sur ANGLE, sans changer de
+   lecteur mpv. L'écran noir est retenu sur disque pour l'adaptateur et son pilote ; un pilote mis
+   à jour retente D3D11. *(Révisé le 2026-11-19, voir le journal.)*
+5. **Un réglage « Rendu vidéo » : Ancien / Nouveau / Automatique**, ouvert à tous sous Windows,
+   **Automatique par défaut**, en français et en anglais. Nouveau force D3D11 et le décodage sans
+   copie ; Ancien est le chemin de la phase 1. *(Remplace « automatique / compatibilité », voir le
+   journal du 2026-11-19.)*
 6. **Ce qui ne change pas :** la fenêtre DV5, le moteur mis en commun, le contrôleur, les surfaces
    Flutter.
 
@@ -322,3 +326,85 @@ identique à celui du zip, relu en entier) et `video/out/d3d11/libmpv_d3d11.c` :
 
 Ne changent pas : la fenêtre DV5, le contrôleur, les surfaces Flutter, les autres plateformes. Le
 statut reste « proposé ».
+
+### 2026-11-19 — phase 2 ouverte à tous, Automatique par défaut, Nouveau force le sans-copie
+
+**L'essai de Tsuky** sur sa machine : Rendu vidéo = Nouveau et Décodage matériel = Compatible
+donnaient `render=d3d11` mais `hwdec=d3d11va-copy`. Sur Rapide : `hwdec=d3d11va`, « Allocated a
+fixed pool of 26 hw surfaces », un HEVC Main 10 4K affiché, redimensionnement juste, aucune erreur
+D3D11. Le nouveau chemin marche.
+
+**Décisions de Tsuky**, pour un essai à grande échelle : « Tous, défaut Automatique » et « Nouveau
+force le sans-copie ». Elles reviennent sur l'entrée précédente :
+
+- **Le réglage Rendu vidéo est ouvert à tous sous Windows**, plus seulement aux admins. Il vaut
+  **Automatique par défaut**, y compris pour qui ne l'a jamais touché. Il n'y a plus de barrière de
+  droits dans le code.
+- **Sur la texture D3D11 (Nouveau ou Automatique), le décodage est toujours sans copie**
+  (`auto-safe`), sauf sur « Logiciel ». « Compatible » ne vaut plus que pour ANGLE. La règle reste
+  une fonction pure (`HardwareDecoding.windowsValue`), testée sur les 18 combinaisons (3 rendus ×
+  3 préférences × appareil pris ou non à décoder en logiciel). Un appareil pris à décoder en
+  logiciel au-dessus de 1440 lignes repasse sur la copie, sur Rapide comme sur Compatible.
+- **Le diagnostic dit ce que mpv reçoit** : `asked auto → auto-safe` en D3D11, et plus
+  `auto-copy-safe` (`HardwareDecoding.describe` prend le chemin de rendu).
+
+**La retombée sur panne est durcie**, puisque c'est désormais le chemin de tout le monde :
+
+- **La lecture en cours passe sur ANGLE**, plus seulement la suivante. La sortie native libère son
+  contexte de rendu D3D11 (ce qui coupe la vidéo de mpv : sa sortie et son décodeur sont détruits,
+  surfaces d3d11va comprises, et la piste vidéo désélectionnée), crée celui d'ANGLE sur le même
+  lecteur mpv, puis Dart repose le décodeur de l'ancien chemin et resélectionne la piste vidéo. Le
+  son, la position, les pistes et le moteur mis en commun ne bougent pas. Lu dans
+  `video/out/vo_libmpv.c` (`mpv_render_context_free`) et `player/client.c` (`do_kill`), v0.42.0.
+  En Automatique seulement : Nouveau force D3D11, une panne y est journalisée sans bascule.
+- **Ce qui déclenche** (`MpvD3D11Fallback.judge`, relevé toutes les 2 s des compteurs de la sortie) :
+  aucune image rendue 3 s après la première image annoncée ; un périphérique perdu
+  (`GetDeviceRemovedReason`, relevé au premier rendu raté : TDR, pilote redémarré) ; ou au moins
+  10 rendus ratés de suite sans aucun réussi. Un contexte que mpv refuse à la création retombe
+  déjà sur ANGLE dans `VideoOutput`.
+- **L'écran noir est retenu sur disque**, sous la clé adaptateur + pilote (`vendeur:appareil:version
+  du pilote`, lue par DXGI sur l'adaptateur que prennent D3D11 et Flutter). Une machine cassée ne
+  redonne pas un écran noir à la première lecture de chaque lancement ; un pilote mis à jour
+  change la clé, et D3D11 est retenté. Un périphérique perdu en route ne l'est que pour la session :
+  la cause peut être passagère.
+
+**Ce qui remonte au serveur** sans demander de journaux aux testeurs : la tranche de journal de
+chaque lecture (`PlaybackReporter`) contient la ligne `Playback:` avec `hwdec=…`, `render=…` et le
+réglage, l'adaptateur et son pilote ; chaque retombée est une ligne d'erreur (raison, adaptateur,
+pilote, réglage, chemin suivant), ce qui garde l'historique de la lecture côté serveur. Le résumé
+de statistiques porte `video_output`, que l'export des journaux affiche en « Rendu vidéo ».
+
+**La recherche plus lente vue en D3D11** (image +2,90 s / reprise +4,05 s, contre +1,14 s /
++2,04 s en ANGLE, à une autre position du film, une seule fois). Rien ne change sans preuve. Ce qui
+a été regardé :
+
+- le pool de 26 surfaces d3d11va ne retient pas les images sautées par `hr-seek` : elles sont
+  rendues au pool dès qu'elles sont jetées, et le décodage sans copie fait moins de travail que la
+  recopie ;
+- `hr-seek`, le cache et le relais sont les mêmes sur les deux chemins ; l'image d'après une
+  recherche dépend surtout de la distance à l'image clé (GOP) et du réseau, qui changent d'une
+  position à l'autre ;
+- une piste plausible propre à D3D11 : `ra_d3d11` compile ses shaders (shaderc → SPIRV-Cross →
+  `D3DCompile`) à la première utilisation de chaque variante, et l'écrit en `v`
+  (« Compiled a … shader in …ns »). Une variante nouvelle après une recherche coûterait sa
+  compilation une fois par lancement.
+
+À mesurer avant toute conclusion : même fichier, même position de départ, cinq recherches de la
+même amplitude sur chaque chemin, en relevant les lignes de recherche (image, reprise, débit du
+cache) et, dans le journal de mpv, les compilations de shaders qui suivent.
+
+**La porte de la phase 2 se jugera sur le test à grande échelle**, plus sur un essai manuel
+préalable : Tsuky met la version de test chez tout le monde, sans repasser Automatique et Ancien à
+la main (« non pas grave on va mettre en test à tout le monde »). Ce qui a été vérifié sur sa
+machine avant : un HEVC Main 10 4K en `d3d11va` sur la texture D3D11 ; et, avec cette version, un
+lancement sans réglage enregistré qui part en `auto → d3d11` (AMD Radeon RX 6800 XT, pilote lu
+par DXGI), `render path: d3d11`. La bascule en pleine lecture n'a pas tourné sur une vraie
+machine : elle se juge dans les journaux des testeurs (lignes « échec D3D11 » et « après la
+bascule »). Pour la provoquer exprès, `--dart-define=ONYX_FORCE_D3D11_FALLBACK=true` fait passer la
+première texture D3D11 sur ANGLE sans rien retenir sur disque ; jamais dans une version publiée.
+Ce que la porte regarde dans ces journaux : les retombées et leurs adaptateurs (Intel, NVIDIA,
+AMD, portables à deux GPU), un `hwdec=no` sur D3D11, les TDR, le plein écran, le
+redimensionnement, l'image dans l'image, l'enchaînement d'épisodes, et les temps de recherche
+sur les deux chemins.
+
+Le statut reste « proposé ».
