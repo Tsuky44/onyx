@@ -5682,8 +5682,8 @@
     "semantic_hash": ""
   },
   "packages/media_kit_libs_windows_video/windows/patch_libmpv.ps1": {
-    "mtime": 1789484916.399832,
-    "seen": 1795079238.7020843,
+    "mtime": 1795087833.4697423,
+    "seen": 1795087950.6319366,
     "ast_hash": "884828a60057218b1b22d36f300f380f",
     "semantic_hash": ""
   },
@@ -9900,9 +9900,9 @@
     "semantic_hash": ""
   },
   "app/assets/legal/third_party.txt": {
-    "mtime": 1791277218.8563275,
-    "seen": 1795079238.7040858,
-    "ast_hash": "d1407b4b6f73d2415d58e6ac42c3e152",
+    "mtime": 1795087870.6808379,
+    "seen": 1795087950.633437,
+    "ast_hash": "2c88c88e39d6805d9991831cbb8695c1",
     "semantic_hash": ""
   },
   "app/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md": {
@@ -10146,9 +10146,9 @@
     "semantic_hash": ""
   },
   "docs/adr/0019-decodage-sans-copie-sous-windows.md": {
-    "mtime": 1791360723.5604308,
-    "seen": 1795079238.7040858,
-    "ast_hash": "cd659a4bf81e6d78ab78febe3d66bcdc",
+    "mtime": 1795087870.682844,
+    "seen": 1795087950.633437,
+    "ast_hash": "dd33b3d704f83fe536a032c35ba056f9",
     "semantic_hash": ""
   },
   "docs/adr/0020-connexion-par-qr-sur-le-web-et-le-desktop.md": {
@@ -10758,8 +10758,8 @@
     "semantic_hash": ""
   },
   "packages/media_kit_libs_windows_video/CHANGELOG.md": {
-    "mtime": 1789485233.036778,
-    "seen": 1795079238.704584,
+    "mtime": 1795087870.6868415,
+    "seen": 1795087950.633437,
     "ast_hash": "155ce265fd79a264a4e99b3b8b620c0c",
     "semantic_hash": ""
   },
@@ -10776,8 +10776,8 @@
     "semantic_hash": ""
   },
   "packages/media_kit_libs_windows_video/windows/CMakeLists.txt": {
-    "mtime": 1789484989.341012,
-    "seen": 1795079238.704584,
+    "mtime": 1795087870.6883416,
+    "seen": 1795087950.633437,
     "ast_hash": "af32b35198c52b9ff648788fb61b6bbe",
     "semantic_hash": ""
   },
@@ -13800,8 +13800,8 @@
     "semantic_hash": ""
   },
   "app/assets/legal/third_party.en.txt": {
-    "mtime": 1794923181.0558217,
-    "seen": 1795079238.7040858,
+    "mtime": 1795087870.6793375,
+    "seen": 1795087950.633437,
     "ast_hash": "285413e080de23c3ea5ec159ca47e184",
     "semantic_hash": ""
   },
@@ -14519,246 +14519,6 @@
     "ast_hash": "b3e9bd7cae641547c303e157245b75d6",
     "semantic_hash": ""
   },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/binary_messenger_impl.h": {
-    "mtime": 1782994387.2626822,
-    "seen": 1795079238.7025864,
-    "ast_hash": "286e55d651260380486c1ca7a2c44578",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/byte_buffer_streams.h": {
-    "mtime": 1782994387.263281,
-    "seen": 1795079238.7025864,
-    "ast_hash": "0a33501e8af56a1390ab6f75e0f568d9",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/core_implementations.cc": {
-    "mtime": 1782994387.2351496,
-    "seen": 1795079238.7025864,
-    "ast_hash": "d02f7794de6b9d3c0ee1a12f044e5629",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/engine_method_result.cc": {
-    "mtime": 1782994387.2367299,
-    "seen": 1795079238.7025864,
-    "ast_hash": "6172a3effcf1f354d756ff757377a576",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/flutter_engine.cc": {
-    "mtime": 1782994387.2405093,
-    "seen": 1795079238.7025864,
-    "ast_hash": "af56bda945d861e13616a54f6f848211",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/flutter_view_controller.cc": {
-    "mtime": 1782994387.241016,
-    "seen": 1795079238.7025864,
-    "ast_hash": "3c4959653a59ba03164e211059dc2652",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/basic_message_channel.h": {
-    "mtime": 1782994387.2420163,
-    "seen": 1795079238.7025864,
-    "ast_hash": "45dd070af12cc7ab125d6ead5267f36c",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/binary_messenger.h": {
-    "mtime": 1782994387.242517,
-    "seen": 1795079238.7025864,
-    "ast_hash": "b313ec90af27dce06153c156a0cbb390",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/byte_streams.h": {
-    "mtime": 1782994387.2435164,
-    "seen": 1795079238.7025864,
-    "ast_hash": "00010cc0042e98ea973f4037a29a3ca0",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/dart_project.h": {
-    "mtime": 1782994387.2652943,
-    "seen": 1795079238.7025864,
-    "ast_hash": "4c4caa9f7afc2aef148615013fe881fd",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/encodable_value.h": {
-    "mtime": 1782994387.2445161,
-    "seen": 1795079238.7025864,
-    "ast_hash": "ca5bf7ecc86138a058d535de1dfa811a",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/engine_method_result.h": {
-    "mtime": 1782994387.2450163,
-    "seen": 1795079238.7025864,
-    "ast_hash": "55b4be5728dfb16220b1bda5bdace3fe",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/event_channel.h": {
-    "mtime": 1782994387.2460158,
-    "seen": 1795079238.7025864,
-    "ast_hash": "143cf6f0acaa229d950d084c940cc77c",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/event_sink.h": {
-    "mtime": 1782994387.2470162,
-    "seen": 1795079238.7025864,
-    "ast_hash": "b1b98c1cf40abd6a3c308182c4822476",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/event_stream_handler.h": {
-    "mtime": 1782994387.2485156,
-    "seen": 1795079238.7025864,
-    "ast_hash": "62be5ae665a6b931d6dc9ac4b27d6c93",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/event_stream_handler_functions.h": {
-    "mtime": 1782994387.247516,
-    "seen": 1795079238.7025864,
-    "ast_hash": "248c4e48231edda0bc7ac80722f15b53",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/flutter_engine.h": {
-    "mtime": 1782994387.2657998,
-    "seen": 1795079238.7025864,
-    "ast_hash": "9041724c1e75774af4fcd6acd79d9515",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/flutter_view.h": {
-    "mtime": 1782994387.2678485,
-    "seen": 1795079238.7025864,
-    "ast_hash": "1f2ea92d1365b11489ea86bb3485dcac",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/flutter_view_controller.h": {
-    "mtime": 1782994387.2668254,
-    "seen": 1795079238.7025864,
-    "ast_hash": "815f4a5fbad9381269e2c216507285cd",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/message_codec.h": {
-    "mtime": 1782994387.2490163,
-    "seen": 1795079238.7025864,
-    "ast_hash": "b5013c9553dc459d5f91b8ec2bda3d0a",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/method_call.h": {
-    "mtime": 1782994387.2500165,
-    "seen": 1795079238.7025864,
-    "ast_hash": "a47afe801378afeffda4439e8cdb01ca",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/method_channel.h": {
-    "mtime": 1782994387.2505164,
-    "seen": 1795079238.7025864,
-    "ast_hash": "beeb4b0780233e226f899bddd220b682",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/method_codec.h": {
-    "mtime": 1782994387.252024,
-    "seen": 1795079238.7025864,
-    "ast_hash": "1d712b93e2dd2e28cb67a55a8d484694",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/method_result.h": {
-    "mtime": 1782994387.25353,
-    "seen": 1795079238.7025864,
-    "ast_hash": "e48c7b84b470630e810b6a0bc2d8e542",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/method_result_functions.h": {
-    "mtime": 1782994387.2525234,
-    "seen": 1795079238.7025864,
-    "ast_hash": "6bfbb61c519f63386a0fb55608dbea90",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/plugin_registrar.h": {
-    "mtime": 1782994387.2540374,
-    "seen": 1795079238.7025864,
-    "ast_hash": "2b81addd18be801eda539f1de332ce4e",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/plugin_registrar_windows.h": {
-    "mtime": 1782994387.2678485,
-    "seen": 1795079238.7025864,
-    "ast_hash": "0bbbe470228d787a92d567a95faa2b33",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/plugin_registry.h": {
-    "mtime": 1782994387.2550437,
-    "seen": 1795079238.7025864,
-    "ast_hash": "85c5071ca77f8687102dcae4f282388b",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/standard_codec_serializer.h": {
-    "mtime": 1782994387.2560508,
-    "seen": 1795079238.7025864,
-    "ast_hash": "09399c3c509a601a970f6efd340a2529",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/standard_message_codec.h": {
-    "mtime": 1782994387.256551,
-    "seen": 1795079238.7025864,
-    "ast_hash": "81df344828c7c48155ae22824eb61e50",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/standard_method_codec.h": {
-    "mtime": 1782994387.260412,
-    "seen": 1795079238.703085,
-    "ast_hash": "4707587e759b2b655852fc0e989c9e70",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/include/flutter/texture_registrar.h": {
-    "mtime": 1782994387.2617757,
-    "seen": 1795079238.703085,
-    "ast_hash": "ee739ab16ee0e2964edc9275a0379095",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/plugin_registrar.cc": {
-    "mtime": 1782994387.2372286,
-    "seen": 1795079238.703085,
-    "ast_hash": "3190b92da7033c643bf749e7f4266da8",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/standard_codec.cc": {
-    "mtime": 1782994387.239264,
-    "seen": 1795079238.703085,
-    "ast_hash": "035f8af9a9a084e129ceef3fa0396c47",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/cpp_client_wrapper/texture_registrar_impl.h": {
-    "mtime": 1782994387.264287,
-    "seen": 1795079238.703085,
-    "ast_hash": "7ec35caedbfe35b37bd7aa66dab7219b",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/flutter_export.h": {
-    "mtime": 1782994386.2886791,
-    "seen": 1795079238.703085,
-    "ast_hash": "51d6ddd086e800d34c1d143004c474fd",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/flutter_messenger.h": {
-    "mtime": 1782994386.2906926,
-    "seen": 1795079238.703085,
-    "ast_hash": "9c15531692496dbfcb820431343d92fa",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/flutter_plugin_registrar.h": {
-    "mtime": 1782994386.291193,
-    "seen": 1795079238.703085,
-    "ast_hash": "205b172dd4be89df08a835c5afcd2c1a",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/flutter_texture_registrar.h": {
-    "mtime": 1782994386.2923267,
-    "seen": 1795079238.703085,
-    "ast_hash": "4ffbfcf8b88a9690e82543b1761e81d5",
-    "semantic_hash": ""
-  },
-  "prototypes/win_gpu_next/windows/flutter/ephemeral/flutter_windows.h": {
-    "mtime": 1782994386.2901945,
-    "seen": 1795079238.703085,
-    "ast_hash": "96a7e6f061d615f678c5c00b30f04fb5",
-    "semantic_hash": ""
-  },
   "docs/adr/0157-sous-windows-les-controles-de-la-fenetre-vivent-dans-l-en-tete-de-verre.md": {
     "mtime": 1795078781.0567236,
     "seen": 1795079238.704584,
@@ -14784,9 +14544,15 @@
     "semantic_hash": ""
   },
   "docs/adr/0158-libmpv-officiel-et-rendu-d3d11-sous-windows.md": {
-    "mtime": 1795085912.110066,
-    "seen": 1795085986.0644426,
-    "ast_hash": "604cd372609bae0332582d8de4962bde",
+    "mtime": 1795087870.6848414,
+    "seen": 1795087950.633437,
+    "ast_hash": "948c0b2af09ca5c6c897c3d07cdd4fca",
+    "semantic_hash": ""
+  },
+  "docs/libmpv-windows-ligne-de-base.md": {
+    "mtime": 1795087784.8973272,
+    "seen": 1795087950.633437,
+    "ast_hash": "b04e4791714a78541a8c47ee8688dad4",
     "semantic_hash": ""
   }
 }
