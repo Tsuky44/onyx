@@ -91,9 +91,13 @@ bool VideoOutput::InitializeD3D11() {
 bool VideoOutput::InitializeANGLE() {
   try {
     // OpenGL context needs to be set before |mpv_render_context_create|.
-    surface_manager_ = std::make_unique<ANGLESurfaceManager>(
+    auto surface_manager = std::make_unique<ANGLESurfaceManager>(
         static_cast<int32_t>(width_.value_or(1)),
         static_cast<int32_t>(height_.value_or(1)));
+    {
+      std::lock_guard<std::mutex> lock(textures_mutex_);
+      surface_manager_ = std::move(surface_manager);
+    }
     surface_manager_->MakeCurrent(true);
     Resize(width_.value_or(1), height_.value_or(1));
     mpv_opengl_init_params gl_init_params{
@@ -133,6 +137,51 @@ void VideoOutput::InitializeSoftware() {
   if (mpv_render_context_create(&render_context_, handle_, params) == 0) {
     SetUpdateCallback();
   }
+}
+
+std::string VideoOutput::FallbackToANGLE() {
+  auto future = thread_pool_ref_->Post([&]() {
+    if (d3d11_surface_manager_ == nullptr || destroyed_) {
+      return;
+    }
+    std::cout << "media_kit: VideoOutput: D3D11 -> ANGLE" << std::endl;
+    // La texture d'abord : Flutter ne doit plus la lire pendant que le
+    // gestionnaire disparaît. Comme dans |Resize|, l'entrée est effacée dans
+    // le rappel, une fois Flutter sorti de la texture.
+    if (texture_id_) {
+      registrar_->texture_registrar()->UnregisterTexture(
+          texture_id_, [&, id = texture_id_]() {
+            std::lock_guard<std::mutex> lock(textures_mutex_);
+            if (destroyed_) {
+              return;
+            }
+            texture_variants_.erase(id);
+            textures_.erase(id);
+          });
+      texture_id_ = 0;
+    }
+    // render.h : libérer le contexte pendant la lecture coupe la vidéo de mpv
+    // et attend que sa sortie et son décodeur soient détruits, surfaces
+    // d3d11va comprises. Rien ne rend en parallèle : ce fil est celui des
+    // rendus.
+    mpv_render_context_set_update_callback(render_context_, nullptr, nullptr);
+    mpv_render_context_free(render_context_);
+    render_context_ = nullptr;
+    {
+      std::lock_guard<std::mutex> lock(textures_mutex_);
+      d3d11_surface_manager_.reset(nullptr);
+    }
+    rendered_frames_ = 0;
+    failed_frames_ = 0;
+    device_removed_reason_ = 0;
+    if (!InitializeANGLE()) {
+      InitializeSoftware();
+    }
+    std::cout << "media_kit: VideoOutput: render path: " << render_api_
+              << " (fallback)" << std::endl;
+  });
+  future.wait();
+  return render_api_;
 }
 
 void VideoOutput::SetUpdateCallback() {
@@ -217,6 +266,15 @@ void VideoOutput::Render() {
         result = mpv_render_context_render(render_context_, params);
       });
       (result >= 0 ? rendered_frames_ : failed_frames_)++;
+      if (result < 0 && device_removed_reason_.load() == 0) {
+        auto reason = d3d11_surface_manager_->DeviceRemovedReason();
+        if (FAILED(reason)) {
+          device_removed_reason_ = static_cast<uint32_t>(reason);
+          std::cout << "media_kit: VideoOutput: D3D11 device removed: 0x"
+                    << std::hex << static_cast<uint32_t>(reason) << std::dec
+                    << std::endl;
+        }
+      }
     }
     // H/W
     if (surface_manager_ != nullptr) {
@@ -418,7 +476,7 @@ void VideoOutput::Resize(int64_t required_width, int64_t required_height) {
               }
               if (d3d11_surface_manager_ != nullptr) {
                 d3d11_surface_manager_->Read();
-              } else {
+              } else if (surface_manager_ != nullptr) {
                 surface_manager_->Read();
               }
               return texture->second.get();

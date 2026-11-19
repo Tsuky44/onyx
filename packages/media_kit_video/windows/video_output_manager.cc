@@ -40,7 +40,24 @@ VideoOutputManager::GetRenderInfo(int64_t handle) {
       output->second->render_api(),
       output->second->rendered_frames(),
       output->second->failed_frames(),
+      output->second->device_removed_reason(),
   };
+}
+
+void VideoOutputManager::FallbackToANGLE(
+    int64_t handle,
+    std::function<void(const std::string&)> callback) {
+  std::thread([=]() {
+    std::string render_api;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      auto output = video_outputs_.find(handle);
+      if (output != video_outputs_.end()) {
+        render_api = output->second->FallbackToANGLE();
+      }
+    }
+    callback(render_api);
+  }).detach();
 }
 
 void VideoOutputManager::SetSize(int64_t handle,

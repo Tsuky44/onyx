@@ -41,8 +41,15 @@ class VideoOutputManager {
     std::string render_api;
     int64_t rendered_frames;
     int64_t failed_frames;
+    int64_t device_removed_reason;
   };
   std::optional<RenderInfo> GetRenderInfo(int64_t handle);
+
+  // Onyx : fait passer la sortie de |handle| de D3D11 à ANGLE, sur un fil à
+  // part (la bascule attend que mpv ait détruit sa sortie vidéo), puis rend
+  // le chemin retenu à |callback| ; une chaîne vide si la sortie n'existe pas.
+  void FallbackToANGLE(int64_t handle,
+                       std::function<void(const std::string&)> callback);
 
   // Sets the required video output size.
   // This forces |VideoOutput| to resize the internal OpenGL surface / D3D

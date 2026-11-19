@@ -63,6 +63,18 @@ class VideoOutput {
   const std::string& render_api() const { return render_api_; }
   int64_t rendered_frames() const { return rendered_frames_.load(); }
   int64_t failed_frames() const { return failed_frames_.load(); }
+  // La cause relevée au premier rendu D3D11 raté sur un périphérique perdu
+  // (TDR, pilote redémarré) ; 0 sinon.
+  int64_t device_removed_reason() const {
+    return device_removed_reason_.load();
+  }
+
+  // Onyx : quitte le rendu D3D11 pour ANGLE (puis le logiciel), sans changer
+  // de lecteur mpv (ADR-0158, phase 2, point 4). Libérer le contexte de rendu
+  // coupe la vidéo de mpv (sa piste est désélectionnée, le son continue) :
+  // Dart la resélectionne ensuite. Rend le chemin retenu ; rien ne change si
+  // la sortie n'est pas en D3D11.
+  std::string FallbackToANGLE();
 
   int64_t width() const {
     // D3D11
@@ -167,6 +179,7 @@ class VideoOutput {
   std::string render_api_ = "sw";
   std::atomic<int64_t> rendered_frames_{0};
   std::atomic<int64_t> failed_frames_{0};
+  std::atomic<int64_t> device_removed_reason_{0};
 
   // Public notifier. This is called when a new texture is registered & texture
   // ID is changed. Only happens when video output resolution changes.

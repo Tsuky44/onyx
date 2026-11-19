@@ -249,6 +249,28 @@ class NativeVideoController extends PlatformVideoController {
     return info?.map((key, value) => MapEntry(key.toString(), value));
   }
 
+  @override
+  Future<String?> fallbackToAngle() async {
+    if (!Platform.isWindows) return null;
+    final handle = await player.handle;
+    final api = await _channel.invokeMethod<String>(
+      'VideoOutputManager.FallbackToANGLE',
+      {'handle': handle.toString()},
+    );
+    if (api != null && api.isNotEmpty) renderApi = api;
+    return renderApi;
+  }
+
+  /// Onyx : l'adaptateur graphique par défaut et la version de son pilote
+  /// (`description`, `vendorId`, `deviceId`, `driverVersion`), sous Windows
+  /// seulement (ADR-0158).
+  static Future<Map<String, Object?>?> windowsGraphicsAdapter() async {
+    if (!Platform.isWindows) return null;
+    final info = await _channel
+        .invokeMethod<Map<Object?, Object?>>('Utils.GetGraphicsAdapter');
+    return info?.map((key, value) => MapEntry(key.toString(), value));
+  }
+
   /// Disposes the instance. Releases allocated resources back to the system.
   Future<void> _dispose() async {
     super.dispose();

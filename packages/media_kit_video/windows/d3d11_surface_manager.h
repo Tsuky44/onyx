@@ -21,9 +21,22 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 
 class D3D11SurfaceManager {
  public:
+  // L'adaptateur où naît le périphérique (le même choix que |CreateDevice|),
+  // et la version de son pilote : la clé sous laquelle l'app retient qu'une
+  // machine ne sait pas faire le rendu D3D11 (ADR-0158). Un pilote mis à jour
+  // change la clé, et l'app retente.
+  struct AdapterInfo {
+    std::string description;
+    int64_t vendor_id = 0;
+    int64_t device_id = 0;
+    std::string driver_version;
+  };
+  static bool DefaultAdapter(AdapterInfo* out);
+
   const int32_t width() const { return width_; }
   const int32_t height() const { return height_; }
   const HANDLE handle() const { return handle_; }
@@ -35,6 +48,12 @@ class D3D11SurfaceManager {
   // rappel de |Draw|. Nulle si la dernière création a échoué (pilote
   // redémarré, mémoire vidéo épuisée).
   ID3D11Texture2D* render_target() const { return internal_texture_.Get(); }
+
+  // S_OK tant que le périphérique vit ; la cause sinon
+  // (DXGI_ERROR_DEVICE_REMOVED, DEVICE_RESET… : un pilote redémarré, un TDR).
+  HRESULT DeviceRemovedReason() const {
+    return device_ != nullptr ? device_->GetDeviceRemovedReason() : E_POINTER;
+  }
 
   // Lève std::runtime_error si le périphérique ou les textures ne se créent
   // pas : |VideoOutput| passe alors au chemin suivant.

@@ -44,6 +44,12 @@ abstract class PlatformVideoController {
   /// la plateforme ne le dit pas, ou quand la sortie n'a pas pu répondre.
   Future<Map<String, Object?>?> renderInfo() async => null;
 
+  /// Onyx : fait passer la sortie native de D3D11 à ANGLE en pleine lecture,
+  /// sans changer de lecteur (ADR-0158, phase 2). La piste vidéo de mpv est
+  /// coupée par la bascule : à l'appelant de la resélectionner. Rend le chemin
+  /// retenu, null là où la plateforme n'a pas ce choix.
+  Future<String?> fallbackToAngle() async => null;
+
   /// {@macro platform_video_controller}
   PlatformVideoController(
     this.player,

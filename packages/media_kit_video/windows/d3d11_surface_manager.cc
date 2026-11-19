@@ -23,6 +23,47 @@ void LogFailure(const char* step, HRESULT hr) {
 
 }  // namespace
 
+bool D3D11SurfaceManager::DefaultAdapter(AdapterInfo* out) {
+  // L'adaptateur 0 est celui que D3D11CreateDevice prend quand on ne lui en
+  // donne aucun : celui de |CreateDevice| et de Flutter.
+  Microsoft::WRL::ComPtr<IDXGIFactory1> factory;
+  if (FAILED(::CreateDXGIFactory1(__uuidof(IDXGIFactory1),
+                                  reinterpret_cast<void**>(
+                                      factory.GetAddressOf())))) {
+    return false;
+  }
+  Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+  if (FAILED(factory->EnumAdapters1(0, &adapter))) {
+    return false;
+  }
+  DXGI_ADAPTER_DESC1 desc{};
+  if (FAILED(adapter->GetDesc1(&desc))) {
+    return false;
+  }
+  auto size = ::WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, nullptr,
+                                    0, nullptr, nullptr);
+  if (size > 1) {
+    std::string description(size - 1, '\0');
+    ::WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1,
+                          description.data(), size, nullptr, nullptr);
+    out->description = description;
+  }
+  out->vendor_id = desc.VendorId;
+  out->device_id = desc.DeviceId;
+  // La version du pilote en mode utilisateur. DXGI ne la rend que par
+  // l'interface IDXGIDevice, quel que soit le niveau de Direct3D employé.
+  LARGE_INTEGER version{};
+  if (SUCCEEDED(
+          adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &version))) {
+    out->driver_version =
+        std::to_string(HIWORD(version.HighPart)) + "." +
+        std::to_string(LOWORD(version.HighPart)) + "." +
+        std::to_string(HIWORD(version.LowPart)) + "." +
+        std::to_string(LOWORD(version.LowPart));
+  }
+  return true;
+}
+
 D3D11SurfaceManager::D3D11SurfaceManager(int32_t width, int32_t height)
     : width_(width), height_(height) {
   mutex_ = ::CreateMutex(NULL, FALSE, NULL);
