@@ -59,6 +59,7 @@ import 'screens/player/display_frame_rate.dart';
 import 'screens/player/playback/auto_quality.dart';
 import 'services/picture_in_picture.dart';
 import 'screens/player/hardware_decoding.dart';
+import 'screens/player/windows_video_render.dart';
 import 'screens/player/playback_profile.dart';
 import 'services/playback_capabilities.dart';
 import 'services/playback_preferences_storage.dart';
@@ -216,6 +217,7 @@ void main() async {
     // the hardware.
     PlaybackCapabilitiesResolver.initialize(),
     HardwareDecoding.initialize(),
+    WindowsVideoRender.initialize(),
     DisplayFrameRate.initialize(),
     AutoQualityPreference.initialize(),
     // Si la souris qui s'attarde sur « Reprendre » en ouvre l'aperçu.
@@ -303,6 +305,13 @@ void main() async {
   if (AppPlatform.isAndroid) DownloadKeepAlive(downloads).start();
 
   final authProvider = AuthProvider(apiClient);
+  // Le choix du rendu vidéo de Windows est réservé aux admins (ADR-0158) : il
+  // suit le compte connecté, et tout autre compte reste sur l'ancien chemin.
+  void syncVideoRenderAdmin() =>
+      WindowsVideoRender.adminAllowed = authProvider.isAuthenticated &&
+          (authProvider.isOwner || authProvider.permissions.isAdmin);
+  syncVideoRenderAdmin();
+  authProvider.addListener(syncVideoRenderAdmin);
   final reachability = ServerReachability(apiClient);
   // L'app ouverte attend ses invitations « Regarder ensemble », ce qui la
   // rend invitable (ADR-0148).

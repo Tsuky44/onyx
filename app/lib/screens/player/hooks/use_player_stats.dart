@@ -122,6 +122,8 @@ class PlayerLiveStats extends ChangeNotifier {
       PlayerStatLine(tr('Chemin de lecture'), _route),
       PlayerStatLine(tr('Codec vidéo'), _text(info.videoCodec)),
       PlayerStatLine(tr('Décodeur vidéo'), _text(info.hardwareDecoder)),
+      if (info.videoOutput != null)
+        PlayerStatLine(tr('Rendu vidéo'), info.videoOutput!),
       PlayerStatLine(tr('Décodeur audio'), _text(info.audioCodec)),
       PlayerStatLine(tr('Images par seconde'), _fps(info.estimatedFps, 2)),
       PlayerStatLine(tr('Cadence du fichier'), _fps(info.containerFps, 3)),

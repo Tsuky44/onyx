@@ -183,6 +183,9 @@ class NativeVideoController extends PlatformVideoController {
           'height': configuration.height.toString(),
           'enableHardwareAcceleration':
               configuration.enableHardwareAcceleration,
+          // Onyx : lu par la seule sortie Windows (ADR-0158, phase 2).
+          if (Platform.isWindows && configuration.windowsRenderApi != null)
+            'renderApi': configuration.windowsRenderApi,
         },
       },
     );
@@ -235,6 +238,17 @@ class NativeVideoController extends PlatformVideoController {
     }
   }
 
+  @override
+  Future<Map<String, Object?>?> renderInfo() async {
+    if (!Platform.isWindows) return null;
+    final handle = await player.handle;
+    final info = await _channel.invokeMethod<Map<Object?, Object?>>(
+      'VideoOutputManager.GetRenderInfo',
+      {'handle': handle.toString()},
+    );
+    return info?.map((key, value) => MapEntry(key.toString(), value));
+  }
+
   /// Disposes the instance. Releases allocated resources back to the system.
   Future<void> _dispose() async {
     super.dispose();
@@ -273,6 +287,12 @@ class NativeVideoController extends PlatformVideoController {
                       call.arguments['rect']['height'] * 1.0,
                     );
                     final int id = call.arguments['id'];
+                    // Onyx : posé avant l'identifiant, que [create] attend :
+                    // le chemin est connu dès que le contrôleur est rendu.
+                    final renderApi = call.arguments['renderApi'];
+                    if (renderApi is String) {
+                      _controllers[handle]?.renderApi = renderApi;
+                    }
                     _controllers[handle]?.rect.value = rect;
                     _controllers[handle]?.id.value = id;
                     // Notify about the first frame being rendered.

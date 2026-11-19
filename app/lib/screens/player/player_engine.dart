@@ -8,6 +8,7 @@ import 'package:onyx_mpv_macos/onyx_mpv_macos.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/mpv_native_view.dart';
 import 'playback/mpv_startup_trace.dart';
+import 'windows_video_render.dart';
 
 /// A libmpv instance together with the video texture it renders into.
 ///
@@ -46,7 +47,38 @@ class PlayerEngine {
   /// réglages d'écran qui n'étaient que pour ce fichier-là.
   bool reusable = true;
 
-  PlayerEngine._(this.player, this.videoController);
+  /// Le chemin de rendu demandé à la sortie Windows à la création (ADR-0158,
+  /// phase 2), null ailleurs. Il ne change plus de la vie du moteur : un
+  /// réglage changé depuis ne s'applique qu'à un moteur neuf
+  /// ([PlayerEnginePool.acquire]).
+  final String? requestedRenderApi;
+
+  PlayerEngine._(this.player, this.videoController, {this.requestedRenderApi});
+
+  /// Le chemin que la sortie Windows a retenu, une fois la texture créée.
+  /// Null hors de Windows, ou si le contrôleur vidéo n'a pas pu naître.
+  ///
+  /// L'attendre ne retarde rien : `Player.open` attend de toute façon ce même
+  /// contrôleur avant d'ouvrir quoi que ce soit.
+  Future<VideoRenderPath?> get renderPath async {
+    final controller = videoController;
+    if (controller == null || !AppPlatform.isWindows) return null;
+    try {
+      final platform = await controller.platform.future;
+      return VideoRenderPath.parse(platform.renderApi);
+    } catch (e) {
+      debugPrint('PlayerEngine: chemin de rendu inconnu: $e');
+      return null;
+    }
+  }
+
+  /// Ce que la sortie a rendu (ADR-0158, phase 2, point 4) : null hors de
+  /// Windows.
+  Future<Map<String, Object?>?> renderInfo() async {
+    final controller = videoController;
+    if (controller == null || !AppPlatform.isWindows) return null;
+    return (await controller.platform.future).renderInfo();
+  }
 
   factory PlayerEngine._create() {
     if (MpvNativeView.enabled) {
@@ -71,7 +103,16 @@ class PlayerEngine {
     final player = mk.Player(
       configuration: const mk.PlayerConfiguration(logLevel: _logLevel),
     );
-    return PlayerEngine._(player, VideoController(player));
+    final renderApi = WindowsVideoRender.nativeRequest;
+    return PlayerEngine._(
+      player,
+      VideoController(
+        player,
+        configuration:
+            VideoControllerConfiguration(windowsRenderApi: renderApi),
+      ),
+      requestedRenderApi: renderApi,
+    );
   }
 
   /// Verbeux, pour que la trace de démarrage ([MpvStartupProbe]) voie
@@ -138,11 +179,22 @@ class PlayerEnginePool {
   static PlayerEngine? _idle;
 
   /// Takes the warm engine, or builds one when the pool is empty.
+  ///
+  /// Un moteur préparé pour un autre chemin de rendu que celui demandé
+  /// maintenant (réglage changé, D3D11 marqué en panne, admin connecté après
+  /// le préchauffage) est jeté : le choix s'applique à la lecture suivante.
   static PlayerEngine acquire() {
     final warm = _idle;
     if (warm != null) {
       _idle = null;
-      return warm;
+      final wanted = WindowsVideoRender.nativeRequest;
+      if (warm.requestedRenderApi == wanted) return warm;
+      debugPrint('PlayerEnginePool: rendu ${warm.requestedRenderApi} → '
+          '$wanted, moteur reconstruit');
+      unawaited(warm.settle().then((_) => warm._dispose()).catchError((_) {
+        // Une instance déjà détruite refuse la commande : il n'y a plus rien
+        // à arrêter.
+      }));
     }
     return PlayerEngine._create();
   }

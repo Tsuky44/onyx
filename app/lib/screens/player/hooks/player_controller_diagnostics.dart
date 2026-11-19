@@ -20,10 +20,15 @@ extension PlayerControllerDiagnostics on PlayerController {
     // here is the engine's own answer, not what it was asked for: one that
     // failed to start falls back silently, and the setting tells you nothing
     // about whether a frame ever reached the GPU that way.
+    // Le chemin de rendu de Windows (ADR-0158), pour lire les essais.
+    final render = info.videoOutput == null
+        ? ''
+        : 'render=${info.videoOutput} (${WindowsVideoRender.describe()}) · ';
     debugPrint('Playback: ${params.width}x${params.height} '
         '${info.videoCodec ?? '?'} @ ${fps > 0 ? '${fps.toStringAsFixed(3)}fps' : 'fps inconnu'} '
         '· hwdec=${info.hardwareDecoder} '
         '(asked ${HardwareDecoding.describe()}) · '
+        '$render'
         'buffers=${PlaybackProfiles.current.label}'
         '${DisplayFrameRate.requested != null ? ' · display=${DisplayFrameRate.requested}Hz' : ''}');
 

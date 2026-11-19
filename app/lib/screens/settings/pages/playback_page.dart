@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../providers/auth_provider.dart';
 import '../../../services/playback_preferences_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/app_platform.dart';
 import '../../player/display_frame_rate.dart';
 import '../../player/playback/auto_quality.dart';
 import '../../player/hardware_decoding.dart';
+import '../../player/windows_video_render.dart';
 import '../widgets/settings_dropdown_label.dart';
 import '../widgets/settings_scope.dart';
 import '../widgets/settings_ui.dart';
@@ -50,6 +53,13 @@ class _PlaybackPageState extends State<PlaybackPage> {
         });
       }
     });
+  }
+
+  /// Le même critère que le rendu effectif (`main.dart`) : propriétaire, ou
+  /// tous les droits.
+  bool _isAdmin(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    return auth.isOwner || auth.permissions.isAdmin;
   }
 
   Future<void> _setAudioLang(String? lang) async {
@@ -174,6 +184,31 @@ class _PlaybackPageState extends State<PlaybackPage> {
                   if (mounted) setState(() {});
                 },
               ),
+              // Les deux rendus de Windows cohabitent le temps des essais
+              // (ADR-0158, phase 2) : le choix n'est montré qu'aux admins, et
+              // tout autre compte reste sur l'ancien, quoi qu'il soit
+              // enregistré.
+              if (AppPlatform.isWindows && _isAdmin(context))
+                SettingsChoiceTile<WindowsVideoRenderChoice>(
+                  icon: Icons.layers_rounded,
+                  title: tr('Rendu vidéo'),
+                  subtitle: tr('Réservé aux admins, pour comparer les deux '
+                      'rendus. Ancien : ANGLE et la recopie de chaque image. '
+                      'Nouveau : mpv dessine lui-même en Direct3D 11, sans '
+                      'recopie. Automatique : le nouveau, et l’ancien dès '
+                      'qu’il ne montre rien.'),
+                  footnote: tr('Prend effet à la prochaine lecture.'),
+                  value: WindowsVideoRender.stored,
+                  options: [
+                    (WindowsVideoRenderChoice.legacy, tr('Ancien')),
+                    (WindowsVideoRenderChoice.d3d11, tr('Nouveau')),
+                    (WindowsVideoRenderChoice.auto, tr('Automatique')),
+                  ],
+                  onChanged: (value) async {
+                    await WindowsVideoRender.setChoice(value);
+                    if (mounted) setState(() {});
+                  },
+                ),
               // Android seul laisse une app choisir le mode d'affichage.
               if (AppPlatform.isAndroid)
                 SettingsSwitchTile(

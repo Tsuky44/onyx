@@ -29,6 +29,7 @@ if(MEDIA_KIT_LIBS_AVAILABLE)
   add_library(
     ${PLUGIN_NAME} SHARED
     "angle_surface_manager.cc"
+    "d3d11_surface_manager.cc"
     "media_kit_video_plugin_c_api.cc"
     "media_kit_video_plugin.cc"
     "video_output_manager.cc"

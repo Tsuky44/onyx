@@ -133,7 +133,7 @@ if(NOT LIBMPV_CURRENT_STAMP STREQUAL LIBMPV_STAMP_CONTENT)
     file(REMOVE ${LIBMPV_JARS})
   endif()
 
-  foreach(LIBMPV_FILE libmpv-2.dll libmpv.dll.a include/client.h include/render.h include/render_gl.h)
+  foreach(LIBMPV_FILE libmpv-2.dll libmpv.dll.a include/client.h include/render.h include/render_gl.h include/render_d3d11.h)
     if(NOT EXISTS "${LIBMPV_SRC}/${LIBMPV_FILE}")
       message(FATAL_ERROR "${LIBMPV} does not contain ${LIBMPV_FILE}.")
     endif()

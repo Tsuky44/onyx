@@ -127,10 +127,19 @@ void MediaKitVideoPlugin::HandleMethodCall(
     }
     configuration_value.enable_hardware_acceleration =
         configuration_enable_hardware_acceleration;
+    // Onyx : le chemin de rendu demandé par l'app (ADR-0158, phase 2).
+    // Absent, c'est ANGLE, comme avant.
+    auto render_api =
+        configuration.find(flutter::EncodableValue("renderApi"));
+    if (render_api != configuration.end() &&
+        std::holds_alternative<std::string>(render_api->second)) {
+      configuration_value.render_api = std::get<std::string>(render_api->second);
+    }
 
     video_output_manager_->Create(
         handle_value, configuration_value,
-        [this, handle = handle_value](auto id, auto width, auto height) {
+        [this, handle = handle_value](auto id, auto width, auto height,
+                                      const std::string& render_api) {
           RunOnMainThread([=]() {
             channel_->InvokeMethod(
                 "VideoOutput.Resize",
@@ -142,6 +151,10 @@ void MediaKitVideoPlugin::HandleMethodCall(
                     {
                         flutter::EncodableValue("id"),
                         flutter::EncodableValue(id),
+                    },
+                    {
+                        flutter::EncodableValue("renderApi"),
+                        flutter::EncodableValue(render_api),
                     },
                     {
                         flutter::EncodableValue("rect"),
@@ -177,6 +190,26 @@ void MediaKitVideoPlugin::HandleMethodCall(
     auto handle_value = static_cast<int64_t>(std::stoll(handle.c_str()));
     video_output_manager_->Dispose(handle_value);
     result->Success(flutter::EncodableValue(std::monostate{}));
+  } else if (method_call.method_name().compare(
+                 "VideoOutputManager.GetRenderInfo") == 0) {
+    // Onyx : ce que la sortie a rendu, pour la retombée sur panne (ADR-0158).
+    auto arguments = std::get<flutter::EncodableMap>(*method_call.arguments());
+    auto handle =
+        std::get<std::string>(arguments[flutter::EncodableValue("handle")]);
+    auto info = video_output_manager_->GetRenderInfo(
+        static_cast<int64_t>(std::stoll(handle.c_str())));
+    if (!info.has_value()) {
+      result->Success(flutter::EncodableValue(std::monostate{}));
+      return;
+    }
+    result->Success(flutter::EncodableValue(flutter::EncodableMap{
+        {flutter::EncodableValue("renderApi"),
+         flutter::EncodableValue(info->render_api)},
+        {flutter::EncodableValue("renderedFrames"),
+         flutter::EncodableValue(info->rendered_frames)},
+        {flutter::EncodableValue("failedFrames"),
+         flutter::EncodableValue(info->failed_frames)},
+    }));
   } else if (method_call.method_name().compare("VideoOutputManager.SetSize") ==
              0) {
     auto arguments = std::get<flutter::EncodableMap>(*method_call.arguments());

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:onyx/screens/player/hardware_decoding.dart';
+import 'package:onyx/screens/player/windows_video_render.dart';
 
 void main() {
   _zeroCopyFallback();
@@ -65,19 +66,20 @@ void main() {
   });
 
   String windows(HardwareDecodingPreference preference,
-          {bool zeroCopyFailed = false}) =>
+          {bool zeroCopyFailed = false, VideoRenderPath? renderPath}) =>
       HardwareDecoding.resolve(
         preference: preference,
         isAndroid: false,
         isMacOS: false,
         isWindows: true,
         zeroCopyFailed: zeroCopyFailed,
+        windowsRenderPath: renderPath,
       );
 
   // ADR-0095 : sans copie, mpv lisait la surface du décodeur, plus grande que
   // l'image, et laissait une bande verte en bas de certains fichiers, en 1080p
   // comme en 4K. La recopie ne sort que l'image utile.
-  test('Windows never decodes without a copy, whatever the file', () {
+  test('on the ANGLE texture, Windows never decodes without a copy', () {
     for (final zeroCopyFailed in [false, true]) {
       final value = windows(HardwareDecodingPreference.auto,
           zeroCopyFailed: zeroCopyFailed);
@@ -85,6 +87,56 @@ void main() {
       expect(value, isNot(anyOf('auto', 'auto-safe', 'd3d11va')));
     }
     expect(windows(HardwareDecodingPreference.copy), 'auto-copy-safe');
+  });
+
+  // ADR-0158, phase 2 : le décodeur suit le chemin de rendu que la sortie
+  // native a retenu.
+  group('the Windows decoder follows the render path', () {
+    test('D3D11 takes the d3d11va of mpv itself', () {
+      expect(HardwareDecoding.windowsAuto(VideoRenderPath.d3d11), 'auto-safe');
+      expect(
+        windows(HardwareDecodingPreference.auto,
+            renderPath: VideoRenderPath.d3d11),
+        'auto-safe',
+      );
+    });
+
+    test('ANGLE keeps the copy, as before', () {
+      expect(HardwareDecoding.windowsAuto(VideoRenderPath.angle),
+          'auto-copy-safe');
+      expect(
+        windows(HardwareDecodingPreference.auto,
+            renderPath: VideoRenderPath.angle),
+        'auto-copy-safe',
+      );
+    });
+
+    test('software rendering, or an unknown path, is unchanged', () {
+      expect(HardwareDecoding.windowsAuto(VideoRenderPath.software),
+          'auto-copy-safe');
+      expect(HardwareDecoding.windowsAuto(null), 'auto-copy-safe');
+    });
+
+    test('D3D11 caught decoding in software falls back to the copy', () {
+      expect(
+        HardwareDecoding.windowsAuto(VideoRenderPath.d3d11,
+            zeroCopyFailed: true),
+        'auto-copy-safe',
+      );
+    });
+
+    test('a pinned decoder wins over the render path', () {
+      expect(
+        windows(HardwareDecodingPreference.copy,
+            renderPath: VideoRenderPath.d3d11),
+        'auto-copy-safe',
+      );
+      expect(
+        windows(HardwareDecodingPreference.off,
+            renderPath: VideoRenderPath.d3d11),
+        'no',
+      );
+    });
   });
 
   test('software decoding is the one unambiguous value', () {

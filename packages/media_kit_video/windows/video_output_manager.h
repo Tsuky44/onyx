@@ -11,6 +11,8 @@
 
 #include <flutter/plugin_registrar_windows.h>
 
+#include <optional>
+#include <string>
 #include <unordered_map>
 
 #include "thread_pool.h"
@@ -28,10 +30,19 @@ class VideoOutputManager {
   // Creates a new |VideoOutput| instance. It's texture ID may be used to render
   // the video. The changes in it's texture ID & video dimensions will be
   // notified via the |texture_update_callback|.
-  void Create(
-      int64_t handle,
-      VideoOutputConfiguration configuration,
-      std::function<void(int64_t, int64_t, int64_t)> texture_update_callback);
+  void Create(int64_t handle,
+              VideoOutputConfiguration configuration,
+              TextureUpdateCallback texture_update_callback);
+
+  // Onyx : le chemin de rendu d'une sortie et le compte de ses rendus réussis
+  // et ratés (ADR-0158, phase 2). Vide si la sortie n'existe pas, ou si une
+  // création est en cours : la question ne bloque jamais le fil de Flutter.
+  struct RenderInfo {
+    std::string render_api;
+    int64_t rendered_frames;
+    int64_t failed_frames;
+  };
+  std::optional<RenderInfo> GetRenderInfo(int64_t handle);
 
   // Sets the required video output size.
   // This forces |VideoOutput| to resize the internal OpenGL surface / D3D

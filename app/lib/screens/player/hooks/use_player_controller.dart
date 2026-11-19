@@ -7,6 +7,7 @@ import '../../../utils/app_platform.dart';
 import '../web/web_playback.dart';
 import '../display_frame_rate.dart';
 import '../hardware_decoding.dart';
+import '../windows_video_render.dart';
 import '../playback/audio_language_gap.dart';
 import '../playback/audio_track_pairing.dart';
 import '../playback/auto_quality.dart';

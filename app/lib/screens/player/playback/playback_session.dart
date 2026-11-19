@@ -98,6 +98,7 @@ class PlaybackDiagnostics {
     this.videoBitrate,
     this.audioBitrate,
     this.bytesLoaded,
+    this.videoOutput,
   });
 
   final String? videoCodec;
@@ -127,6 +128,27 @@ class PlaybackDiagnostics {
   /// compte. Ce qui permet un bitrate moyen sur la séance plutôt qu'un relevé
   /// à un instant.
   final int? bytesLoaded;
+
+  /// Le chemin par lequel l'image atteint l'écran, quand le moteur en a
+  /// plusieurs : `d3d11`, `angle` ou `software` sous Windows (ADR-0158).
+  final String? videoOutput;
+
+  PlaybackDiagnostics withVideoOutput(String? value) => PlaybackDiagnostics(
+        videoCodec: videoCodec,
+        hardwareDecoder: hardwareDecoder,
+        containerFps: containerFps,
+        droppedByDisplay: droppedByDisplay,
+        droppedByDecoder: droppedByDecoder,
+        sourceChannels: sourceChannels,
+        outputChannels: outputChannels,
+        audioCodec: audioCodec,
+        renderedFrames: renderedFrames,
+        estimatedFps: estimatedFps,
+        videoBitrate: videoBitrate,
+        audioBitrate: audioBitrate,
+        bytesLoaded: bytesLoaded,
+        videoOutput: value,
+      );
 
   static const PlaybackDiagnostics none = PlaybackDiagnostics();
 }

@@ -1,7 +1,8 @@
 # ADR-0158 — Sous Windows, le libmpv officiel de mpv, puis le rendu D3D11 de libmpv
 
 - **Statut :** proposé. Phase 1 en cours : le changement de libmpv est prêt, la porte n'est pas
-  franchie (voir le journal d'avancement en fin de page).
+  franchie. Phase 2 commencée en parallèle, derrière un réglage réservé aux admins (voir le
+  journal d'avancement en fin de page).
 - **Date :** 2026-11-19
 - **Portée :** le libmpv livré sous Windows (`packages/media_kit_libs_windows_video`), la sortie
   vidéo du plugin (`packages/media_kit_video/windows`), le choix du décodeur
@@ -263,3 +264,61 @@ Le changement est fusionné en local dans `tsuky`, sans poussée ni version de t
 la porte** : TrueHD, DTS-HD MA, sous-titres PGS/ASS/VobSub, HDR10 avec tone mapping, fenêtre DV5,
 HLS transcodé, séance de 2 h, puis la version de test d'une semaine chez un utilisateur Windows en
 HTTPS.
+
+### 2026-11-19 — phase 2 commencée avant la porte de la phase 1, les deux rendus cohabitent
+
+**Décision de Tsuky.** La phase 2 commence tout de suite, sans attendre la porte de la phase 1, pour
+tout tester d'un coup sur de vraies machines. Ça s'écarte du garde-fou « une variable à la fois » :
+le libmpv 0.42.0 et le rendu D3D11 arrivent ensemble. Ce qui le rend acceptable :
+
+- **Les deux chemins cohabitent dans le code**, et le nouveau ne s'active que sur demande. Le point 5
+  (« Rendu vidéo : automatique / compatibilité » pour tous) est remplacé par un réglage **réservé
+  aux admins, sous Windows seulement**, avec trois valeurs :
+  - **Ancien** : ANGLE et `d3d11va-copy`, le chemin de la phase 1 ;
+  - **Nouveau** : le rendu D3D11 de libmpv et `auto-safe`, avec repli sur ANGLE si mpv refuse de
+    créer le contexte ;
+  - **Automatique** : D3D11 → ANGLE → logiciel, avec la retombée sur panne du point 4.
+- **Par défaut : Ancien**, pour tout le monde. Un compte qui n'est pas admin (propriétaire, ou tous
+  les droits, le critère de `Permissions.isAdmin`) reste sur Ancien quoi qu'il y ait d'enregistré.
+  Seul un admin qui change le réglage passe sur le nouveau chemin. Le choix s'applique à la lecture
+  suivante.
+- Les deux phases gardent chacune leur porte. Celle de la phase 1 se juge sur Ancien ; celle de la
+  phase 2, en comparant Ancien et Nouveau sur la même machine et le même libmpv.
+
+**Ce qui a été fait**, d'après `render_d3d11.h` et `render.h` du zip 0.42.0 épinglé (en-tête
+identique à celui du zip, relu en entier) et `video/out/d3d11/libmpv_d3d11.c` :
+
+1. **`D3D11SurfaceManager`** (`packages/media_kit_video/windows/d3d11_surface_manager.{h,cc}`),
+   à côté d'`ANGLESurfaceManager`, avec la même interface (`Draw`, `Read`, `SetSize`, `handle`,
+   `width`, `height`) plus `device()` et `render_target()`. Même choix d'adaptateur que le chemin
+   ANGLE (l'adaptateur par défaut sous Windows 10, le premier énuméré avant), donc que Flutter.
+   Périphérique sans `SINGLETHREADED` (exigé pour `d3d11va` sans copie), niveaux 11_1 à 9_3 comme
+   la sortie `d3d11` de mpv, protection multithread posée. Texture interne `BIND_RENDER_TARGET`
+   `B8G8R8A8` donnée à mpv par `MPV_RENDER_PARAM_D3D11_FBO`, texture publique partagée
+   (`DxgiSharedHandle`), `CopyResource` + `Flush` dans `Read` sous le même mutex que `Draw`. Une
+   recréation de texture ratée (pilote redémarré) ne lève pas : la texture reste nulle, les rendus
+   suivants échouent et se comptent.
+2. **`VideoOutput`** essaie D3D11 (seulement si Dart le demande) → ANGLE → logiciel. Pour D3D11, le
+   contexte de rendu se crée avant la texture Flutter : un refus de mpv ne laisse rien derrière lui.
+   Le chemin retenu est journalisé (`media_kit: VideoOutput: render path: …`) et remonte à Dart
+   avec l'identifiant de texture (`VideoOutput.Resize`, champ `renderApi`). Chaque rendu réussi ou
+   raté est compté, et `VideoOutputManager.GetRenderInfo` rend ces compteurs sans jamais bloquer le
+   fil de Flutter.
+3. **Le décodeur** : `HardwareDecoding.windowsAuto`, fonction pure testée sur les trois cas.
+   D3D11 → `auto-safe` ; ANGLE → `auto-copy-safe` ; logiciel ou inconnu → `auto-copy-safe`
+   (inchangé). Les préférences « Compatible » et « Logiciel » restent ce qu'elles sont.
+4. **La retombée sur panne** : trois secondes après la première image, une texture D3D11 sans aucun
+   rendu réussi marque l'appareil pour la session (comme `zeroCopyFailed` sur Android) et l'écrit
+   en erreur dans le `ClientLog`. En Automatique, la lecture suivante prend ANGLE ; en Nouveau,
+   l'admin a demandé D3D11 et le garde. Le rattrapage « décodé en logiciel → copie » que
+   l'ADR-0095 avait retiré revient, pour la seule texture D3D11. Pas de vérification sur un profil
+   5 : sa fenêtre mpv (ADR-0061) a pris la place de la texture.
+5. **Le moteur mis en commun** garde le chemin demandé à sa création. Un moteur préparé pour un
+   autre chemin que celui demandé maintenant est jeté et reconstruit (réglage changé, D3D11 marqué
+   en panne, admin connecté après le préchauffage).
+6. **Le diagnostic** dit le chemin effectif : une note `rendu d3d11` dans `PLAYER STARTUP`,
+   `render=d3d11 (auto → d3d11)` dans la ligne `Playback:`, une ligne « Rendu vidéo » dans les
+   statistiques.
+
+Ne changent pas : la fenêtre DV5, le contrôleur, les surfaces Flutter, les autres plateformes. Le
+statut reste « proposé ».

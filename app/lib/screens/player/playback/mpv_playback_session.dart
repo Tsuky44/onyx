@@ -10,6 +10,7 @@ import '../../../utils/mpv_native_view.dart';
 import '../hardware_decoding.dart';
 import '../player_engine.dart';
 import '../playback_profile.dart';
+import '../windows_video_render.dart';
 import 'cache_pause_policy.dart';
 import 'mpv_diagnostics.dart';
 import 'mpv_dolby_vision.dart';
@@ -57,6 +58,10 @@ class MpvPlaybackSession implements PlaybackSession {
   late final MpvDolbyVisionOutput _dolbyVision = MpvDolbyVisionOutput(_engine);
 
   mk.Player get _player => _engine.player;
+
+  /// Le chemin de rendu de la texture sous Windows (ADR-0158), lu au réglage
+  /// du moteur : il décide du décodeur.
+  VideoRenderPath? _renderPath;
 
   /// Le moteur mpv sous-jacent.
   ///
@@ -149,6 +154,7 @@ class MpvPlaybackSession implements PlaybackSession {
     }
     if (!AppPlatform.isWeb && !_pictureLive) {
       _startup.begin(start: start, keyframeStart: _exactSeekDeferred);
+      if (_renderPath != null) _startup.note('rendu ${_renderPath!.name}');
     }
     if (!AppPlatform.isWeb) {
       // Par le relais local, qui connaît déjà l'adresse du serveur : mpv ne
@@ -383,7 +389,8 @@ class MpvPlaybackSession implements PlaybackSession {
     await _set(
         platform, 'demuxer-max-back-bytes', '${profile.demuxerBackBytes}');
     await _set(platform, 'hr-seek', 'yes');
-    await _set(platform, 'hwdec', HardwareDecoding.mpvValue);
+    _renderPath = WindowsVideoRender.active = await _engine.renderPath;
+    await _set(platform, 'hwdec', HardwareDecoding.mpvValueFor(_renderPath));
     // Le rendu direct est une source connue de gels périodiques avec l'API de
     // rendu de libmpv qu'utilise media_kit. Android n'utilise pas cette API —
     // il reçoit une vraie Surface — et la copie supplémentaire y est tout sauf
@@ -471,7 +478,8 @@ class MpvPlaybackSession implements PlaybackSession {
     await _set(platform, 'demuxer-max-bytes', '${profile.hlsDemuxerMaxBytes}');
     await _set(
         platform, 'demuxer-readahead-secs', '${profile.hlsReadaheadSecs}');
-    await _set(platform, 'hwdec', HardwareDecoding.mpvValue);
+    _renderPath = WindowsVideoRender.active = await _engine.renderPath;
+    await _set(platform, 'hwdec', HardwareDecoding.mpvValueFor(_renderPath));
     if (!AppPlatform.isAndroid && !MpvNativeView.enabled) {
       await _set(platform, 'vd-lavc-dr', 'no');
     }
@@ -717,13 +725,21 @@ class MpvPlaybackSession implements PlaybackSession {
       final platform = _player.platform as dynamic;
       await MpvDolbyVisionOutput.log((name) => _read(platform, name));
     }
+    // Une texture D3D11 qui ne rend rien fait passer les lectures suivantes
+    // sur ANGLE (ADR-0158). Pas pour un profil 5 : sa fenêtre mpv a pris la
+    // place de la texture, qui n'a plus rien à rendre.
+    if (_renderPath == VideoRenderPath.d3d11 && !_dolbyVision.active) {
+      unawaited(WindowsVideoRender.verifyFirstFrames(_engine.renderInfo));
+    }
     if (AppPlatform.isWeb) return;
     if (_softwareDecodeHandled) return;
     // Les plateformes où le chemin sans copie peut échouer vers le logiciel :
     // MediaCodec sur Android, l'interop VideoToolbox → Vulkan de gpu-next sur
-    // macOS. Windows décode toujours avec recopie (ADR-0095).
-    final zeroCopyAsked =
-        AppPlatform.isAndroid || (AppPlatform.isMacOS && MpvNativeView.enabled);
+    // macOS, d3d11va sur la texture D3D11 de Windows. Sur ANGLE, Windows
+    // décode toujours avec recopie (ADR-0095).
+    final zeroCopyAsked = AppPlatform.isAndroid ||
+        (AppPlatform.isMacOS && MpvNativeView.enabled) ||
+        _renderPath == VideoRenderPath.d3d11;
     if (!zeroCopyAsked) return;
     if (HardwareDecoding.preference != HardwareDecodingPreference.auto) return;
 
@@ -742,14 +758,16 @@ class MpvPlaybackSession implements PlaybackSession {
     _softwareDecodeHandled = true;
     HardwareDecoding.noteZeroCopyFailure();
     debugPrint('mpv: ${height}p décodé en logiciel — bascule sur '
-        '${HardwareDecoding.mpvValue}');
-    await _set(platform, 'hwdec', HardwareDecoding.mpvValue);
+        '${HardwareDecoding.mpvValueFor(_renderPath)}');
+    await _set(platform, 'hwdec', HardwareDecoding.mpvValueFor(_renderPath));
   }
 
   @override
   Future<PlaybackDiagnostics> readDiagnostics() async {
     if (AppPlatform.isWeb) return PlaybackDiagnostics.none;
-    return _diagnostics();
+    final info = await _diagnostics();
+    final path = _renderPath;
+    return path == null ? info : info.withVideoOutput(path.name);
   }
 
   /// Hors du thread de l'interface là où le libmpv se retrouve depuis un

@@ -144,6 +144,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Scanning…',
   'Analyse, maintenance':
       'Scanning, maintenance',
+  'Ancien':
+      'Legacy',
   'Anglais':
       'English',
   'Annuler':
@@ -312,6 +314,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Auto',
   'Auto · {0}':
       'Auto · {0}',
+  'Automatique':
+      'Automatic',
   'Automatique (piste du fichier)':
       'Automatic (file track)',
   'Autoriser cet appareil':
@@ -1762,6 +1766,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Rating (asc.)',
   'Note (décr.)':
       'Rating (desc.)',
+  'Nouveau':
+      'New',
   'Nouveau mot de passe':
       'New password',
   'Nouveaux codes de secours':
@@ -2104,6 +2110,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Fill screen',
   'Remplir la hauteur':
       'Fill height',
+  'Rendu vidéo':
+      'Video rendering',
+  'Réservé aux admins, pour comparer les deux rendus. Ancien : ANGLE et la recopie de chaque image. Nouveau : mpv dessine lui-même en Direct3D 11, sans recopie. Automatique : le nouveau, et l’ancien dès qu’il ne montre rien.':
+      'Admins only, to compare the two renderers. Legacy: ANGLE, with every frame copied back. New: mpv draws in Direct3D 11 itself, with no copy. Automatic: the new one, and the legacy one as soon as it shows nothing.',
   'Renommer':
       'Rename',
   'Renseignez l’adresse du serveur pour afficher le code.':
