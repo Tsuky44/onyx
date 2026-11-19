@@ -1,7 +1,13 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app_platform.dart';
+import 'window_frame_state.dart';
+
+export 'window_frame_state.dart';
 
 /// Native implementation of the window facade — see `window_controls.dart`.
 ///
@@ -72,6 +78,48 @@ abstract final class WindowControls {
     if (!AppPlatform.isDesktop) return;
     await windowManager.startDragging();
   }
+
+  /// L'état de la fenêtre, suivi par ses événements et non relu après nos
+  /// seuls clics : un double-clic sur l'en-tête, Win + Haut ou un glissement
+  /// contre le bord de l'écran l'agrandissent aussi.
+  static ValueListenable<WindowFrameState> get frameState =>
+      _WindowFrameWatch.instance;
+}
+
+class _WindowFrameWatch extends ValueNotifier<WindowFrameState>
+    with WindowListener {
+  _WindowFrameWatch() : super(const WindowFrameState()) {
+    if (!AppPlatform.isDesktop) return;
+    windowManager.addListener(this);
+    unawaited(_seed());
+  }
+
+  static final instance = _WindowFrameWatch();
+
+  Future<void> _seed() async {
+    try {
+      value = WindowFrameState(
+        maximized: await windowManager.isMaximized(),
+        focused: await windowManager.isFocused(),
+      );
+    } on Exception catch (error) {
+      // Pas de greffon de fenêtre (tests sur un poste Windows) : l'état par
+      // défaut, agrandie non et au premier plan, est celui d'un démarrage.
+      debugPrint('WindowFrameState: état initial illisible ($error)');
+    }
+  }
+
+  @override
+  void onWindowMaximize() => value = value.copyWith(maximized: true);
+
+  @override
+  void onWindowUnmaximize() => value = value.copyWith(maximized: false);
+
+  @override
+  void onWindowFocus() => value = value.copyWith(focused: true);
+
+  @override
+  void onWindowBlur() => value = value.copyWith(focused: false);
 }
 
 /// Region that moves the OS window when dragged. Transparent passthrough where

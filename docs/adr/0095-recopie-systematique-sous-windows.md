@@ -54,3 +54,29 @@ l'ADR-0019 a écarté ; à rouvrir si la charge processeur en 4K devient un prob
   élevée sur ces fichiers. Le correctif de libmpv de l'ADR-0019 reste en place, pour le jour où le
   sans-copie pourra revenir derrière une détection fiable.
 - Le réglage « copie » et le réglage « auto » donnent la même valeur sous Windows.
+
+## Révision du 2026-11-19 — les voies sans copie étudiées, la recopie reste
+
+Relu dans le source de mpv (master) : `hwdec_d3d11egl.c`, notre interop, déclare à ANGLE la
+texture du décodeur à sa taille complète (`texdesc.Width/Height`) et compte sur le recadrage des
+coordonnées. `hwdec_d3d11va.c`, celui de mpv seul, recopie la zone utile (`D3D11_BOX` aux
+dimensions de l'image) avec `CopySubresourceRegion1` quand `d3d11va-zero-copy=no`. C'est cette
+étape qui manque à notre chemin.
+
+Voies étudiées pour retrouver le sans-copie, toutes écartées :
+
+- **La fenêtre mpv de l'ADR-0061 pour toutes les lectures** : bonne pour le HDR et le Dolby Vision,
+  mais elle coûte la réutilisation du moteur, casse les animations (zoom d'entrée, fondus) et
+  repose sur deux fenêtres synchronisées et une fonction Windows non documentée. Trop fragile pour
+  le cas général.
+- **Un libmpv construit par nous**, avec la recopie GPU de la zone utile ajoutée à
+  `hwdec_d3d11egl.c` : solide, mais c'est une chaîne de build Windows (MinGW, FFmpeg, libplacebo) à
+  maintenir en permanence.
+- **`dxva2-egl`**, présent dans mpv sans correctif : il rogne bien (`StretchRect` aux dimensions de
+  l'image), mais il convertit en RVB 8 bits par le pilote (plus de 10 bits ni de HDR, une matrice de
+  couleurs laissée au pilote) et attend jusqu'à 8 ms par image sur le fil de rendu.
+
+La recopie reste donc la valeur de Windows. Elle ne coûte qu'en 4K HDR. Les saccades et le
+décalage du son signalés le même jour venaient du relais local (ADR-0036), pas d'elle. Seule voie
+gardée ouverte, sans rien à maintenir : proposer la recopie de la zone utile à mpv lui-même. Une
+fois fusionnée, les builds de shinchiro l'apporteront au prochain changement de `LIBMPV`.

@@ -30,6 +30,26 @@ extension PlayerControllerCut on PlayerController {
     return true;
   }
 
+  /// Garde [access] comme ticket de la lecture et suit qu'il tienne.
+  void _adoptAccess(PlaybackAccess access) {
+    _playbackAccess = access;
+    unawaited(access.lost.then((_) => _onAccessLost(access)));
+  }
+
+  /// Le serveur a oublié le ticket : il a redémarré pendant la lecture, et la
+  /// connexion de mpv est partie avec lui. mpv lit ce qu'il a en mémoire puis
+  /// annonce une fin — seize minutes plus tard dans le journal d'un
+  /// utilisateur, sur une position qui ne valait plus rien. On rouvre tout
+  /// de suite, à la seconde qu'on voit maintenant.
+  void _onAccessLost(PlaybackAccess access) {
+    if (_disposed || !identical(_playbackAccess, access)) return;
+    final cuts = _cuts;
+    if (cuts == null || cuts.isRecovering) return;
+    ClientLog.error('Player: ticket oublié par le serveur à '
+        '${position.inSeconds}s — flux rouvert');
+    unawaited(cuts.recover(position.inSeconds));
+  }
+
   Future<bool> _reopenAfterCut(int seconds) async {
     final media = _media;
     final api = _apiClient;
@@ -45,7 +65,7 @@ extension PlayerControllerCut on PlayerController {
       return false;
     }
     final previous = _playbackAccess;
-    _playbackAccess = access;
+    _adoptAccess(access);
     unawaited(previous?.close());
 
     if (currentQuality != null) {

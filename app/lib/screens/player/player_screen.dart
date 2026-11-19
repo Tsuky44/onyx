@@ -25,6 +25,7 @@ import '../../services/watch_party_invites.dart';
 import '../../widgets/global/watch_party_invite_banner.dart' show watchPartyInviteFailure;
 import 'chrome_auto_hide.dart';
 import 'display_cutouts.dart';
+import 'resume_point.dart';
 import 'video_display_mode.dart';
 import '../../tv/nav/onyx_dpad.dart' show TvNavScope;
 import '../../tv/nav/tv_back.dart';

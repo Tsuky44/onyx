@@ -81,6 +81,38 @@ void main() {
     await echo.close();
   });
 
+  test(
+      'the relay mpv is given runs off the UI isolate and still knows the '
+      'last address of the host', () async {
+    final echo = await _echo();
+    // Seule l'adresse transmise par routeFor peut servir : le relais tourne
+    // dans un autre isolate, où DnsWarmup n'a rien résolu.
+    DnsWarmup.rememberForTest('relay.invalid', [InternetAddress.loopbackIPv4]);
+    StreamProxy.resetForTest();
+    final route =
+        await StreamProxy.routeFor('https://relay.invalid:${echo.port}/stream');
+    expect(route, startsWith('http://127.0.0.1:'));
+    // Une adresse morte dans l'isolate de l'interface : un relais qui
+    // tournerait encore ici s'y connecterait et répondrait 502.
+    DnsWarmup.rememberForTest('relay.invalid', [InternetAddress('192.0.2.1')]);
+    final port = Uri.parse(route).port;
+    final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+    final received = StringBuffer();
+    final done = Completer<void>();
+    socket.listen((d) => received.write(latin1.decode(d)),
+        onDone: done.complete);
+    socket.add(latin1.encode(
+        'CONNECT relay.invalid:${echo.port} HTTP/1.1\r\n\r\n'));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    socket.add(latin1.encode('isolé'));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    await socket.close();
+    await done.future.timeout(const Duration(seconds: 5));
+    expect(received.toString(), startsWith('HTTP/1.1 200'));
+    expect(received.toString(), endsWith(latin1.decode(latin1.encode('isolé'))));
+    await echo.close();
+  });
+
   test('answers 502 when the server cannot be reached', () async {
     final proxy = await _proxy(
         connect: (_, __) =>

@@ -749,7 +749,15 @@ class MpvPlaybackSession implements PlaybackSession {
   @override
   Future<PlaybackDiagnostics> readDiagnostics() async {
     if (AppPlatform.isWeb) return PlaybackDiagnostics.none;
-    final platform = _player.platform as dynamic;
-    return readMpvDiagnostics((name) => _read(platform, name));
+    return _diagnostics();
   }
+
+  /// Hors du thread de l'interface là où le libmpv se retrouve depuis un
+  /// autre isolate : celui de media_kit sous Windows, le patché sur macOS.
+  late final _diagnostics = MpvDiagnosticsReader(
+    read: (name) => _read(_player.platform as dynamic, name),
+    batch: AppPlatform.isWindows || MpvNativeView.enabled
+        ? _engine.readProperties
+        : null,
+  );
 }

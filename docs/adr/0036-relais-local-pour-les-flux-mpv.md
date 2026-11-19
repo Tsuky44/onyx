@@ -47,3 +47,23 @@ Les pistes par options mpv ont été essayées sur la libmpv de l'app et écart�
 - Une adresse périmée qui ne répond plus coûte trois secondes avant le repli sur le nom.
 - Découvert en chemin : avec libcurl, les options `stream-lavf-o` de reconnexion
   (`reconnect=1…`) ne s'appliquent pas aux flux HTTP. C'est à revoir séparément.
+
+## Révision du 2026-11-19 — le relais sort de l'isolate de l'interface
+
+Les journaux d'un utilisateur Windows qui lit en HTTPS (donc par le relais) montrent une
+interface qui saccade et un son qui se décale lors des longues séances. mpv ne compte pourtant
+qu'entre zéro et trois images perdues. Le relais tournait dans l'isolate de l'interface. Tout le
+film le traversait, avec des rafales de 68 à 158 Mbit/s quand mpv remplit son cache. Chaque
+morceau recopié, et le ramasse-miettes qui suit, retardait les images Flutter. Sous Windows,
+l'image de la texture de media_kit ne change qu'avec une image Flutter : elle restait figée
+pendant que le son continuait. Les lectures en HTTP sur le réseau local ne passent pas par le
+relais, ce qui explique qu'on ne le voyait pas.
+
+- Le relais tourne désormais dans son propre isolate (`Isolate.spawn`). `routeFor` lui transmet
+  la dernière adresse connue de l'hôte avant de rendre la main, car `DnsWarmup` reste dans
+  l'isolate de l'interface. Ses lignes de journal reviennent à l'interface, qui les verse dans le
+  journal exportable.
+- Si l'isolate s'arrête, le prochain flux en relance un. S'il ne démarre pas, mpv résout le nom
+  lui-même, comme avant.
+- Test : `stream_proxy_test.dart` vérifie que le relais remis à mpv sert le tunnel avec
+  l'adresse transmise, même quand l'isolate de l'interface en connaît une morte.

@@ -82,6 +82,33 @@ class PlayerEngine {
   /// paquet et restent coupés).
   static const _logLevel = mk.MPVLogLevel.v;
 
+  int _readsInFlight = 0;
+  Completer<void>? _readsDone;
+
+  /// Lit [names] hors du thread de l'interface ([MpvNativeOutput]).
+  ///
+  /// Compté : la destruction du moteur attend la fin des lectures en cours,
+  /// sans quoi l'isolate lirait un contexte mpv déjà libéré.
+  Future<Map<String, String?>> readProperties(List<String> names) async {
+    _readsInFlight++;
+    try {
+      return await (await nativeOutput).getProperties(names);
+    } finally {
+      if (--_readsInFlight == 0) {
+        _readsDone?.complete();
+        _readsDone = null;
+      }
+    }
+  }
+
+  /// Détruit le moteur une fois ses lectures hors interface terminées.
+  Future<void> _dispose() async {
+    if (_readsInFlight > 0) {
+      await (_readsDone ??= Completer<void>()).future;
+    }
+    await player.dispose();
+  }
+
   /// Waits out the parked unload, if there is one. Idempotent.
   Future<void> settle() async {
     final pending = pendingStop;
@@ -130,7 +157,7 @@ class PlayerEnginePool {
           .then((output) => output.setProperty('vo', 'null'))
           .catchError((Object e) {
         debugPrint('PlayerEnginePool: sortie vidéo non rendue: $e');
-      }).whenComplete(() => engine.player.dispose().catchError((_) {
+      }).whenComplete(() => engine._dispose().catchError((_) {
                 // Une instance déjà détruite refuse la commande : il n'y a
                 // plus rien à arrêter.
               })));
@@ -141,7 +168,7 @@ class PlayerEnginePool {
       // `dispose` stops the player on its way out, so this covers the unload
       // too; racing it with a separate `stop` would only produce a rejected
       // command against an instance that is already gone.
-      unawaited(engine.player.dispose().catchError((_) {
+      unawaited(engine._dispose().catchError((_) {
         // Une instance déjà détruite refuse la commande : il n'y a plus rien à arrêter.
       }));
       return;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -138,6 +139,77 @@ void main() {
     await lease.close();
     await tester.pump(const Duration(seconds: 3));
     expect(renewals, 1);
+  });
+
+  testWidgets(
+      'a ticket the server no longer knows is reported lost once, and no '
+      'longer renewed', (tester) async {
+    var renewals = 0;
+    var lost = 0;
+    final lease = PlaybackAccess(
+        origin: 'http://a.test',
+        mediaId: 7,
+        token: secret,
+        expiresAt: DateTime.now().add(const Duration(minutes: 15)),
+        renewEvery: const Duration(seconds: 1),
+        renew: () async {
+          renewals++;
+          throw const PlaybackTicketRejected();
+        },
+        revoke: () async {});
+    unawaited(lease.lost.then((_) => lost++));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 3));
+    expect(renewals, 1);
+    expect(lost, 1);
+    await lease.close();
+  });
+
+  testWidgets('a network failure while renewing is not a lost ticket',
+      (tester) async {
+    var lost = false;
+    final lease = PlaybackAccess(
+        origin: 'http://a.test',
+        mediaId: 7,
+        token: secret,
+        expiresAt: DateTime.now().add(const Duration(minutes: 15)),
+        renewEvery: const Duration(seconds: 1),
+        renew: () async => throw StateError('offline'),
+        revoke: () async {});
+    unawaited(lease.lost.then((_) => lost = true));
+    await tester.pump(const Duration(seconds: 3));
+    expect(lost, false);
+    await lease.close();
+  });
+
+  testWidgets('the server answering 401 to a renewal loses the ticket',
+      (tester) async {
+    final dio = Dio();
+    dio.httpClientAdapter = Adapter((r) {
+      if (r.method == 'PUT') return json({'error': 'expiré'}, 401);
+      return json({
+        'ticket': secret,
+        'expires_at':
+            DateTime.now().add(const Duration(minutes: 15)).toIso8601String()
+      });
+    });
+    final api = ApiClient(registry: _Registry(), httpClient: dio);
+    // Ouvert dans l'horloge simulée, pour que la minuterie de renouvellement
+    // y soit aussi.
+    PlaybackAccess? lease;
+    unawaited(api.openPlaybackAccess(7).then((l) => lease = l));
+    for (var i = 0; i < 20 && lease == null; i++) {
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    var lost = false;
+    unawaited(lease!.lost.then((_) => lost = true));
+    await tester.pump(const Duration(minutes: 5));
+    for (var i = 0; i < 20 && !lost; i++) {
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(lost, true);
+    unawaited(lease!.close());
+    await tester.pump(const Duration(milliseconds: 50));
   });
 
   test('expired authorization never produces an unsigned URL', () async {

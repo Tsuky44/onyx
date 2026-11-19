@@ -166,10 +166,14 @@ class PlayerController {
         api == null) {
       return;
     }
+    // Le ticket courant à chaque demande : une reprise après coupure en ouvre
+    // un neuf et ferme celui-ci, et les aperçus se désactivaient pour la
+    // séance (`StateError` dans le journal d'un utilisateur).
+    PlaybackAccess current() => _playbackAccess ?? access;
     final previews = TimelinePreviews(
-      open: () => api.openTimelinePreviews(media.id, access: access),
+      open: () => api.openTimelinePreviews(media.id, access: current()),
       fetch: (index) =>
-          api.fetchTimelinePreview(media.id, index, access: access),
+          api.fetchTimelinePreview(media.id, index, access: current()),
     );
     timelinePreviews = previews;
     unawaited(previews.start());

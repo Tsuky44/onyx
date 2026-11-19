@@ -36,6 +36,10 @@ abstract final class AppColors {
   /// réservé à ce seul usage.
   static const rating = Color(0xFFF5C518);
 
+  /// Le rouge du bouton Fermer survolé de Windows 11, et non [error] : c'est
+  /// celui que la main attend en visant le coin d'une fenêtre (ADR-0157).
+  static const windowClose = Color(0xFFC42B1C);
+
   /// Le vert de la pastille TMDB, dans la colonne d'informations des fiches.
   static const tmdb = Color(0xFF01D277);
 

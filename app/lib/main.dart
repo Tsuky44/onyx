@@ -590,16 +590,7 @@ class OnyxApp extends StatelessWidget {
                         child: Column(
                           children: [
                             if (useDesktopCaptionBar)
-                              ValueListenableBuilder<bool>(
-                                valueListenable: showDesktopCaption,
-                                builder: (context, visible, _) {
-                                  return Visibility(
-                                    visible: visible,
-                                    maintainState: false,
-                                    child: const WindowCaptionBar(),
-                                  );
-                                },
-                              ),
+                              const DesktopCaptionSlot(),
                             Expanded(
                               child: CaptionBarPeek(
                                 child: ColoredBox(
