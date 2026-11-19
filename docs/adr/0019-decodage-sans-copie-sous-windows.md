@@ -1,7 +1,8 @@
 # ADR-0019 — Sous Windows, l'image décodée reste sur le GPU
 
-- **Statut :** proposé. Le build applique le correctif et l'app sait revenir en arrière. La
-  mesure avant/après sur une vraie lecture reste à faire (voir « À vérifier »).
+- **Statut :** proposé. Le correctif binaire du point 1 n'existe plus depuis le passage au libmpv
+  officiel (ADR-0158, phase 1, voir la révision du 2026-11-19 en fin de page). Les points 3 et 4
+  sont remplacés par l'ADR-0095.
 - **Date :** 2026-09-15
 - **Portée :** le lecteur mpv sous Windows (`packages/media_kit_libs_windows_video`, décodeur
   matériel dans `hardware_decoding.dart`). La texture Flutter de media_kit ne change pas, ni le
@@ -104,3 +105,20 @@ restent décodées sans copie.
 - Les builds locaux passent de mpv 0.36 au build épinglé (août 2026) : ce que la CI livrait déjà.
 - La texture Flutter reste le chemin de Windows : ni Dolby Vision (voir ADR-0015), ni sortie HDR.
   Ces deux-là demandent que mpv dessine lui-même, ce que Flutter ne permet pas encore sous Windows.
+
+## Révision du 2026-11-19 — le correctif binaire disparaît
+
+Le libmpv de Windows vient désormais de la release officielle de mpv (0.42.0, variante LGPL) :
+voir l'[ADR-0158](0158-libmpv-officiel-et-rendu-d3d11-sous-windows.md), phase 1.
+
+- `patch_libmpv.ps1` et ses deux MD5 sont retirés. Le correctif ne servait qu'à ouvrir l'interop
+  `d3d11-egl`, que Windows n'utilise plus depuis l'ADR-0095 (recopie systématique).
+- Il n'aurait de toute façon plus rien à corriger : le build officiel est compilé sans
+  `egl-angle`, donc sans l'interop `d3d11-egl` ni le contexte `angle`. La texture Flutter n'en a
+  pas besoin : media_kit fournit lui-même le contexte OpenGL ES d'ANGLE à l'API de rendu de libmpv,
+  et la recopie `d3d11va-copy` passe par la mémoire vive.
+- Le point 2 (réextraction dès que l'archive change) reste. Le fichier témoin nomme maintenant
+  l'archive et son SHA-256, et chaque extraction est suivie d'un contrôle de la DLL chargée
+  (`check_libmpv.ps1`).
+- Le sans-copie reviendra, si la phase 2 de l'ADR-0158 passe sa porte, par le rendu D3D11 de libmpv,
+  où mpv recopie lui-même la zone utile sur le GPU. Plus par un correctif.

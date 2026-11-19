@@ -3,6 +3,7 @@ Onyx embarque, selon la plateforme, les composants suivants. Chacun reste soumis
 mpv / libmpv — LGPL-2.1 ou ultérieure — https://mpv.io — sources : https://github.com/mpv-player/mpv
 FFmpeg — LGPL-2.1 ou ultérieure — https://ffmpeg.org — sources : https://github.com/FFmpeg/FFmpeg
 Binaires mpv et FFmpeg d'iOS et de macOS : https://github.com/media-kit/libmpv-darwin-build
+Binaires mpv et FFmpeg de Windows : la libmpv officielle de mpv, variante LGPL, dont l'ensemble est sous LGPL-3.0 — https://github.com/mpv-player/mpv/releases
 libass — ISC — https://github.com/libass/libass
 AetherEngine (iPhone, Mac, Apple TV) — LGPL-3.0 avec exception pour les magasins d'applications — https://github.com/superuser404notfound/AetherEngine
 AndroidX Media3 / ExoPlayer (Android) — Apache-2.0 — https://github.com/androidx/media

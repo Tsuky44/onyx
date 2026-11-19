@@ -1,6 +1,7 @@
 # ADR-0158 — Sous Windows, le libmpv officiel de mpv, puis le rendu D3D11 de libmpv
 
-- **Statut :** proposé. C'est le plan de mise en place ; rien n'est encore changé.
+- **Statut :** proposé. Phase 1 en cours : le changement de libmpv est prêt, la porte n'est pas
+  franchie (voir le journal d'avancement en fin de page).
 - **Date :** 2026-11-19
 - **Portée :** le libmpv livré sous Windows (`packages/media_kit_libs_windows_video`), la sortie
   vidéo du plugin (`packages/media_kit_video/windows`), le choix du décodeur
@@ -150,3 +151,86 @@ puis version de prod.
   ANGLE et le réglage de compatibilité en limitent le risque.
 - Chaque porte demande un passage sur de vraies machines. `flutter test` ne voit ni le GPU ni le
   réseau.
+
+## Journal d'avancement
+
+### 2026-11-19 — phase 1, le changement de binaire
+
+**Ligne de base.** Le jeu de fichiers, le protocole et le relevé à remplir sont dans
+[`docs/libmpv-windows-ligne-de-base.md`](../libmpv-windows-ligne-de-base.md). La ligne de base se
+mesure en mode profile sur `tsuky` juste avant ce changement (shinchiro), puis après lui : le même
+code, seul le libmpv change. Le changement attend donc sur la branche locale `tsuky-libmpv-042`
+jusqu'à ce que la ligne de base soit prise. Pas encore faite.
+
+**L'archive.** `libmpv-v0.42.0-x86_64-w64-mingw32-lgpl.zip`, asset de la release v0.42.0 de mpv
+(05/11/2026), épinglée par son SHA-256 (`8e5f7743…6fce`, celui que GitHub affiche). Sa signature
+PGP (`.asc`) est valide, clé `D83F 25E4 4BD6 B948 724A B75F 6580 1323 38AB D4E2` de Kacper
+Michajłow, mainteneur de mpv. La DLL elle-même n'a pas de signature Authenticode. Le zip a la même
+disposition que l'archive de shinchiro : `include/mpv/*.h`, `libmpv-2.dll`, `libmpv.dll.a`, plus
+deux `.jar` de libbluray (menus BD-J), retirés à l'extraction. Le téléchargement passe à SHA-256
+(`download_and_verify` prend l'algorithme ; ANGLE garde son MD5).
+
+**La licence.** mpv est configuré avec `-Dgpl=false`, sur l'image FFmpeg de BtbN en variante
+`lgpl`, qui compile avec `--enable-version3` : la DLL est sous LGPLv3. Le zip ne contient que le
+texte de la LGPL 2.1 (celui de mpv). Ajouté aux licences des composants livrés
+(`app/assets/legal/third_party*.txt`).
+
+**Le correctif binaire** de l'ADR-0019 est retiré. Il n'aurait plus rien à corriger : le build
+officiel n'a pas `egl-angle` (ni l'interop `d3d11-egl`, ni le contexte `angle`). La texture Flutter
+n'en a pas besoin, media_kit fournit lui-même le contexte d'ANGLE à l'API de rendu.
+
+**Le contenu, comparé à shinchiro** (DLL chargée, `decoder-list`, listes `help` de `hwdec`, `vo` et
+`gpu-api`) :
+
+| | shinchiro (0.41.0-1012) | officiel 0.42.0 LGPL |
+|---|---|---|
+| API cliente | 2.5 | 2.6 |
+| Décodeurs audio et vidéo | 519 | 516 |
+| TrueHD, DTS (`dca`), E-AC-3, AC-3, HEVC, AV1, VC-1, MPEG-2, FLAC, Opus | oui | oui |
+| Décodeurs en moins | — | AVS2 (`libdavs2`), Speex (`libspeex`), huit variantes ADPCM rares, AHX |
+| Décodeurs en plus | — | AMR (`libopencore`), `libopenh264`, `libaom-av1`, deux ADPCM, deux formats d'image |
+| `d3d11va`, `d3d11va-copy` (H.264, HEVC, AV1, VC-1, MPEG-2, VP9) | oui | oui |
+| Sorties | `gpu-next`, `gpu`, `libmpv`, `direct3d`… | les mêmes sans `direct3d` |
+| `gpu-api` | `d3d11`, `vulkan`, `opengl` (`angle`, `win`, `dxinterop`) | `d3d11`, `vulkan`, `opengl` (`win`, `dxinterop`) |
+| libass | 0.17.x | 0.17.x |
+| Flux réseau | libcurl (`curl-enabled=yes`) | libcurl (`curl-enabled=yes`) |
+
+Rien de ce qui manque n'est utilisé : la fenêtre Dolby Vision 5 demande `vo=gpu-next` sans fixer
+`gpu-api`, et l'app ne demande ni `direct3d` ni `angle`. Les fonctions que media_kit 1.2.6 et le
+plugin vidéo appellent sont toutes exportées. Ses liaisons générées portent un en-tête 1.109, mais
+il tourne déjà sur une API 2.x avec shinchiro.
+
+Ce contrôle est désormais automatique : `check_libmpv.ps1` charge la DLL après chaque extraction et
+fait échouer la configuration si un décodeur, libcurl, libass, `gpu-next`, `d3d11va-copy` ou une
+fonction appelée manque. Il passe sur les deux DLL, et ne dépend pas du GPU de la machine.
+
+**Le réseau (le risque n° 1).** Lu dans `stream/stream_curl.c` (v0.42.0) : le libcurl de mpv
+reçoit `http-proxy` en `CURLOPT_PROXY`, donc tunnel `CONNECT` pour du HTTPS, et TLS de bout en bout
+avec le nom de l'URL. Entre la capture de shinchiro et la 0.42.0, ce code n'a changé que de forme
+(`SETOPT`) et pour trois corrections de requêtes (réponse vide, 416, fichier vide). Les flux que FFmpeg ouvre lui-même (les
+segments HLS) passent aussi par ce libcurl (`curl_avio`). Essai réel, DLL chargée seule (`vo=null`,
+`ao=null`) derrière un relais `CONNECT` de test sur 127.0.0.1 :
+
+- **Le relais est suivi** : `CONNECT test-videos.co.uk:443` et `CONNECT onyx.tsuky.ovh:443` reçus,
+  rien d'autre.
+- **Le nom TLS est le bon derrière Cloudflare** : vers le serveur Onyx, TLS 1.3, ALPN h2,
+  certificat `*.tsuky.ovh` vérifié (`tls-verify=yes` par défaut).
+- **Premier démultiplexeur** (`loadfile` → `FILE_LOADED`, fichier MKV derrière Cloudflare, relais
+  qui connaît déjà l'adresse comme celui de l'app) : 0.42.0 autour de 95 ms, shinchiro autour de
+  167 ms, sur 18 ouvertures en alternance (référence ADR-0036 : 117 ms). L'écart vient de
+  shinchiro : son libcurl interroge le DNS (enregistrement HTTPS) avant même d'envoyer le
+  `CONNECT`, environ 80 ms. Celui de mpv n'interroge rien. Une seule ouverture à 11,2 s, la toute
+  première, quand le relais de test résolvait encore le nom lui-même (la signature des 11 s de DNS
+  de ce poste, ADR-0036). Pas reproduite en plus de 20 ouvertures depuis. À surveiller dans
+  `PLAYER STARTUP` pendant la semaine de test.
+- **La reconnexion** : `stream-lavf-o` (`reconnect=1…`) ne s'applique toujours pas, et ne
+  s'appliquera pas : ces options sont celles du HTTP de FFmpeg, que libcurl remplace. La reprise
+  existe pourtant : le flux libcurl réessaie lui-même un transfert coupé, à partir de l'octet
+  atteint (`curl-max-retries`, 5 par défaut). Tunnel coupé à 3 Mo en pleine lecture : les deux DLL
+  rouvrent un `CONNECT`, reprennent à l'octet près et lisent jusqu'au bout.
+
+Le relais est suivi : la phase continue.
+
+**Reste avant la porte** : la ligne de base, puis la version de test, la liste de parité complète
+sur la machine de référence et une semaine chez un utilisateur Windows en HTTPS. Le statut reste
+« proposé ».
