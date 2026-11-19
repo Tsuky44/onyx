@@ -19,8 +19,9 @@ class HeroTopFade extends StatelessWidget {
   final Widget image;
 
   /// L'image descend un peu sous la barre, à la même taille : les têtes, en
-  /// haut des affiches, passent sous le fondu au lieu d'y rester.
-  static const double shift = 24;
+  /// haut des affiches, passent sous le fondu au lieu d'y rester. À 24 points,
+  /// le noir descendait trop bas sous la barre.
+  static const double shift = 12;
 
   /// La hauteur sur laquelle l'image sort du noir : courte, pour qu'il ne
   /// prenne que le haut des têtes et finisse vers le front. Pas de flou : posé
@@ -59,7 +60,11 @@ class HeroTopFade extends StatelessWidget {
                     stops: [0, end * 0.5, end],
                   ).createShader(rect);
                 },
-                child: image,
+                // Le masque ne couvre que le cadre de l'image. Le zoom lent du
+                // fond vivant (ADR-0154) la grossit au-delà : la bande qui
+                // dépassait au-dessus restait en clair sur le noir, avant le
+                // fondu.
+                child: ClipRect(child: image),
               ),
             ),
           ],

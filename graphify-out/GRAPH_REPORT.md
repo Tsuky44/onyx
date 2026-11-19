@@ -1,7 +1,7 @@
 # Graph Report - project playeur  (2026-11-19)
 
 ## Corpus Check
-- 2240 files · ~5,032,349 words
+- 2240 files · ~5,032,508 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 178 file(s) not represented in the graph (top: (none) 43, .csv 24, .xml 20)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7423292f`
+- Built from commit: `424a0db5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

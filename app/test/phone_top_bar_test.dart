@@ -183,6 +183,20 @@ void main() {
     expect(find.byType(BackdropFilter), findsNothing);
   });
 
+  testWidgets('le zoom du fond vivant ne déborde pas au-dessus du fondu',
+      (tester) async {
+    await pumpFade(tester, top: 110);
+    final image = find.byKey(const ValueKey('image'));
+    // Le masque ne couvre que le cadre de l'image : ce qui en sortait, comme
+    // le zoom lent du fond vivant, restait en clair sur le noir de la page.
+    final clip = find.descendant(
+      of: find.byType(ShaderMask),
+      matching: find.ancestor(of: image, matching: find.byType(ClipRect)),
+    );
+    expect(clip, findsOne);
+    expect(tester.getRect(clip), tester.getRect(image));
+  });
+
   testWidgets('sans barre au-dessus, l’image seule', (tester) async {
     await pumpFade(tester, top: 0);
     expect(find.byType(ShaderMask), findsNothing);

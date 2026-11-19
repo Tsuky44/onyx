@@ -100,9 +100,10 @@ verre du tout. Choix de l'utilisateur : « fait moi la C ».
   barre, donc son cadrage, et sort du noir de la page (`HeroTopFade`). À la demande de
   l'utilisateur (« que l'image derrière soit un peu plus basse, triche un peu avec le flou/noir
   pour qu'on voie pas, mais qu'on voie quand même les têtes »), puis « le fondu doit commencer
-  au niveau du front environ » : elle descend de 24 points (son bas, déjà fondu dans la page,
-  sort du bandeau) et sort du noir sur 40 points seulement, ce qui ne prend que le haut des
-  têtes. Un flou posé sur l'arête a été essayé puis retiré : il brouillait les visages. Le voile
+  au niveau du front environ » : elle descend de 12 points (24 au départ, mais le noir descendait
+  trop bas ; son bas, déjà fondu dans la page, sort du bandeau) et sort du noir sur 40 points
+  seulement, ce qui ne prend que le haut des têtes. Elle est rognée à son cadre sous le masque :
+  le zoom lent du fond vivant (ADR-0154) la faisait dépasser au-dessus, en clair sur le noir. Un flou posé sur l'arête a été essayé puis retiré : il brouillait les visages. Le voile
   sombre du haut du bandeau ne se pose plus sous la barre : il cachait les têtes.
 - **Plus de verre en haut** : la lentille et le nom en blanc, avec une ombre douce
   (`BrandPill`) ; le compte dans un disque plein de 36 points (`AccountMenu.plain`). Les cibles
