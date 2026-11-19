@@ -1946,8 +1946,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Skip the intro automatically',
   'Passer sur {0}':
       'Switch to {0}',
-  'Passez sur « Compatible » si l’image est noire ou verte alors que le son fonctionne. Avec le rendu vidéo Nouveau, il décode sans copie lui aussi.':
-      'Switch to “Compatible” if the picture is black or green while the sound works. With the New video rendering, it decodes without a copy too.',
+  'Passez sur « Compatible » si l’image est noire ou verte alors que le son fonctionne. « Compatible » ne s’applique qu’au rendu vidéo Ancien : avec Nouveau ou Automatique, le décodage se fait toujours sans copie.':
+      'Switch to “Compatible” if the picture is black or green while the sound works. “Compatible” only applies to the Legacy video rendering: with New or Automatic, decoding is always copy-free.',
   'Passez sur « Compatible » si l’image est noire ou verte alors que le son fonctionne.':
       'Switch to “Compatible” if the picture is black or green while the sound works.',
   'Pause':

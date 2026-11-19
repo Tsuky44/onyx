@@ -164,8 +164,10 @@ class _PlaybackPageState extends State<PlaybackPage> {
                 // copie (ADR-0158) : « Compatible » ne vaut que pour l'ancien.
                 subtitle: AppPlatform.isWindows
                     ? tr('Passez sur « Compatible » si l’image est noire ou '
-                        'verte alors que le son fonctionne. Avec le rendu '
-                        'vidéo Nouveau, il décode sans copie lui aussi.')
+                        'verte alors que le son fonctionne. « Compatible » '
+                        'ne s’applique qu’au rendu vidéo Ancien : avec '
+                        'Nouveau ou Automatique, le décodage se fait '
+                        'toujours sans copie.')
                     : tr('Passez sur « Compatible » si l’image est noire ou '
                         'verte alors que le son fonctionne.'),
                 footnote: tr('Prend effet à la prochaine lecture.'),
