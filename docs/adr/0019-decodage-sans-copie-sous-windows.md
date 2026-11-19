@@ -122,3 +122,21 @@ voir l'[ADR-0158](0158-libmpv-officiel-et-rendu-d3d11-sous-windows.md), phase 1.
   (`check_libmpv.ps1`).
 - Le sans-copie reviendra, si la phase 2 de l'ADR-0158 passe sa porte, par le rendu D3D11 de libmpv,
   où mpv recopie lui-même la zone utile sur le GPU. Plus par un correctif.
+
+## Révision du 2026-11-19 (2) — le sans-copie revient par un autre chemin
+
+Ce qui a été décidé ici, un correctif binaire puis un sans-copie limité aux grandes images, a été
+remplacé par l'ADR-0095, puis par l'[ADR-0158](0158-libmpv-officiel-et-rendu-d3d11-sous-windows.md).
+L'historique ci-dessus reste tel qu'il était.
+
+- Le sans-copie revient par le **rendu D3D11 de libmpv 0.42.0**, sans ANGLE : mpv dessine dans une
+  texture D3D11 que le plugin lui fournit, avec son `d3d11va` sans copie (`auto-safe`).
+- Plus de bande verte **par construction** : ce `d3d11va` recopie lui-même la zone utile sur le GPU
+  (`CopySubresourceRegion1`) au lieu de lire la surface du décodeur, plus grande que l'image.
+- Plus de correctif binaire : `patch_libmpv.ps1` est retiré (phase 1) et l'interop `d3d11-egl` n'est
+  plus utilisée.
+- Les points 3 et 4 (rattrapage, seuil de 1440 lignes) restent remplacés par l'ADR-0095. La règle de
+  `HardwareDecoding` ne dépend plus de la taille de l'image mais du chemin de rendu retenu :
+  D3D11 → `auto-safe`, ANGLE → `auto-copy-safe`.
+- Statut inchangé (« proposé ») : le chemin est livré en version de test, sa porte n'est pas
+  franchie. Il ne le sera qu'avec l'ADR-0158.

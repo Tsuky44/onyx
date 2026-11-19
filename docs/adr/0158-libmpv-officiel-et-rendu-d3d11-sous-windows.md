@@ -408,3 +408,11 @@ redimensionnement, l'image dans l'image, l'enchaînement d'épisodes, et les tem
 sur les deux chemins.
 
 Le statut reste « proposé ».
+
+### Phase 3 — 2026-11-19, documentation seulement
+
+- [ADR-0019](0019-decodage-sans-copie-sous-windows.md) et [ADR-0095](0095-recopie-systematique-sous-windows.md) sont mises à jour : le sans-copie revient par le rendu D3D11 de libmpv, la recopie n'est plus que le rendu Ancien et le repli.
+- Cette ADR reste **« proposée »**. Elle ne passera en « acceptée » que quand les journaux serveur de la version de test à grande échelle auront montré la parité (retombées, `hwdec=no` sur D3D11, TDR, adaptateurs, temps de recherche).
+- ANGLE reste le repli. Il ne se retirera qu'avec une nouvelle ADR.
+- Il n'existe pas d'index des ADR : le statut se lit dans l'en-tête de chaque fichier.
+
