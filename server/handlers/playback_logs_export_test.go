@@ -68,7 +68,7 @@ func TestExportPlaybackLogsNamesAndFillsOneFilePerPlay(t *testing.T) {
 	started := time.Date(2026, 10, 30, 1, 36, 0, 0, time.UTC)
 	seedExportedPlay(t, fx, 3, "Haikyu!!", "S01E05", "Le duel", started,
 		`[{"at":"2026-10-30T01:36:07.318Z","level":"info","message":"ouverture"}]`,
-		`{"sample_count":3,"sampled_seconds":42,"average_fps":23.9,"container_fps":23.976,"buffering_events":0,"decoder":"c2.android.avc.decoder"}`)
+		`{"sample_count":3,"sampled_seconds":42,"average_fps":23.9,"container_fps":23.976,"buffering_events":0,"decoder":"c2.android.avc.decoder","video_output":"d3d11"}`)
 	// Même minute, même média, même compte : le second nom doit se distinguer.
 	seedExportedPlay(t, fx, 3, "Haikyu!!", "S01E05", "Le duel", started.Add(10*time.Second), `[]`, ``)
 
@@ -90,6 +90,7 @@ func TestExportPlaybackLogsNamesAndFillsOneFilePerPlay(t *testing.T) {
 		"Transcodage · 2026-10-30 01:36:00",
 		"Images par seconde : 23.9 / 23.976",
 		"Décodage : c2.android.avc.decoder (logiciel)",
+		"Rendu vidéo : d3d11",
 		"Mises en tampon : aucune",
 		"Mesuré sur : 42 s",
 		"01:36:07.318 · ouverture",

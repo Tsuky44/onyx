@@ -378,6 +378,10 @@ func describeExportStats(raw string) []string {
 		}
 		add("Décodage", decoder)
 	}
+	// Le chemin de rendu de Windows (ADR-0158) : d3d11, angle ou software.
+	if v := str("video_output"); v != "" {
+		add("Rendu vidéo", v)
+	}
 	if v := str("video_codec"); v != "" {
 		add("Codec vidéo", v)
 	}
