@@ -27,6 +27,8 @@ import '../../widgets/global/hero_banner.dart' show HeroBanner;
 import '../library/movie_detail_screen.dart';
 import '../library/show_detail_screen.dart';
 import '../player/player_screen.dart';
+import '../setup/setup_launcher.dart';
+import '../setup/widgets/setup_home_card.dart';
 import 'home_empty_view.dart';
 import 'home_recent_rows.dart';
 import '../../l10n/tr.dart';
@@ -74,6 +76,9 @@ class _HomeScreenState extends State<HomeScreen>
       _homeProvider!.loadHome();
       Provider.of<LibraryProvider>(context, listen: false)
           .ensureCatalogLoaded();
+      // Un serveur neuf ouvre l'assistant d'installation à son propriétaire
+      // (ADR-0165).
+      maybeOpenSetupWizard(context);
     });
   }
 
@@ -290,6 +295,12 @@ class _HomeScreenState extends State<HomeScreen>
                           else ...[
                             const SliverToBoxAdapter(
                                 child: SizedBox(height: 8)),
+                            SliverToBoxAdapter(
+                              child: SetupHomeCard(
+                                canManage:
+                                    authProvider.permissions.manageSettings,
+                              ),
+                            ),
                             if (data != null &&
                                 data.continueWatching.isNotEmpty)
                               SliverToBoxAdapter(

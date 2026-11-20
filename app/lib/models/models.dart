@@ -8,6 +8,7 @@ library;
 export 'catalog.dart';
 export 'device_video.dart';
 export 'episode_navigation.dart';
+export 'first_run_setup.dart';
 export 'home_response.dart';
 export 'media.dart';
 export 'media_details.dart';

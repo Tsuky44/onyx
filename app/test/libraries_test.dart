@@ -50,8 +50,15 @@ class _Api extends ApiClient {
   Exception? failure;
   LibraryFolders folders = LibraryFolders.none;
 
+  /// Null : un serveur qui ne sait pas explorer ses dossiers (ADR-0165), donc
+  /// le formulaire d'avant, avec son chemin tapé.
+  FsListing? listing;
+
   @override
   Future<LibraryFolders> getLibraryFolders() async => folders;
+
+  @override
+  Future<FsListing?> browseFolders({String? path}) async => listing;
 
   @override
   Future<List<MediaLibrary>> getLibraries() async => listed;

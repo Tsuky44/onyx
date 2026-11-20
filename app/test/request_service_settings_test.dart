@@ -67,6 +67,9 @@ class _Server {
                 if (canChoose) 'request_services',
               ],
             });
+          case 'GET /api/setup/state':
+            // Un serveur d'avant l'assistant ne verrouille rien (ADR-0165).
+            return _json({'error': 'not found'}, 404);
           case 'GET /api/settings':
             return _json(_settings);
           case 'PUT /api/settings':
