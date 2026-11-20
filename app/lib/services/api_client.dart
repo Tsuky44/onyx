@@ -52,6 +52,7 @@ part 'api/account_admin.dart';
 part 'api/watch_party.dart';
 part 'api/watch_party_invites.dart';
 part 'api/libraries.dart';
+part 'api/setup.dart';
 part 'api/library_admin.dart';
 part 'api/activity.dart';
 part 'api/playback_preferences.dart';
@@ -83,6 +84,7 @@ class ApiClient
         _WatchPartyEndpoints,
         _WatchPartyInviteEndpoints,
         _LibraryEndpoints,
+        _SetupEndpoints,
         _LibraryAdminEndpoints,
         _ActivityEndpoints,
         _PlaybackPreferencesEndpoints,

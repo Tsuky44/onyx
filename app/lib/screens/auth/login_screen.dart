@@ -1,3 +1,4 @@
+import 'widgets/setup_code_hint.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart' show DioException;
@@ -575,6 +576,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : null,
                                                   ),
                         ),
+                        if (_setupRequired && _setupCodeRequired)
+                          const SetupCodeHint(),
                       ],
                       const SizedBox(height: 16),
                       TvDeferredKeyboard(

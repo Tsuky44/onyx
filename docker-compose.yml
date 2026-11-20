@@ -1,15 +1,20 @@
 # Onyx, le serveur.
 #
-#   1. cp .env.example .env
-#   2. Remplissez .env (au minimum MEDIA_PATH).
-#   3. docker compose up -d
+#   1. docker compose up -d
+#   2. Ouvrez http://<votre-serveur>:8080 et créez votre compte : c'est le
+#      compte propriétaire.
+#   3. L'assistant de l'app guide le reste : les bibliothèques (il explore
+#      /media), la clé TMDB et le service de demandes, chacun avec son test.
 #
-# Puis ouvrez http://<votre-serveur>:8080 : le premier compte créé devient le
-# propriétaire. Les bibliothèques se créent dans l'app (Paramètres →
-# Bibliothèque), qui propose les dossiers trouvés dans MEDIA_PATH.
+# Ce fichier ne demande aucun réglage et n'a pas à être modifié. Seul Docker a
+# besoin de savoir où sont vos médias : sans MEDIA_PATH, c'est le dossier
+# ./media à côté de ce fichier (Docker le crée vide, mettez-y vos médias). Pour
+# un dossier ailleurs, copiez .env.example en .env et réglez MEDIA_PATH ; les
+# autres réglages de .env sont facultatifs. Le transcodage matériel et un
+# second disque de médias se décommentent plus bas.
 #
-# Tous les réglages sont dans .env : ce fichier n'a pas à être modifié, sauf
-# pour le transcodage matériel (plus bas) ou un second disque de médias.
+# Docker Compose 2.24 ou plus récent : c'est la version qui accepte
+# `required: false` sur env_file, donc un .env absent n'est pas une erreur.
 
 services:
   onyx:
@@ -26,13 +31,16 @@ services:
     volumes:
       # La base, les sous-titres extraits et les aperçus de lecture.
       - ${ONYX_DATA:-./data}:/app/data
-      # Vos médias, vus par le serveur sous /media.
-      - ${MEDIA_PATH:?Indiquez le dossier de vos médias (MEDIA_PATH) dans .env}:/media:${MEDIA_ACCESS:-ro}
+      # Vos médias, vus par le serveur sous /media. ro : Onyx les lit sans les
+      # toucher ; MEDIA_ACCESS=rw l'autorise à supprimer un titre depuis l'app.
+      - ${MEDIA_PATH:-./media}:/media:${MEDIA_ACCESS:-ro}
       # Un autre disque ? Montez-le sous /media, il sera proposé aussi :
       # - /mnt/disque2/Films:/media/Films-disque2:ro
-    # Tout ce que .env contient est passé au serveur : les réglages
-    # facultatifs s'activent en y décommentant leur ligne.
-    env_file: .env
+    # Les réglages facultatifs de .env (PUID, TZ, VIDEO_ENCODER…) sont passés au
+    # serveur. Le fichier peut ne pas exister.
+    env_file:
+      - path: .env
+        required: false
     # Transcodage par le circuit vidéo (Intel, AMD) : décommentez ces deux
     # lignes et mettez VIDEO_ENCODER=auto dans .env.
     # devices:

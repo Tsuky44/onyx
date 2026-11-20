@@ -1,0 +1,14 @@
+{
+  "completed": true,
+  "libraries": {
+    "count": 1,
+    "done": true
+  },
+  "tmdb": {
+    "done": true
+  },
+  "requests": {
+    "done": true,
+    "available": true
+  }
+}

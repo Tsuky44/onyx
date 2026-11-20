@@ -1,5 +1,7 @@
 # ADR-0155 — Un seul docker-compose réglé par .env, et des bibliothèques préremplies
 
+> Précisé par l'ADR-0164 (assistant d'installation)
+
 - **Statut :** accepté, à la demande de l'utilisateur (2026-11-18 : « refais un compose propre […]
   pour que les utilisateurs aient juste à le prendre et à remplir », puis « préremplir ça en
   fonction de ce qu'on a mis dans la config »). Vérifié par `docker compose config` et en test,

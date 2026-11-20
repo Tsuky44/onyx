@@ -23,6 +23,9 @@ const (
 	KeyPlaybackLogsEnabled  = "playback_logs_enabled"
 	KeyPlaybackStatsEnabled = "playback_stats_enabled"
 	KeyOTPPolicy            = "otp_policy"
+	// KeySetupCompleted : l'assistant du premier lancement est terminé ou
+	// écarté (ADR-0164). Absent, l'assistant reste proposé à l'administrateur.
+	KeySetupCompleted = "setup_completed"
 )
 
 var (
@@ -217,6 +220,20 @@ func OTPPolicy() otp.Policy {
 	return otp.DefaultPolicy
 }
 
+// SetupCompleted dit si l'assistant du premier lancement est terminé. Seule
+// partie de l'état de l'installation qui est un drapeau : le reste se calcule
+// depuis les données (handlers/setup.go).
+func SetupCompleted() bool {
+	v, ok := getStored(KeySetupCompleted)
+	return ok && v == "true"
+}
+
+// MarkSetupCompleted pose le drapeau. Il ne se retire pas : un assistant
+// terminé ne se rouvre pas de lui-même.
+func MarkSetupCompleted() error {
+	return setStored(KeySetupCompleted, "true")
+}
+
 // PublicSettings is the safe API payload (secrets never returned in clear).
 type PublicSettings struct {
 	MediaHubURL        string `json:"mediahub_url"`
@@ -381,6 +398,73 @@ func ApplyUpdate(req UpdateRequest) (PublicSettings, error) {
 
 	return Snapshot(), nil
 }
+
+// CheckRequestServiceNeedsTMDB refuse (ErrTMDBKeyRequired) une mise à jour qui
+// met en place ou change le service de demandes sans qu'une clé TMDB existe
+// une fois la mise à jour appliquée (ADR-0164) : le catalogue, les fiches et
+// les épisodes des demandes viennent de TMDB pour les trois services, et un
+// service enregistré sans elle ne montrerait que des écrans vides.
+//
+// À appeler avant ApplyUpdate, pour que le refus n'écrive rien. Seul le
+// formulaire des réglages (PUT /api/settings) la pose : MediaHub, qui réécrit
+// son adresse ou sa clé par la clé d'intégration, parle d'un service déjà
+// en place et n'est jamais bloqué. Un service inconnu n'est pas son affaire :
+// ApplyUpdate le refuse.
+func CheckRequestServiceNeedsTMDB(req UpdateRequest) error {
+	var service mediahub.Service
+	if req.RequestService != nil {
+		var ok bool
+		if service, ok = mediahub.ParseService(*req.RequestService); !ok {
+			return nil
+		}
+	}
+	if configuresRequestService(req, service) && !tmdbKeyAvailableAfter(req) {
+		return ErrTMDBKeyRequired
+	}
+	return nil
+}
+
+// configuresRequestService dit si req met en place ou change le service de
+// demandes : un service, une adresse ou une clé différents de ceux en place.
+// Rejouer les valeurs déjà enregistrées, ou en retirer, ne le configure pas :
+// une configuration déjà en place n'est jamais bloquée après coup. service est
+// celui de req.RequestService, déjà validé.
+func configuresRequestService(req UpdateRequest, service mediahub.Service) bool {
+	if req.RequestService != nil && service != RequestService() {
+		return true
+	}
+	if req.MediaHubURL != nil {
+		next := strings.TrimRight(strings.TrimSpace(*req.MediaHubURL), "/")
+		if next != "" && next != MediaHubURL() {
+			return true
+		}
+	}
+	if !req.ClearMediaHubAPIKey && req.MediaHubAPIKey != nil {
+		next := strings.TrimSpace(*req.MediaHubAPIKey)
+		if next != "" && next != MediaHubAPIKey() {
+			return true
+		}
+	}
+	return false
+}
+
+// tmdbKeyAvailableAfter dit si une clé TMDB utilisable existera une fois req
+// appliquée : celle que req enregistre, sinon celle en place (réglage ou
+// environnement), et seulement l'environnement si req efface la clé.
+func tmdbKeyAvailableAfter(req UpdateRequest) bool {
+	if req.ClearTMDBAPIKey {
+		return !isPlaceholderTMDBKey(strings.TrimSpace(os.Getenv("TMDB_API_KEY")))
+	}
+	if req.TMDBAPIKey != nil {
+		if key := strings.TrimSpace(*req.TMDBAPIKey); key != "" {
+			return !isPlaceholderTMDBKey(key) || TMDBAPIKey() != ""
+		}
+	}
+	return TMDBAPIKey() != ""
+}
+
+// ErrTMDBKeyRequired : un service de demandes ne s'enregistre pas sans clé TMDB.
+var ErrTMDBKeyRequired = errors.New("config: a TMDB key is required for the request service")
 
 // ErrInvalidRequestService : le service de demandes demandé n'existe pas.
 var ErrInvalidRequestService = errors.New("config: invalid request service")

@@ -879,6 +879,18 @@ var migrations = []migration{
 			`ALTER TABLE watch_list_members ADD COLUMN role TEXT NOT NULL DEFAULT 'editor';`,
 		},
 	},
+	{
+		id:   32,
+		name: "setup completed for existing servers",
+		// Voir ADR-0164. L'assistant du premier lancement ne s'adresse qu'à un
+		// serveur neuf. Un serveur qui a déjà une bibliothèque (déclarée par
+		// l'app, ou reprise de MOVIES_DIR / SERIES_DIR par la migration 22) est
+		// déjà installé : l'assistant ne doit jamais se proposer à lui.
+		stmts: []string{
+			`INSERT OR IGNORE INTO app_settings (key, value)
+				SELECT 'setup_completed', 'true' WHERE EXISTS (SELECT 1 FROM libraries);`,
+		},
+	},
 }
 
 // applyMigrations brings the database up to the latest schema version.

@@ -236,6 +236,8 @@ func TestAMuteCompanionIsNamedInTheError(t *testing.T) {
 func TestSettingsKeepTheChosenRequestService(t *testing.T) {
 	setupAuthDB(t)
 	t.Setenv("REQUEST_SERVICE", "")
+	// Un service de demandes ne s'enregistre pas sans clé TMDB (ADR-0164).
+	t.Setenv("TMDB_API_KEY", "cle-tmdb")
 	// Le cache de config survit d'un test à l'autre : on le relit d'une table
 	// vidée, pour que le service choisi ici ne masque pas REQUEST_SERVICE
 	// dans les tests suivants.

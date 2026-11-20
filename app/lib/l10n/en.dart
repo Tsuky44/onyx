@@ -4079,4 +4079,132 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} people will lose access',
   'Prochain : {0}':
       'Next: {0}',
+  'Pour lire le code, tapez cette commande sur la machine du serveur :':
+      'To read the code, run this command on the server machine:',
+  'Chargement des dossiers':
+      'Loading folders',
+  'Le serveur n’a pas le droit de lire ce dossier. Vérifiez ses droits, ou choisissez-en un autre.':
+      'The server is not allowed to read this folder. Check its permissions, or pick another one.',
+  'Choisir ce dossier':
+      'Choose this folder',
+  'Aucun sous-dossier ici. Vous pouvez choisir ce dossier.':
+      'No subfolders here. You can choose this folder.',
+  'Déjà utilisé par une bibliothèque':
+      'Already used by a library',
+  '{0} · aucune vidéo':
+      '{0} · no videos',
+  '{0}+ vidéos':
+      '{0}+ videos',
+  'Aucun média trouvé : montez votre dossier dans le compose. Ajoutez une ligne comme celle-ci sous « volumes » du service onyx-server, puis relancez-le.':
+      'No media found: mount your folder in the compose file. Add a line like this one under "volumes" of the onyx-server service, then restart it.',
+  'Le dossier de gauche est celui de votre machine, celui de droite est ce que le serveur verra.':
+      'The left side is the folder on your machine, the right side is what the server will see.',
+  '{0} vidéo':
+      '{0} video',
+  '{0} vidéos':
+      '{0} videos',
+  'Configurez d’abord TMDB : le service de demandes en a besoin pour chercher les films et les séries.':
+      'Set up TMDB first: the request service needs it to look up movies and shows.',
+  'Configurer TMDB':
+      'Set up TMDB',
+  'La clé est acceptée par TMDB.':
+      'TMDB accepts this key.',
+  'TMDB refuse cette clé. Copiez la clé API (v3), pas le jeton d’accès.':
+      'TMDB rejects this key. Copy the API key (v3), not the access token.',
+  'Le serveur n’arrive pas à joindre TMDB. La clé n’est pas en cause : vérifiez la connexion Internet du serveur.':
+      'The server cannot reach TMDB. The key is not the problem: check the server\'s Internet connection.',
+  'Collez d’abord une clé à tester.':
+      'Paste a key to test first.',
+  'Le test a échoué.':
+      'The test failed.',
+  'Ce serveur est trop ancien pour tester la clé. Mettez-le à jour, ou enregistrez-la directement.':
+      'This server is too old to test the key. Update it, or save the key directly.',
+  'Installation du serveur':
+      'Server setup',
+  'Fermer l’assistant':
+      'Close the wizard',
+  'Précédent':
+      'Previous',
+  'Finir l’installation : {0}/{1}':
+      'Finish setup: {0}/{1}',
+  'Ajouter vos bibliothèques':
+      'Add your libraries',
+  'Un dossier de films ou de séries de votre serveur.':
+      'A folder of movies or shows on your server.',
+  'Ajouter la clé TMDB':
+      'Add the TMDB key',
+  'Affiches et résumés activés.':
+      'Posters and summaries enabled.',
+  'Sans clé, pas d’affiches ni de métadonnées.':
+      'Without a key, no posters or metadata.',
+  'Brancher un service de demandes':
+      'Connect a request service',
+  'Les demandes sont transmises.':
+      'Requests are forwarded.',
+  'Facultatif : MediaHub, Overseerr ou Jellyseerr.':
+      'Optional: MediaHub, Overseerr or Jellyseerr.',
+  'Facultatif. Configurez d’abord TMDB.':
+      'Optional. Set up TMDB first.',
+  '{0} bibliothèque':
+      '{0} library',
+  '{0} bibliothèques':
+      '{0} libraries',
+  'C’est presque fini':
+      'Almost done',
+  'Voici ce qui est réglé. Ce qui ne l’est pas reste dans la checklist de l’accueil, et se change à tout moment dans les Paramètres.':
+      'Here is what is set up. Anything left stays in the checklist on the home screen, and can be changed at any time in Settings.',
+  'Aucune pour l’instant':
+      'None yet',
+  'Clé TMDB':
+      'TMDB key',
+  'Affiches et résumés activés':
+      'Posters and summaries enabled',
+  'Ignorée : pas d’affiches ni de métadonnées':
+      'Skipped: no posters or metadata',
+  'Branché':
+      'Connected',
+  'Non branché (facultatif)':
+      'Not connected (optional)',
+  'Analyse de vos bibliothèques en cours…':
+      'Scanning your libraries…',
+  'L’analyse est terminée : vos titres sont dans le catalogue.':
+      'The scan is done: your titles are in the catalog.',
+  'Vos bibliothèques':
+      'Your libraries',
+  'Une bibliothèque, c’est un dossier de films ou de séries de votre serveur. Onyx l’analyse pour en faire un catalogue avec affiches et résumés. Vous pouvez en ajouter autant que vous voulez, et en changer plus tard dans les Paramètres.':
+      'A library is a folder of movies or shows on your server. Onyx scans it to build a catalog with posters and summaries. You can add as many as you like, and change them later in Settings.',
+  'Le serveur analyse ces dossiers pendant que vous réglez la suite.':
+      'The server scans these folders while you set up the rest.',
+  'Aucune bibliothèque pour l’instant : sans elle, Onyx n’a rien à montrer.':
+      'No library yet: without one, Onyx has nothing to show.',
+  'Ajout en cours…':
+      'Adding…',
+  'Choisir un dossier':
+      'Choose a folder',
+  'Ajouter le dossier trouvé ({0})':
+      'Add the folder found ({0})',
+  'Ajouter tous les dossiers trouvés ({0})':
+      'Add all folders found ({0})',
+  'Les demandes':
+      'Requests',
+  'Facultatif. Un service de demandes permet à vos utilisateurs de demander un film ou une série qui n’est pas encore sur le serveur : MediaHub, Overseerr ou Jellyseerr le télécharge. Vous pourrez le brancher plus tard dans Paramètres → Services.':
+      'Optional. A request service lets your users ask for a movie or show that is not on the server yet: MediaHub, Overseerr or Jellyseerr downloads it. You can connect it later in Settings → Services.',
+  'Adresse : {0}':
+      'Address: {0}',
+  'La clé TMDB':
+      'The TMDB key',
+  'TMDB est la base de données qui donne à Onyx les affiches, les résumés, les logos et les titres traduits, et qui lui permet d’identifier vos films et vos séries.':
+      'TMDB is the database that gives Onyx its posters, summaries, logos and translated titles, and lets it identify your movies and shows.',
+  'Pour obtenir une clé : créez un compte gratuit sur themoviedb.org, ouvrez Paramètres → API, demandez une clé « Developer », puis copiez la clé API (v3), pas le jeton d’accès.':
+      'To get a key: create a free account on themoviedb.org, open Settings → API, request a "Developer" key, then copy the API key (v3), not the access token.',
+  'La clé est gratuite pour un usage non commercial. Un usage commercial demande une licence auprès de TMDB.':
+      'The key is free for non-commercial use. Commercial use requires a license from TMDB.',
+  'Taper une clé à la télécommande est pénible : passez cette étape et faites-le depuis un téléphone ou un ordinateur. La checklist de l’accueil vous le rappellera.':
+      'Typing a key with a remote is tedious: skip this step and do it from a phone or a computer. The checklist on the home screen will remind you.',
+  'Ouvrir themoviedb.org/settings/api':
+      'Open themoviedb.org/settings/api',
+  'Sans clé, pas d’affiches ni de métadonnées : le catalogue n’affichera que les noms de fichiers.':
+      'Without a key, no posters or metadata: the catalog will only show file names.',
+  'Avancé : saisir le chemin à la main':
+      'Advanced: type the path by hand',
 };

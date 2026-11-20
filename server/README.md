@@ -34,21 +34,25 @@ Les décisions d'architecture sont dans [`docs/adr/`](../docs/adr/).
 
 ## ⚙️ Comment lancer le serveur (Docker Compose)
 
-Le dépôt fournit à la racine un seul `docker-compose.yml`, réglé par un fichier `.env`.
+Le dépôt fournit à la racine un seul `docker-compose.yml` (Docker Compose 2.24 ou plus récent). Il ne contient que ce que Docker doit savoir et n'exige aucun réglage : tout le reste se fait dans l'assistant de l'app.
 
-### 1. Les réglages
-```bash
-cp .env.example .env
-```
-Remplissez `.env` : `MEDIA_PATH` (obligatoire) est le dossier de vos médias, monté dans le conteneur sous `/media` ; `TMDB_API_KEY` donne les affiches et les résumés. Les autres réglages sont décrits dans le fichier, commentés : `.env` est passé tel quel au serveur, une ligne décommentée suffit.
-
-### 2. Démarrage
+### 1. Démarrage
 ```bash
 docker compose up -d
 ```
 Pour construire l'image depuis les sources, décommentez `build: ./server` dans `docker-compose.yml`, puis `docker compose up -d --build`.
 
-Le serveur démarrera sur le port **8080** (http://localhost:8080) et créera la base de données SQLite dans `./data/player.db`. Un serveur neuf n'a aucune bibliothèque : elles se créent depuis l'app, qui propose les sous-dossiers de `/media` (`MEDIA_ROOT` le change, hors de Docker).
+Le serveur démarre sur le port **8080** et crée la base SQLite dans `./data/player.db`.
+
+### 2. Le compte propriétaire et l'assistant
+Ouvrez `http://<votre-serveur>:8080` et créez votre compte : le premier devient le **propriétaire**. L'assistant d'installation guide alors le reste : les bibliothèques (un explorateur parcourt les dossiers de `/media`), la clé TMDB et le service de demandes, chacun avec un test. Ils se changent plus tard dans Paramètres → Serveur ; les anciennes variables `TMDB_API_KEY`, `FANART_API_KEY`, `REQUEST_SERVICE`, `MEDIAHUB_URL` et `MEDIAHUB_API_KEY` sont encore lues, pour qu'une installation existante ne perde rien, mais une installation neuve n'en a pas besoin.
+
+Si vous créez le compte depuis Internet plutôt que depuis la machine ou le réseau local, l'app demande le **code d'installation** que le serveur écrit dans son journal au démarrage : `docker logs onyx-server`.
+
+### 3. Vos médias
+Le serveur voit vos médias sous `/media`. Sans réglage, le compose monte `./media`, le dossier à côté de lui : Docker le crée **vide** au premier lancement, donc mettez-y vos médias, ou réglez `MEDIA_PATH` pour pointer vers le dossier qui les contient. `MEDIA_PATH` se pose dans un fichier `.env` (`cp .env.example .env`, puis décommentez la ligne). `.env` est facultatif : `.env.example` décrit les autres réglages, tous commentés (`MEDIA_ACCESS`, `ONYX_PORT`, `ONYX_DATA`, `ONYX_VERSION`, `PUID`/`PGID`, `TZ`, puis un bloc Avancé : transcodage, HTTPS, proxys, surveillance, journal). Il est passé tel quel au serveur : une ligne décommentée suffit.
+
+Une bibliothèque se crée depuis l'app, qui propose les sous-dossiers de `/media` (`MEDIA_ROOT` le change, hors de Docker).
 
 Les sous-titres extraits et les aperçus de la barre de lecture sont rangés à côté de la base. Avant toute migration du schéma, la base est copiée à côté d'elle (`player.db.pre-<migration>-<date>.bak`, les trois dernières sont gardées) ; `DB_SKIP_MIGRATION_BACKUP=true` s'en passe quand le disque n'a pas la place. Le conteneur tourne sous root par défaut ; `PUID` (et `PGID`) le font tourner sous un compte sans privilèges, à qui `./data` est rendu au démarrage — les dossiers de médias doivent alors lui être lisibles. Le journal s'écrit en texte sur la sortie d'erreur ; `LOG_FORMAT=json` donne une ligne JSON par entrée, et `LOG_LEVEL` (`debug`, `info`, `warn`, `error`) règle ce qui est écrit.
 
@@ -157,6 +161,18 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
   rend toujours `200` `{ "ok", "message", "service"?: "onyxhub"|"mediahub"|"overseerr"|"jellyseerr", "version"?, "notes"? }`.
   `notes` : compte de l'administrateur absent du compagnon, `ONYX_WEBHOOK_URL` non réglé (MediaHub).
   Capacité `mediahub_link_test` sur `/api/ping`.
+* `POST /api/settings/tmdb/test` (`manage_settings`, ADR-0164) — body facultatif
+  `{ "tmdb_api_key" }` (vide : la clé enregistrée ou de l'environnement). Le serveur appelle la route
+  `/configuration` de TMDB avec cette clé. Il rend toujours `200`
+  `{ "ok", "reason": "ok"|"invalid_key"|"unreachable"|"no_key", "message" }` : `invalid_key` sur un
+  `401` de TMDB, `unreachable` quand TMDB ne répond pas (le conteneur n'a peut-être pas Internet),
+  `no_key` sans aucune clé. Le message suit la langue de la requête ; la clé n'est jamais renvoyée ni
+  journalisée. Contrat : `contract/tmdb_key_test.json`.
+* `PUT /api/settings` répond `409` quand il met en place ou change le service de demandes
+  (`request_service`, `mediahub_url`, `mediahub_api_key`) sans qu'une clé TMDB existe (celle de la
+  requête, celle enregistrée ou `TMDB_API_KEY`) : le catalogue, les fiches et les épisodes des
+  demandes viennent de TMDB pour MediaHub, Overseerr et Jellyseerr. Une configuration déjà en place
+  n'est jamais bloquée (ADR-0164).
 * `GET /api/requests/catalog?query=&type=&page=` (`request_media`, ADR-0134) — tendances,
   découverte ou recherche TMDB. Une recherche reclasse ensemble les trois premières pages de TMDB
   (correspondance du titre traduit ou original, pondérée par la popularité et les votes), y ajoute
@@ -583,9 +599,16 @@ Le serveur n'en impose aucune et n'en limite pas le nombre (ADR-0058). Il annonc
 
 * **`GET /api/libraries`** (compte connecté) : `[{"id": 1, "name": "Animés", "kind": "shows", "path": "/media/Animes"}]`, par ordre de création. `path` n'est joint que pour `manage_settings`.
 * **`GET /api/libraries/folders`** (`manage_settings`) : `{"root": "/media", "folders": [{"path": "/media/Films", "name": "Films", "kind": "movies"}]}`. Les sous-dossiers de `/media` (ou de `MEDIA_ROOT`) qu'aucune bibliothèque ne couvre encore, avec le type que leur nom suggère : films d'abord, puis séries, puis le reste. Un `/media` sans sous-dossier se propose lui-même ; absent, la liste est vide. L'app s'en sert pour préremplir une nouvelle bibliothèque (ADR-0155).
+* **`GET /api/fs/browse?path=<chemin absolu>`** (`manage_settings`, ADR-0164) : l'explorateur de dossiers de l'assistant du premier lancement. Sans `path`, la racine (`/media` ou `MEDIA_ROOT`). Jamais au-dessus de la racine : `400` pour un `..` ou un chemin hors racine, `404` pour un dossier absent. Les liens symboliques de dossiers sont suivis, sous leur chemin de `/media`. Réponse : `{"root", "path", "parent": null|"…", "breadcrumb": [{"name", "path"}], "folders": [{"name", "path", "kind": "movies"|"shows"|"other", "covered", "video_count", "video_count_capped"}], "readable", "empty_root"}`. `covered` : une bibliothèque couvre déjà ce dossier ; `video_count` est borné (4 niveaux, 2 000 entrées, délai court) et `video_count_capped` dit qu'il a été coupé ; les dossiers cachés sont ignorés. `empty_root` : la racine est absente, illisible ou sans sous-dossier (le dossier de médias n'est pas monté). Contrat : `contract/fs_browse.json`.
 * **`POST /api/libraries`** (`manage_settings`) : corps `{"name", "kind", "path"}`. `201` et la bibliothèque créée ; une analyse démarre. `400` si le nom est vide ou dépasse 40 caractères, si le type est inconnu, si le chemin n'est pas absolu ou n'est pas un dossier que le serveur voit ; `409` si le dossier est déjà celui d'une bibliothèque.
 * **`PUT /api/libraries/:id`** (`manage_settings`) : corps `{"name", "path"}`. Le type ne se change pas. Changer le dossier retire du catalogue ce qui était indexé sous l'ancien et analyse le nouveau.
 * **`DELETE /api/libraries/:id`** (`manage_settings`) : `204`. Retire la bibliothèque et ses titres du catalogue, avec leur progression. Les fichiers ne sont pas touchés.
+
+#### 🧭 Assistant du premier lancement
+Capacité `setup_wizard` sur `GET /api/ping` (ADR-0164).
+
+* **`GET /api/setup/state`** (`manage_settings`) : `{"completed", "libraries": {"count", "done"}, "tmdb": {"done"}, "requests": {"done", "available"}}`. Les étapes se calculent depuis les données (une bibliothèque, une clé TMDB, un service de demandes réglé) ; `requests.available` vaut vrai quand une clé TMDB existe. Contrat : `contract/setup_state.json`.
+* **`POST /api/setup/complete`** (`manage_settings`) : `204`. Pose le réglage `setup_completed`. Un serveur qui a déjà une bibliothèque l'a d'office (migration 32) : l'assistant ne se propose jamais à une installation existante.
 
 #### ➡️ Liste des Films
 * **Route :** `GET /api/movies`
