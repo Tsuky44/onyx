@@ -29,6 +29,13 @@ func UpdateSettings(w http.ResponseWriter, r *http.Request, _ httprouter.Params,
 		return
 	}
 
+	// Avant toute écriture : un refus ne laisse pas la moitié de la requête
+	// enregistrée.
+	if err := config.CheckRequestServiceNeedsTMDB(req); err != nil {
+		writeJSONError(w, http.StatusConflict, "Une clé TMDB est nécessaire pour activer les demandes : enregistrez-la d'abord.")
+		return
+	}
+
 	previousLanguage := medialang.Base()
 	snapshot, err := config.ApplyUpdate(req)
 	if errors.Is(err, config.ErrInvalidRequestService) {

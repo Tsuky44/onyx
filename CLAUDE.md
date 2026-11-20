@@ -45,7 +45,7 @@ Identifie l'utilisateur actif via la branche Git courante (ou `CLAUDE.local.md`)
 ## 3. Obligations Techniques & Documentation
 
 - **Internationalisation (i18n) Obligatoire :** À chaque ajout ou modification touchant l'interface utilisateur (UI), tu dois **impérativement** ajouter/mettre à jour les traductions en **Français (FR)** et en **Anglais (EN)**. Une tâche UI n'est jamais terminée sans les deux langues.
-- **Architecture Decision Records (ADR) :** À chaque décision technique structurante (choix d'architecture, ajout de dépendance majeure, modification de schéma/API), crée ou mets à jour automatiquement un fichier ADR numéroté dans `docs/adr/` (voir `docs/agents/domain.md`).
+- **Architecture Decision Records (ADR) :** À chaque décision technique structurante (choix d'architecture, ajout de dépendance majeure, modification de schéma/API), crée ou mets à jour automatiquement un fichier ADR dans `docs/adr/` nommé au format `YYYY-MM-DD-<auteur>-<titre-court>.md` (ex: `2026-11-18-fytroz-auth-apple.md`) pour éviter tout conflit de numérotation lors des merges entre `tsuky` et `fytroz` (voir `docs/agents/domain.md`).
 - **Maintien continu de Graphify :**
   - Avant toute question d'architecture ou recherche dans le code, interroge `graphify-out/` via `graphify query "<question>"` (ou `path`/`explain`).
   - Après **chaque** modification de code, exécute systématiquement `graphify update .` en autonomie pour garder le graphe à jour. Ne signale jamais les diffs de `graphify-out/graph.json` comme du bruit.

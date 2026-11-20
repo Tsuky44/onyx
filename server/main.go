@@ -191,6 +191,15 @@ func main() {
 	// Le test de la liaison avec OnyxHub (ADR-0072) fait appeler au serveur une
 	// adresse saisie et y présente la clé : manage_settings, comme l'écriture.
 	router.POST("/api/settings/mediahub/test", handlers.RequirePermission(models.PermManageSettings, handlers.TestMediaHubLink))
+	// Le test de la clé TMDB (ADR-0164) fait appeler TMDB au serveur avec une
+	// clé saisie : manage_settings, comme l'écriture de cette clé.
+	router.POST("/api/settings/tmdb/test", handlers.RequirePermission(models.PermManageSettings, handlers.TestTMDBKey))
+
+	// L'assistant du premier lancement (ADR-0164) : où en est l'installation,
+	// et « c'est terminé ». Elles ne montrent que des booléens et des
+	// comptes, mais c'est l'administration du serveur : manage_settings.
+	router.GET("/api/setup/state", handlers.RequirePermission(models.PermManageSettings, handlers.GetSetupState))
+	router.POST("/api/setup/complete", handlers.RequirePermission(models.PermManageSettings, handlers.CompleteSetup))
 
 	// Le message aux utilisateurs (ADR-0069). L'écrire parle à tous les comptes
 	// du serveur : c'est manage_settings, comme le reste des réglages. Chaque
@@ -211,6 +220,9 @@ func main() {
 	// (ADR-0155) : c'est le plan du disque du serveur, réservé à qui peut en
 	// créer une.
 	router.GET("/api/libraries/folders", handlers.RequirePermission(models.PermManageSettings, handlers.ListLibraryFolders))
+	// L'explorateur de dossiers de l'assistant (ADR-0164) : le même plan du
+	// disque, descendu dossier par dossier mais confiné à /media. Même droit.
+	router.GET("/api/fs/browse", handlers.RequirePermission(models.PermManageSettings, handlers.BrowseFolders))
 	router.POST("/api/libraries", handlers.RequirePermission(models.PermManageSettings, handlers.CreateLibrary))
 	router.PUT("/api/libraries/:id", handlers.RequirePermission(models.PermManageSettings, handlers.UpdateLibrary))
 	router.DELETE("/api/libraries/:id", handlers.RequirePermission(models.PermManageSettings, handlers.DeleteLibrary))

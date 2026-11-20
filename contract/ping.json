@@ -26,6 +26,7 @@
     "mediahub_directory",
     "mediahub_storage",
     "request_services",
-    "watch_party_invites"
+    "watch_party_invites",
+    "setup_wizard"
   ]
 }

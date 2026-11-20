@@ -83,6 +83,10 @@ const (
 	// Une séance « Regarder ensemble » invite les comptes qui ont Onyx ouvert,
 	// et l'app attend ses invitations (/api/me/watch-party-invites, ADR-0148).
 	CapabilityWatchPartyInvites = "watch_party_invites"
+	// GET /api/fs/browse, POST /api/settings/tmdb/test, GET /api/setup/state et
+	// POST /api/setup/complete existent : l'assistant du premier lancement
+	// (ADR-0164).
+	CapabilitySetupWizard = "setup_wizard"
 )
 
 type pingResponse struct {
@@ -125,6 +129,7 @@ func pingPayload() pingResponse {
 			CapabilityMediaHubStorage,
 			CapabilityRequestServices,
 			CapabilityWatchPartyInvites,
+			CapabilitySetupWizard,
 		},
 	}
 }

@@ -118,3 +118,59 @@ func TestOnlyThisPackageBuildsTMDBURLs(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// CheckKey teste la clé qu'on lui donne, pas celle qui est enregistrée : c'est
+// la clé saisie dans l'assistant, avant qu'elle ne soit gardée.
+func TestCheckKeyAsksTheLightRouteWithTheGivenKey(t *testing.T) {
+	t.Setenv("TMDB_API_KEY", "")
+
+	var seen *http.Request
+	client := &http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
+		seen = r
+		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("{}"))}, nil
+	})}
+	if err := CheckKey(context.Background(), client, "  "+testKey+"\n"); err != nil {
+		t.Fatalf("CheckKey = %v, want nil", err)
+	}
+	if seen.URL.Path != "/3/configuration" || seen.URL.Query().Get("api_key") != testKey {
+		t.Fatalf("asked %s?%s", seen.URL.Path, seen.URL.RawQuery)
+	}
+}
+
+func TestCheckKeyTellsARejectedKeyFromAnUnreachableTMDB(t *testing.T) {
+	status := func(code int) *http.Client {
+		return &http.Client{Transport: roundTrip(func(*http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: code, Body: io.NopCloser(strings.NewReader("{}"))}, nil
+		})}
+	}
+	if err := CheckKey(context.Background(), status(http.StatusUnauthorized), testKey); !errors.Is(err, ErrInvalidKey) {
+		t.Fatalf("401 = %v, want ErrInvalidKey", err)
+	}
+	for _, code := range []int{http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusForbidden} {
+		err := CheckKey(context.Background(), status(code), testKey)
+		if err == nil || errors.Is(err, ErrInvalidKey) || errors.Is(err, ErrNoKey) {
+			t.Fatalf("HTTP %d = %v, want a plain error (TMDB not usable, key not judged)", code, err)
+		}
+	}
+
+	offline := &http.Client{Transport: roundTrip(func(*http.Request) (*http.Response, error) {
+		return nil, context.DeadlineExceeded
+	})}
+	err := CheckKey(context.Background(), offline, testKey)
+	if !errors.Is(err, context.DeadlineExceeded) || errors.Is(err, ErrInvalidKey) {
+		t.Fatalf("network failure = %v, want the transport cause", err)
+	}
+	if strings.Contains(err.Error(), testKey) || strings.Contains(err.Error(), "api_key") {
+		t.Fatalf("the error leaks the key: %v", err)
+	}
+}
+
+func TestCheckKeyWithoutAKeyAsksNothing(t *testing.T) {
+	client := &http.Client{Transport: roundTrip(func(*http.Request) (*http.Response, error) {
+		t.Fatal("a request left without a key")
+		return nil, nil
+	})}
+	if err := CheckKey(context.Background(), client, "   "); !errors.Is(err, ErrNoKey) {
+		t.Fatalf("err = %v, want ErrNoKey", err)
+	}
+}
