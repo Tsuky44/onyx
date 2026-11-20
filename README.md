@@ -112,19 +112,16 @@ Une règle que l'on s'impose : ce qui est gratuit dans la version stable le rest
 
 ### Serveur (Docker)
 
-Récupérez [`docker-compose.yml`](docker-compose.yml) et [`.env.example`](.env.example), puis :
-
-```bash
-cp .env.example .env
-```
-
-Remplissez `.env` : au minimum `MEDIA_PATH`, le dossier de vos médias, et `TMDB_API_KEY` pour les affiches.
+Récupérez [`docker-compose.yml`](docker-compose.yml) (Docker Compose 2.24 ou plus récent), puis :
 
 ```bash
 docker compose up -d
 ```
 
-Le serveur tourne sur **http://localhost:8080**. Le premier compte créé devient le propriétaire. Les bibliothèques se créent dans l'app (Paramètres → Bibliothèque), qui propose les dossiers trouvés dans `MEDIA_PATH`.
+Ouvrez **http://\<votre-serveur\>:8080** (http://localhost:8080 sur la machine même) et créez votre compte : le premier compte devient le propriétaire. Un assistant guide le reste : les bibliothèques, choisies dans un explorateur des dossiers de `/media`, la clé TMDB et le service de demandes, chacun avec son test. Rien n'est à régler avant dans un fichier.
+
+- **Le code d'installation.** Si vous créez le compte depuis Internet plutôt que depuis la machine ou le réseau local, l'app demande un code : le serveur l'écrit dans son journal au démarrage, `docker logs onyx-server` le montre.
+- **Vos médias.** Sans réglage, le compose monte le dossier `./media` à côté de lui ; Docker le crée **vide** au premier lancement. Mettez-y vos médias, ou pointez vers le dossier où ils sont déjà : copiez [`.env.example`](.env.example) en `.env`, puis réglez `MEDIA_PATH=/chemin/vers/vos/medias` et relancez `docker compose up -d`. `.env.example` décrit aussi les autres réglages facultatifs (port, dossier des données, `PUID`/`PGID`, transcodage matériel, HTTPS).
 
 La documentation complète de l'API est dans [`server/README.md`](server/README.md).
 

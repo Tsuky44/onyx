@@ -34,21 +34,25 @@ Les décisions d'architecture sont dans [`docs/adr/`](../docs/adr/).
 
 ## ⚙️ Comment lancer le serveur (Docker Compose)
 
-Le dépôt fournit à la racine un seul `docker-compose.yml`, réglé par un fichier `.env`.
+Le dépôt fournit à la racine un seul `docker-compose.yml` (Docker Compose 2.24 ou plus récent). Il ne contient que ce que Docker doit savoir et n'exige aucun réglage : tout le reste se fait dans l'assistant de l'app.
 
-### 1. Les réglages
-```bash
-cp .env.example .env
-```
-Remplissez `.env` : `MEDIA_PATH` (obligatoire) est le dossier de vos médias, monté dans le conteneur sous `/media` ; `TMDB_API_KEY` donne les affiches et les résumés. Les autres réglages sont décrits dans le fichier, commentés : `.env` est passé tel quel au serveur, une ligne décommentée suffit.
-
-### 2. Démarrage
+### 1. Démarrage
 ```bash
 docker compose up -d
 ```
 Pour construire l'image depuis les sources, décommentez `build: ./server` dans `docker-compose.yml`, puis `docker compose up -d --build`.
 
-Le serveur démarrera sur le port **8080** (http://localhost:8080) et créera la base de données SQLite dans `./data/player.db`. Un serveur neuf n'a aucune bibliothèque : elles se créent depuis l'app, qui propose les sous-dossiers de `/media` (`MEDIA_ROOT` le change, hors de Docker).
+Le serveur démarre sur le port **8080** et crée la base SQLite dans `./data/player.db`.
+
+### 2. Le compte propriétaire et l'assistant
+Ouvrez `http://<votre-serveur>:8080` et créez votre compte : le premier devient le **propriétaire**. L'assistant d'installation guide alors le reste : les bibliothèques (un explorateur parcourt les dossiers de `/media`), la clé TMDB et le service de demandes, chacun avec un test. Ils se changent plus tard dans Paramètres → Serveur ; les anciennes variables `TMDB_API_KEY`, `FANART_API_KEY`, `REQUEST_SERVICE`, `MEDIAHUB_URL` et `MEDIAHUB_API_KEY` sont encore lues, pour qu'une installation existante ne perde rien, mais une installation neuve n'en a pas besoin.
+
+Si vous créez le compte depuis Internet plutôt que depuis la machine ou le réseau local, l'app demande le **code d'installation** que le serveur écrit dans son journal au démarrage : `docker logs onyx-server`.
+
+### 3. Vos médias
+Le serveur voit vos médias sous `/media`. Sans réglage, le compose monte `./media`, le dossier à côté de lui : Docker le crée **vide** au premier lancement, donc mettez-y vos médias, ou réglez `MEDIA_PATH` pour pointer vers le dossier qui les contient. `MEDIA_PATH` se pose dans un fichier `.env` (`cp .env.example .env`, puis décommentez la ligne). `.env` est facultatif : `.env.example` décrit les autres réglages, tous commentés (`MEDIA_ACCESS`, `ONYX_PORT`, `ONYX_DATA`, `ONYX_VERSION`, `PUID`/`PGID`, `TZ`, puis un bloc Avancé : transcodage, HTTPS, proxys, surveillance, journal). Il est passé tel quel au serveur : une ligne décommentée suffit.
+
+Une bibliothèque se crée depuis l'app, qui propose les sous-dossiers de `/media` (`MEDIA_ROOT` le change, hors de Docker).
 
 Les sous-titres extraits et les aperçus de la barre de lecture sont rangés à côté de la base. Avant toute migration du schéma, la base est copiée à côté d'elle (`player.db.pre-<migration>-<date>.bak`, les trois dernières sont gardées) ; `DB_SKIP_MIGRATION_BACKUP=true` s'en passe quand le disque n'a pas la place. Le conteneur tourne sous root par défaut ; `PUID` (et `PGID`) le font tourner sous un compte sans privilèges, à qui `./data` est rendu au démarrage — les dossiers de médias doivent alors lui être lisibles. Le journal s'écrit en texte sur la sortie d'erreur ; `LOG_FORMAT=json` donne une ligne JSON par entrée, et `LOG_LEVEL` (`debug`, `info`, `warn`, `error`) règle ce qui est écrit.
 
