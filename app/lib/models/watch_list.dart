@@ -99,6 +99,9 @@ class WatchList {
     this.memberCount = 0,
     this.updatedAt,
     this.containsItemId,
+    this.watchedCount,
+    this.onServerCount,
+    this.nextItem,
   });
 
   final int id;
@@ -128,7 +131,35 @@ class WatchList {
   /// null quand rien n'a été demandé.
   final int? containsItemId;
 
+  /// Combien de titres le compte qui lit a vus ; null quand le serveur ne le
+  /// dit pas (serveur d'avant l'ADR-0159). Le serveur tranche ce qu'est « vu » :
+  /// un film terminé, une série dont chaque épisode présent l'est.
+  final int? watchedCount;
+
+  /// Combien de titres le serveur a ; null comme [watchedCount].
+  final int? onServerCount;
+
+  /// Le premier titre du serveur que le compte n'a pas vu, dans l'ordre
+  /// d'ajout ; null quand il a tout vu ou que le serveur ne le dit pas.
+  final WatchListNext? nextItem;
+
   bool get isWatchLater => kind == WatchListKind.watchLater;
+
+  /// Le serveur a donné la progression : la vue large peut la montrer.
+  bool get hasProgress => watchedCount != null && onServerCount != null;
+
+  /// Les titres que le serveur n'a pas : ceux qu'on peut demander.
+  int get toRequestCount => onServerCount == null
+      ? 0
+      : (itemCount - onServerCount!).clamp(0, itemCount);
+
+  /// La part des titres de la liste déjà vus, de 0 à 1 : « N vus sur M », M
+  /// comptant aussi ce qu'il reste à demander. 0 pour une liste vide.
+  double get watchedFraction {
+    final watched = watchedCount;
+    if (watched == null || itemCount <= 0) return 0;
+    return (watched / itemCount).clamp(0.0, 1.0);
+  }
 
   /// Le nom à afficher : celui de « À regarder plus tard » suit la langue de
   /// l'interface, le serveur n'en range qu'une version.
@@ -160,6 +191,12 @@ class WatchList {
             .toList(),
         updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
         containsItemId: (json['contains_item_id'] as num?)?.toInt(),
+        watchedCount: (json['watched_count'] as num?)?.toInt(),
+        onServerCount: (json['on_server_count'] as num?)?.toInt(),
+        nextItem: json['next_item'] is Map
+            ? WatchListNext.fromJson(
+                Map<String, dynamic>.from(json['next_item'] as Map))
+            : null,
       );
 
   /// La même liste avec un titre de plus ou de moins, en attendant que le
@@ -184,6 +221,43 @@ class WatchList {
         posters: posters,
         updatedAt: updatedAt,
         containsItemId: itemId,
+        watchedCount: watchedCount,
+        onServerCount: onServerCount,
+        nextItem: nextItem,
+      );
+}
+
+/// Le prochain titre à regarder d'une liste, du serveur : de quoi l'afficher
+/// et le lancer (ADR-0159).
+class WatchListNext {
+  const WatchListNext({
+    required this.id,
+    required this.mediaId,
+    required this.mediaType,
+    required this.title,
+    required this.posterUrl,
+    required this.releaseDate,
+  });
+
+  final int id;
+
+  /// La fiche du serveur, que « Lire » lance.
+  final int mediaId;
+  final WatchListMediaType mediaType;
+  final String title;
+  final String posterUrl;
+  final String releaseDate;
+
+  String? get year =>
+      releaseDate.length >= 4 ? releaseDate.substring(0, 4) : null;
+
+  factory WatchListNext.fromJson(Map<String, dynamic> json) => WatchListNext(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        mediaId: (json['media_id'] as num?)?.toInt() ?? 0,
+        mediaType: WatchListMediaType.parse(json['media_type'] as String?),
+        title: json['title'] as String? ?? '',
+        posterUrl: json['poster_url'] as String? ?? '',
+        releaseDate: json['release_date'] as String? ?? '',
       );
 }
 
@@ -199,6 +273,7 @@ class WatchListItem {
     required this.mediaId,
     this.addedAt,
     this.media,
+    this.watched = false,
   });
 
   final int id;
@@ -215,8 +290,17 @@ class WatchListItem {
   /// Cette fiche, avec la progression du compte qui lit la liste.
   final HomeMediaItem? media;
 
+  /// Le compte qui lit a vu ce titre. Le serveur tranche (un film terminé, une
+  /// série dont chaque épisode présent l'est) ; faux pour un titre qu'il n'a
+  /// pas, et pour un serveur d'avant l'ADR-0159.
+  final bool watched;
+
   /// Le serveur a ce titre : il s'ouvre sur sa fiche.
   bool get isOnServer => media != null;
+
+  /// Le chemin TMDB de l'affiche (`/abc.jpg`), ce que le serveur accepte pour
+  /// ranger un titre qu'il n'a pas ; null pour une autre adresse.
+  String? get tmdbPosterPath => _tmdbPath(posterUrl);
 
   String? get year =>
       releaseDate.length >= 4 ? releaseDate.substring(0, 4) : null;
@@ -232,6 +316,7 @@ class WatchListItem {
       releaseDate: json['release_date'] as String? ?? '',
       addedAt: DateTime.tryParse(json['added_at'] as String? ?? ''),
       mediaId: (json['media_id'] as num?)?.toInt() ?? 0,
+      watched: json['watched'] as bool? ?? false,
       media: media is Map
           ? HomeMediaItem.fromJson(Map<String, dynamic>.from(media))
           : null,
@@ -339,6 +424,17 @@ class ListableTitle {
             ? WatchListMediaType.show
             : WatchListMediaType.movie,
         posterPath: item.posterPath,
+        releaseDate: item.releaseDate,
+      );
+
+  /// Le titre d'un élément déjà rangé : pour le copier dans une autre liste,
+  /// ou le remettre dans celle d'où on vient de le retirer.
+  factory ListableTitle.fromItem(WatchListItem item) => ListableTitle._(
+        title: item.title,
+        mediaId: item.mediaId,
+        tmdbId: item.tmdbId,
+        mediaType: item.mediaType,
+        posterPath: item.tmdbPosterPath,
         releaseDate: item.releaseDate,
       );
 

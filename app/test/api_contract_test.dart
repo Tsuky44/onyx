@@ -223,6 +223,13 @@ void main() {
     expect(later.containsItemId, isPositive);
     expect(later.canEdit, isTrue);
     expect(later.memberCount, isPositive);
+    // La progression que la vue large montre (ADR-0159).
+    expect(later.hasProgress, isTrue);
+    expect(later.watchedCount, isPositive);
+    expect(later.onServerCount, isPositive);
+    expect(later.nextItem!.mediaId, isPositive);
+    expect(later.nextItem!.mediaType, WatchListMediaType.show);
+    expect(later.nextItem!.title, 'title-value');
     expect(overview.shared.single.kind, WatchListKind.custom);
 
     final detail = WatchListDetail.fromJson(_contract('watch_list'));

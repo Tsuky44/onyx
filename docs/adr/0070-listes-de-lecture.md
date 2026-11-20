@@ -71,3 +71,5 @@ catalogue des demandes.
   `media_id`.
 - Supprimer un compte supprime ses listes (clé étrangère), partagées comprises.
 - Avec plusieurs serveurs (ADR-0013), les listes sont celles du serveur actif.
+- La page des listes de la grande fenêtre montre la progression de chaque liste, que le
+  serveur calcule : voir l'ADR-0159.

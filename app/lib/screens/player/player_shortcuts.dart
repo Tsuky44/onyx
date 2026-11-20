@@ -102,6 +102,7 @@ const List<(String, String)> _helpRows = [
   ('←  ·  J', 'Reculer de 10 s'),
   ('→  ·  L', 'Avancer de 10 s'),
   ('↑  ↓', 'Volume'),
+  ('Molette', 'Volume'),
   ('M', 'Couper le son'),
   ('F', 'Plein écran'),
   ('N', 'Épisode suivant'),

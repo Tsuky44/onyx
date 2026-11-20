@@ -241,6 +241,76 @@ class WatchListsProvider extends ChangeNotifier {
     }
   }
 
+  /// Retire plusieurs titres d'un coup. Ils disparaissent de l'écran tout de
+  /// suite ; le serveur est appelé un titre après l'autre, et ce que la liste
+  /// relue remet en place est ce qui n'a pas pu l'être. Rend les éléments
+  /// retirés (de quoi les remettre, [copyItems]) et combien ont échoué.
+  Future<WatchListBatch> removeItems(
+      int listId, List<WatchListItem> items) async {
+    final ids = {for (final i in items) i.id};
+    final detail = _details[listId];
+    if (detail != null) {
+      _details[listId] = WatchListDetail(
+        list: detail.list,
+        items: detail.items.where((i) => !ids.contains(i.id)).toList(),
+        members: detail.members,
+      );
+      notifyListeners();
+    }
+    final done = <WatchListItem>[];
+    var failed = 0;
+    for (final item in items) {
+      try {
+        await apiClient.removeFromWatchList(listId, item.id);
+        done.add(item);
+      } catch (e) {
+        failed++;
+        debugPrint('WatchListsProvider: remove ${item.id} failed: $e');
+      }
+    }
+    _refresh(listId);
+    return WatchListBatch(done: done, failed: failed);
+  }
+
+  /// Range ces titres dans une autre liste. Un titre déjà dedans n'y est pas
+  /// doublé (ADR-0070) : le serveur renvoie l'élément existant.
+  Future<WatchListBatch> copyItems(
+      int toListId, List<WatchListItem> items) async {
+    final done = <WatchListItem>[];
+    var failed = 0;
+    for (final item in items) {
+      try {
+        await apiClient.addToWatchList(toListId, ListableTitle.fromItem(item));
+        done.add(item);
+      } catch (e) {
+        failed++;
+        debugPrint('WatchListsProvider: copy ${item.id} failed: $e');
+      }
+    }
+    _refresh(toListId);
+    return WatchListBatch(done: done, failed: failed);
+  }
+
+  /// Déplace ces titres : copiés dans [toListId], puis retirés de [fromListId]
+  /// seulement s'ils y sont bien arrivés, pour qu'aucun ne se perde entre les
+  /// deux.
+  Future<WatchListBatch> moveItems(
+      int fromListId, int toListId, List<WatchListItem> items) async {
+    final copied = await copyItems(toListId, items);
+    if (copied.done.isEmpty) return copied;
+    final removed = await removeItems(fromListId, copied.done);
+    return WatchListBatch(
+        done: removed.done, failed: copied.failed + removed.failed);
+  }
+
+  /// Relit la liste ouverte et les résumés après une écriture.
+  void _refresh(int listId) {
+    if (_details.containsKey(listId)) {
+      unawaited(loadDetail(listId, silent: true));
+    }
+    unawaited(load(silent: true));
+  }
+
   /// Les autres comptes du serveur, pour choisir qui inviter.
   Future<List<WatchListMember>> people() => apiClient.getWatchListPeople();
 
@@ -281,4 +351,15 @@ class WatchListsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+}
+
+/// Ce qu'une écriture en lot a fait : les éléments passés, et combien ont
+/// échoué.
+class WatchListBatch {
+  const WatchListBatch({required this.done, required this.failed});
+
+  final List<WatchListItem> done;
+  final int failed;
+
+  bool get isComplete => failed == 0;
 }

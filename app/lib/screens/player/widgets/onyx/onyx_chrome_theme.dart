@@ -208,7 +208,7 @@ class OnyxChromeMetrics {
         logoHeight = 38,
         brandTextSize = 18,
         bottomInset = 12,
-        topInset = 12,
+        topInset = 28,
         skipIntroTextSize = 14,
         previewWidth = 320;
 
@@ -229,7 +229,7 @@ class OnyxChromeMetrics {
         logoHeight = 28,
         brandTextSize = 15,
         bottomInset = 10,
-        topInset = 12,
+        topInset = 24,
         skipIntroTextSize = 13,
         previewWidth = 208;
 

@@ -7,6 +7,7 @@
   "release_date": "2020-01-02",
   "added_at": "2026-01-02T03:04:05Z",
   "media_id": 3,
+  "watched": true,
   "media": {
     "versions": [
       {

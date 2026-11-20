@@ -108,7 +108,8 @@ extension _PlayerRemote on _PlayerScreenState {
     // Un glissé vertical appelle les commandes, par les pas du trackpad.
     if (move.dx.abs() < move.dy.abs()) return false;
     if (_popups.isOpen || _pageOverImage) return false;
-    final seeks = !_remoteBrowsingControls || _progressFocusNode.hasPrimaryFocus;
+    final seeks =
+        !_remoteBrowsingControls || _progressFocusNode.hasPrimaryFocus;
     if (!seeks) return false;
     _remoteEntry = _RemoteEntry.scrubber;
     _remoteSeek.scrub(
@@ -125,7 +126,9 @@ extension _PlayerRemote on _PlayerScreenState {
   /// pending, the player's own otherwise.
   Duration get _displayedPosition {
     final target = _remoteSeek.target;
-    return target != null ? Duration(seconds: target) : _playerController.position;
+    return target != null
+        ? Duration(seconds: target)
+        : _playerController.position;
   }
 
   /// The invariant that makes the remote legible: on a television, chrome on
@@ -333,10 +336,28 @@ extension _PlayerRemote on _PlayerScreenState {
 
   void _adjustVolume(double delta) {
     final session = _playerController.session;
-    final next = (session.volume + delta).clamp(0.0, 100.0);
+    // Depuis ce que le curseur montre, pas depuis ce que le moteur a fini de
+    // rapporter : à la molette, un second cran arrive avant le premier écho.
+    final next =
+        (_volumeShown.resolve(session.volume) + delta).clamp(0.0, 100.0);
+    _volumeShown.request(next);
     session.setVolume(next);
     _showControlsTransient();
     _safeSetState(() {});
+  }
+
+  /// La molette d'une souris règle le volume, comme ↑ ↓.
+  ///
+  /// Passe par le résolveur de signaux : une liste qui défile dessous (les
+  /// épisodes, les chapitres) le prend avant nous et garde sa molette.
+  void _handlePointerSignal(PointerSignalEvent event) {
+    // Un ordinateur seulement : un téléphone a ses touches de volume, un
+    // téléviseur son propre réglage (voir `showVolume`).
+    if (TvMode.isTv || AppPlatform.isMobile) return;
+    final delta = playerWheelVolumeDelta(event);
+    if (delta == null) return;
+    GestureBinding.instance.pointerSignalResolver
+        .register(event, (_) => _adjustVolume(delta));
   }
 
   void _handleMediaFastForward() {

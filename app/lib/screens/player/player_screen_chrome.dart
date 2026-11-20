@@ -621,8 +621,11 @@ extension _PlayerChrome on _PlayerScreenState {
       overline: _info.overline,
       logoUrl: _mediaLogoUrl,
       isEpisode: _info.isEpisode,
-      volume: _playerController.session.volume,
-      onVolumeChanged: (v) => _playerController.session.setVolume(v),
+      volume: _volumeShown.resolve(_playerController.session.volume),
+      onVolumeChanged: (v) {
+        _volumeShown.request(v);
+        _playerController.session.setVolume(v);
+      },
       brightness: _screenBrightness,
       onBrightnessChanged: _setScreenBrightness,
       // Same deal as the scrubber: the chrome cannot fade out

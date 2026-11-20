@@ -222,9 +222,17 @@ func (s *Store) decorate(viewerID int, groups ...[]models.WatchList) error {
 		return fmt.Errorf("load watch list posters: %w", err)
 	}
 
+	progress, err := s.progress(viewerID, ids)
+	if err != nil {
+		return err
+	}
+
 	for _, group := range groups {
 		for i := range group {
 			group[i].ItemCount = counts[group[i].ID]
+			group[i].WatchedCount = progress[group[i].ID].watched
+			group[i].OnServerCount = progress[group[i].ID].onServer
+			group[i].NextItem = progress[group[i].ID].next
 			group[i].MemberCount = members[group[i].ID]
 			switch roles[group[i].ID] {
 			case models.WatchListRoleEditor:
@@ -259,6 +267,15 @@ func (s *Store) Get(viewerID, listID int) (models.WatchListDetail, error) {
 	members, err := s.members(listID)
 	if err != nil {
 		return models.WatchListDetail{}, err
+	}
+	// Le même calcul que le résumé : « vu » reste tranché par le serveur
+	// (ADR-0159), les onglets À voir / Vus de l'app ne le recalculent pas.
+	progress, err := s.progress(viewerID, []int{listID})
+	if err != nil {
+		return models.WatchListDetail{}, err
+	}
+	for i := range items {
+		items[i].Watched = progress[listID].watchedItems[items[i].ID]
 	}
 	return models.WatchListDetail{WatchList: l, Items: items, Members: members}, nil
 }

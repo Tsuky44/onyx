@@ -134,7 +134,10 @@ func TestAPIContract(t *testing.T) {
 	watchLists := filled[models.WatchListsResponse]()
 	watchLists.Mine[0].Kind = models.WatchListKindWatchLater
 	watchLists.Shared[0].Kind = models.WatchListKindCustom
+	watchLists.Mine[0].NextItem.MediaType = string(models.TypeShow)
+	watchLists.Shared[0].NextItem.MediaType = string(models.TypeMovie)
 	watchList := filled[models.WatchListDetail]()
+	watchList.NextItem.MediaType = string(models.TypeMovie)
 	watchList.Kind = models.WatchListKindCustom
 	watchList.Items[0].MediaType = string(models.TypeShow)
 	watchListItem := filled[models.WatchListItem]()

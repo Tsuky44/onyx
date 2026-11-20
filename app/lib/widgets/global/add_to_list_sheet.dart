@@ -11,6 +11,7 @@ import '../../theme/app_type.dart';
 import 'adaptive_panel.dart';
 import 'add_to_list_panel_body.dart';
 import 'empty_state.dart';
+import 'onyx_toast.dart';
 import 'watch_list_editor_dialog.dart';
 
 /// Ouvre la feuille « Ajouter à une liste » pour [title] (ADR-0070).
@@ -92,10 +93,7 @@ class _AddToListSheetState extends State<AddToListSheet> {
     } catch (e) {
       debugPrint('AddToListSheet: toggle ${list.id} failed: $e');
       if (mounted) _replace(list);
-      messenger.showSnackBar(SnackBar(
-        content: Text(_errorText(e)),
-        backgroundColor: AppColors.error,
-      ));
+      showOnyxToastOn(messenger, _errorText(e), error: true);
     } finally {
       _pending.remove(list.id);
     }
@@ -134,10 +132,7 @@ class _AddToListSheetState extends State<AddToListSheet> {
       });
     } catch (e) {
       debugPrint('AddToListSheet: create failed: $e');
-      messenger.showSnackBar(SnackBar(
-        content: Text(_errorText(e)),
-        backgroundColor: AppColors.error,
-      ));
+      showOnyxToastOn(messenger, _errorText(e), error: true);
     }
   }
 

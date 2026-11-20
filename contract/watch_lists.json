@@ -19,12 +19,22 @@
         "posters-value"
       ],
       "updated_at": "2026-01-02T03:04:05Z",
-      "contains_item_id": 5
+      "contains_item_id": 5,
+      "watched_count": 6,
+      "on_server_count": 7,
+      "next_item": {
+        "id": 8,
+        "media_id": 9,
+        "media_type": "show",
+        "title": "title-value",
+        "poster_url": "poster_url-value",
+        "release_date": "2020-01-02"
+      }
     }
   ],
   "shared": [
     {
-      "id": 6,
+      "id": 10,
       "kind": "custom",
       "name": "name-value",
       "description": "description-value",
@@ -32,17 +42,27 @@
       "is_mine": true,
       "can_edit": true,
       "is_member": true,
-      "member_count": 7,
+      "member_count": 11,
       "owner": {
-        "id": 8,
+        "id": 12,
         "username": "username-value"
       },
-      "item_count": 9,
+      "item_count": 13,
       "posters": [
         "posters-value"
       ],
       "updated_at": "2026-01-02T03:04:05Z",
-      "contains_item_id": 10
+      "contains_item_id": 14,
+      "watched_count": 15,
+      "on_server_count": 16,
+      "next_item": {
+        "id": 17,
+        "media_id": 18,
+        "media_type": "movie",
+        "title": "title-value",
+        "poster_url": "poster_url-value",
+        "release_date": "2020-01-02"
+      }
     }
   ]
 }

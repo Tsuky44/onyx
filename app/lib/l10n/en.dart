@@ -1696,6 +1696,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Edit rights',
   'Modifier l’adresse':
       'Edit the address',
+  'Molette':
+      'Wheel',
   'Mon compte':
       'My account',
   'Mon espace':
@@ -3280,6 +3282,32 @@ const Map<String, String> kEnglish = <String, String>{
       'Private',
   'Ouvrir la liste {0}':
       'Open the list {0}',
+  'Ouvrir la liste':
+      'Open list',
+  'Aucun titre':
+      'No titles',
+  'Rien de vu sur {0}':
+      'Nothing watched out of {0}',
+  '{0} vu sur {1}':
+      '{0} watched of {1}',
+  '{0} vus sur {1}':
+      '{0} watched of {1}',
+  '{0} à demander':
+      '{0} to request',
+  '{0} sur le serveur':
+      '{0} on the server',
+  '{0} · prochain : {1}':
+      '{0} · next: {1}',
+  'Prochain à regarder':
+      'Up next',
+  'Tout ce que le serveur a de cette liste est vu.':
+      'You have watched everything the server has from this list.',
+  'Rien à lancer pour l’instant.':
+      'Nothing to play right now.',
+  'Quand un autre compte partagera une liste, elle apparaîtra ici.':
+      'When another account shares a list, it will show up here.',
+  'Créez une liste pour y ranger ce que vous voulez regarder.':
+      'Create a list to keep what you want to watch.',
   'Dans vos listes':
       'In your lists',
   'Ajouter à une liste':
@@ -3915,4 +3943,138 @@ const Map<String, String> kEnglish = <String, String>{
       'Next episode {0}',
   'Dossiers trouvés sur le serveur':
       'Folders found on the server',
+  'Certains titres n’ont pas pu être retirés.':
+      'Some titles couldn’t be removed.',
+  '« {0} » retiré de la liste':
+      '“{0}” removed from the list',
+  'Déplacer vers…':
+      'Move to…',
+  'Copier vers…':
+      'Copy to…',
+  'Certains titres n’ont pas pu être déplacés.':
+      'Some titles couldn’t be moved.',
+  'Certains titres n’ont pas pu être copiés.':
+      'Some titles couldn’t be copied.',
+  'Aucun titre ici':
+      'No titles here',
+  'Aucun titre de cette liste ne correspond à cet onglet.':
+      'No title in this list matches this tab.',
+  '{0} titre retiré':
+      '{0} title removed',
+  '{0} titres retirés':
+      '{0} titles removed',
+  '{0} titre déplacé vers « {1} »':
+      '{0} title moved to “{1}”',
+  '{0} titres déplacés vers « {1} »':
+      '{0} titles moved to “{1}”',
+  '{0} titre copié vers « {1} »':
+      '{0} title copied to “{1}”',
+  '{0} titres copiés vers « {1} »':
+      '{0} titles copied to “{1}”',
+  'À voir':
+      'To watch',
+  'Vus':
+      'Watched',
+  'À demander':
+      'To request',
+  'Ajoutés en premier':
+      'Oldest first',
+  'Année':
+      'Year',
+  'Partage…':
+      'Sharing…',
+  'Partager…':
+      'Share…',
+  'Sélectionner des titres':
+      'Select titles',
+  'Retirer les titres vus':
+      'Remove watched titles',
+  'Supprimer la liste':
+      'Delete list',
+  'Ouvrir la fiche':
+      'Open details',
+  'Voir dans le catalogue':
+      'View in the catalog',
+  'Retirer de la liste':
+      'Remove from list',
+  'Lire {0}':
+      'Play {0}',
+  'Terminer la sélection':
+      'Done selecting',
+  'Désélectionner {0}':
+      'Deselect {0}',
+  'Sélectionner {0}':
+      'Select {0}',
+  '{0} titre sélectionné':
+      '{0} title selected',
+  '{0} titres sélectionnés':
+      '{0} titles selected',
+  'La liste':
+      'The list',
+  'Les titres':
+      'Titles',
+  'Visible par tout le serveur':
+      'Visible to the whole server',
+  'Supprimer la liste…':
+      'Delete list…',
+  '{0} personne invitée':
+      '{0} person invited',
+  '{0} personnes invitées':
+      '{0} people invited',
+  '{0} titre · se défait':
+      '{0} title · can be undone',
+  '{0} titres · se défait':
+      '{0} titles · can be undone',
+  'Liste de {0}':
+      '{0}’s list',
+  'Liste privée':
+      'Private list',
+  'Remplie avec {0}':
+      'Filled with {0}',
+  'Visible par {0}':
+      'Visible to {0}',
+  'Déplacer':
+      'Move',
+  'Partagées avec moi':
+      'Shared with me',
+  'Nouvelle liste…':
+      'New list…',
+  'Qui peut la voir':
+      'Who can see it',
+  'Vous et les personnes invitées.':
+      'You and the people you invite.',
+  'Tout le serveur':
+      'Whole server',
+  'Tous les comptes la voient, sans la modifier.':
+      'Every account can see it, but not edit it.',
+  'Aucun':
+      'None',
+  'Voir':
+      'View',
+  'Accès de {0}':
+      '{0}’s access',
+  'La voit même quand elle est privée':
+      'Sees it even when it’s private',
+  'Y ajoute et en retire des titres':
+      'Adds and removes titles',
+  'Retirer l’accès':
+      'Remove access',
+  'Personnes':
+      'People',
+  'Personnes · {0} invitée':
+      'People · {0} invited',
+  'Personnes · {0} invitées':
+      'People · {0} invited',
+  'Chaque changement s’applique tout de suite.':
+      'Changes apply right away.',
+  'Les personnes qui ajoutent peuvent aussi retirer des titres. Vous seul renommez ou supprimez la liste.':
+      'People who can add titles can also remove them. Only you can rename or delete the list.',
+  'Rechercher un compte':
+      'Search accounts',
+  'Aucun compte ne correspond.':
+      'No matching account.',
+  '{0} perdra l’accès':
+      '{0} will lose access',
+  '{0} personnes perdront l’accès':
+      '{0} people will lose access',
 };
