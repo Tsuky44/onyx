@@ -297,16 +297,24 @@ void main() {
       expect(find.text('2022'), findsNothing);
     });
 
-    testWidgets('le temps écoulé à gauche, le restant à droite, la fin au survol',
+    testWidgets('le temps écoulé à gauche, le restant et la fin à droite',
         (tester) async {
       await pumpChrome(tester, width: 1280);
 
       expect(find.text('42:00'), findsOneWidget);
-      expect(find.text('-01:18:00'), findsOneWidget);
-      final tip = tester.widget<Tooltip>(
-        find.byKey(const ValueKey('onyx-remaining')),
+      final remaining = find.text('-01:18:00');
+      final end = find.byKey(const ValueKey('onyx-end-clock'));
+      expect(remaining, findsOneWidget);
+      expect(tester.widget<Text>(end).data, startsWith('Fin à '));
+      // L'heure de fin est écrite à côté du restant, pas au survol.
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Tooltip && (w.message ?? '').startsWith('Fin'),
+        ),
+        findsNothing,
       );
-      expect(tip.message, startsWith('Fin à '));
+      expect(tester.getTopLeft(end).dx,
+          greaterThan(tester.getTopRight(remaining).dx));
     });
   });
 
@@ -1151,11 +1159,13 @@ void main() {
         expect(button.bottom, lessThanOrEqualTo(bar.top), reason: '$icon');
         expect(button.left, greaterThan(480), reason: '$icon');
       }
-      // Les temps dessous : écoulé à gauche, restant à droite, sans heure de
-      // fin.
+      // Les temps dessous : écoulé à gauche ; à droite le restant, puis
+      // l'heure de fin au bord de la barre (ADR-0163).
+      final end = tester.getRect(find.byKey(const ValueKey('onyx-end-clock')));
       expect(elapsed.top, greaterThanOrEqualTo(bar.bottom - 1));
       expect(elapsed.left, bar.left);
-      expect(remaining.right, closeTo(bar.right, 0.5));
+      expect(end.right, closeTo(bar.right, 0.5));
+      expect(remaining.right, lessThan(end.left));
       // Tout tient dans le bas de l'image.
       expect(title.top, greaterThan(270));
     });

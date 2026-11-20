@@ -276,6 +276,12 @@ func (s *Store) Get(viewerID, listID int) (models.WatchListDetail, error) {
 	}
 	for i := range items {
 		items[i].Watched = progress[listID].watchedItems[items[i].ID]
+		if st, ok := progress[listID].shows[items[i].ID]; ok {
+			items[i].EpisodesTotal = st.total
+			items[i].EpisodesWatched = st.finished
+			items[i].NextEpisodeSeason = st.nextSeason
+			items[i].NextEpisodeNumber = st.nextEpisode
+		}
 	}
 	return models.WatchListDetail{WatchList: l, Items: items, Members: members}, nil
 }

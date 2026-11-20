@@ -85,6 +85,15 @@ type WatchListItem struct {
 	// chaque épisode présent l'est). Toujours faux pour un titre que le serveur
 	// n'a pas. Rempli par le détail d'une liste seulement (ADR-0159).
 	Watched bool `json:"watched"`
+	// EpisodesWatched et EpisodesTotal disent où le compte en est d'une série :
+	// combien de ses épisodes présents sur le disque il a terminés, sur combien.
+	// NextEpisodeSeason et NextEpisodeNumber nomment le premier qu'il lui reste à
+	// voir (0 quand il a tout vu). Absents pour un film et pour une série que le
+	// serveur n'a pas ; remplis par le détail d'une liste seulement.
+	EpisodesWatched   int `json:"episodes_watched,omitempty"`
+	EpisodesTotal     int `json:"episodes_total,omitempty"`
+	NextEpisodeSeason int `json:"next_episode_season,omitempty"`
+	NextEpisodeNumber int `json:"next_episode_number,omitempty"`
 	// Media est cette fiche, avec la progression du compte qui lit la liste.
 	Media *HomeMediaItem `json:"media,omitempty"`
 }

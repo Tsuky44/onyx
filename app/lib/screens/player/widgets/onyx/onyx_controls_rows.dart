@@ -151,7 +151,7 @@ extension _OnyxControlsRows on OnyxControlsLayer {
                       ),
                     ),
                   ),
-                  _buildTvTimes(m),
+                  _buildTimes(m),
                 ],
               ),
             ),
@@ -322,9 +322,14 @@ extension _OnyxControlsRows on OnyxControlsLayer {
     );
   }
 
-  /// Le temps écoulé à gauche, le temps restant à droite, sans l'heure de fin
-  /// des autres arrangements.
-  Widget _buildTvTimes(OnyxChromeMetrics m) {
+  /// Le temps écoulé à gauche ; à droite le temps restant et, juste à côté,
+  /// l'heure à laquelle le média se termine si la lecture ne s'arrête plus
+  /// (ADR-0163). Une seule rangée pour les trois arrangements du chrome : un
+  /// téléviseur, un écran tenu en main et une souris la lisent pareil.
+  ///
+  /// La rangée est reconstruite à chaque position, et l'heure de fin se
+  /// recalcule depuis l'horloge : une pause la repousse d'autant.
+  Widget _buildTimes(OnyxChromeMetrics m) {
     final style = TextStyle(
       color: OnyxChromeTheme.time,
       fontSize: m.timeSize,
@@ -336,7 +341,20 @@ extension _OnyxControlsRows on OnyxControlsLayer {
       children: [
         Text(formatPlaybackTime(position.inSeconds), style: style),
         if (duration.inSeconds > 0)
-          Text('-${formatPlaybackTime(_remainingSeconds)}', style: style),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('-${formatPlaybackTime(_remainingSeconds)}', style: style),
+              SizedBox(width: m.timeSize * 0.9),
+              Text(
+                tr('Fin à {0}', [formatEndClock(_remainingSeconds)]),
+                key: const ValueKey('onyx-end-clock'),
+                style: style.copyWith(
+                  color: style.color?.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }

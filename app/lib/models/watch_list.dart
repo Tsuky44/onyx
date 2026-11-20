@@ -274,6 +274,10 @@ class WatchListItem {
     this.addedAt,
     this.media,
     this.watched = false,
+    this.episodesWatched = 0,
+    this.episodesTotal = 0,
+    this.nextEpisodeSeason = 0,
+    this.nextEpisodeNumber = 0,
   });
 
   final int id;
@@ -294,6 +298,35 @@ class WatchListItem {
   /// série dont chaque épisode présent l'est) ; faux pour un titre qu'il n'a
   /// pas, et pour un serveur d'avant l'ADR-0159.
   final bool watched;
+
+  /// Où le compte en est d'une série : ses épisodes terminés, sur ceux que le
+  /// serveur a, et le premier qui lui reste (0 quand il a tout vu). Le serveur
+  /// les calcule (ADR-0162) ; tous à 0 pour un film, une série que le serveur
+  /// n'a pas, et un serveur d'avant l'ADR-0162.
+  final int episodesWatched;
+  final int episodesTotal;
+  final int nextEpisodeSeason;
+  final int nextEpisodeNumber;
+
+  /// Une série commencée et pas finie : la seule dont l'affiche dit où l'on en
+  /// est. Une série jamais lancée ou entièrement vue n'a rien à ajouter à son
+  /// affiche (la coche de « vu » suffit à la seconde).
+  bool get isShowInProgress =>
+      mediaType == WatchListMediaType.show &&
+      !watched &&
+      episodesTotal > 0 &&
+      episodesWatched > 0 &&
+      episodesWatched < episodesTotal;
+
+  /// La part des épisodes terminés, de 0 à 1.
+  double get episodesFraction =>
+      episodesTotal <= 0 ? 0 : (episodesWatched / episodesTotal).clamp(0.0, 1.0);
+
+  /// « S2 E5 » : l'épisode à regarder ensuite ; null quand le serveur ne le
+  /// nomme pas (épisode sans numéro).
+  String? get nextEpisodeCode => nextEpisodeSeason > 0 && nextEpisodeNumber > 0
+      ? tr('S{0} E{1}', [nextEpisodeSeason, nextEpisodeNumber])
+      : null;
 
   /// Le serveur a ce titre : il s'ouvre sur sa fiche.
   bool get isOnServer => media != null;
@@ -317,6 +350,10 @@ class WatchListItem {
       addedAt: DateTime.tryParse(json['added_at'] as String? ?? ''),
       mediaId: (json['media_id'] as num?)?.toInt() ?? 0,
       watched: json['watched'] as bool? ?? false,
+      episodesWatched: (json['episodes_watched'] as num?)?.toInt() ?? 0,
+      episodesTotal: (json['episodes_total'] as num?)?.toInt() ?? 0,
+      nextEpisodeSeason: (json['next_episode_season'] as num?)?.toInt() ?? 0,
+      nextEpisodeNumber: (json['next_episode_number'] as num?)?.toInt() ?? 0,
       media: media is Map
           ? HomeMediaItem.fromJson(Map<String, dynamic>.from(media))
           : null,

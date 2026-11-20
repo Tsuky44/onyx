@@ -6,6 +6,7 @@ import '../../../models/watch_list.dart';
 import '../../../services/api_client.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_icons.dart';
+import '../../../theme/app_type.dart';
 import '../../../utils/poster_url.dart';
 import '../../../widgets/global/poster_card.dart';
 import '../../../widgets/global/poster_card_details.dart';
@@ -53,8 +54,20 @@ class _ListItemCardState extends State<ListItemCard> {
     final isShow = item.mediaType == WatchListMediaType.show;
     final progress = item.media?.percentWatched ?? 0;
     final inProgress = !isShow && progress > 0 && progress < 0.99;
+    // Une série n'a pas de position de lecture : sa barre compte les épisodes
+    // terminés, que le serveur donne (ADR-0162).
+    final showInProgress = item.isShowInProgress;
+    final nextCode = item.nextEpisodeCode;
+    final episodesLine = showInProgress
+        ? tr('{0}/{1} épisodes vus', [item.episodesWatched, item.episodesTotal])
+        : null;
     final facts = item.isOnServer
-        ? item.year
+        ? [
+            if (item.year != null) item.year!,
+            if (episodesLine != null) episodesLine,
+            if (showInProgress && nextCode != null)
+              tr('Prochain : {0}', [nextCode]),
+          ].join(' · ')
         : [
             if (item.year != null) item.year!,
             tr('Pas sur le serveur'),
@@ -82,7 +95,7 @@ class _ListItemCardState extends State<ListItemCard> {
           hoverDetails: PosterCardDetails(
             title: item.title,
             typeLabel: isShow ? tr('Série') : tr('Film'),
-            facts: facts,
+            facts: facts.isEmpty ? null : facts,
           ),
           dimmed: !item.isOnServer,
           autofocus: widget.autofocus,
@@ -114,8 +127,52 @@ class _ListItemCardState extends State<ListItemCard> {
                 bottom: PosterCard.overlayInset,
                 child: UnavailableBadge(),
               ),
+            if (showInProgress && nextCode != null)
+              Positioned(
+                top: PosterCard.overlayInset,
+                left: PosterCard.overlayInset,
+                child: _NextEpisodeChip(code: nextCode),
+              ),
           ],
-          footerOverlay: inProgress ? ProgressPill(value: progress) : null,
+          footerOverlay: inProgress
+              ? ProgressPill(value: progress)
+              : showInProgress
+                  ? ProgressPill(value: item.episodesFraction)
+                  : null,
+        ),
+      ),
+    );
+  }
+}
+
+/// L'épisode où reprendre une série commencée, en pastille de verre comme
+/// « Indispo » : « S2 E5 ». Elle se lit avec la barre du bas, qui dit combien
+/// d'épisodes sont derrière.
+class _NextEpisodeChip extends StatelessWidget {
+  const _NextEpisodeChip({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: tr('Prochain : {0}', [code]),
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Text(
+          code,
+          style: const TextStyle(
+            fontSize: AppType.micro,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
     );

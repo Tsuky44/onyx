@@ -1,6 +1,7 @@
 package watchlists
 
 import (
+	"database/sql"
 	"fmt"
 
 	"project-player/server/models"
@@ -14,6 +15,15 @@ type listProgress struct {
 	// watchedItems sont les éléments (et non les fiches) que le compte a vus :
 	// le détail d'une liste en tire l'indicateur `watched` de chaque titre.
 	watchedItems map[int]bool
+	// shows donne, par élément série, où le compte en est (ADR-0162).
+	shows map[int]showStats
+}
+
+// showStats est l'avancement d'un compte dans une série : épisodes présents
+// sur le disque, terminés, et le premier qui reste à voir (0/0 : tout est vu).
+type showStats struct {
+	total, finished         int
+	nextSeason, nextEpisode int
 }
 
 // sqlChunk borne les paramètres d'une requête `IN (…)` : une liste porte
@@ -102,10 +112,17 @@ func (s *Store) progress(viewerID int, listIDs []int) (map[int]listProgress, err
 	}
 
 	finishedShows := map[int]bool{}
+	showStatsByMedia := map[int]showStats{}
 	for _, chunk := range chunks(showIDs) {
+		// Le premier épisode à voir est le plus petit (saison, épisode) non
+		// terminé : la saison de l'épisode, à défaut celle de son dossier.
+		// 10000 écarte tout risque de chevauchement entre saisons.
 		rows, err := s.db.Query(fmt.Sprintf(`
 			SELECT season.parent_id, COUNT(*),
-				SUM(CASE WHEN COALESCE(p.is_finished, 0) <> 0 THEN 1 ELSE 0 END)
+				SUM(CASE WHEN COALESCE(p.is_finished, 0) <> 0 THEN 1 ELSE 0 END),
+				MIN(CASE WHEN COALESCE(p.is_finished, 0) = 0
+					THEN COALESCE(NULLIF(e.season_number, 0), season.season_number, 0) * 10000
+						+ COALESCE(e.episode_number, 0) END)
 			FROM medias e
 			JOIN medias season ON e.parent_id = season.id AND season.type = 'season'
 			LEFT JOIN progressions p ON p.media_id = e.id AND p.user_id = ?
@@ -118,11 +135,18 @@ func (s *Store) progress(viewerID int, listIDs []int) (map[int]listProgress, err
 		}
 		for rows.Next() {
 			var id, available, finished int
-			if err := rows.Scan(&id, &available, &finished); err != nil {
+			var nextKey sql.NullInt64
+			if err := rows.Scan(&id, &available, &finished, &nextKey); err != nil {
 				rows.Close()
 				return nil, fmt.Errorf("scan show progress: %w", err)
 			}
 			finishedShows[id] = available > 0 && finished >= available
+			st := showStats{total: available, finished: finished}
+			if nextKey.Valid {
+				st.nextSeason = int(nextKey.Int64) / 10000
+				st.nextEpisode = int(nextKey.Int64) % 10000
+			}
+			showStatsByMedia[id] = st
 		}
 		rows.Close()
 		if err := rows.Err(); err != nil {
@@ -136,6 +160,12 @@ func (s *Store) progress(viewerID int, listIDs []int) (map[int]listProgress, err
 		watched := finishedMovies[e.next.MediaID]
 		if e.isShow {
 			watched = finishedShows[e.next.MediaID]
+			if st, ok := showStatsByMedia[e.next.MediaID]; ok {
+				if p.shows == nil {
+					p.shows = map[int]showStats{}
+				}
+				p.shows[e.next.ID] = st
+			}
 		}
 		if watched {
 			p.watched++

@@ -17,7 +17,8 @@ part of 'onyx_controls_layer.dart';
 /// - le volume, l'image dans l'image et le plein écran sont en haut à droite,
 ///   là où un écran tenu en main a son verrou ;
 /// - un onglet s'ouvre d'un clic, et se referme d'un second ;
-/// - l'heure de fin se lit au survol du temps restant ;
+/// - l'heure de fin s'écrit à côté du temps restant, comme sur les autres
+///   écrans (ADR-0163) ;
 /// - dans une fenêtre trop petite pour le volet
 ///   ([OnyxChromeTheme.pointerCarriesTabs]), les onglets passent derrière un
 ///   bouton de la rangée, comme sur un écran tenu en main.
@@ -176,7 +177,7 @@ extension _OnyxPointerChrome on OnyxControlsLayer {
                       marker: true,
                     ),
                   ),
-                  _buildPointerTimes(m),
+                  _buildTimes(m),
                 ],
               ),
             ),
@@ -199,31 +200,4 @@ extension _OnyxPointerChrome on OnyxControlsLayer {
     );
   }
 
-  /// Le temps écoulé à gauche, le temps restant à droite. L'heure de fin, que
-  /// l'ancien chrome écrivait à côté, se lit au survol du temps restant : une
-  /// souris a de quoi la demander, et la rangée reste celle des autres écrans.
-  Widget _buildPointerTimes(OnyxChromeMetrics m) {
-    final style = TextStyle(
-      color: OnyxChromeTheme.time,
-      fontSize: m.timeSize,
-      fontWeight: FontWeight.w600,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(formatPlaybackTime(position.inSeconds), style: style),
-        if (duration.inSeconds > 0)
-          Tooltip(
-            key: const ValueKey('onyx-remaining'),
-            message: tr('Fin à {0}', [formatEndClock(_remainingSeconds)]),
-            waitDuration: const Duration(milliseconds: 300),
-            child: Text(
-              '-${formatPlaybackTime(_remainingSeconds)}',
-              style: style,
-            ),
-          ),
-      ],
-    );
-  }
 }

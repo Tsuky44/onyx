@@ -2,6 +2,8 @@ package watchlists
 
 import (
 	"testing"
+
+	"project-player/server/models"
 )
 
 // seedShow range une série de deux épisodes présents sur le disque et d'un
@@ -154,5 +156,59 @@ func TestListDetailFlagsEachWatchedItem(t *testing.T) {
 	}
 	if got := watchedByMedia(bob); got[10] {
 		t.Fatalf("guest sees the owner's progress: %v", got)
+	}
+}
+
+// Le détail d'une liste dit où le compte en est d'une série : épisodes terminés
+// sur épisodes présents (l'emplacement sans fichier ne compte pas) et le
+// premier qui reste à voir (ADR-0162).
+func TestListDetailTellsHowFarTheAccountIsInAShow(t *testing.T) {
+	s := newTestStore(t)
+	seedShow(t, s)
+	for id, episode := range map[int]int{22: 1, 23: 2} {
+		if _, err := s.db.Exec(`UPDATE medias SET season_number = 1, episode_number = ? WHERE id = ?`, episode, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	list := mustCreate(t, s, alice, "Séries", true)
+	for _, id := range []int{10, 20} {
+		if _, err := s.AddServerMedia(alice, list.ID, id); err != nil {
+			t.Fatalf("add %d: %v", id, err)
+		}
+	}
+	show := func(viewer int) models.WatchListItem {
+		detail, err := s.Get(viewer, list.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, it := range detail.Items {
+			if it.MediaID == 20 {
+				return it
+			}
+			if it.MediaID == 10 && it.EpisodesTotal != 0 {
+				t.Fatalf("a movie carries episode counts: %+v", it)
+			}
+		}
+		t.Fatal("show missing from the list")
+		return models.WatchListItem{}
+	}
+
+	got := show(alice)
+	if got.EpisodesTotal != 2 || got.EpisodesWatched != 0 || got.NextEpisodeSeason != 1 || got.NextEpisodeNumber != 1 {
+		t.Fatalf("not started: %+v, want 0/2 next S1E1", got)
+	}
+	finish(t, s, alice, 22)
+	got = show(alice)
+	if got.EpisodesWatched != 1 || got.NextEpisodeSeason != 1 || got.NextEpisodeNumber != 2 || got.Watched {
+		t.Fatalf("half way: %+v, want 1/2 next S1E2", got)
+	}
+	// Un autre compte repart de zéro.
+	if other := show(bob); other.EpisodesWatched != 0 || other.NextEpisodeNumber != 1 {
+		t.Fatalf("guest sees the owner's progress: %+v", other)
+	}
+	finish(t, s, alice, 23)
+	got = show(alice)
+	if got.EpisodesWatched != 2 || got.NextEpisodeSeason != 0 || got.NextEpisodeNumber != 0 || !got.Watched {
+		t.Fatalf("finished: %+v, want 2/2 and no next episode", got)
 	}
 }

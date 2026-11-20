@@ -310,8 +310,9 @@ void main() {
       '-${formatPlaybackTime((_duration - _position).inSeconds)}',
     );
     expect(elapsed, findsOneWidget);
-    // Le restant seul : pas d'heure de fin, comme sur un téléviseur.
+    // Le restant, et l'heure de fin juste à côté (ADR-0163).
     expect(remaining, findsOneWidget);
+    expect(_key('end-clock'), findsOneWidget);
     expect(tester.getCenter(elapsed).dx, lessThan(tester.getCenter(remaining).dx));
     // Sous le trait de la barre, sans ajouter une rangée entière.
     expect(tester.getRect(elapsed).top, greaterThan(bar.center.dy));

@@ -4077,4 +4077,6 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} will lose access',
   '{0} personnes perdront l’accès':
       '{0} people will lose access',
+  'Prochain : {0}':
+      'Next: {0}',
 };

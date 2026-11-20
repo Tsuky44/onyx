@@ -284,7 +284,7 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
   }
 
   /// La barre et, dans sa propre cible, les temps : écoulé à gauche, restant
-  /// à droite, sans l'heure de fin (comme sur un téléviseur).
+  /// et heure de fin à droite (ADR-0163).
   Widget _buildHandheldTimeline(OnyxChromeMetrics m) {
     return SizedBox(
       height: m.hitSize + _timesBelowBar,
@@ -318,7 +318,7 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
             bottom: 0,
             // Dans la cible de la barre : le doigt posé sur un temps déplace
             // la lecture, il ne tombe pas sur un texte.
-            child: IgnorePointer(child: _buildTvTimes(m)),
+            child: IgnorePointer(child: _buildTimes(m)),
           ),
         ],
       ),
