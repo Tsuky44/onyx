@@ -27,7 +27,21 @@ import '../../l10n/tr.dart';
 class AccountMenu extends StatefulWidget {
   final AuthProvider authProvider;
 
-  const AccountMenu({super.key, required this.authProvider});
+  /// Le compte de la barre du haut du téléphone (ADR-0144) : un disque
+  /// plein, sans verre, posé sur le noir où l'affiche se fond.
+  final bool plain;
+
+  /// La cible du disque [plain] : les 44 points qu'Apple demande.
+  static const double plainTarget = 44;
+
+  /// Le diamètre du disque [plain].
+  static const double plainSize = 36;
+
+  const AccountMenu({
+    super.key,
+    required this.authProvider,
+    this.plain = false,
+  });
 
   @override
   State<AccountMenu> createState() => _AccountMenuState();
@@ -125,11 +139,47 @@ class _AccountMenuState extends State<AccountMenu> {
       anchor: TourAnchor.account,
       child: Tooltip(
         message: tr('Menu'),
-        child: GlassIconButton(
-          key: _anchorKey,
-          size: 34,
+        child: widget.plain
+            ? _buildPlain()
+            : GlassIconButton(
+                key: _anchorKey,
+                size: 34,
+                onTap: _open,
+                child: _avatarOrInitial(32),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildPlain() {
+    return SizedBox.square(
+      key: _anchorKey,
+      dimension: AccountMenu.plainTarget,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          customBorder: const CircleBorder(),
           onTap: _open,
-          child: _avatarOrInitial(),
+          child: Center(
+            child: Container(
+              key: const ValueKey('account-plain-disc'),
+              width: AccountMenu.plainSize,
+              height: AccountMenu.plainSize,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.border,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: _avatarOrInitial(AccountMenu.plainSize),
+            ),
+          ),
         ),
       ),
     );
@@ -137,11 +187,11 @@ class _AccountMenuState extends State<AccountMenu> {
 
   /// L'image de profil quand la personne en a choisi une, sinon son initiale
   /// sur le verre du header, comme avant (ADR-0078).
-  Widget _avatarOrInitial() {
+  Widget _avatarOrInitial(double size) {
     final active = authProvider.activeServer;
     if (active != null &&
         ProfileAvatar.parse(active.avatar) is! InitialAvatar) {
-      return ClipOval(child: ProfileDisc(account: active, size: 32));
+      return ClipOval(child: ProfileDisc(account: active, size: size));
     }
     return Text(
       (authProvider.currentUser?.username ?? '?')[0].toUpperCase(),

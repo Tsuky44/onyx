@@ -1,56 +1,54 @@
 # 🚀 Onyx — Serveur Média (Back-End Go)
 
-Un serveur multimédia ultra-léger écrit en Go, conçu exclusivement pour du **Direct Play pur à 100 %**, avec une consommation de RAM minimale (inférieure à 20 Mo) et des performances exceptionnelles.
+Le serveur d'Onyx : un binaire Go et une base SQLite. Il indexe vos dossiers, sert les fichiers en **Direct Play** (requêtes HTTP Range, `206 Partial Content`) et ne transcode qu'en repli, avec FFmpeg, quand l'appareil ne sait pas lire le fichier.
 
 ---
 
-## 🛠 Architecture & Choix Techniques
+## 🛠 Choix techniques
 
-- **Langage :** Go (Golang) pour sa rapidité et sa gestion native du streaming HTTP par morceaux (`http.ServeFile`).
-- **Base de données :** SQLite (avec pilote pur Go `modernc.org/sqlite` — pas besoin de compilateur CGO/gcc).
-- **Mode WAL activé :** Toutes les écritures de progression et de synchronisation s'effectuent sans bloquer la lecture grâce au mode *Write-Ahead Logging* (`PRAGMA journal_mode=WAL;`).
-- **Indexeur Intelligent :** Scanne automatiquement les disques, structure de manière hiérarchique les séries/saisons/épisodes, nettoie la base de données des fichiers supprimés et filtre le "bruit" des noms de fichiers.
-- **Direct Play :** Utilise le protocole natif des *HTTP Range Requests* (code HTTP `206 Partial Content`), permettant des sauts temporels instantanés sans solliciter le CPU ou la mémoire du serveur.
+- **Go sans CGO** : SQLite par le pilote pur Go `modernc.org/sqlite`, en mode WAL (les écritures de progression ne bloquent pas les lectures).
+- **Direct Play d'abord** ; le transcodage HLS suit une échelle de débits (ADR-0022), l'encodeur matériel reste facultatif (ADR-0023).
+- **Léger** : objectif de moins de 20 Mo de RAM au repos.
 
 ---
 
-## 📂 Structure du Code Source
+## 📂 Organisation du code
 
-```
-server/
-├── Dockerfile               # Image Docker multi-stage optimisée (< 20 Mo)
-├── go.mod                   # Gestionnaire des dépendances
-├── main.go                  # Point d'entrée, configuration & routage API
-├── database/
-│   └── database.go          # Initialisation SQLite, PRAGMA WAL & migrations
-├── models/
-│   └── models.go            # Structs Go (User, Media, Progression, etc.)
-├── indexer/
-│   └── indexer.go           # Indexation intelligente, regex SxxExx, auto-nettoyage
-└── handlers/
-    ├── auth.go              # Inscription, Connexion, Profil, Middleware d'Auth
-    ├── media.go             # Dashboard, Progressions & Navigation Bibliothèque
-    └── stream.go            # Streaming de fichiers par morceaux (Direct Play)
-```
+| Dossier | Rôle |
+|---|---|
+| `main.go` | Point d'entrée : réglages, routes de l'API, tâches de fond. |
+| `handlers/` | HTTP : décoder, autoriser, appeler, encoder. |
+| `indexer/` | Parcours des disques, identification, métadonnées, surveillance des dossiers. |
+| `libraries/` | Les bibliothèques et les dossiers proposés à leur création. |
+| `streaming/` | Sondage ffprobe, plan de lecture, HLS, transcodage, aperçus. |
+| `subtitles/`, `playbackauth/`, `streamcache/` | Sous-titres extraits, tickets de lecture, cache de flux. |
+| `database/` | Ouverture de la base, PRAGMA, migrations. |
+| `models/` | Structures partagées et leur JSON. |
+| `mediahub/`, `tmdb/`, `httpx/` | Services externes et les seuls clients HTTP sortants. |
+| `codeguard/` | Tests qui relisent tout le serveur pour faire tenir une convention. |
+| `Dockerfile`, `docker-entrypoint.sh` | L'image et son démarrage (`PUID`/`PGID`). |
+
+Les décisions d'architecture sont dans [`docs/adr/`](../docs/adr/).
 
 ---
 
 ## ⚙️ Comment lancer le serveur (Docker Compose)
 
-Le projet intègre un fichier `docker-compose.yml` à la racine pour un déploiement instantané.
+Le dépôt fournit à la racine un seul `docker-compose.yml`, réglé par un fichier `.env`.
 
-### 1. Préparation des Dossiers
-Créez vos dossiers de médias locaux s'ils n'existent pas encore :
+### 1. Les réglages
 ```bash
-mkdir -p data media/Films media/Series
+cp .env.example .env
 ```
+Remplissez `.env` : `MEDIA_PATH` (obligatoire) est le dossier de vos médias, monté dans le conteneur sous `/media` ; `TMDB_API_KEY` donne les affiches et les résumés. Les autres réglages sont décrits dans le fichier, commentés : `.env` est passé tel quel au serveur, une ligne décommentée suffit.
 
 ### 2. Démarrage
-Lancez l'environnement avec Docker Compose :
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
-Le serveur démarrera sur le port **8080** (http://localhost:8080) et créera la base de données SQLite dans `./data/player.db`.
+Pour construire l'image depuis les sources, décommentez `build: ./server` dans `docker-compose.yml`, puis `docker compose up -d --build`.
+
+Le serveur démarrera sur le port **8080** (http://localhost:8080) et créera la base de données SQLite dans `./data/player.db`. Un serveur neuf n'a aucune bibliothèque : elles se créent depuis l'app, qui propose les sous-dossiers de `/media` (`MEDIA_ROOT` le change, hors de Docker).
 
 Les sous-titres extraits et les aperçus de la barre de lecture sont rangés à côté de la base. Avant toute migration du schéma, la base est copiée à côté d'elle (`player.db.pre-<migration>-<date>.bak`, les trois dernières sont gardées) ; `DB_SKIP_MIGRATION_BACKUP=true` s'en passe quand le disque n'a pas la place. Le conteneur tourne sous root par défaut ; `PUID` (et `PGID`) le font tourner sous un compte sans privilèges, à qui `./data` est rendu au démarrage — les dossiers de médias doivent alors lui être lisibles. Le journal s'écrit en texte sur la sortie d'erreur ; `LOG_FORMAT=json` donne une ligne JSON par entrée, et `LOG_LEVEL` (`debug`, `info`, `warn`, `error`) règle ce qui est écrit.
 
@@ -584,6 +582,7 @@ Le serveur n'en impose aucune et n'en limite pas le nombre (ADR-0058). Il annonc
 `libraries` sur `GET /api/ping`.
 
 * **`GET /api/libraries`** (compte connecté) : `[{"id": 1, "name": "Animés", "kind": "shows", "path": "/media/Animes"}]`, par ordre de création. `path` n'est joint que pour `manage_settings`.
+* **`GET /api/libraries/folders`** (`manage_settings`) : `{"root": "/media", "folders": [{"path": "/media/Films", "name": "Films", "kind": "movies"}]}`. Les sous-dossiers de `/media` (ou de `MEDIA_ROOT`) qu'aucune bibliothèque ne couvre encore, avec le type que leur nom suggère : films d'abord, puis séries, puis le reste. Un `/media` sans sous-dossier se propose lui-même ; absent, la liste est vide. L'app s'en sert pour préremplir une nouvelle bibliothèque (ADR-0155).
 * **`POST /api/libraries`** (`manage_settings`) : corps `{"name", "kind", "path"}`. `201` et la bibliothèque créée ; une analyse démarre. `400` si le nom est vide ou dépasse 40 caractères, si le type est inconnu, si le chemin n'est pas absolu ou n'est pas un dossier que le serveur voit ; `409` si le dossier est déjà celui d'une bibliothèque.
 * **`PUT /api/libraries/:id`** (`manage_settings`) : corps `{"name", "path"}`. Le type ne se change pas. Changer le dossier retire du catalogue ce qui était indexé sous l'ancien et analyse le nouveau.
 * **`DELETE /api/libraries/:id`** (`manage_settings`) : `204`. Retire la bibliothèque et ses titres du catalogue, avec leur progression. Les fichiers ne sont pas touchés.

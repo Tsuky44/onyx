@@ -5,15 +5,16 @@ part of 'onyx_controls_layer.dart';
 ///
 /// Ce qu'il en garde : le logo en haut à gauche, ce qu'on regarde en une
 /// ligne en bas à gauche, des boutons ronds de verre à sa droite, la barre
-/// fine et son repère, les temps écoulé et restant, les onglets sous la barre.
+/// fine et son repère, les temps écoulé et restant.
 ///
 /// Ce qui change, parce qu'il n'y a pas de télécommande :
 /// - lecture/pause et ±10 s sont au milieu de l'image. Sur un téléviseur ils
 ///   doublaient la télécommande ; ici un toucher sur l'image ne fait
 ///   qu'afficher le chrome, et il faut bien un bouton pour mettre en pause ;
 /// - Retour et le verrou sont des boutons, en haut ;
-/// - un onglet ouvre la feuille du bas (`PlayerTabSheet`) : un doigt ne
-///   « descend » pas sur un onglet, il le touche.
+/// - les onglets ne sont plus sous la barre (ADR-0139) : un bouton de la
+///   rangée ouvre la feuille du bas (`PlayerTabSheet`), qui les porte tous.
+///   La rangée d'onglets coûtait 44 points de haut à un écran qui en a 390.
 ///
 /// La rangée des boutons ronds est celle d'un téléviseur
 /// ([_buildEssentialActions]) : l'essentiel a son bouton, la roue crantée
@@ -28,6 +29,11 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
   /// dessinés dans la cible de la barre plutôt que dessous : la rangée garde
   /// la hauteur d'un doigt sans que le chrome prenne celle de deux rangées.
   static const double _timesBelowBar = 8;
+
+  /// ±10 s contre lecture/pause : « légèrement plus petits », à la demande de
+  /// l'utilisateur (ADR-0139). À 0,64 ils se lisaient comme des commandes
+  /// secondaires, alors qu'on les touche autant que la pause.
+  static const double _sideRatio = 0.8;
 
   Widget _buildHandheldChrome(OnyxChromeMetrics m, double width) {
     final hasBrightness = brightness != null && onBrightnessChanged != null;
@@ -157,6 +163,14 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
                   child: _buildTitleMark(m),
                 ),
               ),
+              if (handheldFullscreen)
+                _handheldGlassButton(
+                  m,
+                  id: 'fullscreen',
+                  icon: Icons.fullscreen_rounded,
+                  tooltip: tr('Plein écran'),
+                  onPressed: onToggleFullscreen,
+                ),
               if (onLockScreen != null)
                 _handheldGlassButton(
                   m,
@@ -178,8 +192,8 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
   /// et suivant n'y sont pas : à cette taille, sous le pouce, un épisode
   /// changé par erreur coûte bien plus cher que dix secondes.
   Widget _buildHandheldTransport(OnyxChromeMetrics m) {
-    final sideSize = m.playIconSize * 0.64;
-    final gap = SizedBox(width: m.playIconSize * 0.8);
+    final sideSize = m.playIconSize * _sideRatio;
+    final gap = SizedBox(width: m.playIconSize * 0.66);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -193,15 +207,21 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
           onPressed: onRewind,
         ),
         gap,
-        OnyxIconButton(
-          key: const ValueKey('onyx-play-pause'),
-          icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          tooltip: isPlaying ? tr('Pause') : tr('Lecture'),
-          metrics: m,
-          size: m.playIconSize,
-          focusNode: playPauseFocusNode,
-          onPicture: true,
-          onPressed: onPlayPause,
+        // Sous l'anneau d'attente, posé au même endroit par l'écran du
+        // lecteur : le bouton s'efface sans quitter sa place.
+        AnimatedOpacity(
+          opacity: isLoading ? 0 : 1,
+          duration: AppMotion.micro,
+          child: OnyxIconButton(
+            key: const ValueKey('onyx-play-pause'),
+            icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            tooltip: isPlaying ? tr('Pause') : tr('Lecture'),
+            metrics: m,
+            size: m.playIconSize,
+            focusNode: playPauseFocusNode,
+            onPicture: true,
+            onPressed: onPlayPause,
+          ),
         ),
         gap,
         OnyxIconButton(
@@ -223,7 +243,7 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
     // Transparent aux touchers, comme le titre des autres arrangements : un
     // toucher sur le titre range le chrome comme partout ailleurs sur l'image.
     final title = IgnorePointer(child: _buildIdentityLine(m));
-    final actions = _buildEssentialActions(m);
+    final actions = _buildEssentialActions(m, tabsButton: true);
     return OnyxScrim(
       gradient: OnyxChromeTheme.bottomScrim,
       child: Padding(
@@ -257,7 +277,6 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
                 ),
               ),
             _dodgeCutouts(_buildHandheldTimeline(m)),
-            if (tabs.isNotEmpty) _dodgeCutouts(_buildHandheldTabs()),
           ],
         ),
       ),
@@ -302,35 +321,6 @@ extension _OnyxHandheldChrome on OnyxControlsLayer {
             child: IgnorePointer(child: _buildTvTimes(m)),
           ),
         ],
-      ),
-    );
-  }
-
-  /// Les onglets, sous la barre. En toucher un ouvre la feuille du bas sur
-  /// lui ; l'écran du lecteur décide lesquels existent.
-  Widget _buildHandheldTabs() {
-    // Le texte du premier onglet s'aligne sur le titre : sa capsule, elle,
-    // déborde de son retrait intérieur. Un décalage et non une marge : la
-    // rangée est déjà en retrait, et une marge ne peut pas être négative.
-    return Transform.translate(
-      offset: const Offset(-OnyxChromeTab.inset, 0),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final entry in tabs)
-              OnyxChromeTab(
-                key: ValueKey('onyx-tab-${entry.tab.name}'),
-                label: entry.label,
-                active: entry.marked,
-                selected: entry.tab == openTab,
-                fontSize: AppType.callout,
-                hitHeight: OnyxIconButton.glassSize,
-                onPressed: () => onTabChanged?.call(entry.tab),
-              ),
-          ],
-        ),
       ),
     );
   }

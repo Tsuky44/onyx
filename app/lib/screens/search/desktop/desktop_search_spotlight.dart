@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../../l10n/tr.dart';
 import '../../../models/media_request.dart';
 import '../../../models/models.dart';
-import '../../../providers/library_provider.dart';
-import '../../../utils/format.dart';
 import '../../../utils/poster_url.dart';
 import '../../../utils/responsive.dart';
 import '../../../widgets/global/unavailable_badge.dart';
 import '../../library/widgets/library_spotlight.dart';
 import '../../library/widgets/library_tv_view.dart';
+import '../../library/widgets/spotlight_scale.dart';
 import 'desktop_search_controller.dart';
-import 'desktop_search_hits.dart';
+import '../search_layout.dart';
 
 /// Le volet gauche de la recherche du bureau : le titre sélectionné (sous le
 /// pointeur ou les flèches), présenté comme dans le volet d'une bibliothèque
@@ -23,10 +21,19 @@ import 'desktop_search_hits.dart';
 /// le voile de la recherche, à travers lequel on devine celle d'avant : un
 /// fondu vers la couleur du fond y laissait une couture. Le volet s'efface
 /// donc vers la transparence, sur la largeur où les affiches commencent.
+///
+/// Il a les proportions de celui de l'Apple TV, comme le volet d'une
+/// bibliothèque ([SpotlightScale], ADR-0156) : [scale] l'agrandit avec la
+/// fenêtre.
 class DesktopSearchSpotlight extends StatelessWidget {
-  const DesktopSearchSpotlight({super.key, required this.controller});
+  const DesktopSearchSpotlight({
+    super.key,
+    required this.controller,
+    this.scale = 1,
+  });
 
   final DesktopSearchController controller;
+  final double scale;
 
   /// La largeur du texte, celle du volet d'une bibliothèque sur téléviseur.
   static double get textWidth => LibraryTvView.textWidth;
@@ -34,12 +41,15 @@ class DesktopSearchSpotlight extends StatelessWidget {
   /// L'image de fond déborde sous les premières affiches avant de s'effacer.
   static const double overhang = 170;
 
-  /// La place que le volet prend à gauche des affiches.
+  /// La place que le volet prend à gauche des affiches, avant
+  /// l'agrandissement ([SpotlightScale.factorFor]).
   static double paneWidth(BuildContext context) =>
       AppLayout.pagePadding(context) * 2 + textWidth;
 
   @override
   Widget build(BuildContext context) {
+    // Mesuré avant l'agrandissement, comme le volet que [SpotlightScale] met
+    // en page : le fondu tombe au même endroit de la fiche à toute échelle.
     final pane = paneWidth(context);
     final total = pane + overhang;
     return ShaderMask(
@@ -48,23 +58,26 @@ class DesktopSearchSpotlight extends StatelessWidget {
         colors: const [Colors.white, Colors.white, Colors.transparent],
         stops: [0, (pane - 40) / total, 1],
       ).createShader(bounds),
-      child: ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) {
-          final hit = controller.current;
-          if (hit == null) return const SizedBox.expand();
-          return switch (hit) {
-            LibraryHit(:final media) => LibrarySpotlight(
-                // Une seule fiche pour tous les titres de la bibliothèque :
-                // l'image d'un titre se fond dans la suivante.
-                key: const ValueKey('library'),
-                media: media,
-                eyebrow: _libraryEyebrow(context, media),
-                textWidth: textWidth,
-              ),
-            UnavailableHit(:final item) => _unavailable(item),
-          };
-        },
+      child: SpotlightScale(
+        scale: scale,
+        child: ListenableBuilder(
+          listenable: controller,
+          builder: (context, _) {
+            final hit = controller.current;
+            if (hit == null) return const SizedBox.expand();
+            return switch (hit) {
+              LibraryHit(:final media) => LibrarySpotlight(
+                  // Une seule fiche pour tous les titres de la bibliothèque :
+                  // l'image d'un titre se fond dans la suivante.
+                  key: const ValueKey('library'),
+                  media: media,
+                  eyebrow: librarySpotlightEyebrow(context, media),
+                  textWidth: textWidth,
+                ),
+              UnavailableHit(:final item) => _unavailable(item),
+            };
+          },
+        ),
       ),
     );
   }
@@ -98,24 +111,5 @@ class DesktopSearchSpotlight extends StatelessWidget {
       textWidth: textWidth,
       backdropUrl: backdrop,
     );
-  }
-
-  /// Le surtitre d'un titre de la bibliothèque : son type, puis où on en est.
-  String _libraryEyebrow(BuildContext context, Media media) {
-    final isMovie = media.type == MediaType.movie;
-    final parts = <String>[isMovie ? tr('Film') : tr('Série')];
-    if (isMovie) {
-      final item = context.read<LibraryProvider>().movieItemFor(media.id);
-      final position = item?.currentPositionSeconds ?? 0;
-      if (item?.isFinished ?? false) {
-        parts.add(tr('Vu'));
-      } else if (item != null && position > 0) {
-        final remaining = formatRemaining(item.duration - position);
-        if (remaining != null) parts.add(remaining);
-      }
-    } else if (media.isFullyWatched) {
-      parts.add(tr('Vu'));
-    }
-    return parts.join(' · ');
   }
 }

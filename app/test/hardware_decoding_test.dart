@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:onyx/screens/player/hardware_decoding.dart';
+import 'package:onyx/screens/player/windows_video_render.dart';
 
 void main() {
   _zeroCopyFallback();
@@ -65,19 +66,20 @@ void main() {
   });
 
   String windows(HardwareDecodingPreference preference,
-          {bool zeroCopyFailed = false}) =>
+          {bool zeroCopyFailed = false, VideoRenderPath? renderPath}) =>
       HardwareDecoding.resolve(
         preference: preference,
         isAndroid: false,
         isMacOS: false,
         isWindows: true,
         zeroCopyFailed: zeroCopyFailed,
+        windowsRenderPath: renderPath,
       );
 
   // ADR-0095 : sans copie, mpv lisait la surface du décodeur, plus grande que
   // l'image, et laissait une bande verte en bas de certains fichiers, en 1080p
   // comme en 4K. La recopie ne sort que l'image utile.
-  test('Windows never decodes without a copy, whatever the file', () {
+  test('on the ANGLE texture, Windows never decodes without a copy', () {
     for (final zeroCopyFailed in [false, true]) {
       final value = windows(HardwareDecodingPreference.auto,
           zeroCopyFailed: zeroCopyFailed);
@@ -85,6 +87,80 @@ void main() {
       expect(value, isNot(anyOf('auto', 'auto-safe', 'd3d11va')));
     }
     expect(windows(HardwareDecodingPreference.copy), 'auto-copy-safe');
+  });
+
+  // ADR-0158, phase 2 : le décodeur suit le chemin de rendu que la sortie
+  // native a retenu. Sur D3D11, le sans-copie est forcé (décision de Tsuky) :
+  // seul « Logiciel » y échappe.
+  group('the Windows decoder follows the render path', () {
+    // Chaque combinaison : 3 rendus × 3 préférences × appareil pris ou non à
+    // décoder en logiciel.
+    const expected =
+        <(VideoRenderPath?, HardwareDecodingPreference, bool), String>{
+      (VideoRenderPath.d3d11, HardwareDecodingPreference.auto, false):
+          'auto-safe',
+      (VideoRenderPath.d3d11, HardwareDecodingPreference.copy, false):
+          'auto-safe',
+      (VideoRenderPath.d3d11, HardwareDecodingPreference.off, false): 'no',
+      (VideoRenderPath.d3d11, HardwareDecodingPreference.auto, true):
+          'auto-copy-safe',
+      (VideoRenderPath.d3d11, HardwareDecodingPreference.copy, true):
+          'auto-copy-safe',
+      (VideoRenderPath.d3d11, HardwareDecodingPreference.off, true): 'no',
+      (VideoRenderPath.angle, HardwareDecodingPreference.auto, false):
+          'auto-copy-safe',
+      (VideoRenderPath.angle, HardwareDecodingPreference.copy, false):
+          'auto-copy-safe',
+      (VideoRenderPath.angle, HardwareDecodingPreference.off, false): 'no',
+      (VideoRenderPath.angle, HardwareDecodingPreference.auto, true):
+          'auto-copy-safe',
+      (VideoRenderPath.angle, HardwareDecodingPreference.copy, true):
+          'auto-copy-safe',
+      (VideoRenderPath.angle, HardwareDecodingPreference.off, true): 'no',
+      (VideoRenderPath.software, HardwareDecodingPreference.auto, false):
+          'auto-copy-safe',
+      (VideoRenderPath.software, HardwareDecodingPreference.copy, false):
+          'auto-copy-safe',
+      (VideoRenderPath.software, HardwareDecodingPreference.off, false): 'no',
+      (VideoRenderPath.software, HardwareDecodingPreference.auto, true):
+          'auto-copy-safe',
+      (VideoRenderPath.software, HardwareDecodingPreference.copy, true):
+          'auto-copy-safe',
+      (VideoRenderPath.software, HardwareDecodingPreference.off, true): 'no',
+    };
+
+    test('every render path, preference and failure state', () {
+      expect(expected, hasLength(18));
+      expected.forEach((key, value) {
+        final (path, preference, failed) = key;
+        expect(
+          windows(preference, zeroCopyFailed: failed, renderPath: path),
+          value,
+          reason: '$path · ${preference.name} · échec=$failed',
+        );
+      });
+    });
+
+    test('D3D11 forces zero copy, even on « Compatible »', () {
+      expect(HardwareDecoding.windowsValue(VideoRenderPath.d3d11), 'auto-safe');
+      expect(
+        windows(HardwareDecodingPreference.copy,
+            renderPath: VideoRenderPath.d3d11),
+        'auto-safe',
+      );
+    });
+
+    test('an unknown path is treated as ANGLE', () {
+      expect(HardwareDecoding.windowsValue(null), 'auto-copy-safe');
+    });
+
+    test('describe names what mpv really gets on the render path', () {
+      HardwareDecoding.overrideWith(HardwareDecodingPreference.auto);
+      final value = HardwareDecoding.describe(VideoRenderPath.d3d11);
+      expect(value, startsWith('auto → '));
+      expect(
+          value, endsWith(HardwareDecoding.mpvValueFor(VideoRenderPath.d3d11)));
+    });
   });
 
   test('software decoding is the one unambiguous value', () {

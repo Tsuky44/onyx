@@ -27,6 +27,7 @@ import 'widgets/request_type_switch.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 class RequestsScreen extends StatefulWidget {
   final bool embedded;
@@ -456,7 +457,10 @@ class _RequestsScreenState extends State<RequestsScreen> {
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
                     // Le bas dégage la dernière rangée du bouton flottant.
-                    horizontalPadding, 8, horizontalPadding, 96),
+                    horizontalPadding,
+                    8,
+                    horizontalPadding,
+                    SliverScrollEnd.extentOf(context, 96)),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
                     final grid = AppLayout.posterGridDelegate(

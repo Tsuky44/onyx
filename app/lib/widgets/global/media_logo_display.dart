@@ -47,38 +47,33 @@ class MediaLogoDisplay extends StatelessWidget {
     );
 
     // Explicit width is required — without it the image can collapse to 0px.
+    //
+    // Pas d'ombre portée : une `BoxShadow` ombre la boîte, pas les lettres, et
+    // la boîte fait toute la largeur permise (560 px sur le bandeau). Elle
+    // dessinait un rectangle sombre et flou derrière le logo, bien visible sur
+    // une image claire (ADR-0154). Les voiles du bandeau et des fiches
+    // suffisent à le détacher.
     return SizedBox(
       width: width,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.55),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: AppNetworkImage(
-          url: logoUrl,
-          width: width,
-          height: maxHeight,
-          fit: BoxFit.contain,
-          alignment: Alignment.centerLeft,
-          filterQuality: FilterQuality.high,
-          // Logos are small at w500 and several screens draw them at different
-          // heights. An unconstrained decode keeps one entry in the memory
-          // cache that all of them hit, instead of one per slot size.
-          decodeAtSourceSize: true,
-          // Le logo attendu tient sa place vide, à sa hauteur : poser le titre
-          // en attendant le faisait paraître, puis disparaître quand le logo
-          // arrivait, et décalait l'en-tête de la différence de hauteur.
-          // Seul un logo en échec laisse le titre (errorWidget). Le spinner
-          // d'avant était un second état de mise en page, et clignotait à
-          // chaque lecture du cache.
-          placeholder: SizedBox(width: width, height: maxHeight),
-          errorWidget: fallback,
-        ),
+      child: AppNetworkImage(
+        url: logoUrl,
+        width: width,
+        height: maxHeight,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        filterQuality: FilterQuality.high,
+        // Logos are small at w500 and several screens draw them at different
+        // heights. An unconstrained decode keeps one entry in the memory
+        // cache that all of them hit, instead of one per slot size.
+        decodeAtSourceSize: true,
+        // Le logo attendu tient sa place vide, à sa hauteur : poser le titre
+        // en attendant le faisait paraître, puis disparaître quand le logo
+        // arrivait, et décalait l'en-tête de la différence de hauteur.
+        // Seul un logo en échec laisse le titre (errorWidget). Le spinner
+        // d'avant était un second état de mise en page, et clignotait à
+        // chaque lecture du cache.
+        placeholder: SizedBox(width: width, height: maxHeight),
+        errorWidget: fallback,
       ),
     );
   }

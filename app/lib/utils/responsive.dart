@@ -89,18 +89,22 @@ abstract final class AppLayout {
   ///
   /// [context] est celui du `SliverLayoutBuilder` : la grille suit le zoom
   /// Ctrl + molette de `PosterGridZoomRegion` (`PosterGridZoom`).
+  ///
+  /// [tileScale] agrandit l'affiche que le choix automatique vise : celle du
+  /// mur d'un téléviseur, à côté du volet d'une bibliothèque (ADR-0156).
   static SliverGridDelegate posterGridDelegate(
     BuildContext context,
     double contentWidth, {
     bool compact = false,
     bool withMeta = true,
+    double tileScale = 1,
   }) {
     final cross =
         compact ? posterGridCompactCrossSpacing : posterGridCrossSpacing;
     final zoom = PosterGridZoomScope.watch(context);
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: zoom.apply(
-        posterGridCount(contentWidth, spacing: cross),
+        posterGridCount(contentWidth / tileScale, spacing: cross),
         phone: isCompact(context),
       ),
       crossAxisSpacing: cross,

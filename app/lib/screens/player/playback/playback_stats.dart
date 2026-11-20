@@ -27,6 +27,7 @@ class PlaybackStatsSummary {
     this.videoCodec,
     this.audioCodec,
     this.decoder,
+    this.videoOutput,
     this.bufferingEvents = 0,
     this.bufferingSeconds = 0,
     this.startupMillis,
@@ -60,6 +61,10 @@ class PlaybackStatsSummary {
   /// Le décodeur réellement instancié — `hwdec-current` côté mpv, le nom
   /// MediaCodec côté Android.
   final String? decoder;
+
+  /// Le chemin de rendu de Windows (`d3d11`, `angle`, `software`,
+  /// ADR-0158) : le dernier relevé, celui d'après une éventuelle bascule.
+  final String? videoOutput;
 
   /// Les mises en mémoire tampon après le démarrage. Une lecture qui repart
   /// douze fois n'est pas la même chose qu'une lecture qui n'a jamais démarré,
@@ -99,6 +104,7 @@ class PlaybackStatsSummary {
         if (videoCodec != null) 'video_codec': videoCodec,
         if (audioCodec != null) 'audio_codec': audioCodec,
         if (decoder != null) 'decoder': decoder,
+        if (videoOutput != null) 'video_output': videoOutput,
         'buffering_events': bufferingEvents,
         'buffering_seconds': bufferingSeconds,
         if (startupMillis != null) 'startup_ms': startupMillis,
@@ -139,6 +145,7 @@ class PlaybackStatsCollector {
   String? _videoCodec;
   String? _audioCodec;
   String? _decoder;
+  String? _videoOutput;
 
   // Les compteurs cumulés du moteur, rattrapés à travers ses remises à zéro.
   // `_base` est ce qu'ont laissé les ouvertures précédentes de la séance,
@@ -255,6 +262,7 @@ class PlaybackStatsCollector {
         videoCodec: _videoCodec,
         audioCodec: _audioCodec,
         decoder: _decoder,
+        videoOutput: _videoOutput,
         bufferingEvents: _bufferingEvents,
         bufferingSeconds: _bufferingWatch.elapsedMilliseconds / 1000,
         startupMillis: _startupMillis,
@@ -308,6 +316,7 @@ class PlaybackStatsCollector {
     _videoCodec = info.videoCodec ?? _videoCodec;
     _audioCodec = info.audioCodec ?? _audioCodec;
     _decoder = info.hardwareDecoder ?? _decoder;
+    _videoOutput = info.videoOutput ?? _videoOutput;
 
     if (info.droppedByDisplay != null) _sawDropped = true;
     if (info.renderedFrames != null) _sawRendered = true;

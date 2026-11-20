@@ -1,10 +1,13 @@
 import '../../services/playback_access.dart';
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/window_controls.dart';
+import '../../widgets/global/optimistic_volume.dart';
+import 'player_wheel_volume.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
@@ -21,8 +24,12 @@ import '../../services/picture_in_picture.dart';
 import '../../services/player_presence.dart';
 import '../../services/screen_brightness_control.dart';
 import '../../services/watch_party.dart';
+import '../../services/watch_party_invites.dart';
+import '../../widgets/global/watch_party_invite_banner.dart'
+    show watchPartyInviteFailure;
 import 'chrome_auto_hide.dart';
 import 'display_cutouts.dart';
+import 'resume_point.dart';
 import 'video_display_mode.dart';
 import '../../tv/nav/onyx_dpad.dart' show TvNavScope;
 import '../../tv/nav/tv_back.dart';
@@ -41,6 +48,7 @@ import 'hooks/use_player_popup.dart';
 import 'hooks/use_player_stats.dart';
 import 'hooks/use_player_tabs.dart';
 import 'hooks/use_player_watch_party.dart';
+import 'hooks/use_player_invite.dart';
 import 'hooks/use_pause_info.dart';
 import 'hooks/use_window_focus.dart';
 import 'widgets/desktop_pip_overlay.dart';
@@ -50,6 +58,7 @@ import 'widgets/next_episode_page.dart';
 import 'widgets/next_season_overlay.dart';
 import 'widgets/language_gap_overlay.dart';
 import 'widgets/upcoming_episode_overlay.dart';
+import 'widgets/onyx/onyx_chrome_theme.dart';
 import 'widgets/onyx/onyx_controls_layer.dart';
 import 'widgets/onyx/onyx_settings_menu.dart';
 import 'widgets/onyx/onyx_tabs.dart';
@@ -68,6 +77,7 @@ import 'widgets/tabs/player_info_tab.dart';
 import 'widgets/tabs/player_stats_tab.dart';
 import 'widgets/tabs/player_watch_party_tab.dart';
 import 'widgets/watch_party_overlay.dart';
+import 'widgets/player_invite_overlay.dart';
 import 'playback/live_subtitles.dart';
 import 'playback/relay_trigger.dart';
 import 'playback/remote_seek.dart';
@@ -124,8 +134,8 @@ class PlayerScreen extends StatefulWidget {
 
 class _PlayerScreenState extends State<PlayerScreen> {
   late final PlayerController _playerController;
-  late final PlayerMediaInfo _info =
-      PlayerMediaInfo(widget.media as Object, seasonNumber: widget.seasonNumber);
+  late final PlayerMediaInfo _info = PlayerMediaInfo(widget.media as Object,
+      seasonNumber: widget.seasonNumber);
   EpisodeNavigationController? _episodeNav;
   late final EpisodesPanelController _episodesPanel;
 
@@ -139,7 +149,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _nextEpisodePageWasVisible = false;
   late final PlaybackHandoffWatch _handoff;
   late final PlayerWatchParty _party;
+  late final PlayerInviteWatch _invite;
   late final PauseInfoWatch _pauseInfo = _createPauseInfo();
+
   /// L'écran natif d'Apple TV, ou null là où l'interface Onyx reste seule.
   final GestureHints _hints = GestureHints();
   late final WindowFocusWatch _windowFocus =
@@ -243,6 +255,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
   final GlobalKey _timelineAnchorKey = GlobalKey();
 
   final FocusNode _keyboardFocusNode = FocusNode(debugLabel: 'player');
+
+  /// Le volume demandé par une touche ou la molette, montré par le curseur
+  /// tant que le moteur ne l'a pas rattrapé.
+  ///
+  /// Le volume du moteur n'est pas un flux : sans cela le curseur attendait le
+  /// prochain rafraîchissement de l'écran pour bouger, et deux crans de molette
+  /// rapprochés repartaient tous deux de l'ancienne valeur.
+  final OptimisticVolume _volumeShown = OptimisticVolume();
 
   /// The control the remote is handed when it enters the control bar.
   ///
@@ -383,11 +403,22 @@ class _PlayerScreenState extends State<PlayerScreen> {
       setWantsPlayback: (wanted) => _wantsPlayback = wanted,
       openMedia: (media, {required resumeAtSeconds, required startPaused}) =>
           _navigateToEpisode(
-            media,
-            fromParty: true,
-            resumeAtSeconds: resumeAtSeconds,
-            startPaused: startPaused,
-          ),
+        media,
+        fromParty: true,
+        resumeAtSeconds: resumeAtSeconds,
+        startPaused: startPaused,
+      ),
+    )
+      ..addListener(_rebuild)
+      ..listen();
+    _invite = PlayerInviteWatch(
+      join: (invite) async {
+        final inbox = WatchPartyInviteInbox.instance;
+        if (inbox != null) await _party.joinInvite(invite, inbox);
+      },
+      isGone: () => _isLeaving || _isDisposing || !mounted,
+      restoreFocus: _restoreFocusAfterInvite,
+      showFailure: (e) => _party.showNotice(watchPartyInviteFailure(e)),
     )
       ..addListener(_rebuild)
       ..listen();
@@ -425,7 +456,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
       isPlaying: () => _playerController.isPlaying,
     );
     _init().catchError((Object error) {
-      debugPrint('Player initialization failed: ${redactPlaybackDiagnostic(error)}');
+      debugPrint(
+          'Player initialization failed: ${redactPlaybackDiagnostic(error)}');
       _safeSetState(() => _startupStalled = true);
     });
   }
@@ -456,6 +488,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     SleepTimer.instance.release();
     StillWatching.instance.release();
     _party.dispose();
+    _invite.dispose();
     _keyboardFocusNode.dispose();
     _playPauseFocusNode.dispose();
     _progressFocusNode.dispose();
@@ -516,177 +549,184 @@ class _PlayerScreenState extends State<PlayerScreen> {
         },
         child: Scaffold(
           backgroundColor: Colors.black,
-          body: MouseRegion(
-            cursor:
-                _shouldHideCursor ? SystemMouseCursors.none : MouseCursor.defer,
-            onHover: (event) => _handlePointerHover(),
-            child: Stack(
-              children: [
-                PlayerVideoStage(
-                  scale: _videoScale,
-                  alignment: _videoAlignment,
-                  // Le widget de rendu appartient au moteur : mpv
-                  // dessine dans une texture, ExoPlayer dans une
-                  // SurfaceView composée par le plan vidéo de l'écran.
+          body: Listener(
+            onPointerSignal: _handlePointerSignal,
+            child: MouseRegion(
+              cursor: _shouldHideCursor
+                  ? SystemMouseCursors.none
+                  : MouseCursor.defer,
+              onHover: (event) => _handlePointerHover(),
+              child: Stack(
+                children: [
+                  PlayerVideoStage(
+                    scale: _videoScale,
+                    alignment: _videoAlignment,
+                    // Le widget de rendu appartient au moteur : mpv
+                    // dessine dans une texture, ExoPlayer dans une
+                    // SurfaceView composée par le plan vidéo de l'écran.
+                    //
+                    // Retiré dès qu'on s'en va. Une SurfaceView est une
+                    // couche du système : Flutter ne peut pas l'emmener
+                    // dans son animation de sortie, et elle y restait
+                    // figée sur sa dernière image pendant que le reste
+                    // glissait. Du noir s'anime, lui.
+                    child: _isLeaving
+                        ? const ColoredBox(color: Colors.black)
+                        // Les sous-titres d'une session HLS sont peints
+                        // ici, pour tous les moteurs — voir ADR-0031.
+                        : LiveSubtitleLayer(
+                            feed: _playerController.liveSubtitles,
+                            child: _playerController.session.buildSurface(
+                              fit: _displayMode.fit,
+                              aspectRatio: _playerController.videoAspectRatio,
+                              activeArea:
+                                  _playerController.mediaTracks?.activeArea,
+                            ),
+                          ),
+                  ),
+                  // Everything above the picture, and only when there is room
+                  // for it.
                   //
-                  // Retiré dès qu'on s'en va. Une SurfaceView est une
-                  // couche du système : Flutter ne peut pas l'emmener
-                  // dans son animation de sortie, et elle y restait
-                  // figée sur sa dernière image pendant que le reste
-                  // glissait. Du noir s'anime, lui.
-                  child: _isLeaving
-                      ? const ColoredBox(color: Colors.black)
-                      // Les sous-titres d'une session HLS sont peints
-                      // ici, pour tous les moteurs — voir ADR-0031.
-                      : LiveSubtitleLayer(
-                          feed: _playerController.liveSubtitles,
-                          child: _playerController.session.buildSurface(
-                            fit: _displayMode.fit,
-                            aspectRatio: _playerController.videoAspectRatio,
-                            activeArea: _playerController
-                                .mediaTracks?.activeArea,
+                  // In the system's little window there is none: no chrome, no
+                  // gestures, no overlays — the picture and the sound, which is
+                  // what the window is for. Written as one spread rather than a
+                  // separate tree so the video widget keeps its place in the
+                  // list: rebuilding it there would tear down the platform view
+                  // and re-attach the surface, which is a blink in the corner of
+                  // the home screen for nothing.
+                  if (!_inPip && !_inDesktopPip) ...[
+                    // Dimming scrim for a session rebuild. It sits here — directly
+                    // above the video and BELOW the controls — so it veils the
+                    // stale frame without also greying out the buttons the user
+                    // needs while loading. The spinner itself stays at the top of
+                    // the stack.
+                    if (_playerController.isSwitchingQuality)
+                      const Positioned.fill(
+                        child: IgnorePointer(
+                          child: ColoredBox(color: Colors.black54),
+                        ),
+                      ),
+                    // Start-up cover. Same place as the scrim above — over the
+                    // video, under the controls — so the back button and the title
+                    // stay usable while the stream opens.
+                    //
+                    // It is held until the decoder has produced a frame of *this*
+                    // media, not until startPlayback() returns. The engine texture
+                    // is pooled and still shows the previous title until then, and
+                    // between the two the picture was either that stale frame or
+                    // black with nothing on it.
+                    if (!_playerController.hasFirstFrame)
+                      const Positioned.fill(
+                        child: IgnorePointer(
+                          child: ColoredBox(color: Colors.black),
+                        ),
+                      ),
+                    Positioned.fill(
+                      child: PlayerTapZones(
+                        // Only where two fingers can reach the picture: a
+                        // television is driven by a remote and a desktop by a
+                        // mouse, and neither can produce this gesture.
+                        pinch: _handheld ? _pinch : null,
+                        onPinchZoom: _applyPinchZoom,
+                        doubleTapTogglesFullscreen: _doubleTapTogglesFullscreen,
+                        onDoubleTapFullscreen: _handleDoubleTapFullscreen,
+                        onDoubleTapSeek: _handleDoubleTapSeek,
+                        onSideTap: _handleSideZoneTap,
+                        onCenterTap: () =>
+                            _handleVideoTap(togglePlayback: true),
+                        onWindowDrag:
+                            _windowDragEnabled ? _startWindowDrag : null,
+                      ),
+                    ),
+                    if (_hints.seekMounted)
+                      Positioned.fill(
+                        child: SeekFeedbackOverlay(
+                          forward: _hints.seekForward,
+                          seconds: _hints.seekSeconds,
+                          pulse: _hints.seekPulse,
+                          visible: _hints.seekVisible,
+                        ),
+                      ),
+                    if (_hints.zoomMounted)
+                      Positioned.fill(
+                        child: VideoZoomHint(
+                          mode: _hints.zoomMode,
+                          visible: _hints.zoomVisible,
+                        ),
+                      ),
+                    PlayerTvScale.layer(isTv: isTv, child: _buildChrome(isTv)),
+                    if (_buildPauseInfo(isTv) case final pauseInfo?) pauseInfo,
+                    ..._buildOverChrome(isTv),
+                    // Start-up spinner. IgnorePointer like the one below: loading is
+                    // exactly when the user may want to go back, so the cover must
+                    // never eat taps meant for the chrome.
+                    //
+                    // Past the deadline it stops being a spinner and starts being a
+                    // question, which does take input — there is a button on it.
+                    if (!_playerController.hasFirstFrame)
+                      if (_startupStalled)
+                        Positioned.fill(
+                          child: StalledStartup(
+                            failure: _playerController.startupFailure,
+                            onRetry: _retryPlayback,
+                            onBack: _leavePlayer,
+                          ),
+                        )
+                      else
+                        _buildLoadingRing(isTv),
+                    // Les fenêtres de question sont à l'échelle du lecteur, comme
+                    // le chrome : voir [PlayerTvScale].
+                    if (_handoff.handedOffTo != null)
+                      PlayerTvScale.layer(
+                        isTv: isTv,
+                        child: Positioned.fill(
+                          child: PlayingElsewhere(
+                            deviceName: _handoff.handedOffTo!,
+                            busy: _handoff.resumingHere,
+                            onResume: _handoff.resumeHere,
+                            onBack: _leavePlayer,
                           ),
                         ),
-                ),
-                // Everything above the picture, and only when there is room
-                // for it.
-                //
-                // In the system's little window there is none: no chrome, no
-                // gestures, no overlays — the picture and the sound, which is
-                // what the window is for. Written as one spread rather than a
-                // separate tree so the video widget keeps its place in the
-                // list: rebuilding it there would tear down the platform view
-                // and re-attach the surface, which is a blink in the corner of
-                // the home screen for nothing.
-                if (!_inPip && !_inDesktopPip) ...[
-                // Dimming scrim for a session rebuild. It sits here — directly
-                // above the video and BELOW the controls — so it veils the
-                // stale frame without also greying out the buttons the user
-                // needs while loading. The spinner itself stays at the top of
-                // the stack.
-                if (_playerController.isSwitchingQuality)
-                  const Positioned.fill(
-                    child: IgnorePointer(
-                      child: ColoredBox(color: Colors.black54),
-                    ),
-                  ),
-                // Start-up cover. Same place as the scrim above — over the
-                // video, under the controls — so the back button and the title
-                // stay usable while the stream opens.
-                //
-                // It is held until the decoder has produced a frame of *this*
-                // media, not until startPlayback() returns. The engine texture
-                // is pooled and still shows the previous title until then, and
-                // between the two the picture was either that stale frame or
-                // black with nothing on it.
-                if (!_playerController.hasFirstFrame)
-                  const Positioned.fill(
-                    child: IgnorePointer(
-                      child: ColoredBox(color: Colors.black),
-                    ),
-                  ),
-                Positioned.fill(
-                  child: PlayerTapZones(
-                    // Only where two fingers can reach the picture: a
-                    // television is driven by a remote and a desktop by a
-                    // mouse, and neither can produce this gesture.
-                    pinch: _handheld ? _pinch : null,
-                    onPinchZoom: _applyPinchZoom,
-                    doubleTapTogglesFullscreen: _doubleTapTogglesFullscreen,
-                    onDoubleTapFullscreen: _handleDoubleTapFullscreen,
-                    onDoubleTapSeek: _handleDoubleTapSeek,
-                    onSideTap: _handleSideZoneTap,
-                    onCenterTap: () => _handleVideoTap(togglePlayback: true),
-                    onWindowDrag: _windowDragEnabled ? _startWindowDrag : null,
-                  ),
-                ),
-                if (_hints.seekMounted)
-                  Positioned.fill(
-                    child: SeekFeedbackOverlay(
-                      forward: _hints.seekForward,
-                      seconds: _hints.seekSeconds,
-                      pulse: _hints.seekPulse,
-                      visible: _hints.seekVisible,
-                    ),
-                  ),
-                if (_hints.zoomMounted)
-                  Positioned.fill(
-                    child: VideoZoomHint(
-                      mode: _hints.zoomMode,
-                      visible: _hints.zoomVisible,
-                    ),
-                  ),
-                PlayerTvScale.layer(isTv: isTv, child: _buildChrome(isTv)),
-                if (_buildPauseInfo(isTv) case final pauseInfo?) pauseInfo,
-                ..._buildOverChrome(isTv),
-                // Start-up spinner. IgnorePointer like the one below: loading is
-                // exactly when the user may want to go back, so the cover must
-                // never eat taps meant for the chrome.
-                //
-                // Past the deadline it stops being a spinner and starts being a
-                // question, which does take input — there is a button on it.
-                if (!_playerController.hasFirstFrame)
-                  if (_startupStalled)
+                      ),
+                    if (_playerController.isSwitchingQuality ||
+                        (_playerController.isBuffering && _isInitialized))
+                      _buildLoadingRing(isTv),
+                    if (_stillWatchingAsked)
+                      PlayerTvScale.layer(
+                        isTv: isTv,
+                        child: Positioned.fill(
+                          child: StillWatchingPrompt(
+                            onContinue: _confirmStillWatching,
+                            onLeave: _leavePlayer,
+                          ),
+                        ),
+                      ),
+                    // En dernier, donc au-dessus de tout : rien de ce qui précède
+                    // ne doit pouvoir prendre un doigt tant que l'écran est
+                    // verrouillé.
+                    if (_screenLocked)
+                      Positioned.fill(
+                        child: PlayerScreenLock(
+                          key: _screenLockKey,
+                          onUnlock: _unlockScreen,
+                        ),
+                      ),
+                  ],
+                  // Dans la petite fenêtre d'ordinateur : l'image reste
+                  // cliquable (pause, retour, déplacement), sans le chrome.
+                  if (_inDesktopPip)
                     Positioned.fill(
-                      child: StalledStartup(
-                        failure: _playerController.startupFailure,
-                        onRetry: _retryPlayback,
-                        onBack: _leavePlayer,
-                      ),
-                    )
-                  else
-                    const PlayerLoadingSpinner(),
-                // Les fenêtres de question sont à l'échelle du lecteur, comme
-                // le chrome : voir [PlayerTvScale].
-                if (_handoff.handedOffTo != null)
-                  PlayerTvScale.layer(
-                    isTv: isTv,
-                    child: Positioned.fill(
-                      child: PlayingElsewhere(
-                        deviceName: _handoff.handedOffTo!,
-                        busy: _handoff.resumingHere,
-                        onResume: _handoff.resumeHere,
-                        onBack: _leavePlayer,
+                      child: DesktopPipOverlay(
+                        playing: _playerController.isPlaying,
+                        onTogglePlayback: _togglePlayPause,
+                        onSeek: _seekRelative,
+                        onRestore: () =>
+                            unawaited(DesktopPictureInPicture.exit()),
+                        onDrag: _startWindowDrag,
                       ),
                     ),
-                  ),
-                if (_playerController.isSwitchingQuality ||
-                    (_playerController.isBuffering && _isInitialized))
-                  const PlayerLoadingSpinner(),
-                if (_stillWatchingAsked)
-                  PlayerTvScale.layer(
-                    isTv: isTv,
-                    child: Positioned.fill(
-                      child: StillWatchingPrompt(
-                        onContinue: _confirmStillWatching,
-                        onLeave: _leavePlayer,
-                      ),
-                    ),
-                  ),
-                // En dernier, donc au-dessus de tout : rien de ce qui précède
-                // ne doit pouvoir prendre un doigt tant que l'écran est
-                // verrouillé.
-                if (_screenLocked)
-                  Positioned.fill(
-                    child: PlayerScreenLock(
-                      key: _screenLockKey,
-                      onUnlock: _unlockScreen,
-                    ),
-                  ),
                 ],
-                // Dans la petite fenêtre d'ordinateur : l'image reste
-                // cliquable (pause, retour, déplacement), sans le chrome.
-                if (_inDesktopPip)
-                  Positioned.fill(
-                    child: DesktopPipOverlay(
-                      playing: _playerController.isPlaying,
-                      onTogglePlayback: _togglePlayPause,
-                      onSeek: _seekRelative,
-                      onRestore: () => unawaited(DesktopPictureInPicture.exit()),
-                      onDrag: _startWindowDrag,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),

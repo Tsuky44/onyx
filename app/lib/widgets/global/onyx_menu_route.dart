@@ -14,12 +14,20 @@ export 'onyx_panel_surface.dart' show OnyxMenuPlacement;
 ///
 /// [OnyxMenuButton] l'appelle ; un déclencheur qui ne peut pas être un
 /// `OnyxMenuButton` (un clic droit, un raccourci) peut l'appeler lui-même.
+/// L'ancre est [anchorKey], ou [anchorContext] pour un bouton qui n'a que son
+/// contexte (un `Builder` autour de lui) : l'un des deux.
 Future<({T value})?> showOnyxMenu<T>({
   required BuildContext context,
-  required GlobalKey anchorKey,
+  GlobalKey? anchorKey,
+  BuildContext? anchorContext,
   required List<OnyxMenuItem<T>> items,
 }) async {
-  final box = anchorKey.currentContext?.findRenderObject() as RenderBox?;
+  assert((anchorKey == null) != (anchorContext == null),
+      'Une ancre : anchorKey ou anchorContext, l’une des deux.');
+  final anchorAt = anchorContext ?? anchorKey?.currentContext;
+  final box = anchorAt != null && anchorAt.mounted
+      ? anchorAt.findRenderObject() as RenderBox?
+      : null;
   final navigator = Navigator.of(context, rootNavigator: true);
   final overlay = navigator.overlay?.context.findRenderObject() as RenderBox?;
   if (box == null || !box.attached || !box.hasSize || overlay == null) {

@@ -33,7 +33,11 @@ echo -e "${YELLOW}1. Build du bundle Flutter Web...${NC}"
 # n'active la nouvelle qu'au chargement d'apres. Un client de serveur media
 # auto-heberge n'a aucun besoin de fonctionner hors ligne. Flutter le declare
 # lui-meme deprecie.
-(cd "$APP_DIR" && flutter build web --release --no-web-resources-cdn --pwa-strategy=none)
+# --wasm produit un build WasmGC/skwasm (rendu multi-thread, bien plus fluide que
+# CanvasKit en JS) ET la version JS de repli : le chargeur de Flutter choisit au
+# demarrage selon la prise en charge de WasmGC par le navigateur. Les navigateurs
+# sans WasmGC (webOS, Safari ancien) gardent donc CanvasKit. Voir ADR-0152.
+(cd "$APP_DIR" && flutter build web --wasm --release --no-web-resources-cdn --pwa-strategy=none)
 
 echo -e "${YELLOW}2. Copie vers server/webui/dist/...${NC}"
 # Wipe everything but the placeholder, so files removed by a Flutter upgrade
@@ -46,15 +50,12 @@ echo -e "${YELLOW}3. Nettoyage des artefacts inutilises...${NC}"
 # par un navigateur, plusieurs Mo chacune, et elles finiraient dans le binaire.
 find "$DIST_DIR" -name '*.symbols' -delete
 
-# skwasm / wimp ne sont charges que par un build WasmGC (`flutter build web
-# --wasm`). Ce projet ne peut pas en faire un : flutter_secure_storage_web
-# depend de dart:html, que WasmGC ne supporte pas. Ces ~17 Mo seraient donc
-# embarques dans le binaire sans qu'aucun navigateur ne les demande jamais.
-# Idem pour experimental_webparagraph, non selectionne par defaut.
+# skwasm / wimp sont maintenant necessaires : ils servent le build WasmGC
+# (flutter_secure_storage_web 2.x n'utilise plus dart:html, plus rien ne bloque
+# --wasm). On ne retire que experimental_webparagraph, non selectionne par defaut.
 #
-# Ce qui reste est necessaire : canvaskit/chromium/ sert Chrome et Edge,
-# canvaskit/canvaskit.wasm sert Safari et Firefox.
-find "$DIST_DIR/canvaskit" \( -name 'skwasm*' -o -name 'wimp*' \) -delete
+# canvaskit/chromium/ et canvaskit/canvaskit.wasm restent : ils servent le repli
+# JS (Chrome/Edge sans WasmGC, Safari, Firefox, webOS).
 rm -rf "$DIST_DIR/canvaskit/experimental_webparagraph"
 
 echo -e "${YELLOW}4. Service worker d'auto-désinstallation...${NC}"
@@ -93,7 +94,7 @@ echo -e "${YELLOW}5. Pré-compression gzip des assets texte...${NC}"
 # encore besoin.
 find "$DIST_DIR" \
     \( -name '*.js' -o -name '*.json' -o -name '*.html' \
-    -o -name '*.css' -o -name '*.wasm' \) \
+    -o -name '*.css' -o -name '*.wasm' -o -name '*.mjs' \) \
     -size +1k -exec gzip -9 -k -f {} \;
 
 RAW_SIZE=$(du -sh "$DIST_DIR" | cut -f1)

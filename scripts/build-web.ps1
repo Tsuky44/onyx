@@ -24,7 +24,8 @@ Write-Host "1. Build du bundle Flutter Web..." -ForegroundColor Yellow
 # et sans signaler chaque visiteur à un tiers.
 Push-Location $AppDir
 try {
-    flutter build web --release --no-web-resources-cdn
+    # --wasm : build WasmGC/skwasm + repli JS (webOS, navigateurs sans WasmGC). ADR-0152.
+    flutter build web --wasm --release --no-web-resources-cdn
     if ($LASTEXITCODE -ne 0) { throw "flutter build web a échoué" }
 }
 finally {
@@ -45,23 +46,17 @@ Write-Host "3. Nettoyage des artefacts inutilisés..." -ForegroundColor Yellow
 # par un navigateur, plusieurs Mo chacune, et elles finiraient dans le binaire.
 Get-ChildItem -Path $DistDir -Recurse -File -Filter "*.symbols" | Remove-Item -Force
 
-# skwasm / wimp ne sont chargés que par un build WasmGC, impossible ici
-# (flutter_secure_storage_web dépend de dart:html). ~17 Mo qu'aucun navigateur
-# ne demandera jamais. Idem pour experimental_webparagraph.
+# skwasm / wimp servent le build WasmGC : on les garde. Seul
+# experimental_webparagraph, non sélectionné par défaut, est retiré.
 $canvasKit = Join-Path $DistDir "canvaskit"
-if (Test-Path $canvasKit) {
-    Get-ChildItem -Path $canvasKit -Recurse -File |
-        Where-Object { $_.Name -like "skwasm*" -or $_.Name -like "wimp*" } |
-        Remove-Item -Force
-    $webParagraph = Join-Path $canvasKit "experimental_webparagraph"
-    if (Test-Path $webParagraph) { Remove-Item $webParagraph -Recurse -Force }
-}
+$webParagraph = Join-Path $canvasKit "experimental_webparagraph"
+if (Test-Path $webParagraph) { Remove-Item $webParagraph -Recurse -Force }
 
 Write-Host "4. Pré-compression gzip des assets texte..." -ForegroundColor Yellow
 # Pré-compresser au build veut dire que le serveur n'y dépense aucun CPU. On
 # garde l'original : les clients qui n'envoient pas Accept-Encoding en ont
 # encore besoin.
-$compressible = @(".js", ".json", ".html", ".css", ".wasm")
+$compressible = @(".js", ".mjs", ".json", ".html", ".css", ".wasm")
 Get-ChildItem -Path $DistDir -Recurse -File |
     Where-Object { $compressible -contains $_.Extension -and $_.Length -gt 1KB } |
     ForEach-Object {

@@ -1,41 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../navigation/shell_navigator.dart';
 import '../../providers/library_provider.dart';
-import '../../providers/search_provider.dart';
-import '../../screens/library/search_results_screen.dart';
 import '../../screens/search/tv_search_screen.dart';
 import '../../screens/search/tv_system_search_screen.dart';
 import '../../services/tv_system_search.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_motion.dart';
-import '../../tv/tv_deferred_keyboard.dart';
+import '../../navigation/shell_navigator.dart';
 import '../../tv/tv_focus.dart';
 import '../../tv/tv_mode.dart';
-import 'glass_chrome.dart';
 import 'tv_tab_bar.dart';
-import 'search_results_route.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 
-/// La recherche du catalogue dans la barre du téléphone et du téléviseur.
-///
-/// Dès le premier caractère tapé, la page de résultats s'ouvre
-/// ([SearchResultsScreen]) : une grille d'affiches en pleine page, avec son
-/// propre champ, où la frappe continue. La liste déroulante sous le champ a
-/// disparu — elle montrait huit titres dans une fenêtre étroite, et il
-/// fallait un clic de plus pour voir le reste.
+/// La porte de la recherche du catalogue sur téléviseur : l'écran de
+/// recherche du système (Apple TV) ou celui de l'app ([TvSearchScreen]).
 ///
 /// Le bureau a la sienne, dans son en-tête (`DesktopHeaderSearch`,
-/// ADR-0139).
+/// ADR-0139) ; le téléphone le rond de sa barre d'onglets, qui s'étire en
+/// bulle au-dessus de la page de recherche (`PhoneSearchSession`, ADR-0142
+/// et ADR-0145). Hors d'un téléviseur, elle ne dessine rien.
 class GlassCatalogSearch extends StatefulWidget {
-  final bool expandInline;
+  /// La largeur du champ d'un téléviseur, hors de la pilule des onglets.
   final double collapsedWidth;
-  final double expandedWidth;
 
-  /// When true, the idle state is a circular search icon instead of a field.
+  /// Sur téléviseur, le repos est une loupe ronde plutôt qu'un champ.
   final bool compactTrigger;
 
   /// Sur téléviseur, la recherche est une entrée de la pilule des onglets
@@ -44,9 +33,7 @@ class GlassCatalogSearch extends StatefulWidget {
 
   const GlassCatalogSearch({
     super.key,
-    this.expandInline = true,
     this.collapsedWidth = 180,
-    this.expandedWidth = 300,
     this.compactTrigger = false,
     this.tabBarTrigger = false,
   });
@@ -56,23 +43,12 @@ class GlassCatalogSearch extends StatefulWidget {
 }
 
 class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
-  final _controller = TextEditingController();
-  final _focusNode = FocusNode();
   final FocusNode _tvSearchNode =
       FocusNode(debugLabel: 'tv-search-header-button');
-
-  /// La page de résultats ouverte par la frappe, tant qu'elle est dans la pile.
-  Route<void>? _resultsRoute;
-
-  /// La page sur laquelle on était quand la frappe a ouvert les résultats :
-  /// celle où l'on revient quand la recherche s'efface.
-  Route<dynamic>? _routeBeforeResults;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() => setState(() {}));
-    _focusNode.addListener(_onFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<LibraryProvider>().ensureCatalogLoaded();
     });
@@ -80,93 +56,8 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChanged);
-    _controller.dispose();
-    _focusNode.dispose();
     _tvSearchNode.dispose();
     super.dispose();
-  }
-
-  void _onFocusChanged() {
-    context.read<SearchProvider>().setExpanded(_focusNode.hasFocus);
-  }
-
-  void _onQueryChanged(String value) {
-    if (value.trim().isNotEmpty) _openResults(value);
-  }
-
-  /// Ouvre la page de résultats, ou y ramène si elle est déjà dans la pile.
-  void _openResults(String typed) {
-    final navigator = shellNavigatorOf(context);
-    final open = _resultsRoute;
-    if (open != null && open.isActive) {
-      // Une fiche ouverte depuis les résultats les recouvre : reprendre la
-      // frappe y ramène, au lieu de filtrer une grille qu'on ne voit pas.
-      if (!open.isCurrent) navigator.popUntil((route) => route == open);
-      return;
-    }
-
-    // La frappe passe au champ de la page. Celui-ci se vide avant : un
-    // caractère arrivé avant que la page ne prenne le focus y resterait, et
-    // on le retrouverait au retour. Le clavier, lui, reste ouvert — le
-    // refermer ici le ferait clignoter sous le doigt.
-    _controller.clear();
-    context.read<SearchProvider>().clear();
-
-    // Un prédicat vrai d'emblée ne retire rien : il donne la page du dessus.
-    navigator.popUntil((route) {
-      _routeBeforeResults = route;
-      return true;
-    });
-
-    final route = SearchResultsRoute<void>(
-      builder: (_) => SearchResultsScreen(
-        query: typed,
-        autofocusField: true,
-        closesWhenEmptied: true,
-      ),
-    );
-    _resultsRoute = route;
-    navigator.push(route).whenComplete(() {
-      if (!identical(_resultsRoute, route)) return;
-      _resultsRoute = null;
-      _routeBeforeResults = null;
-    });
-  }
-
-  /// Referme les résultats et rend la page sur laquelle on était avant de
-  /// chercher, fiches ouvertes depuis les résultats comprises.
-  void _closeResults() {
-    final route = _resultsRoute;
-    final before = _routeBeforeResults;
-    _resultsRoute = null;
-    _routeBeforeResults = null;
-    if (route == null || !route.isActive) return;
-    final navigator = route.navigator!;
-    if (route.isCurrent) {
-      navigator.pop();
-      return;
-    }
-    // Une fiche recouvre les résultats. Ils partent d'abord de dessous, sans
-    // se voir ; puis la fiche se referme par son propre geste, sur la page
-    // d'avant — au lieu de deux pages qui s'effacent l'une sur l'autre.
-    navigator.removeRoute(route);
-    navigator.popUntil(
-      (r) => (before != null && before.isActive) ? r == before : r.isFirst,
-    );
-  }
-
-  void _resetField() {
-    _controller.clear();
-    context.read<SearchProvider>().clear();
-    _focusNode.unfocus();
-    SystemChannels.textInput.invokeMethod('TextInput.hide');
-  }
-
-  /// La croix du champ : referme la recherche et rend la page d'avant.
-  void _clear() {
-    _closeResults();
-    _resetField();
   }
 
   Future<void> _openTvSearch(BuildContext context) async {
@@ -272,54 +163,6 @@ class _GlassCatalogSearchState extends State<GlassCatalogSearch> {
       );
     }
 
-    final search = context.watch<SearchProvider>();
-    final expanded =
-        widget.expandInline && (search.isExpanded || search.isActive);
-    final showField = !widget.compactTrigger || expanded;
-    final width = showField
-        ? (expanded ? widget.expandedWidth : widget.collapsedWidth)
-        : 40.0;
-
-    if (widget.compactTrigger && !showField) {
-      return GlassIconButton(
-        size: 40,
-        onTap: () {
-          context.read<SearchProvider>().setExpanded(true);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _focusNode.requestFocus();
-              SystemChannels.textInput.invokeMethod('TextInput.show');
-            }
-          });
-        },
-        child: Icon(
-          AppIcons.search,
-          size: 20,
-          color: AppColors.textPrimary.withValues(alpha: 0.92),
-        ),
-      );
-    }
-
-    return TvDeferredKeyboard(
-      fieldFocusNode: _focusNode,
-      borderRadius: BorderRadius.circular(17),
-      builder: (context, focusNode, canRequestFocus) => AnimatedContainer(
-        duration: AppMotion.move(context),
-        curve: AppMotion.curve,
-        width: width,
-        child: GlassSearchInput(
-          controller: _controller,
-          focusNode: _focusNode,
-          canRequestFocus: canRequestFocus,
-          onChanged: _onQueryChanged,
-          // Entrée ramène aux résultats quand une fiche les recouvre.
-          onSubmitted: _onQueryChanged,
-          onClear: _clear,
-          hint: expanded ? tr('Titre, film, série…') : tr('Rechercher'),
-          focused: _focusNode.hasFocus,
-          hasText: _controller.text.isNotEmpty,
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }

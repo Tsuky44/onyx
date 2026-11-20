@@ -22,7 +22,15 @@ Future<void> showJoinWatchPartyDialog(
     builder: (_) => _JoinWatchPartyDialog(authProvider: authProvider),
   );
   if (session == null || !context.mounted) return;
+  await openJoinedWatchParty(context, session);
+}
 
+/// Ouvre le lecteur sur la séance qu'on vient de rejoindre, là où en sont les
+/// autres : par le code, ou par une invitation (ADR-0148).
+Future<void> openJoinedWatchParty(
+  BuildContext context,
+  WatchPartySession session,
+) async {
   final snapshot = session.snapshot;
   final media = snapshot.media;
   if (media == null) {

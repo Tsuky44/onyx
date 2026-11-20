@@ -16,15 +16,18 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
 # ------------------------------------------------------------------------------
-function(download_and_verify url md5 locationForArchive)
+# Onyx : l'algorithme d'empreinte est un paramètre. Le libmpv s'épingle en
+# SHA-256, l'empreinte que GitHub publie à côté de chaque asset de release de
+# mpv : un changement de version se vérifie sur la page, sans recalcul.
+function(download_and_verify url algo hash locationForArchive)
   # Check if the archive exists.
   if(EXISTS "${locationForArchive}")
-    file(MD5 "${locationForArchive}" ARCHIVE_MD5)
+    file(${algo} "${locationForArchive}" ARCHIVE_HASH)
 
-    # If MD5 doesn't match, delete the archive to download again.
-    if(NOT md5 STREQUAL ARCHIVE_MD5)
+    # If the hash doesn't match, delete the archive to download again.
+    if(NOT hash STREQUAL ARCHIVE_HASH)
       file(REMOVE "${locationForArchive}")
-      message(STATUS "MD5 mismatch. File deleted.")
+      message(STATUS "${algo} mismatch. File deleted.")
     endif()
   endif()
 
@@ -34,10 +37,10 @@ function(download_and_verify url md5 locationForArchive)
     file(DOWNLOAD "${url}" "${locationForArchive}")
     message(STATUS "Downloaded archive to ${locationForArchive}.")
 
-    # Verify MD5 of the newly downloaded file.
-    file(MD5 "${locationForArchive}" ARCHIVE_MD5)
+    # Verify the hash of the newly downloaded file.
+    file(${algo} "${locationForArchive}" ARCHIVE_HASH)
 
-    if(md5 STREQUAL ARCHIVE_MD5)
+    if(hash STREQUAL ARCHIVE_HASH)
       message(STATUS "${locationForArchive} Verification successful.")
     else()
       message(FATAL_ERROR "${locationForArchive} Integrity check failed, please try to re-build project again.")
@@ -65,21 +68,21 @@ endfunction()
 
 # libmpv archive containing the pre-built shared libraries & headers.
 #
-# Onyx : le build de shinchiro plutôt que libmpv-win32-video-build. Celui de
-# media_kit compile FFmpeg avec une liste blanche de décodeurs sans TrueHD — la
-# piste était listée, sélectionnable et muette. Celui-ci embarque un FFmpeg
-# complet. SourceForge garde les anciennes archives, donc l'URL épinglée ne
-# disparaît pas (les releases GitHub de zhongfly, elles, tournent sur ~40).
-set(LIBMPV "mpv-dev-x86_64-20260830-git-e8673660ab.7z")
+# Onyx : le libmpv officiel de mpv, variante LGPL (ADR-0158, phase 1). Depuis la
+# 0.42.0, mpv publie avec chaque release une libmpv Windows, signée (PGP, clé de
+# Kacper Michajłow) : en-têtes, libmpv-2.dll et la bibliothèque d'import
+# libmpv.dll.a que lie media_kit_video. Son FFmpeg est celui de BtbN, variante
+# « lgpl » (--enable-version3) : l'ensemble est sous LGPLv3. Il a tout ce que le
+# build de shinchiro apportait (TrueHD, DTS, E-AC-3, libass, libplacebo, libcurl
+# pour le relais de l'ADR-0036), ce que check_libmpv.ps1 vérifie plus bas.
+# Une release GitHub de mpv ne tourne pas : l'URL épinglée reste.
+set(LIBMPV_VERSION "v0.42.0")
+set(LIBMPV "libmpv-${LIBMPV_VERSION}-x86_64-w64-mingw32-lgpl.zip")
 
-# Download URL & MD5 hash of the libmpv archive.
-set(LIBMPV_URL "https://downloads.sourceforge.net/project/mpv-player-windows/libmpv/${LIBMPV}")
-set(LIBMPV_MD5 "3acdcd86e237cd2bbfbbeb8d2745358a")
-
-# MD5 of libmpv-2.dll inside that archive, and once patched by patch_libmpv.ps1
-# so that mpv keeps D3D11-decoded frames on the GPU (see that script).
-set(LIBMPV_DLL_MD5 "af0ae02f511d8cbbebb1079113743524")
-set(LIBMPV_PATCHED_MD5 "9dfea39217b3f282070b2eed6d1186e6")
+# Download URL & SHA-256 of the libmpv archive (the digest GitHub shows for the
+# release asset).
+set(LIBMPV_URL "https://github.com/mpv-player/mpv/releases/download/${LIBMPV_VERSION}/${LIBMPV}")
+set(LIBMPV_SHA256 "8e5f77430efc53ef175804ba6618527e3af0448a0dcabf04d3cc72659d1a6fce")
 
 # Download location of the libmpv archive.
 set(LIBMPV_ARCHIVE "${CMAKE_BINARY_DIR}/${LIBMPV}")
@@ -87,7 +90,8 @@ set(LIBMPV_SRC "${CMAKE_BINARY_DIR}/libmpv")
 
 download_and_verify(
   ${LIBMPV_URL}
-  ${LIBMPV_MD5}
+  SHA256
+  ${LIBMPV_SHA256}
   ${LIBMPV_ARCHIVE}
 )
 
@@ -98,7 +102,7 @@ download_and_verify(
 # jamais atteint les builds locaux. Le chemin reste ${CMAKE_BINARY_DIR}/libmpv,
 # que media_kit_video lit en dur.
 set(LIBMPV_STAMP "${LIBMPV_SRC}/onyx-libmpv.stamp")
-set(LIBMPV_STAMP_CONTENT "${LIBMPV} ${LIBMPV_PATCHED_MD5}")
+set(LIBMPV_STAMP_CONTENT "${LIBMPV} ${LIBMPV_SHA256}")
 set(LIBMPV_CURRENT_STAMP "")
 if(EXISTS "${LIBMPV_STAMP}")
   file(READ "${LIBMPV_STAMP}" LIBMPV_CURRENT_STAMP)
@@ -122,21 +126,33 @@ if(NOT LIBMPV_CURRENT_STAMP STREQUAL LIBMPV_STAMP_CONTENT)
   file(COPY ${LIBMPV_HEADERS} DESTINATION "${LIBMPV_SRC}/include")
   file(REMOVE_RECURSE "${LIBMPV_SRC}/include/mpv")
 
+  # Les fichiers Java de libbluray (menus BD-J) ne sont pas livrés : rien ne les
+  # charge, l'app ne lit pas de disque.
+  file(GLOB LIBMPV_JARS "${LIBMPV_SRC}/*.jar")
+  if(LIBMPV_JARS)
+    file(REMOVE ${LIBMPV_JARS})
+  endif()
+
+  foreach(LIBMPV_FILE libmpv-2.dll libmpv.dll.a include/client.h include/render.h include/render_gl.h include/render_d3d11.h)
+    if(NOT EXISTS "${LIBMPV_SRC}/${LIBMPV_FILE}")
+      message(FATAL_ERROR "${LIBMPV} does not contain ${LIBMPV_FILE}.")
+    endif()
+  endforeach()
+
+  # Ce que l'app attend de la DLL, vérifié en la chargeant : un libmpv qui
+  # perdrait le TrueHD ou libcurl se jouerait sinon sans erreur, en silence.
   execute_process(
     COMMAND powershell -NoProfile -ExecutionPolicy Bypass
-      -File "${CMAKE_CURRENT_SOURCE_DIR}/patch_libmpv.ps1"
-      -Source "${LIBMPV_SRC}/libmpv-2.dll"
-      -Destination "${LIBMPV_SRC}/libmpv-2.dll"
-      -ExpectedSourceMd5 "${LIBMPV_DLL_MD5}"
-      -ExpectedPatchedMd5 "${LIBMPV_PATCHED_MD5}"
-    RESULT_VARIABLE LIBMPV_PATCH_RESULT
-    OUTPUT_VARIABLE LIBMPV_PATCH_OUTPUT
-    ERROR_VARIABLE LIBMPV_PATCH_ERROR
+      -File "${CMAKE_CURRENT_SOURCE_DIR}/check_libmpv.ps1"
+      -Dll "${LIBMPV_SRC}/libmpv-2.dll"
+    RESULT_VARIABLE LIBMPV_CHECK_RESULT
+    OUTPUT_VARIABLE LIBMPV_CHECK_OUTPUT
+    ERROR_VARIABLE LIBMPV_CHECK_ERROR
   )
-  if(NOT LIBMPV_PATCH_RESULT EQUAL 0)
-    message(FATAL_ERROR "Unable to patch libmpv-2.dll: ${LIBMPV_PATCH_OUTPUT} ${LIBMPV_PATCH_ERROR}")
+  if(NOT LIBMPV_CHECK_RESULT EQUAL 0)
+    message(FATAL_ERROR "libmpv-2.dll check failed:\n${LIBMPV_CHECK_OUTPUT}${LIBMPV_CHECK_ERROR}")
   endif()
-  message(STATUS "${LIBMPV_PATCH_OUTPUT}")
+  message(STATUS "${LIBMPV_CHECK_OUTPUT}")
 
   file(WRITE "${LIBMPV_STAMP}" "${LIBMPV_STAMP_CONTENT}")
 endif()
@@ -156,6 +172,7 @@ set(ANGLE_SRC "${CMAKE_BINARY_DIR}/ANGLE")
 
 download_and_verify(
   ${ANGLE_URL}
+  MD5
   ${ANGLE_MD5}
   ${ANGLE_ARCHIVE}
 )

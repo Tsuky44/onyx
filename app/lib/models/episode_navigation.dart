@@ -143,6 +143,14 @@ class UpcomingEpisode {
   /// How many episodes the season holds in all, when TMDB knows.
   final int seasonEpisodes;
 
+  /// Set only when the server holds a later episode of this season: how many
+  /// episodes going on would skip. Zero means a season that simply stops here
+  /// for now (ADR-0147).
+  final int missingCount;
+
+  /// True when this episode is a hole in the season, not its end.
+  bool get isSkipped => missingCount > 0;
+
   const UpcomingEpisode({
     required this.showId,
     required this.showTitle,
@@ -153,6 +161,7 @@ class UpcomingEpisode {
     this.stillUrl,
     this.airDate,
     this.seasonEpisodes = 0,
+    this.missingCount = 0,
   });
 
   /// True while the episode has a date that has not come yet — the difference
@@ -178,6 +187,7 @@ class UpcomingEpisode {
       stillUrl: json['still_url'] as String?,
       airDate: json['air_date'] as String?,
       seasonEpisodes: json['season_episodes'] as int? ?? 0,
+      missingCount: json['missing_count'] as int? ?? 0,
     );
   }
 }

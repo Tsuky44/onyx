@@ -12,10 +12,9 @@ VideoOutputManager::VideoOutputManager(
     flutter::PluginRegistrarWindows* registrar)
     : registrar_(registrar) {}
 
-void VideoOutputManager::Create(
-    int64_t handle,
-    VideoOutputConfiguration configuration,
-    std::function<void(int64_t, int64_t, int64_t)> texture_update_callback) {
+void VideoOutputManager::Create(int64_t handle,
+                                VideoOutputConfiguration configuration,
+                                TextureUpdateCallback texture_update_callback) {
   std::thread([=]() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (video_outputs_.find(handle) == video_outputs_.end()) {
@@ -24,6 +23,40 @@ void VideoOutputManager::Create(
       instance->SetTextureUpdateCallback(texture_update_callback);
       video_outputs_.insert(std::make_pair(handle, std::move(instance)));
     }
+  }).detach();
+}
+
+std::optional<VideoOutputManager::RenderInfo>
+VideoOutputManager::GetRenderInfo(int64_t handle) {
+  std::unique_lock<std::mutex> lock(mutex_, std::try_to_lock);
+  if (!lock.owns_lock()) {
+    return std::nullopt;
+  }
+  auto output = video_outputs_.find(handle);
+  if (output == video_outputs_.end()) {
+    return std::nullopt;
+  }
+  return RenderInfo{
+      output->second->render_api(),
+      output->second->rendered_frames(),
+      output->second->failed_frames(),
+      output->second->device_removed_reason(),
+  };
+}
+
+void VideoOutputManager::FallbackToANGLE(
+    int64_t handle,
+    std::function<void(const std::string&)> callback) {
+  std::thread([=]() {
+    std::string render_api;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      auto output = video_outputs_.find(handle);
+      if (output != video_outputs_.end()) {
+        render_api = output->second->FallbackToANGLE();
+      }
+    }
+    callback(render_api);
   }).detach();
 }
 

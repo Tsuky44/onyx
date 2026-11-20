@@ -144,6 +144,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Scanning…',
   'Analyse, maintenance':
       'Scanning, maintenance',
+  'Ancien':
+      'Legacy',
+  'Ancien : ANGLE, avec la recopie de chaque image. Nouveau : mpv dessine lui-même en Direct3D 11, sans recopie, quel que soit le décodage matériel. Automatique : le nouveau, et l’ancien dès qu’il ne montre rien.':
+      'Legacy: ANGLE, with every frame copied back. New: mpv draws in Direct3D 11 itself, with no copy, whatever the hardware decoding. Automatic: the new one, and the legacy one as soon as it shows nothing.',
   'Anglais':
       'English',
   'Annuler':
@@ -312,6 +316,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Auto',
   'Auto · {0}':
       'Auto · {0}',
+  'Automatique':
+      'Automatic',
   'Automatique (piste du fichier)':
       'Automatic (file track)',
   'Autoriser cet appareil':
@@ -446,6 +452,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Change',
   'Chapitre {0}':
       'Chapter {0}',
+  'Chargement':
+      'Loading',
   'Chapitres':
       'Chapters',
   'Chapitres MKV':
@@ -704,14 +712,14 @@ const Map<String, String> kEnglish = <String, String>{
       'Tick the seasons to add.',
   'Film à venir':
       'Upcoming movie',
+  'Fin à {0}':
+      'Ends at {0}',
   'Fin':
       'End',
   'Genres · {0}':
       'Genres · {0}',
   'Cochez les saisons à demander.':
       'Tick the seasons to request.',
-  'Il s’affiche ici une fois la séance ouverte.':
-      'It appears here once the session is open.',
   'Impossible de charger les genres.':
       'Could not load genres.',
   'Impossible de charger les services.':
@@ -734,8 +742,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Mexico',
   'Norvège':
       'Norway',
-  'Partagez le code':
-      'Share the code',
   'Pays-Bas':
       'Netherlands',
   'Prochain épisode':
@@ -1690,6 +1696,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Edit rights',
   'Modifier l’adresse':
       'Edit the address',
+  'Molette':
+      'Wheel',
   'Mon compte':
       'My account',
   'Mon espace':
@@ -1762,6 +1770,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Rating (asc.)',
   'Note (décr.)':
       'Rating (desc.)',
+  'Nouveau':
+      'New',
   'Nouveau mot de passe':
       'New password',
   'Nouveaux codes de secours':
@@ -1938,6 +1948,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Skip the intro automatically',
   'Passer sur {0}':
       'Switch to {0}',
+  'Passez sur « Compatible » si l’image est noire ou verte alors que le son fonctionne. « Compatible » ne s’applique qu’au rendu vidéo Ancien : avec Nouveau ou Automatique, le décodage se fait toujours sans copie.':
+      'Switch to “Compatible” if the picture is black or green while the sound works. “Compatible” only applies to the Legacy video rendering: with New or Automatic, decoding is always copy-free.',
   'Passez sur « Compatible » si l’image est noire ou verte alors que le son fonctionne.':
       'Switch to “Compatible” if the picture is black or green while the sound works.',
   'Pause':
@@ -2104,6 +2116,8 @@ const Map<String, String> kEnglish = <String, String>{
       'Fill screen',
   'Remplir la hauteur':
       'Fill height',
+  'Rendu vidéo':
+      'Video rendering',
   'Renommer':
       'Rename',
   'Renseignez l’adresse du serveur pour afficher le code.':
@@ -2156,8 +2170,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Revenue',
   'Revoir le lien':
       'Show the link again',
-  'Rien dans la bibliothèque':
-      'Nothing in the library',
   'Rien ne descend sans que vous le demandiez.':
       'Nothing is downloaded unless you ask for it.',
   'Rien n’a été gardé de ce serveur : reconnectez-vous.':
@@ -2896,8 +2908,6 @@ const Map<String, String> kEnglish = <String, String>{
       '{0} is no longer the main server.',
   '{0} reçue(s) d’Emby, {1} envoyée(s) à Emby.':
       '{0} received from Emby, {1} sent to Emby.',
-  '{0} résultat{1}':
-      '{0} result{1}',
   '{0} sur {1}':
       '{0} of {1}',
   '{0} % vu':
@@ -2992,6 +3002,14 @@ const Map<String, String> kEnglish = <String, String>{
       'Send it separately, not with the link.',
   'ÉPISODE {0} PAS ENCORE DISPONIBLE':
       'EPISODE {0} NOT AVAILABLE YET',
+  'ÉPISODE {0} MANQUANT':
+      'EPISODE {0} MISSING',
+  '{0} ÉPISODES MANQUANTS AVANT LE SUIVANT':
+      '{0} EPISODES MISSING BEFORE THE NEXT ONE',
+  'Passer à l’épisode {0}':
+      'Skip to episode {0}',
+  'Cet épisode n’est pas sur le serveur. Passer à la suite vous le ferait sauter.':
+      'This episode is not on the server. Moving on would skip it.',
   'Échap':
       'Esc',
   'Échec de l\'enregistrement.':
@@ -3264,6 +3282,32 @@ const Map<String, String> kEnglish = <String, String>{
       'Private',
   'Ouvrir la liste {0}':
       'Open the list {0}',
+  'Ouvrir la liste':
+      'Open list',
+  'Aucun titre':
+      'No titles',
+  'Rien de vu sur {0}':
+      'Nothing watched out of {0}',
+  '{0} vu sur {1}':
+      '{0} watched of {1}',
+  '{0} vus sur {1}':
+      '{0} watched of {1}',
+  '{0} à demander':
+      '{0} to request',
+  '{0} sur le serveur':
+      '{0} on the server',
+  '{0} · prochain : {1}':
+      '{0} · next: {1}',
+  'Prochain à regarder':
+      'Up next',
+  'Tout ce que le serveur a de cette liste est vu.':
+      'You have watched everything the server has from this list.',
+  'Rien à lancer pour l’instant.':
+      'Nothing to play right now.',
+  'Quand un autre compte partagera une liste, elle apparaîtra ici.':
+      'When another account shares a list, it will show up here.',
+  'Créez une liste pour y ranger ce que vous voulez regarder.':
+      'Create a list to keep what you want to watch.',
   'Dans vos listes':
       'In your lists',
   'Ajouter à une liste':
@@ -3316,8 +3360,14 @@ const Map<String, String> kEnglish = <String, String>{
       'Removes blur, motion and shadows to keep the interface and playback smooth on a small device. The file still plays as is. {0}',
   'Actif : cet appareil a peu de ressources.':
       'On: this device has few resources.',
-  'Actif : l’interface saccadait sur cet appareil.':
-      'On: the interface stuttered on this device.',
+  'L’interface saccade sur cet appareil':
+      'The interface is stuttering on this device',
+  'Le mode léger retire le flou, les mouvements et les ombres pour que l’interface reste fluide. Le fichier reste lu tel quel. Vous pourrez changer d’avis dans Réglages › Cet appareil.':
+      'Lite mode removes blur, motion and shadows so the interface stays smooth. The file still plays as is. You can change your mind in Settings › This device.',
+  'Garder l’interface complète':
+      'Keep the full interface',
+  'Passer en mode léger':
+      'Switch to lite mode',
   'Actif.':
       'On.',
   'Inactif.':
@@ -3860,4 +3910,171 @@ const Map<String, String> kEnglish = <String, String>{
       'Recently added',
   'Revenir à {0}':
       'Back to {0}',
+  // Inviter à une séance « Regarder ensemble » (ADR-0148).
+  'Invitation à regarder ensemble':
+      'Watch party invitation',
+  '{0} vous invite':
+      '{0} invited you',
+  '{0} vous invite à regarder {1} ensemble.':
+      '{0} invited you to watch {1} together.',
+  'Cette séance est terminée.':
+      'This watch party has ended.',
+  'Les personnes qui ont Onyx ouvert en ce moment.':
+      'People who have Onyx open right now.',
+  'Personne d’autre n’a Onyx ouvert. Partagez le code.':
+      'No one else has Onyx open. Share the code.',
+  'Envoyée':
+      'Sent',
+  'Réinviter':
+      'Invite again',
+  'A refusé':
+      'Declined',
+  '{0} vient de fermer Onyx.':
+      '{0} just closed Onyx.',
+  'L’invitation n’est pas partie. Réessayez.':
+      'The invitation wasn’t sent. Try again.',
+  'Invitez ou partagez le code':
+      'Invite or share the code',
+  'Les personnes qui ont Onyx ouvert reçoivent une invitation.':
+      'People who have Onyx open get an invitation.',
+  'Premier épisode':
+      'First episode',
+  'Prochain épisode le {0}':
+      'Next episode {0}',
+  'Dossiers trouvés sur le serveur':
+      'Folders found on the server',
+  'Certains titres n’ont pas pu être retirés.':
+      'Some titles couldn’t be removed.',
+  '« {0} » retiré de la liste':
+      '“{0}” removed from the list',
+  'Déplacer vers…':
+      'Move to…',
+  'Copier vers…':
+      'Copy to…',
+  'Certains titres n’ont pas pu être déplacés.':
+      'Some titles couldn’t be moved.',
+  'Certains titres n’ont pas pu être copiés.':
+      'Some titles couldn’t be copied.',
+  'Aucun titre ici':
+      'No titles here',
+  'Aucun titre de cette liste ne correspond à cet onglet.':
+      'No title in this list matches this tab.',
+  '{0} titre retiré':
+      '{0} title removed',
+  '{0} titres retirés':
+      '{0} titles removed',
+  '{0} titre déplacé vers « {1} »':
+      '{0} title moved to “{1}”',
+  '{0} titres déplacés vers « {1} »':
+      '{0} titles moved to “{1}”',
+  '{0} titre copié vers « {1} »':
+      '{0} title copied to “{1}”',
+  '{0} titres copiés vers « {1} »':
+      '{0} titles copied to “{1}”',
+  'À voir':
+      'To watch',
+  'Vus':
+      'Watched',
+  'À demander':
+      'To request',
+  'Ajoutés en premier':
+      'Oldest first',
+  'Année':
+      'Year',
+  'Partage…':
+      'Sharing…',
+  'Partager…':
+      'Share…',
+  'Sélectionner des titres':
+      'Select titles',
+  'Retirer les titres vus':
+      'Remove watched titles',
+  'Supprimer la liste':
+      'Delete list',
+  'Ouvrir la fiche':
+      'Open details',
+  'Voir dans le catalogue':
+      'View in the catalog',
+  'Retirer de la liste':
+      'Remove from list',
+  'Lire {0}':
+      'Play {0}',
+  'Terminer la sélection':
+      'Done selecting',
+  'Désélectionner {0}':
+      'Deselect {0}',
+  'Sélectionner {0}':
+      'Select {0}',
+  '{0} titre sélectionné':
+      '{0} title selected',
+  '{0} titres sélectionnés':
+      '{0} titles selected',
+  'La liste':
+      'The list',
+  'Les titres':
+      'Titles',
+  'Visible par tout le serveur':
+      'Visible to the whole server',
+  'Supprimer la liste…':
+      'Delete list…',
+  '{0} personne invitée':
+      '{0} person invited',
+  '{0} personnes invitées':
+      '{0} people invited',
+  '{0} titre · se défait':
+      '{0} title · can be undone',
+  '{0} titres · se défait':
+      '{0} titles · can be undone',
+  'Liste de {0}':
+      '{0}’s list',
+  'Liste privée':
+      'Private list',
+  'Remplie avec {0}':
+      'Filled with {0}',
+  'Visible par {0}':
+      'Visible to {0}',
+  'Déplacer':
+      'Move',
+  'Partagées avec moi':
+      'Shared with me',
+  'Nouvelle liste…':
+      'New list…',
+  'Qui peut la voir':
+      'Who can see it',
+  'Vous et les personnes invitées.':
+      'You and the people you invite.',
+  'Tout le serveur':
+      'Whole server',
+  'Tous les comptes la voient, sans la modifier.':
+      'Every account can see it, but not edit it.',
+  'Aucun':
+      'None',
+  'Voir':
+      'View',
+  'Accès de {0}':
+      '{0}’s access',
+  'La voit même quand elle est privée':
+      'Sees it even when it’s private',
+  'Y ajoute et en retire des titres':
+      'Adds and removes titles',
+  'Retirer l’accès':
+      'Remove access',
+  'Personnes':
+      'People',
+  'Personnes · {0} invitée':
+      'People · {0} invited',
+  'Personnes · {0} invitées':
+      'People · {0} invited',
+  'Chaque changement s’applique tout de suite.':
+      'Changes apply right away.',
+  'Les personnes qui ajoutent peuvent aussi retirer des titres. Vous seul renommez ou supprimez la liste.':
+      'People who can add titles can also remove them. Only you can rename or delete the list.',
+  'Rechercher un compte':
+      'Search accounts',
+  'Aucun compte ne correspond.':
+      'No matching account.',
+  '{0} perdra l’accès':
+      '{0} will lose access',
+  '{0} personnes perdront l’accès':
+      '{0} people will lose access',
 };

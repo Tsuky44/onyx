@@ -50,7 +50,7 @@ Client Direct Play pur branché sur un backend Go ultra-léger : zéro transcoda
 
 ## Evidence on Hand
 
-- Spec produit : `project.md`, `README.md`.
+- Spec produit : `README.md`.
 - Intention visuelle : `design.md` (Cinematic Glass).
 - Implémentation UI : `app/lib/` (theme, shell, home, library, player, requests, auth, widgets glass).
 - Pas de testimonials / marketing externes à inventer.

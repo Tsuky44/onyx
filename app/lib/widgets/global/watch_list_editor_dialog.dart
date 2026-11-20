@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import '../../l10n/tr.dart';
 import '../../models/watch_list.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../tv/tv_deferred_keyboard.dart';
+import 'list_visibility_choice.dart';
+import 'onyx_dialog.dart';
 
 /// Ce que la boîte de dialogue rend : le nom, la description et le partage.
 typedef WatchListDraft = ({String name, String description, bool isShared});
@@ -17,7 +20,7 @@ Future<WatchListDraft?> showWatchListEditor(
   BuildContext context, {
   WatchList? existing,
 }) {
-  return showDialog<WatchListDraft>(
+  return showOnyxDialog<WatchListDraft>(
     context: context,
     builder: (_) => _WatchListEditor(existing: existing),
   );
@@ -63,84 +66,108 @@ class _WatchListEditorState extends State<_WatchListEditor> {
     ));
   }
 
+  /// Le compteur d'un champ, à droite dans le champ : on voit la borne avant
+  /// de la buter.
+  static Widget _counter(TextEditingController c, int max) => Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: c,
+          builder: (_, value, __) => Text(
+            '${value.text.characters.length} / $max',
+            style: const TextStyle(
+                color: AppColors.textSecondary, fontSize: AppType.footnote),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final existing = widget.existing;
-    return AlertDialog(
-      backgroundColor: AppColors.surfaceElevated,
-      title: Text(existing == null
+    // Le partage d'une liste qui existe se règle dans « Partager » (ADR-0161) ;
+    // seule la création, et « À regarder plus tard » qui n'a que lui, le
+    // demandent ici.
+    final askVisibility = existing == null || _fixedName;
+    return OnyxDialog(
+      icon: existing == null ? AppIcons.add : AppIcons.edit,
+      title: existing == null
           ? tr('Nouvelle liste')
           : _fixedName
               ? existing.displayName
-              : tr('Modifier la liste')),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!_fixedName) ...[
-                TvDeferredKeyboard(
-                  builder: (context, focusNode, canRequestFocus) => TextField(
-                    controller: _name,
-                    focusNode: focusNode,
-                    canRequestFocus: canRequestFocus,
-                    autofocus: existing == null,
-                    maxLength: _maxName,
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      labelText: tr('Nom'),
-                      hintText: tr('Mes recommandations'),
-                      counterText: '',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TvDeferredKeyboard(
-                  builder: (context, focusNode, canRequestFocus) => TextField(
-                    controller: _description,
-                    focusNode: focusNode,
-                    canRequestFocus: canRequestFocus,
-                    maxLength: _maxDescription,
-                    minLines: 1,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: tr('Description (facultative)'),
-                      counterText: '',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _isShared,
-                onChanged: (v) => setState(() => _isShared = v),
-                title: Text(tr('Partager avec les autres comptes')),
-                subtitle: Text(
-                  _isShared
-                      ? tr('Tous les comptes de ce serveur peuvent voir la '
-                          'liste.')
-                      : tr('Seuls vous et les personnes avec qui vous la '
-                          'partagez la voient.'),
-                  style: const TextStyle(
-                      color: AppColors.textMuted, fontSize: AppType.subhead),
+              : tr('Modifier la liste'),
+      width: 460,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!_fixedName) ...[
+            // L'étiquette du champ monte sur son bord : de l'air sous le titre.
+            const SizedBox(height: 10),
+            TvDeferredKeyboard(
+              builder: (context, focusNode, canRequestFocus) => TextField(
+                controller: _name,
+                focusNode: focusNode,
+                canRequestFocus: canRequestFocus,
+                autofocus: existing == null,
+                maxLength: _maxName,
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (_) => _save(),
+                decoration: InputDecoration(
+                  labelText: tr('Nom'),
+                  hintText: tr('Mes recommandations'),
+                  counterText: '',
+                  suffixIcon: _counter(_name, _maxName),
+                  suffixIconConstraints:
+                      const BoxConstraints(minWidth: 0, minHeight: 0),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+            const SizedBox(height: 14),
+            TvDeferredKeyboard(
+              builder: (context, focusNode, canRequestFocus) => TextField(
+                controller: _description,
+                focusNode: focusNode,
+                canRequestFocus: canRequestFocus,
+                maxLength: _maxDescription,
+                minLines: 2,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: tr('Description (facultative)'),
+                  alignLabelWithHint: true,
+                  counterText: '',
+                ),
+              ),
+            ),
+          ],
+          if (askVisibility) ...[
+            if (!_fixedName) const SizedBox(height: 18),
+            Text(
+              tr('Qui peut la voir').toUpperCase(),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: AppType.caption,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListVisibilityChoice(
+              shared: _isShared,
+              autofocus: _fixedName,
+              onChanged: (v) => setState(() => _isShared = v),
+            ),
+          ],
+        ],
       ),
       actions: [
-        TextButton(
+        OnyxDialogAction(
+          label: tr('Annuler'),
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(tr('Annuler')),
         ),
-        FilledButton(
+        OnyxDialogAction(
+          label: existing == null ? tr('Créer') : tr('Enregistrer'),
+          primary: true,
           onPressed: _canSave ? _save : null,
-          child: Text(existing == null ? tr('Créer') : tr('Enregistrer')),
         ),
       ],
     );

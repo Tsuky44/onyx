@@ -68,6 +68,11 @@ class VideoController {
   /// [Rect] of the video output, received from the native implementation.
   final ValueNotifier<Rect?> rect = ValueNotifier<Rect?>(null);
 
+  /// Onyx : l'adaptateur graphique par défaut de Windows et la version de son
+  /// pilote, null ailleurs (ADR-0158).
+  static Future<Map<String, Object?>?> windowsGraphicsAdapter() =>
+      NativeVideoController.windowsGraphicsAdapter();
+
   /// {@macro video_controller}
   VideoController(
     this.player, {

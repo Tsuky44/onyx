@@ -65,6 +65,10 @@ class ServerCapabilities {
   /// (ADR-0136). Sans elle, le serveur ne connaît que MediaHub.
   static const requestServices = 'request_services';
 
+  /// Une séance invite les comptes qui ont Onyx ouvert, et l'app attend ses
+  /// invitations (ADR-0148).
+  static const watchPartyInvites = 'watch_party_invites';
+
   bool supports(String capability) => capabilities.contains(capability);
 
   /// Null quand la réponse n'est pas celle d'un serveur Onyx qui va bien.

@@ -3,16 +3,21 @@ import 'package:provider/provider.dart';
 import 'interface_tour/tour_anchor.dart';
 import '../../models/models.dart';
 import '../../services/api_client.dart';
+import '../../services/hero_series_preview.dart';
 import '../../services/media_details_cache.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
-import '../../theme/app_theme.dart';
+import '../../theme/lite_mode.dart';
 import '../../utils/format.dart';
 import '../../utils/poster_url.dart';
 import '../../tv/tv_mode.dart';
-import 'app_network_image.dart';
+import 'detail_actions.dart';
+import 'hero/hero_actions.dart';
+import 'hero/hero_heading.dart';
+import 'hero/hero_living_backdrop.dart';
+import 'hero/hero_next_episode_card.dart';
+import 'hero_top_fade.dart';
 import 'media_logo_display.dart';
-import '../../theme/app_icons.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
 
@@ -31,6 +36,24 @@ class HeroBanner extends StatefulWidget {
 
   final bool autofocusPlay;
 
+  /// La hauteur ajoutée au-dessus du bandeau pour que l'image monte sous la
+  /// barre d'état et la barre du haut du téléphone (ADR-0144). Le texte et
+  /// les boutons, calés en bas, ne bougent pas.
+  final double extendTop;
+
+  /// L'épisode de « Reprendre » que présente la diapositive. Pour une série
+  /// de la découverte, nul : le bandeau demande au serveur l'épisode à
+  /// reprendre, comme la fiche (ADR-0154).
+  final HomeMediaItem? continueItem;
+
+  /// La diapositive est celle qu'on voit. Ses voisines, que le carrousel
+  /// construit pendant un passage, ne font pas défiler leur fond.
+  final bool active;
+
+  /// Le nombre d'images que le fond fera défiler : le carrousel laisse à la
+  /// diapositive le temps de les montrer.
+  final ValueChanged<int>? onFrameCount;
+
   const HeroBanner({
     super.key,
     required this.media,
@@ -42,7 +65,15 @@ class HeroBanner extends StatefulWidget {
     this.onInfo,
     this.detailsMediaId,
     this.autofocusPlay = false,
+    this.extendTop = 0,
+    this.continueItem,
+    this.active = true,
+    this.onFrameCount,
   });
+
+  /// La largeur à partir de laquelle la carte « À suivre » d'une série se pose
+  /// à droite du texte : en dessous, elle le chevauchait.
+  static const double cardMinWidth = 1000;
 
   static double heightFor(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -65,12 +96,28 @@ class _HeroBannerState extends State<HeroBanner> {
   MediaDetails? _details;
   bool _detailsSettled = false;
 
+  /// L'épisode à lancer et les images du fond, pour une série (ADR-0154).
+  HeroSeriesPreview? _preview;
+
+  /// L'image du fond à l'écran, pour sa légende.
+  final ValueNotifier<int> _frame = ValueNotifier(0);
+  int? _reportedFrames;
+
   int get _detailsId => widget.detailsMediaId ?? widget.media.id;
+
+  /// Une série de la découverte, ou un épisode de « Reprendre ».
+  bool get _isSeries =>
+      widget.media.type == MediaType.show ||
+      widget.media.type == MediaType.episode;
+
+  /// L'épisode que la lecture lance, quand c'est une série.
+  HomeMediaItem? get _episode => widget.continueItem ?? _preview?.next;
 
   @override
   void initState() {
     super.initState();
     _resolveDetails();
+    _resolvePreview();
   }
 
   @override
@@ -80,6 +127,17 @@ class _HeroBannerState extends State<HeroBanner> {
         oldWidget.media.id != widget.media.id) {
       _resolveDetails();
     }
+    if (oldWidget.media.id != widget.media.id ||
+        oldWidget.continueItem?.media.id != widget.continueItem?.media.id) {
+      _frame.value = 0;
+      _resolvePreview();
+    }
+  }
+
+  @override
+  void dispose() {
+    _frame.dispose();
+    super.dispose();
   }
 
   /// La fiche TMDB porte l'image de fond en paysage et le logo du titre. Le
@@ -103,6 +161,31 @@ class _HeroBannerState extends State<HeroBanner> {
     });
   }
 
+  /// L'épisode à lancer et les images de sa saison. Jusqu'à la réponse, le
+  /// bandeau d'une série de la découverte garde « Lecture » seul, qui ouvre
+  /// la fiche ; celui d'une reprise connaît déjà son épisode.
+  void _resolvePreview() {
+    final showId = _detailsId;
+    final known = widget.continueItem;
+    if (!_isSeries || showId <= 0) {
+      _preview = null;
+      return;
+    }
+    final cached = HeroSeriesPreviewCache.peek(showId, known: known);
+    _preview = cached;
+    if (cached != null) return;
+    final api = Provider.of<ApiClient>(context, listen: false);
+    HeroSeriesPreviewCache.load(api, showId, known: known).then((preview) {
+      if (!mounted || showId != _detailsId) return;
+      if (known?.media.id != widget.continueItem?.media.id) return;
+      setState(() => _preview = preview);
+    }, onError: (Object error) {
+      // Le bandeau reste celui d'avant : « Lecture » ouvre la fiche, le fond
+      // est l'image de la série.
+      debugPrint('HeroBanner: aperçu de la série $showId indisponible: $error');
+    });
+  }
+
   String? _backgroundUrl(String baseUrl) {
     final media = widget.media;
     // Un épisode a déjà son image en paysage : l'arrêt sur image de
@@ -122,29 +205,114 @@ class _HeroBannerState extends State<HeroBanner> {
         resolveHeroImageUrl(media.posterUrl, serverBaseUrl: baseUrl);
   }
 
+  /// Le fond vivant : l'image du titre, puis celles des épisodes de la saison
+  /// jusqu'à celui à lancer, chacune une fois.
+  List<HeroBackdropFrame> _frames(
+      String? backgroundUrl, String baseUrl, bool animate) {
+    if (backgroundUrl == null) return const [];
+    final frames = [HeroBackdropFrame(backgroundUrl)];
+    if (!animate) return frames;
+    final seen = {backgroundUrl};
+    for (final still in _preview?.stills ?? const <HomeMediaItem>[]) {
+      final url =
+          resolveHeroImageUrl(still.media.posterUrl, serverBaseUrl: baseUrl);
+      if (url == null || !seen.add(url)) continue;
+      frames.add(HeroBackdropFrame(url, caption: heroEpisodeTitle(still)));
+    }
+    return frames;
+  }
+
+  /// Dit au carrousel combien d'images passeront, après l'image en cours.
+  void _reportFrames(int count) {
+    if (count == _reportedFrames) return;
+    _reportedFrames = count;
+    final report = widget.onFrameCount;
+    if (report == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) report(count);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final apiClient = Provider.of<ApiClient>(context, listen: false);
     final media = widget.media;
+    final details = _details;
     final backgroundUrl = _backgroundUrl(apiClient.baseUrl);
     final title = widget.titleOverride ?? media.title;
-    final year = extractYear(media.releaseDate);
-    final meta = [
-      if (year != null) year,
-      if (widget.subtitle != null && widget.subtitle!.isNotEmpty)
-        widget.subtitle!,
-    ];
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < 600;
     final isTv = TvScope.of(context);
     final horizontalPadding = isCompact ? 16.0 : 48.0;
-    final bannerHeight = HeroBanner.heightFor(context);
-    final detailsOverview = _details?.overview;
+    final textBottom = isCompact
+        ? 52.0
+        : isTv
+            ? 72.0
+            : 140.0;
+    final bannerHeight = HeroBanner.heightFor(context) + widget.extendTop;
+    final detailsOverview = details?.overview;
     final overview = media.type != MediaType.episode &&
             detailsOverview != null &&
             detailsOverview.isNotEmpty
         ? detailsOverview
         : media.overview;
+
+    // Le fond ne bouge que sous les yeux, et pas là où le mouvement coûte ou
+    // gêne : téléviseur, mode léger, « réduire les animations ».
+    final animate = widget.active &&
+        !isTv &&
+        !AppMotion.reduced(context) &&
+        !LiteScope.of(context);
+    final frames = _frames(backgroundUrl, apiClient.baseUrl, animate);
+    _reportFrames(frames.length);
+    final captioned = frames.length > 1;
+
+    final episode = _isSeries ? _episode : null;
+    final resuming = episode != null &&
+        episode.currentPositionSeconds > 0 &&
+        !episode.isFinished;
+    final playLabel = episode == null
+        ? tr(widget.playLabel)
+        : resuming
+            ? tr('Reprendre')
+            : tr('Lecture');
+    final showCard = episode != null &&
+        !isCompact &&
+        !isTv &&
+        screenWidth >= HeroBanner.cardMinWidth;
+
+    final seasons = details?.numberOfSeasons ?? 0;
+    final eyebrow = [
+      mediaTypeLabel(_isSeries ? MediaType.show : media.type),
+      if (_isSeries && seasons > 0)
+        trPlural(seasons, '{0} saison', '{0} saisons'),
+    ].join('  ·  ');
+    final meta = HeroMetaLine(
+      year: extractYear(media.releaseDate),
+      genres: details?.genres ?? const [],
+      rating: details?.voteAverage ?? 0,
+      // Pour une série, le bouton et la carte disent déjà l'épisode : la
+      // ligne annonce plutôt le prochain à sortir. Pas au téléphone, où il ne
+      // tenait plus et finissait en « Prochain épisode le… ».
+      trailing: _isSeries
+          ? (isCompact ? null : heroNextAirLabel(details))
+          : widget.subtitle,
+    );
+
+    final play = HeroPlayButton(
+      label: playLabel,
+      episodeCode: episode == null ? null : episodeShortCode(episode.media),
+      onPressed: widget.onPlay,
+      autofocus: widget.autofocusPlay,
+      isTv: isTv,
+    );
+    final info = widget.onInfo == null
+        ? null
+        : HeroInfoButton(
+            onPressed: widget.onInfo!,
+            compact: isCompact,
+            isTv: isTv,
+          );
 
     return SizedBox(
       height: bannerHeight,
@@ -153,17 +321,19 @@ class _HeroBannerState extends State<HeroBanner> {
         fit: StackFit.expand,
         children: [
           const ColoredBox(color: AppColors.background),
-          if (backgroundUrl != null)
-            AppNetworkImage(
-              url: backgroundUrl,
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-              filterQuality: FilterQuality.high,
-              // Logical width — AppNetworkImage applies the device pixel ratio.
-              decodeWidth: screenWidth,
-              fadeInDuration: AppMotion.emphasis,
-              placeholder: const ColoredBox(color: AppColors.background),
-              errorWidget: const ColoredBox(color: AppColors.background),
+          if (frames.isNotEmpty)
+            // Sous la barre du téléphone, l'image garde son cadrage et se
+            // fond dans le noir par le haut (ADR-0144).
+            HeroTopFade(
+              top: widget.extendTop,
+              image: HeroLivingBackdrop(
+                key: ValueKey(media.id),
+                frames: frames,
+                animate: animate,
+                // Logical width — AppNetworkImage applies the device pixel ratio.
+                decodeWidth: screenWidth,
+                frame: _frame,
+              ),
             ),
 
           // Le voile latéral d'abord, le vertical ensuite, et tous deux vers
@@ -186,20 +356,26 @@ class _HeroBannerState extends State<HeroBanner> {
               ),
             ),
           ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  // Un voile en haut, pour que l'en-tête reste lisible sur un
-                  // fond clair.
-                  AppColors.background.withValues(alpha: 0.45),
-                  AppColors.background.withValues(alpha: 0),
-                  AppColors.background.withValues(alpha: 0.35),
-                  AppColors.background,
-                ],
-                stops: const [0.0, 0.25, 0.6, 1.0],
+          Positioned.fill(
+            top: widget.extendTop,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    // Un voile en haut, pour que l'en-tête reste lisible sur un
+                    // fond clair. Pas sous la barre du téléphone : elle est
+                    // sur le noir, et le voile cachait les têtes que l'image
+                    // fait sortir du fondu (ADR-0144).
+                    AppColors.background
+                        .withValues(alpha: widget.extendTop > 0 ? 0 : 0.45),
+                    AppColors.background.withValues(alpha: 0),
+                    AppColors.background.withValues(alpha: 0.35),
+                    AppColors.background,
+                  ],
+                  stops: const [0.0, 0.25, 0.6, 1.0],
+                ),
               ),
             ),
           ),
@@ -207,11 +383,7 @@ class _HeroBannerState extends State<HeroBanner> {
           Positioned(
             left: horizontalPadding,
             right: horizontalPadding,
-            bottom: isCompact
-                ? 52
-                : isTv
-                    ? 72
-                    : 140,
+            bottom: textBottom,
             // L'Align relâche la largeur imposée par le Positioned : sans lui,
             // la limite de 560 px était ignorée et le synopsis courait sur toute
             // la largeur de l'écran.
@@ -224,19 +396,14 @@ class _HeroBannerState extends State<HeroBanner> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      mediaTypeLabel(media.type).toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: AppType.caption,
-                        letterSpacing: 1.6,
-                      ),
+                    HeroEyebrow(
+                      text: eyebrow,
+                      newEpisode: episode?.hasNewEpisode ?? false,
                     ),
                     const SizedBox(height: 12),
                     MediaLogoDisplay(
                       title: title,
-                      logoUrl: logoImageUrl(_details?.logoUrl,
+                      logoUrl: logoImageUrl(details?.logoUrl,
                           serverBaseUrl: apiClient.baseUrl),
                       maxHeight: isCompact ? 72 : 128,
                       maxWidth: isCompact ? screenWidth * 0.8 : 560,
@@ -248,18 +415,9 @@ class _HeroBannerState extends State<HeroBanner> {
                                 letterSpacing: isCompact ? -0.6 : -1.0,
                               ),
                     ),
-                    if (meta.isNotEmpty) ...[
+                    if (!meta.isEmpty) ...[
                       const SizedBox(height: 12),
-                      Text(
-                        meta.join('  ·  '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: AppType.body,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      meta,
                     ],
                     if (overview != null && overview.isNotEmpty) ...[
                       const SizedBox(height: 12),
@@ -267,7 +425,7 @@ class _HeroBannerState extends State<HeroBanner> {
                         overview,
                         // Deux lignes sur un téléviseur : lues de loin, la
                         // troisième poussait le logo sous l'en-tête.
-                        maxLines: isCompact || isTv ? 2 : 3,
+                        maxLines: isCompact || isTv || showCard ? 2 : 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: AppColors.textSecondary,
@@ -276,88 +434,61 @@ class _HeroBannerState extends State<HeroBanner> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
+                    SizedBox(height: isCompact ? 20 : 24),
                     TourTarget(
                       anchor: TourAnchor.hero,
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          _PlayButton(
-                            label: tr(widget.playLabel),
-                            onPressed: widget.onPlay,
-                            autofocus: widget.autofocusPlay,
-                          ),
-                          if (widget.onInfo != null)
-                            _InfoButton(
-                              onPressed: widget.onInfo!,
-                              compact: isCompact,
+                      // Sur téléphone, la lecture prend la largeur et
+                      // « Plus d'infos » se réduit à son rond de verre.
+                      child: isCompact
+                          ? Row(
+                              children: [
+                                Expanded(child: play),
+                                if (info != null) ...[
+                                  const SizedBox(width: 10),
+                                  info,
+                                ],
+                              ],
+                            )
+                          : Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: [play, if (info != null) info],
                             ),
-                        ],
-                      ),
                     ),
                   ],
                 ),
               ),
             ),
           ),
+
+          if (showCard)
+            Positioned(
+              right: horizontalPadding,
+              bottom: textBottom,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (captioned) ...[
+                    SizedBox(
+                      width: HeroNextEpisodeCard.width,
+                      child: HeroBackdropCaption(frames: frames, frame: _frame),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  HeroNextEpisodeCard(episode: episode, onTap: widget.onPlay),
+                ],
+              ),
+            )
+          else if (captioned)
+            Positioned(
+              right: horizontalPadding,
+              // Sur téléphone, à hauteur des traits du carrousel.
+              bottom: isCompact ? 24 : textBottom,
+              width: isCompact ? 180 : HeroNextEpisodeCard.width,
+              child: HeroBackdropCaption(frames: frames, frame: _frame),
+            ),
         ],
-      ),
-    );
-  }
-}
-
-class _PlayButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onPressed;
-  final bool autofocus;
-
-  const _PlayButton({
-    required this.label,
-    required this.onPressed,
-    this.autofocus = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      autofocus: autofocus,
-      icon: const Icon(AppIcons.play, size: 28),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(48, 48),
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-      ),
-    );
-  }
-}
-
-class _InfoButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final bool compact;
-
-  const _InfoButton({required this.onPressed, this.compact = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: const Icon(AppIcons.info, size: 22),
-      label: Text(compact ? tr('Infos') : tr('Plus d’infos')),
-      // Sans bordure au repos, mais avec l'anneau au focus : `side` posé ici
-      // remplaçait celui du thème, et « Plus d'infos » n'avait aucun focus
-      // visible à la télécommande.
-      style: AppTheme.focusRinged(
-        OutlinedButton.styleFrom(
-          backgroundColor: Colors.white.withValues(alpha: 0.15),
-          minimumSize: const Size(48, 48),
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 16 : 24,
-            vertical: 14,
-          ),
-        ),
-        resting: BorderSide.none,
       ),
     );
   }

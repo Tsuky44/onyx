@@ -47,6 +47,22 @@ final class MpvNativeOutput {
   Future<void> setProperty(String name, String value) =>
       _enqueue(() => _set(name, value));
 
+  /// Lit [names] d'un seul appel, depuis un isolate à part ; null pour une
+  /// propriété que mpv n'a pas.
+  ///
+  /// L'API de mpv est sûre d'un thread à l'autre, mais chaque lecture attend
+  /// que le cœur de mpv soit libre. Faite depuis le thread de l'interface —
+  /// ce que fait `getProperty` de media_kit —, une rafale de relevés pendant
+  /// un seek ou un remplissage du cache y retenait les images de Flutter.
+  /// Pas dans la file des options : une lecture n'a pas à attendre qu'une
+  /// sortie vidéo se reconstruise.
+  Future<Map<String, String?>> getProperties(List<String> names) {
+    final library = libmpvPath;
+    final handle = mpvHandle;
+    final wanted = List<String>.of(names);
+    return Isolate.run(() => _getPropertyStrings(library, handle, wanted));
+  }
+
   Future<void> _enqueue(Future<void> Function() operation) {
     final result = _queue.then((_) => operation());
     _queue = result.catchError((Object error) {
@@ -65,6 +81,38 @@ final class MpvNativeOutput {
       throw StateError('mpv a refusé $name=$value (erreur $code)');
     }
   }
+}
+
+Map<String, String?> _getPropertyStrings(
+  String libmpvPath,
+  int handle,
+  List<String> names,
+) {
+  final library = DynamicLibrary.open(libmpvPath);
+  final getProperty = library.lookupFunction<
+      Pointer<Utf8> Function(Pointer<Void>, Pointer<Utf8>),
+      Pointer<Utf8> Function(Pointer<Void>, Pointer<Utf8>)>(
+    'mpv_get_property_string',
+  );
+  final free = library.lookupFunction<Void Function(Pointer<Void>),
+      void Function(Pointer<Void>)>('mpv_free');
+  final mpv = Pointer<Void>.fromAddress(handle);
+  final values = <String, String?>{};
+  for (final name in names) {
+    final nativeName = name.toNativeUtf8();
+    try {
+      final value = getProperty(mpv, nativeName);
+      if (value == nullptr) {
+        values[name] = null;
+      } else {
+        values[name] = value.toDartString();
+        free(value.cast());
+      }
+    } finally {
+      malloc.free(nativeName);
+    }
+  }
+  return values;
 }
 
 int _setPropertyString(

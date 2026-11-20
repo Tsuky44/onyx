@@ -47,6 +47,26 @@ type WatchList struct {
 	// ContainsItemID est l'élément de cette liste qui porte le titre demandé
 	// par ?media_id= ou ?tmdb_id= (0 s'il n'y est pas). Absent sans question.
 	ContainsItemID *int `json:"contains_item_id,omitempty"`
+	// WatchedCount est le nombre de titres de la liste que le compte qui lit
+	// a vus, parmi ceux que le serveur a ; OnServerCount, combien de titres
+	// le serveur a (ItemCount - OnServerCount restent à demander). Voir
+	// ADR-0159.
+	WatchedCount  int `json:"watched_count"`
+	OnServerCount int `json:"on_server_count"`
+	// NextItem est le premier titre du serveur que le compte n'a pas vu, dans
+	// l'ordre d'ajout ; absent quand il a tout vu ou que le serveur n'a rien.
+	NextItem *WatchListNext `json:"next_item,omitempty"`
+}
+
+// WatchListNext est le prochain titre à regarder d'une liste : de quoi
+// l'afficher et le lancer, sans la fiche complète (ADR-0159).
+type WatchListNext struct {
+	ID          int    `json:"id"`
+	MediaID     int    `json:"media_id"`
+	MediaType   string `json:"media_type"`
+	Title       string `json:"title"`
+	PosterURL   string `json:"poster_url"`
+	ReleaseDate string `json:"release_date"`
 }
 
 // WatchListItem est un film ou une série d'une liste, sur le serveur ou pas.
@@ -61,6 +81,10 @@ type WatchListItem struct {
 	// MediaID est la fiche du serveur à laquelle l'élément se rattache, 0
 	// quand le serveur n'a pas (ou plus) ce titre.
 	MediaID int `json:"media_id"`
+	// Watched : le compte qui lit a vu ce titre (un film terminé, une série dont
+	// chaque épisode présent l'est). Toujours faux pour un titre que le serveur
+	// n'a pas. Rempli par le détail d'une liste seulement (ADR-0159).
+	Watched bool `json:"watched"`
 	// Media est cette fiche, avec la progression du compte qui lit la liste.
 	Media *HomeMediaItem `json:"media,omitempty"`
 }

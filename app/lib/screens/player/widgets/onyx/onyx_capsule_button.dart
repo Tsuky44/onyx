@@ -39,6 +39,7 @@ class OnyxCapsuleButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.leading,
     this.primary = false,
     this.selected = false,
     this.large = false,
@@ -52,6 +53,10 @@ class OnyxCapsuleButton extends StatefulWidget {
   /// Nul : le bouton est présent mais inactif.
   final VoidCallback? onPressed;
   final IconData? icon;
+
+  /// Ce qui précède le libellé quand ce n'est pas une icône (les visages des
+  /// invités d'une liste, sur « Partager »). Exclusif avec [icon].
+  final Widget? leading;
 
   /// Le choix attendu d'une fenêtre : blanc hors téléviseur.
   final bool primary;
@@ -128,8 +133,9 @@ class _OnyxCapsuleButtonState extends State<OnyxCapsuleButton> {
                   duration: AppMotion.move(context, AppMotion.focus),
                   curve: AppMotion.curve,
                   height: height,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: widget.large ? 26 : 18,
+                  padding: EdgeInsetsDirectional.only(
+                    start: widget.leading != null ? 6 : (widget.large ? 26 : 18),
+                    end: widget.large ? 26 : 18,
                   ),
                   decoration: BoxDecoration(color: fill, borderRadius: radius),
                   child: Row(
@@ -147,6 +153,9 @@ class _OnyxCapsuleButtonState extends State<OnyxCapsuleButton> {
                           ),
                         ),
                         const SizedBox(width: 10),
+                      ] else if (widget.leading != null) ...[
+                        widget.leading!,
+                        const SizedBox(width: 8),
                       ] else if (widget.icon != null) ...[
                         Icon(widget.icon, size: 18, color: ink),
                         const SizedBox(width: 8),

@@ -1,0 +1,10 @@
+{
+  "root": "root-value",
+  "folders": [
+    {
+      "path": "path-value",
+      "name": "name-value",
+      "kind": "shows"
+    }
+  ]
+}

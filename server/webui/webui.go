@@ -117,6 +117,23 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// bundleContentType donne le type d'un fichier du bundle. WebAssembly.compileStreaming
+// refuse un .wasm qui n'est pas « application/wasm », et un module ES (.mjs)
+// charge par import() exige un type JavaScript : on ne laisse pas cela a la table
+// MIME du systeme (le registre Windows, par exemple, peut etre faux).
+func bundleContentType(name string) string {
+	switch path.Ext(name) {
+	case ".wasm":
+		return "application/wasm"
+	case ".mjs", ".js":
+		return "text/javascript; charset=utf-8"
+	}
+	if t := mime.TypeByExtension(path.Ext(name)); t != "" {
+		return t
+	}
+	return "application/octet-stream"
+}
+
 // serveFile writes one bundle file, preferring a pre-compressed sibling when the
 // client accepts it. Returns false if the file is not in the bundle.
 func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, name string) bool {
@@ -125,10 +142,7 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, name string)
 		return false
 	}
 
-	contentType := mime.TypeByExtension(path.Ext(name))
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
+	contentType := bundleContentType(name)
 
 	// publish-image.sh pre-compresses the large text assets. Serving those saves
 	// ~70% of the transfer without spending CPU per request, and works even when
@@ -154,6 +168,13 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, name string)
 	// Flutter charge et compile à l'exécution.
 	w.Header().Set("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'self'; object-src 'none'")
 	w.Header().Set("X-Frame-Options", "DENY")
+	// Isolation inter-origines : sans elle, skwasm (rendu WebAssembly de Flutter)
+	// ne peut pas utiliser SharedArrayBuffer et retombe sur un seul thread.
+	// « credentialless » plutot que « require-corp » : les affiches TMDB et les
+	// flux d'un autre serveur Onyx se chargent sans en-tete CORP, mais sans
+	// cookies. Voir ADR-0152.
+	w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+	w.Header().Set("Cross-Origin-Embedder-Policy", "credentialless")
 	w.Header().Set("ETag", etag)
 	w.Header().Set("Cache-Control", cacheControl)
 

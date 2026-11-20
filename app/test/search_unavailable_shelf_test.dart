@@ -3,16 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/media_request.dart';
 import 'package:onyx/models/models.dart';
-import 'package:onyx/navigation/shell_navigator.dart';
 import 'package:onyx/providers/auth_provider.dart';
 import 'package:onyx/providers/home_provider.dart';
 import 'package:onyx/providers/library_provider.dart';
 import 'package:onyx/providers/media_requests_provider.dart';
 import 'package:onyx/providers/search_provider.dart';
 import 'package:onyx/providers/watch_lists_provider.dart';
-import 'package:onyx/screens/library/search_results_screen.dart';
 import 'package:onyx/screens/requests/request_detail_screen.dart';
 import 'package:onyx/screens/requests/widgets/request_media_card.dart';
+import 'package:onyx/screens/search/phone/phone_search_row.dart';
+import 'package:onyx/screens/search/phone/phone_search_screen.dart';
+import 'package:onyx/screens/search/search_layout.dart';
 import 'package:onyx/screens/search/tv_search_screen.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/services/download_manager.dart';
@@ -26,6 +27,7 @@ import 'package:onyx/widgets/global/unavailable_badge.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/phone_search_harness.dart';
 import 'support/search_catalog_fakes.dart';
 import 'support/tv_nav_harness.dart';
 
@@ -75,7 +77,11 @@ Widget _providers(SearchCatalogApi api, AuthProvider auth, Widget app) {
 }
 
 /// La pause dans la frappe qui interroge le catalogue, puis sa réponse.
+///
+/// La page apprend la frappe en se reconstruisant : la pause ne commence
+/// qu'à l'image suivante.
 Future<void> _catalogAnswers(WidgetTester tester) async {
+  await tester.pump();
   await tester.pump(const Duration(milliseconds: 350));
   await tester.pumpAndSettle();
 }
@@ -246,71 +252,81 @@ void main() {
       final api = _server();
       final auth = FakeAuth(api, Permissions(requestMedia: canRequest));
       addTearDown(auth.dispose);
-      await tester.binding.setSurfaceSize(const Size(1400, 900));
+      await tester.binding.setSurfaceSize(const Size(400, 860));
       addTearDown(() => tester.binding.setSurfaceSize(null));
+      final session = phoneSearchSession();
       await tester.pumpWidget(_providers(
         api,
         auth,
-        MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                const GlassCatalogSearch(),
-                Expanded(
-                  child: Navigator(
-                    key: shellNavigatorKey,
-                    onGenerateRoute: (_) => MaterialPageRoute<void>(
-                      builder: (_) => const Center(child: Text('Accueil')),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        MaterialApp(home: phoneSearchHarness(session)),
       ));
       await tester.pumpAndSettle();
+      await openPhoneSearchIn(tester, session);
+      expect(find.byType(PhoneSearchScreen), findsOneWidget);
     }
 
     Future<void> type(WidgetTester tester, String text) async {
       await tester.enterText(find.byType(TextField), text);
       await _catalogAnswers(tester);
-      expect(find.byType(SearchResultsScreen), findsOneWidget);
     }
 
+    /// Les titres des lignes, dans l'ordre de l'écran.
+    List<String> rows(WidgetTester tester, {required bool unavailable}) => [
+          for (final row
+              in tester.widgetList<PhoneSearchRow>(find.byType(PhoneSearchRow)))
+            if ((row.hit is UnavailableHit) == unavailable)
+              switch (row.hit) {
+                LibraryHit(:final media) => media.title,
+                UnavailableHit(:final item) => item.title,
+              },
+        ];
+
+    String badge(WidgetTester tester, String title) => tester
+        .widget<Text>(find.descendant(
+          of: find.descendant(
+            of: find.widgetWithText(PhoneSearchRow, title),
+            matching: find.byType(UnavailableBadge),
+          ),
+          matching: find.byType(Text),
+        ))
+        .data!;
+
     testWidgets(
-        'sous les résultats de la bibliothèque, le rayon des titres absents',
-        (tester) async {
+        'sous les titres de la bibliothèque, ceux que le serveur n’a pas, '
+        'avec la pastille « Indispo » ou « Demandé »', (tester) async {
       await pump(tester);
       await type(tester, 'dune');
 
-      expect(find.text('1 résultat'), findsOneWidget);
-      expect(find.text('Pas sur le serveur'), findsOneWidget);
+      expect(rows(tester, unavailable: false), ['Dune']);
+      expect(rows(tester, unavailable: true),
+          ['Dune : Deuxième partie', 'Dune : Prophétie']);
       expect(find.text('Ouvrez un titre pour le demander'), findsOneWidget);
       expect(
-        tester.getRect(find.text('Pas sur le serveur')).top,
-        greaterThan(tester.getRect(find.byType(MediaCard)).bottom),
+        tester.getRect(find.text('Ouvrez un titre pour le demander')).top,
+        greaterThan(
+            tester.getRect(find.widgetWithText(PhoneSearchRow, 'Dune')).bottom),
       );
+      expect(badge(tester, 'Dune : Deuxième partie'), 'Indispo');
+      expect(badge(tester, 'Dune : Prophétie'), 'Demandé');
+      // Le titre de la bibliothèque n'est pas marqué.
       expect(
-        [for (final card in _unavailable(tester)) card.item.title],
-        ['Dune : Deuxième partie', 'Dune : Prophétie'],
+        find.descendant(
+          of: find.widgetWithText(PhoneSearchRow, 'Dune'),
+          matching: find.byType(UnavailableBadge),
+        ),
+        findsNothing,
       );
-      expect(_unavailable(tester).every((card) => card.marksUnavailable),
-          isTrue);
-      expect(_badgeOf(tester, 'Dune : Deuxième partie'), 'Indispo');
-      expect(_badgeOf(tester, 'Dune : Prophétie'), 'Demandé');
     });
 
     testWidgets(
-        'la bibliothèque n’a rien : la page le dit, et montre ce qui peut '
-        'se demander', (tester) async {
+        'la bibliothèque n’a rien : la page montre ce qui peut se demander, '
+        'sans « Aucun résultat »', (tester) async {
       await pump(tester);
       await type(tester, 'arrival');
 
       expect(find.text('Aucun résultat'), findsNothing);
-      expect(find.text('Rien dans la bibliothèque'), findsOneWidget);
-      expect(find.byType(MediaCard), findsNothing);
-      expect(_unavailable(tester).single.item.title, 'Premier Contact');
+      expect(rows(tester, unavailable: false), isEmpty);
+      expect(rows(tester, unavailable: true), ['Premier Contact']);
     });
 
     testWidgets('toucher un titre absent ouvre sa fiche de demande',
@@ -318,24 +334,22 @@ void main() {
       await pump(tester);
       await type(tester, 'arrival');
 
-      await tester.tap(find.byType(RequestMediaCard));
+      await tester.tap(find.widgetWithText(PhoneSearchRow, 'Premier Contact'));
       await tester.pumpAndSettle();
       expect(find.byType(RequestDetailScreen), findsOneWidget);
     });
 
     testWidgets(
-        'un compte qui ne peut rien demander garde la recherche d’avant',
+        'un compte qui ne peut rien demander ne voit que la bibliothèque',
         (tester) async {
       await pump(tester, canRequest: false);
       await type(tester, 'dune');
 
-      expect(find.text('1 résultat'), findsOneWidget);
-      expect(find.text('Pas sur le serveur'), findsNothing);
-      expect(find.byType(RequestMediaCard), findsNothing);
+      expect(rows(tester, unavailable: false), ['Dune']);
+      expect(rows(tester, unavailable: true), isEmpty);
+      expect(find.textContaining('Pas sur le serveur'), findsNothing);
 
-      // La frappe continue dans le champ de la page de résultats.
-      await tester.enterText(find.byType(TextField).last, 'arrival');
-      await _catalogAnswers(tester);
+      await type(tester, 'arrival');
       expect(find.text('Aucun résultat'), findsOneWidget);
     });
   });

@@ -50,13 +50,23 @@ __pycache__/
 server/data/
 .mediahub/
 
-# Flutter build output (generated)
-prototypes/**/windows/flutter/ephemeral/
 
 # Runtime : volume Docker et depot imbrique, jamais suivis
 /data/
 /mediahub/
 
+# Les réglages du serveur, clés comprises : chacun copie .env.example.
+/.env
+
 # Préférences Claude perso (une par dev, recréées par le setup script de
 # chaque environnement cloud). Jamais versionnées, donc jamais mergées.
 CLAUDE.local.md
+
+# graphify : le graphe se versionne, pas ses sauvegardes datées (~30 Mo par
+# jour) ni son cache, propre à chaque machine (le nom de son dossier en dépend).
+graphify-out/cache/
+graphify-out/20*/
+app/graphify-out/
+
+# Prototypes / maquettes de test (jamais versionnés)
+prototypes/

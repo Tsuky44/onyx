@@ -34,6 +34,22 @@ abstract class PlatformVideoController {
   /// [Rect] of the video output, received from the native implementation.
   final ValueNotifier<Rect?> rect = ValueNotifier<Rect?>(null);
 
+  /// Onyx : le chemin de rendu que la sortie native a retenu — `d3d11`,
+  /// `angle` ou `sw` sous Windows (ADR-0158, phase 2), null ailleurs. Connu dès
+  /// que [VideoController.platform] est résolu.
+  String? renderApi;
+
+  /// Onyx : le chemin de rendu et le compte des rendus réussis et ratés de la
+  /// sortie native (`renderApi`, `renderedFrames`, `failedFrames`). Null là où
+  /// la plateforme ne le dit pas, ou quand la sortie n'a pas pu répondre.
+  Future<Map<String, Object?>?> renderInfo() async => null;
+
+  /// Onyx : fait passer la sortie native de D3D11 à ANGLE en pleine lecture,
+  /// sans changer de lecteur (ADR-0158, phase 2). La piste vidéo de mpv est
+  /// coupée par la bascule : à l'appelant de la resélectionner. Rend le chemin
+  /// retenu, null là où la plateforme n'a pas ce choix.
+  Future<String?> fallbackToAngle() async => null;
+
   /// {@macro platform_video_controller}
   PlatformVideoController(
     this.player,
@@ -121,6 +137,12 @@ class VideoControllerConfiguration {
   /// * [vo] != gpu : `false`
   final bool? androidAttachSurfaceAfterVideoParameters;
 
+  /// Onyx : le premier chemin de rendu matériel que la sortie Windows essaie
+  /// (ADR-0158, phase 2). `d3d11` : le rendu D3D11 de libmpv, puis ANGLE, puis
+  /// le logiciel. Null ou `angle` : ANGLE puis le logiciel, comme avant.
+  /// Ignoré hors de Windows.
+  final String? windowsRenderApi;
+
   /// {@macro video_controller_configuration}
   const VideoControllerConfiguration({
     this.vo,
@@ -130,6 +152,7 @@ class VideoControllerConfiguration {
     this.scale = 1.0,
     this.enableHardwareAcceleration = true,
     this.androidAttachSurfaceAfterVideoParameters,
+    this.windowsRenderApi,
   });
 
   /// Returns a copy of this class with the given fields replaced by the new values.
@@ -141,6 +164,7 @@ class VideoControllerConfiguration {
     int? height,
     bool? enableHardwareAcceleration,
     bool? androidAttachSurfaceAfterVideoParameters,
+    String? windowsRenderApi,
   }) =>
       VideoControllerConfiguration(
         vo: vo ?? this.vo,
@@ -153,5 +177,6 @@ class VideoControllerConfiguration {
         androidAttachSurfaceAfterVideoParameters:
             androidAttachSurfaceAfterVideoParameters ??
                 this.androidAttachSurfaceAfterVideoParameters,
+        windowsRenderApi: windowsRenderApi ?? this.windowsRenderApi,
       );
 }

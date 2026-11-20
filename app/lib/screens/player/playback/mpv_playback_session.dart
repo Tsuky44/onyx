@@ -10,7 +10,9 @@ import '../../../utils/mpv_native_view.dart';
 import '../hardware_decoding.dart';
 import '../player_engine.dart';
 import '../playback_profile.dart';
+import '../windows_video_render.dart';
 import 'cache_pause_policy.dart';
+import 'mpv_d3d11_fallback.dart';
 import 'mpv_diagnostics.dart';
 import 'mpv_dolby_vision.dart';
 import 'mpv_fast_rendering.dart';
@@ -58,6 +60,19 @@ class MpvPlaybackSession implements PlaybackSession {
 
   mk.Player get _player => _engine.player;
 
+  /// Le chemin de rendu de la texture sous Windows (ADR-0158), lu au réglage
+  /// du moteur : il décide du décodeur.
+  VideoRenderPath? _renderPath;
+
+  /// La retombée sur ANGLE d'une texture D3D11 qui ne montre rien.
+  late final MpvD3D11Fallback _d3d11 = MpvD3D11Fallback(
+    engine: _engine,
+    read: (name) => _read(_player.platform as dynamic, name),
+    set: (name, value) => _set(_player.platform as dynamic, name, value),
+    suspended: () => _dolbyVision.active,
+    onPath: (path) => _renderPath = WindowsVideoRender.active = path,
+  );
+
   /// Le moteur mpv sous-jacent.
   ///
   /// Exposé pour ce qui ne peut pas encore passer par le port : la mise en
@@ -72,6 +87,7 @@ class MpvPlaybackSession implements PlaybackSession {
   Future<void> dispose() async {
     _endSeekWatch(log: false);
     _startup.cancel();
+    _d3d11.stop();
     await _stopObserving();
     // Rendu plutôt que détruit : la lecture suivante réutilise cette instance
     // libmpv et sa texture au lieu de payer leur construction.
@@ -149,6 +165,7 @@ class MpvPlaybackSession implements PlaybackSession {
     }
     if (!AppPlatform.isWeb && !_pictureLive) {
       _startup.begin(start: start, keyframeStart: _exactSeekDeferred);
+      if (_renderPath != null) _startup.note('rendu ${_renderPath!.name}');
     }
     if (!AppPlatform.isWeb) {
       // Par le relais local, qui connaît déjà l'adresse du serveur : mpv ne
@@ -383,7 +400,8 @@ class MpvPlaybackSession implements PlaybackSession {
     await _set(
         platform, 'demuxer-max-back-bytes', '${profile.demuxerBackBytes}');
     await _set(platform, 'hr-seek', 'yes');
-    await _set(platform, 'hwdec', HardwareDecoding.mpvValue);
+    _renderPath = WindowsVideoRender.active = await _engine.renderPath;
+    await _set(platform, 'hwdec', HardwareDecoding.mpvValueFor(_renderPath));
     // Le rendu direct est une source connue de gels périodiques avec l'API de
     // rendu de libmpv qu'utilise media_kit. Android n'utilise pas cette API —
     // il reçoit une vraie Surface — et la copie supplémentaire y est tout sauf
@@ -471,7 +489,8 @@ class MpvPlaybackSession implements PlaybackSession {
     await _set(platform, 'demuxer-max-bytes', '${profile.hlsDemuxerMaxBytes}');
     await _set(
         platform, 'demuxer-readahead-secs', '${profile.hlsReadaheadSecs}');
-    await _set(platform, 'hwdec', HardwareDecoding.mpvValue);
+    _renderPath = WindowsVideoRender.active = await _engine.renderPath;
+    await _set(platform, 'hwdec', HardwareDecoding.mpvValueFor(_renderPath));
     if (!AppPlatform.isAndroid && !MpvNativeView.enabled) {
       await _set(platform, 'vd-lavc-dr', 'no');
     }
@@ -717,15 +736,26 @@ class MpvPlaybackSession implements PlaybackSession {
       final platform = _player.platform as dynamic;
       await MpvDolbyVisionOutput.log((name) => _read(platform, name));
     }
+    // Une texture D3D11 qui ne montre rien passe sur ANGLE (ADR-0158).
+    if (_renderPath == VideoRenderPath.d3d11) _d3d11.watch();
     if (AppPlatform.isWeb) return;
     if (_softwareDecodeHandled) return;
     // Les plateformes où le chemin sans copie peut échouer vers le logiciel :
     // MediaCodec sur Android, l'interop VideoToolbox → Vulkan de gpu-next sur
-    // macOS. Windows décode toujours avec recopie (ADR-0095).
-    final zeroCopyAsked =
-        AppPlatform.isAndroid || (AppPlatform.isMacOS && MpvNativeView.enabled);
+    // macOS, d3d11va sur la texture D3D11 de Windows. Sur ANGLE, Windows
+    // décode toujours avec recopie (ADR-0095).
+    final zeroCopyAsked = AppPlatform.isAndroid ||
+        (AppPlatform.isMacOS && MpvNativeView.enabled) ||
+        _renderPath == VideoRenderPath.d3d11;
     if (!zeroCopyAsked) return;
-    if (HardwareDecoding.preference != HardwareDecodingPreference.auto) return;
+    // Sur la texture D3D11, « Compatible » décode aussi sans copie : seul
+    // « Logiciel » y échappe.
+    final preference = HardwareDecoding.preference;
+    if (preference == HardwareDecodingPreference.off) return;
+    if (preference != HardwareDecodingPreference.auto &&
+        _renderPath != VideoRenderPath.d3d11) {
+      return;
+    }
 
     final platform = _player.platform as dynamic;
     final height = _player.state.videoParams.h;
@@ -742,14 +772,24 @@ class MpvPlaybackSession implements PlaybackSession {
     _softwareDecodeHandled = true;
     HardwareDecoding.noteZeroCopyFailure();
     debugPrint('mpv: ${height}p décodé en logiciel — bascule sur '
-        '${HardwareDecoding.mpvValue}');
-    await _set(platform, 'hwdec', HardwareDecoding.mpvValue);
+        '${HardwareDecoding.mpvValueFor(_renderPath)}');
+    await _set(platform, 'hwdec', HardwareDecoding.mpvValueFor(_renderPath));
   }
 
   @override
   Future<PlaybackDiagnostics> readDiagnostics() async {
     if (AppPlatform.isWeb) return PlaybackDiagnostics.none;
-    final platform = _player.platform as dynamic;
-    return readMpvDiagnostics((name) => _read(platform, name));
+    final info = await _diagnostics();
+    final path = _renderPath;
+    return path == null ? info : info.withVideoOutput(path.name);
   }
+
+  /// Hors du thread de l'interface là où le libmpv se retrouve depuis un
+  /// autre isolate : celui de media_kit sous Windows, le patché sur macOS.
+  late final _diagnostics = MpvDiagnosticsReader(
+    read: (name) => _read(_player.platform as dynamic, name),
+    batch: AppPlatform.isWindows || MpvNativeView.enabled
+        ? _engine.readProperties
+        : null,
+  );
 }

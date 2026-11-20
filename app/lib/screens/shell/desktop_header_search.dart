@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/tr.dart';
 import '../../navigation/shell_navigator.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../theme/app_motion.dart';
@@ -15,7 +14,7 @@ import '../search/desktop/desktop_search_controller.dart';
 import '../search/desktop/desktop_search_hotkey.dart';
 import '../search/desktop/desktop_search_route.dart';
 import '../search/desktop/desktop_search_sheet.dart';
-import '../search/desktop/recent_searches.dart';
+import '../search/recent_searches.dart';
 
 /// Le champ de recherche de l'en-tête du bureau (ADR-0139).
 ///
@@ -232,11 +231,7 @@ class _DesktopHeaderSearchState extends State<DesktopHeaderSearch>
 
   @override
   Widget build(BuildContext context) {
-    _recentsFor(context.select<AuthProvider, String?>((auth) {
-      final server = auth.activeServer?.id;
-      final user = auth.currentUser?.id;
-      return server == null || user == null ? null : '$server:$user';
-    }));
+    _recentsFor(RecentSearches.watchProfileKey(context));
     final open = context.select<SearchProvider, bool>((s) => s.isExpanded);
     final focused = _focusNode.hasFocus;
     final hasText = _controller.text.isNotEmpty;

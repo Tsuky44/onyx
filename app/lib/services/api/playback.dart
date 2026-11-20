@@ -71,9 +71,17 @@ mixin _PlaybackEndpoints {
       token: token,
       expiresAt: DateTime.parse(data['expires_at'] as String),
       renew: () async {
-        final result = await _dio.request('/api/playback/tickets',
-            data: {'ticket': token}, options: scoped('PUT'));
-        return DateTime.parse(result.data['expires_at'] as String);
+        try {
+          final result = await _dio.request('/api/playback/tickets',
+              data: {'ticket': token}, options: scoped('PUT'));
+          return DateTime.parse(result.data['expires_at'] as String);
+        } on DioException catch (error) {
+          // 401 : le serveur répond mais ne connaît plus ce ticket.
+          if (error.response?.statusCode == 401) {
+            throw const PlaybackTicketRejected();
+          }
+          rethrow;
+        }
       },
       revoke: () async {
         await _dio.request('/api/playback/tickets',

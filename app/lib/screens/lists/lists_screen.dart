@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,17 +14,32 @@ import '../../theme/app_type.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/global/empty_state.dart';
+import '../../widgets/global/glass_chrome.dart';
+import '../player/widgets/onyx/onyx_capsule_button.dart';
+import '../../widgets/global/onyx_toast.dart';
 import '../../widgets/global/watch_list_editor_dialog.dart';
 import 'list_detail_screen.dart';
+import 'lists_overview_wide.dart';
 import 'widgets/watch_list_tile.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 /// L'onglet des listes (ADR-0070) : « À regarder plus tard » et les listes
 /// du compte, puis celles que les autres comptes partagent.
-class ListsScreen extends StatelessWidget {
+class ListsScreen extends StatefulWidget {
   const ListsScreen({super.key, this.embedded = false});
 
   /// Sous l'en-tête de la coquille large : le contenu commence plus bas.
   final bool embedded;
+
+  @override
+  State<ListsScreen> createState() => _ListsScreenState();
+}
+
+class _ListsScreenState extends State<ListsScreen> {
+  bool get embedded => widget.embedded;
+
+  /// L'ordre de « Mes listes » dans la vue large.
+  WatchListSort _sort = WatchListSort.recent;
 
   static SliverGridDelegate _gridDelegate(BuildContext context) {
     final compact = AppLayout.isCompact(context);
@@ -55,12 +72,13 @@ class ListsScreen extends StatelessWidget {
     } catch (e) {
       debugPrint('ListsScreen: create failed: $e');
       final data = e is DioException ? e.response?.data : null;
-      messenger.showSnackBar(SnackBar(
-        content: Text(data is Map && data['error'] != null
+      showOnyxToastOn(
+        messenger,
+        data is Map && data['error'] != null
             ? data['error'].toString()
-            : tr('La liste n’a pas pu être créée. Réessayez.')),
-        backgroundColor: AppColors.error,
-      ));
+            : tr('La liste n’a pas pu être créée. Réessayez.'),
+        error: true,
+      );
     }
   }
 
@@ -70,6 +88,9 @@ class ListsScreen extends StatelessWidget {
     final padding = AppLayout.pagePadding(context);
     final compact = AppLayout.isCompact(context);
     final overview = provider.overview;
+    // La grande fenêtre a sa vue d'ensemble (ADR-0159) ; le téléphone, la
+    // tablette étroite et la télévision gardent les vignettes.
+    final wide = AppLayout.isWide(context) && !TvMode.isTv;
 
     Widget? state;
     if (!provider.hasLoaded && provider.errorMessage == null) {
@@ -121,16 +142,21 @@ class ListsScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     if (compact)
-                      IconButton.filledTonal(
-                        tooltip: tr('Nouvelle liste'),
-                        onPressed: () => _create(context),
-                        icon: const Icon(AppIcons.add),
+                      Tooltip(
+                        message: tr('Nouvelle liste'),
+                        child: GlassIconButton(
+                          size: 40,
+                          onTap: () => _create(context),
+                          child: const Icon(AppIcons.add,
+                              size: 20, color: AppColors.textPrimary),
+                        ),
                       )
                     else
-                      FilledButton.icon(
+                      OnyxCapsuleButton(
+                        label: tr('Nouvelle liste'),
+                        icon: AppIcons.add,
+                        primary: true,
                         onPressed: () => _create(context),
-                        icon: const Icon(AppIcons.add, size: 18),
-                        label: Text(tr('Nouvelle liste')),
                       ),
                   ],
                 ),
@@ -138,6 +164,19 @@ class ListsScreen extends StatelessWidget {
             ),
             if (state != null)
               SliverFillRemaining(hasScrollBody: false, child: state)
+            else if (wide)
+              ...wideListsSlivers(
+                context,
+                overview: overview,
+                sort: _sort,
+                onSort: (sort) => setState(() => _sort = sort),
+                onOpen: (list) async {
+                  await _open(context, list);
+                  // Ce qu'on a vu ou ajouté dans la liste change sa progression.
+                  if (mounted) unawaited(provider.load(silent: true));
+                },
+                onRefresh: () => unawaited(provider.load(silent: true)),
+              )
             else ...[
               _Section(title: tr('Mes listes')),
               SliverPadding(
@@ -160,7 +199,8 @@ class ListsScreen extends StatelessWidget {
               _Section(title: tr('Partagées par les autres')),
               if (overview.shared.isEmpty)
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(padding, 0, padding, 48),
+                  padding: EdgeInsets.fromLTRB(
+                      padding, 0, padding, SliverScrollEnd.extentOf(context)),
                   sliver: SliverToBoxAdapter(
                     child: Text(
                       tr('Personne n’a encore partagé de liste sur ce serveur.'),
@@ -170,7 +210,8 @@ class ListsScreen extends StatelessWidget {
                 )
               else
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(padding, 0, padding, 48),
+                  padding: EdgeInsets.fromLTRB(
+                      padding, 0, padding, SliverScrollEnd.extentOf(context)),
                   sliver: SliverGrid(
                     gridDelegate: _gridDelegate(context),
                     delegate: SliverChildBuilderDelegate(

@@ -159,3 +159,33 @@ func TestFindEpisodeInSeasonCarriesTheShowID(t *testing.T) {
 		t.Fatalf("expected show id %d on the next episode, got %d", showID, item.ShowID)
 	}
 }
+
+// Finishing episode 2 with only episode 4 on the server: the response has to
+// name episode 3 as missing, so the player asks before skipping it. Without
+// TMDB (no API key in tests) the local numbering is what is trusted.
+func TestDescribeSkippedEpisodeNamesTheHole(t *testing.T) {
+	showID, seasonIDs := setupSeasonsTestDB(t, 1)
+
+	skipped := describeSkippedEpisode(seasonIDs[1], 2, 5, baseMediaLanguage())
+
+	if skipped == nil {
+		t.Fatal("expected the episodes between 2 and 5 to be reported missing")
+	}
+	if skipped.ShowID != showID || skipped.SeasonNumber != 1 {
+		t.Fatalf("expected show %d season 1, got %+v", showID, skipped)
+	}
+	if skipped.Number != 3 || skipped.MissingCount != 2 {
+		t.Fatalf("expected episode 3 first and 2 missing, got %d and %d", skipped.Number, skipped.MissingCount)
+	}
+}
+
+func TestDescribeSkippedEpisodeIgnoresConsecutiveEpisodes(t *testing.T) {
+	_, seasonIDs := setupSeasonsTestDB(t, 1)
+
+	if skipped := describeSkippedEpisode(seasonIDs[1], 2, 3, baseMediaLanguage()); skipped != nil {
+		t.Fatalf("expected no hole between 2 and 3, got %+v", skipped)
+	}
+	if skipped := describeSkippedEpisode(seasonIDs[1], 0, 4, baseMediaLanguage()); skipped != nil {
+		t.Fatalf("expected an unnumbered episode to claim no hole, got %+v", skipped)
+	}
+}

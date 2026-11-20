@@ -183,7 +183,7 @@ extension PlayerControllerHls on PlayerController {
           await access.close();
           return;
         }
-        _playbackAccess = access;
+        _adoptAccess(access);
       }
       final hls = prepared ??
           await api.startHlsSession(

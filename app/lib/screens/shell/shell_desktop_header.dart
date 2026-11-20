@@ -13,12 +13,12 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_type.dart';
-import '../../utils/app_platform.dart';
 import '../../utils/window_controls.dart';
 import '../../widgets/global/account_menu.dart';
 import '../../widgets/global/app_download_button.dart';
 import '../../widgets/global/glass_chrome.dart';
 import '../../widgets/global/interface_tour/tour_anchor.dart';
+import '../../widgets/global/window_caption_buttons.dart';
 import 'desktop_header_search.dart';
 import 'shell_indexer_status.dart';
 import 'shell_tabs.dart';
@@ -127,7 +127,9 @@ class ShellDesktopHeader extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(
           28,
           6 + macOSWindowControlsTopInset,
-          28,
+          // Les contrôles de la fenêtre ont leur propre marge intérieure :
+          // Fermer reste près du coin, où la main le cherche.
+          useDesktopCaptionBar ? 12 : 28,
           10,
         ),
         child: Row(
@@ -149,13 +151,14 @@ class ShellDesktopHeader extends StatelessWidget {
             ShellIndexerStatus(homeProvider: homeProvider),
             const AppDownloadButton(),
             AccountMenu(authProvider: authProvider),
+            if (useDesktopCaptionBar) const _WindowControlsCluster(),
           ],
         ),
       ),
     );
 
     return GlassHeaderStrip(
-      child: AppPlatform.isMacOS
+      child: useHiddenNativeTitleBar
           ? Stack(
               children: [
                 // Empty zones (title bar / spacer) drag the window; buttons
@@ -167,6 +170,31 @@ class ShellDesktopHeader extends StatelessWidget {
               ],
             )
           : header,
+    );
+  }
+}
+
+/// Sous Windows, les contrôles de la fenêtre au bout de la rangée, après un
+/// trait qui les sépare du compte (ADR-0157) : l'en-tête les porte, et la
+/// bande du haut s'efface ([WindowCaptionHost]).
+class _WindowControlsCluster extends StatelessWidget {
+  const _WindowControlsCluster();
+
+  @override
+  Widget build(BuildContext context) {
+    return WindowCaptionHost(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 1,
+            height: 20,
+            margin: const EdgeInsets.only(left: 18, right: 14),
+            color: Colors.white.withValues(alpha: 0.16),
+          ),
+          const WindowCaptionButtons(),
+        ],
+      ),
     );
   }
 }

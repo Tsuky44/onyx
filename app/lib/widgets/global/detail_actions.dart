@@ -27,15 +27,23 @@ String detailPlayLabel({
   int? seasonOverride,
 }) {
   final verb = resuming ? tr('Reprendre') : tr('Lecture');
-  if (episode == null) return verb;
+  final code = episodeShortCode(episode, seasonOverride: seasonOverride);
+  return code == null ? verb : '$verb $code';
+}
+
+/// Le numéro d'un épisode tel que les boutons de lecture l'écrivent :
+/// « S2 E4 », ou « E4 » sans saison. Nul sans numéro d'épisode.
+///
+/// La fiche et le bandeau d'accueil (ADR-0154) disent ainsi le même épisode
+/// de la même façon.
+String? episodeShortCode(Media? episode, {int? seasonOverride}) {
+  if (episode == null) return null;
   final number = episode.effectiveEpisodeNumber;
-  if (number == null || number <= 0) return verb;
+  if (number == null || number <= 0) return null;
   final season = (seasonOverride != null && seasonOverride > 0)
       ? seasonOverride
       : episode.effectiveSeasonNumber;
-  return season != null && season > 0
-      ? '$verb S$season E$number'
-      : '$verb E$number';
+  return season != null && season > 0 ? 'S$season E$number' : 'E$number';
 }
 
 /// La rangée d'actions d'une fiche film ou série : la pastille de lecture, où

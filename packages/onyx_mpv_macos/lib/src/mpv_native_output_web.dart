@@ -14,6 +14,9 @@ final class MpvNativeOutput {
 
   Future<void> setProperty(String name, String value) => _unsupported();
 
+  Future<Map<String, String?>> getProperties(List<String> names) =>
+      Future.error(UnsupportedError('libmpv est indisponible sur le web'));
+
   static Future<void> _unsupported() =>
       Future.error(UnsupportedError('libmpv est indisponible sur le web'));
 }

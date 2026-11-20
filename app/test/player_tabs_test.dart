@@ -220,7 +220,7 @@ void main() {
       ));
 
       expect(find.text('Regardez à plusieurs'), findsOneWidget);
-      expect(find.text('Partagez le code'), findsOneWidget);
+      expect(find.text('Invitez ou partagez le code'), findsOneWidget);
       await tester.tap(find.text('Démarrer une séance'));
       await tester.pumpAndSettle();
       expect(started, 1);

@@ -40,7 +40,6 @@ Future<List<Offset>> _pumpOverPicture(WidgetTester tester) async {
               onBack: () {},
               onToggleSubtitles: () {},
               onOpenAudio: () {},
-              onCycleSpeed: () {},
               onOpenSettings: () {},
               onToggleFullscreen: () {},
             ),
@@ -62,12 +61,15 @@ void main() {
       expect(reached, hasLength(2));
     });
 
-    testWidgets('le titre des deux barres atteint l’image', (tester) async {
+    testWidgets('le titre atteint l’image', (tester) async {
       final reached = await _pumpOverPicture(tester);
-      for (final text in find.text('Avatar : La Voie de l’eau').evaluate()) {
+      // Un film sans logo : son titre n'est écrit qu'en bas (ADR-0139).
+      final titles = find.text('Avatar : La Voie de l’eau').evaluate().toList();
+      expect(titles, isNotEmpty);
+      for (final text in titles) {
         await tester.tapAt(tester.getCenter(find.byWidget(text.widget)));
       }
-      expect(reached, hasLength(2));
+      expect(reached, hasLength(titles.length));
     });
 
     testWidgets('un bouton garde son clic', (tester) async {

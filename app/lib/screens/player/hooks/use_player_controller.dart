@@ -7,6 +7,7 @@ import '../../../utils/app_platform.dart';
 import '../web/web_playback.dart';
 import '../display_frame_rate.dart';
 import '../hardware_decoding.dart';
+import '../windows_video_render.dart';
 import '../playback/audio_language_gap.dart';
 import '../playback/audio_track_pairing.dart';
 import '../playback/auto_quality.dart';
@@ -45,6 +46,7 @@ part 'player_controller_dolby_vision.dart';
 part 'player_controller_hls.dart';
 part 'player_controller_language.dart';
 part 'player_controller_startup.dart';
+part 'player_controller_subtitle_offer.dart';
 part 'player_controller_tracks.dart';
 
 /// Orchestrates playback, quality/audio/subtitle switching and the Direct Play
@@ -165,10 +167,14 @@ class PlayerController {
         api == null) {
       return;
     }
+    // Le ticket courant à chaque demande : une reprise après coupure en ouvre
+    // un neuf et ferme celui-ci, et les aperçus se désactivaient pour la
+    // séance (`StateError` dans le journal d'un utilisateur).
+    PlaybackAccess current() => _playbackAccess ?? access;
     final previews = TimelinePreviews(
-      open: () => api.openTimelinePreviews(media.id, access: access),
+      open: () => api.openTimelinePreviews(media.id, access: current()),
       fetch: (index) =>
-          api.fetchTimelinePreview(media.id, index, access: access),
+          api.fetchTimelinePreview(media.id, index, access: current()),
     );
     timelinePreviews = previews;
     unawaited(previews.start());

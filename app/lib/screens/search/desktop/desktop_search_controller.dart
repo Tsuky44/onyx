@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../search_layout.dart';
 import 'desktop_search_hits.dart';
 
 /// Ce que partagent le champ de l'en-tête et la feuille de résultats du
@@ -14,14 +15,13 @@ import 'desktop_search_hits.dart';
 /// flèche (ADR-0025).
 class DesktopSearchController extends ChangeNotifier {
   /// La pastille choisie. À part : changer de pastille reconstruit la grille.
-  final ValueNotifier<DesktopSearchFilter> filter =
-      ValueNotifier(DesktopSearchFilter.all);
+  final ValueNotifier<SearchFilter> filter = ValueNotifier(SearchFilter.all);
 
   int _selected = 0;
   bool _browsing = false;
   List<int> _sections = const [];
   int _columns = 1;
-  List<DesktopSearchHit> _hits = const [];
+  List<SearchHit> _hits = const [];
 
   /// Le rang du titre sélectionné dans [hits].
   int get selected => _selected;
@@ -33,15 +33,14 @@ class DesktopSearchController extends ChangeNotifier {
   bool get browsing => _browsing;
 
   /// Les titres que la feuille affiche, dans l'ordre de la sélection.
-  List<DesktopSearchHit> get hits => _hits;
+  List<SearchHit> get hits => _hits;
 
   /// Le titre sélectionné, ou null quand la grille est vide.
-  DesktopSearchHit? get current =>
-      _selected < _hits.length ? _hits[_selected] : null;
+  SearchHit? get current => _selected < _hits.length ? _hits[_selected] : null;
 
   /// La feuille dit ce qu'elle affiche, à chaque construction. Silencieux :
   /// appelé pendant une construction, il ne peut prévenir personne.
-  void show(DesktopSearchLayout layout) {
+  void show(SearchLayout layout) {
     _hits = layout.hits;
     _sections = layout.sections;
     if (_selected >= _hits.length) {
@@ -59,11 +58,11 @@ class DesktopSearchController extends ChangeNotifier {
   void restart() {
     _selected = 0;
     _browsing = false;
-    filter.value = DesktopSearchFilter.all;
+    filter.value = SearchFilter.all;
     notifyListeners();
   }
 
-  void setFilter(DesktopSearchFilter value) {
+  void setFilter(SearchFilter value) {
     if (filter.value == value) return;
     _selected = 0;
     _browsing = false;

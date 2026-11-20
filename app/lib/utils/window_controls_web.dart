@@ -1,7 +1,12 @@
 import 'dart:js_interop';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
+
+import 'window_frame_state.dart';
+
+export 'window_frame_state.dart';
 
 /// Web implementation of the window facade — see `window_controls.dart`.
 ///
@@ -42,6 +47,10 @@ abstract final class WindowControls {
   static Future<void> minimize() async {}
   static Future<void> close() async {}
   static Future<void> startDragging() async {}
+
+  /// Un onglet n'a pas de fenêtre à agrandir : l'état ne change jamais.
+  static final ValueListenable<WindowFrameState> frameState =
+      ValueNotifier(const WindowFrameState());
 }
 
 /// No-op counterpart of the native drag region.

@@ -54,6 +54,7 @@ Future<void> pumpChrome(
   bool isPlaying = true,
   bool visible = true,
   bool isTv = false,
+  bool handheld = false,
   FocusNode? playPauseFocusNode,
   FocusNode? progressFocusNode,
   VoidCallback? onBack,
@@ -61,7 +62,6 @@ Future<void> pumpChrome(
   VoidCallback? onForward,
   VoidCallback? onPlayPause,
   VoidCallback? onLockScreen,
-  VoidCallback? onOpenWatchParty,
   VoidCallback? onOpenInfo,
   String? logoUrl,
   List<OnyxTabEntry> tabs = const [],
@@ -103,7 +103,6 @@ Future<void> pumpChrome(
           onBack: onBack ?? () {},
           onToggleSubtitles: () {},
           onOpenAudio: () {},
-          onCycleSpeed: () {},
           onOpenSettings: () {},
           onToggleFullscreen: () {},
           onLockScreen: onLockScreen,
@@ -111,10 +110,10 @@ Future<void> pumpChrome(
           onSkipPrevious: onSkipPrevious,
           onOpenEpisodes: onOpenEpisodes,
           onSkipIntro: onSkipIntro,
-          onOpenWatchParty: onOpenWatchParty,
           onOpenInfo: onOpenInfo,
           logoUrl: logoUrl,
           isTv: isTv,
+          handheld: handheld,
           playPauseFocusNode: playPauseFocusNode,
           progressFocusNode: progressFocusNode,
           tabs: tabs,
@@ -176,7 +175,6 @@ Future<TvNavHarness> pumpTvChrome(
         onBack: onBack ?? () {},
         onToggleSubtitles: () {},
         onOpenAudio: () {},
-        onCycleSpeed: () {},
         onOpenSettings: () {},
         onToggleFullscreen: () {},
         onSkipNext: onSkipNext,
@@ -205,6 +203,7 @@ void main() {
         tester,
         width: 400,
         showVolume: false,
+        handheld: true,
         onLockScreen: () => locked++,
       );
 
@@ -233,14 +232,44 @@ void main() {
         Icons.volume_up_rounded,
         Icons.closed_caption_rounded,
         Icons.graphic_eq_rounded,
-        Icons.speed_rounded,
         Icons.settings_rounded,
         Icons.fullscreen_rounded,
-        Icons.replay_10_rounded,
-        Icons.pause_rounded,
-        Icons.forward_10_rounded,
       ]) {
         expect(find.byIcon(icon), findsOneWidget, reason: '$icon missing');
+      }
+    });
+
+    testWidgets('sous une souris, rien au milieu de l’image', (tester) async {
+      // Un clic sur l'image met en pause, Espace aussi, les flèches déplacent
+      // de dix secondes : les boutons doublaient ce que la main fait déjà
+      // (ADR-0139, comme la télécommande de l'ADR-0124).
+      await pumpChrome(tester, width: 1280, onSkipNext: () {});
+
+      for (final icon in [
+        Icons.replay_10_rounded,
+        Icons.pause_rounded,
+        Icons.play_arrow_rounded,
+        Icons.forward_10_rounded,
+        Icons.speed_rounded,
+      ]) {
+        expect(find.byIcon(icon), findsNothing, reason: '$icon');
+      }
+      // Entre le bas de la rangée du haut et le haut de celle du bas : rien
+      // qui prenne un clic.
+      final back = tester.getRect(find.byKey(const ValueKey('onyx-back')));
+      final next = tester.getRect(find.byKey(const ValueKey('onyx-next')));
+      expect(next.top - back.bottom, greaterThan(300));
+    });
+
+    testWidgets('tous les boutons sont des disques de verre', (tester) async {
+      await pumpChrome(tester,
+          width: 1280, onSkipNext: () {}, onSkipPrevious: () {});
+
+      for (final button
+          in tester.widgetList<OnyxIconButton>(find.byType(OnyxIconButton))) {
+        // Le bouton muet est dans la capsule de verre du volume.
+        if (button.key == const ValueKey('onyx-mute')) continue;
+        expect(button.glass, isTrue, reason: '${button.key}');
       }
     });
 
@@ -260,27 +289,82 @@ void main() {
       expect(find.byIcon(Icons.picture_in_picture_alt_rounded), findsNothing);
     });
 
-    testWidgets('shows the title block, both lines', (tester) async {
+    testWidgets('ce qu’on regarde tient en une ligne', (tester) async {
       await pumpChrome(tester, width: 1280);
 
-      expect(find.text('2022'), findsOneWidget);
-      // Once in the title block; the top bar falls back to the same text when
-      // there is no logo.
-      expect(find.text('Avatar : La Voie de l’eau'), findsWidgets);
+      // Un film : son titre, une fois, en bas. L'année n'est plus écrite.
+      expect(find.text('Avatar : La Voie de l’eau'), findsOneWidget);
+      expect(find.text('2022'), findsNothing);
     });
 
-    testWidgets(
-        'times read as elapsed on the left, remaining + end on the right',
+    testWidgets('le temps écoulé à gauche, le restant à droite, la fin au survol',
         (tester) async {
       await pumpChrome(tester, width: 1280);
 
       expect(find.text('42:00'), findsOneWidget);
-      expect(
-        find.byWidgetPredicate(
-          (w) => w is Text && (w.data?.startsWith('-01:18:00  /  ') ?? false),
-        ),
-        findsOneWidget,
+      expect(find.text('-01:18:00'), findsOneWidget);
+      final tip = tester.widget<Tooltip>(
+        find.byKey(const ValueKey('onyx-remaining')),
       );
+      expect(tip.message, startsWith('Fin à '));
+    });
+  });
+
+  group('les onglets d’une souris', () {
+    final tabs = [
+      testTab(OnyxTab.info, 'Infos'),
+      testTab(OnyxTab.episodes, 'Épisodes'),
+      testTab(OnyxTab.stats, 'Stats'),
+    ];
+
+    testWidgets('sous la barre dans une grande fenêtre, un clic ouvre le volet',
+        (tester) async {
+      final asked = <OnyxTab?>[];
+      await pumpChrome(tester,
+          width: 1280, tabs: tabs, onTabChanged: asked.add, onOpenInfo: () {});
+
+      final bar = tester.getRect(find.byType(OnyxProgressBar));
+      final tab = find.byKey(const ValueKey('onyx-tab-episodes'));
+      expect(tester.getRect(tab).top, greaterThanOrEqualTo(bar.bottom));
+      // Les onglets sont là : pas de bouton pour les ouvrir.
+      expect(find.byKey(const ValueKey('onyx-info')), findsNothing);
+      expect(find.byKey(const ValueKey('contenu-episodes')), findsNothing);
+
+      await tester.tap(tab);
+      await tester.pumpAndSettle();
+      expect(asked.last, OnyxTab.episodes);
+      expect(find.byKey(const ValueKey('contenu-episodes')), findsOneWidget);
+      // La barre est remontée pour laisser la place au volet.
+      expect(
+        tester.getRect(find.byType(OnyxProgressBar)).top,
+        lessThan(bar.top - OnyxTvTabs.contentHeight / 2),
+      );
+
+      // Un second clic le referme.
+      await tester.tap(tab);
+      await tester.pumpAndSettle();
+      expect(asked.last, isNull);
+      expect(find.byKey(const ValueKey('contenu-episodes')), findsNothing);
+    });
+
+    testWidgets('dans une fenêtre étroite ou basse, derrière un bouton',
+        (tester) async {
+      for (final size in const [Size(700, 700), Size(1280, 500)]) {
+        var opened = 0;
+        await pumpChrome(
+          tester,
+          width: size.width,
+          height: size.height,
+          tabs: tabs,
+          onOpenEpisodes: () => opened++,
+        );
+
+        expect(find.byKey(const ValueKey('onyx-tab-episodes')), findsNothing,
+            reason: '$size');
+        await tester.tap(find.byKey(const ValueKey('onyx-episodes')));
+        expect(opened, 1, reason: '$size');
+        expect(tester.takeException(), isNull);
+      }
     });
   });
 
@@ -443,7 +527,6 @@ void main() {
             onBack: () => backTaps++,
             onToggleSubtitles: () {},
             onOpenAudio: () {},
-            onCycleSpeed: () {},
             onOpenSettings: () {},
             onToggleFullscreen: () {},
           ),
@@ -469,7 +552,7 @@ void main() {
 
     testWidgets('takes the band between the two bars, on the right edge',
         (tester) async {
-      await pumpChrome(tester, width: 420, brightness: 0.5);
+      await pumpChrome(tester, width: 420, brightness: 0.5, handheld: true);
 
       final bar = find.byType(OnyxBrightnessSlider);
       expect(bar, findsOneWidget);
@@ -489,20 +572,21 @@ void main() {
       // the utilities cluster, those buttons were hit-tested first and took
       // the touches, so the lower part of the bar simply stopped answering
       // while still being drawn.
-      await pumpChrome(tester, width: 420, brightness: 0.5);
+      await pumpChrome(tester, width: 420, brightness: 0.5, handheld: true);
 
       final rect = tester.getRect(find.byType(OnyxBrightnessSlider));
-      final fullscreen = tester.getRect(find.byIcon(Icons.fullscreen_rounded));
+      final settings = tester.getRect(find.byKey(const ValueKey('onyx-settings')));
 
-      expect(rect.bottom, lessThanOrEqualTo(fullscreen.top));
+      expect(rect.bottom, lessThanOrEqualTo(settings.top));
     });
 
     testWidgets('dragging up brightens and dragging down dims', (tester) async {
       final values = <double>[];
       await pumpChrome(
         tester,
-        width: 420,
-        brightness: 0.5,
+        // Assez large pour que la colonne ne passe pas sous +10 s.
+        width: 800,
+        brightness: 0.5, handheld: true,
         onBrightnessChanged: values.add,
       );
 
@@ -524,12 +608,12 @@ void main() {
       // chrome's bottom bar takes two thirds. The band left is barely 70 px,
       // and the bar has to live in it — it vanished outright at one point,
       // which is worse than tight.
-      await pumpChrome(tester, width: 800, height: 360, brightness: 0.5);
+      await pumpChrome(tester, width: 800, height: 360, brightness: 0.5, handheld: true);
 
       expect(find.byType(OnyxBrightnessSlider), findsOneWidget);
       final rect = tester.getRect(find.byType(OnyxBrightnessSlider));
-      final fullscreen = tester.getRect(find.byIcon(Icons.fullscreen_rounded));
-      expect(rect.bottom, lessThanOrEqualTo(fullscreen.top));
+      final settings = tester.getRect(find.byKey(const ValueKey('onyx-settings')));
+      expect(rect.bottom, lessThanOrEqualTo(settings.top));
     });
 
     testWidgets('holds still under a camera bubble', (tester) async {
@@ -542,19 +626,19 @@ void main() {
         tester,
         width: 800,
         height: 360,
-        brightness: 0.5,
+        brightness: 0.5, handheld: true,
         cutouts: const [Rect.fromLTWH(0, 120, 40, 80)],
       );
 
       final bar = tester.getRect(find.byType(OnyxBrightnessSlider));
-      final fullscreen = tester.getRect(find.byIcon(Icons.fullscreen_rounded));
+      final settings = tester.getRect(find.byKey(const ValueKey('onyx-settings')));
 
       for (var frame = 0; frame < 5; frame++) {
         await tester.pump(const Duration(milliseconds: 16));
       }
 
       expect(tester.getRect(find.byType(OnyxBrightnessSlider)), bar);
-      expect(tester.getRect(find.byIcon(Icons.fullscreen_rounded)), fullscreen);
+      expect(tester.getRect(find.byKey(const ValueKey('onyx-settings'))), settings);
     });
 
     testWidgets('a finger that lands beside the bar still drives it',
@@ -564,8 +648,9 @@ void main() {
       final values = <double>[];
       await pumpChrome(
         tester,
-        width: 420,
-        brightness: 0.5,
+        // Assez large pour que la colonne ne passe pas sous +10 s.
+        width: 800,
+        brightness: 0.5, handheld: true,
         onBrightnessChanged: values.add,
       );
 
@@ -589,7 +674,7 @@ void main() {
       await pumpChrome(
         tester,
         width: 420,
-        brightness: 0.5,
+        brightness: 0.5, handheld: true,
         onBrightnessChanged: values.add,
       );
       final rect = tester.getRect(find.byType(OnyxBrightnessSlider));
@@ -618,7 +703,7 @@ void main() {
       await pumpChrome(
         tester,
         width: 420,
-        brightness: 0.5,
+        brightness: 0.5, handheld: true,
         onBrightnessChanged: values.add,
       );
 
@@ -636,8 +721,9 @@ void main() {
       final values = <double>[];
       await pumpChrome(
         tester,
-        width: 420,
-        brightness: 0.5,
+        // Assez large pour que la colonne ne passe pas sous +10 s.
+        width: 800,
+        brightness: 0.5, handheld: true,
         onBrightnessChanged: values.add,
       );
 
@@ -657,7 +743,7 @@ void main() {
       await pumpChrome(
         tester,
         width: 420,
-        brightness: 0.5,
+        brightness: 0.5, handheld: true,
         visible: false,
       );
 
@@ -688,7 +774,7 @@ void main() {
       expect(small.isCompact, base.isCompact);
     });
 
-    testWidgets('the icons come out smaller and the targets do not',
+    testWidgets('the text comes out smaller and the targets do not',
         (tester) async {
       Size targetOf(WidgetTester tester) => tester.getSize(
             find
@@ -699,18 +785,18 @@ void main() {
                 .first,
           );
 
-      // The glyph, not its box: the box is the target, and that is the half
-      // that must not move.
-      double glyphOf(WidgetTester tester) =>
-          tester.widget<Icon>(find.byIcon(Icons.fullscreen_rounded)).size!;
+      double textOf(WidgetTester tester) => tester
+          .widget<Text>(find.text('Avatar : La Voie de l’eau'))
+          .style!
+          .fontSize!;
 
       await pumpChrome(tester, width: 1280);
-      final glyphAtFullSize = glyphOf(tester);
+      final textAtFullSize = textOf(tester);
       final targetAtFullSize = targetOf(tester);
 
       await pumpChrome(tester, width: 1280, scale: 0.9);
 
-      expect(glyphOf(tester), closeTo(glyphAtFullSize * 0.9, 0.001));
+      expect(textOf(tester), closeTo(textAtFullSize * 0.9, 0.001));
       expect(targetOf(tester), targetAtFullSize);
     });
   });

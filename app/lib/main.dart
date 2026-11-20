@@ -59,6 +59,7 @@ import 'screens/player/display_frame_rate.dart';
 import 'screens/player/playback/auto_quality.dart';
 import 'services/picture_in_picture.dart';
 import 'screens/player/hardware_decoding.dart';
+import 'screens/player/windows_video_render.dart';
 import 'screens/player/playback_profile.dart';
 import 'services/playback_capabilities.dart';
 import 'services/playback_preferences_storage.dart';
@@ -68,11 +69,14 @@ import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 import 'theme/lite_mode.dart';
 import 'desktop_window.dart';
+import 'widgets/global/lite_mode_suggestion.dart';
 import 'widgets/global/middle_click_autoscroll.dart';
+import 'widgets/global/smooth_wheel_scroll.dart';
 import 'widgets/global/resume_preview/hover_preview_preference.dart';
 import 'l10n/app_language.dart';
 import 'l10n/localized_asset.dart';
 import 'l10n/tr.dart';
+import 'services/watch_party_invites.dart';
 
 /// Les licences de ce qu'aucun paquet Dart ne déclare : les polices embarquées
 /// — Manrope (OFL) et les icônes Phosphor (MIT) — et les moteurs de lecture
@@ -108,9 +112,12 @@ class AppScrollBehavior extends MaterialScrollBehavior {
   @override
   Widget buildScrollbar(
       BuildContext context, Widget child, ScrollableDetails details) {
-    return MiddleClickAutoScroll(
+    return SmoothWheelScroll(
       details: details,
-      child: super.buildScrollbar(context, child, details),
+      child: MiddleClickAutoScroll(
+        details: details,
+        child: super.buildScrollbar(context, child, details),
+      ),
     );
   }
 }
@@ -210,6 +217,7 @@ void main() async {
     // the hardware.
     PlaybackCapabilitiesResolver.initialize(),
     HardwareDecoding.initialize(),
+    WindowsVideoRender.initialize(),
     DisplayFrameRate.initialize(),
     AutoQualityPreference.initialize(),
     // Si la souris qui s'attarde sur « Reprendre » en ouvre l'aperçu.
@@ -258,6 +266,8 @@ void main() async {
 
   await Future.wait(independent);
   AppImageCache.configure(lite: LiteMode.isLite);
+  // Des saccades mesurées proposent le mode léger, sans l'imposer (ADR-0141).
+  LiteModeSuggestion.attach(rootNavigatorKey);
   // Sans attendre : il ne sert qu'à poser sans fondu les images déjà sur
   // disque, et la première image n'a pas à patienter derrière lui (ADR-0088).
   unawaited(AppImageCache.loadDiskIndex());
@@ -296,6 +306,9 @@ void main() async {
 
   final authProvider = AuthProvider(apiClient);
   final reachability = ServerReachability(apiClient);
+  // L'app ouverte attend ses invitations « Regarder ensemble », ce qui la
+  // rend invitable (ADR-0148).
+  WatchPartyInviteInbox.install(authProvider);
 
   // Les réglages de lecture suivent le compte (ADR-0043) : dès qu'on sait qui
   // est connecté, et sur quel serveur, l'appareil s'aligne sur lui. La clé ne
@@ -579,16 +592,7 @@ class OnyxApp extends StatelessWidget {
                         child: Column(
                           children: [
                             if (useDesktopCaptionBar)
-                              ValueListenableBuilder<bool>(
-                                valueListenable: showDesktopCaption,
-                                builder: (context, visible, _) {
-                                  return Visibility(
-                                    visible: visible,
-                                    maintainState: false,
-                                    child: const WindowCaptionBar(),
-                                  );
-                                },
-                              ),
+                              const DesktopCaptionSlot(),
                             Expanded(
                               child: CaptionBarPeek(
                                 child: ColoredBox(

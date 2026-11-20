@@ -5,6 +5,7 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
+import '../../services/hero_series_preview.dart';
 import '../../theme/app_colors.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
@@ -20,6 +21,7 @@ import '../../widgets/global/live_progress_state.dart';
 import '../../widgets/global/media_row.dart';
 import '../../widgets/global/poster_launch_route.dart';
 import '../../widgets/global/remote_playback_banner.dart';
+import '../../widgets/global/watch_party_invite_banner.dart';
 import '../../widgets/global/skeleton.dart';
 import '../../widgets/global/hero_banner.dart' show HeroBanner;
 import '../library/movie_detail_screen.dart';
@@ -28,6 +30,7 @@ import '../player/player_screen.dart';
 import 'home_empty_view.dart';
 import 'home_recent_rows.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool embedded;
@@ -142,6 +145,8 @@ class _HomeScreenState extends State<HomeScreen>
       settings: const RouteSettings(name: SearchRouteObserver.playerRouteName),
       builder: (_) => PlayerScreen(media: media),
     );
+    // L'épisode à suivre d'une série du bandeau vient de changer (ADR-0154).
+    HeroSeriesPreviewCache.clear();
     if (!context.mounted) return;
     Provider.of<HomeProvider>(context, listen: false).loadHome(silent: true);
   }
@@ -154,6 +159,13 @@ class _HomeScreenState extends State<HomeScreen>
     if (slide.media.type == MediaType.movie) {
       _playMedia(context, slide.media);
     } else if (slide.media.type == MediaType.show) {
+      // L'épisode que le bandeau annonce (ADR-0154). Tant que le serveur ne
+      // l'a pas dit, la fiche, comme avant.
+      final next = HeroSeriesPreviewCache.peek(slide.media.id)?.next;
+      if (next != null) {
+        _playMedia(context, next);
+        return;
+      }
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => ShowDetailScreen(show: slide.media)),
       );
@@ -179,8 +191,14 @@ class _HomeScreenState extends State<HomeScreen>
     final isPhone = !isTv && AppLayout.isCompact(context);
     // Sur téléviseur, l'image du bandeau part du haut de l'écran, derrière
     // la pilule des onglets (ADR-0118) : la barre n'est plus une bande
-    // opaque, et le texte du bandeau est calé en bas, loin d'elle.
-    final heroTop = isTv ? 0.0 : headerInset;
+    // opaque, et le texte du bandeau est calé en bas, loin d'elle. Sur
+    // téléphone aussi (ADR-0144) : l'image monte sous l'heure et sous les
+    // pièces de verre de la barre du haut, et le bandeau grandit d'autant
+    // ([heroExtend]) pour que son texte et la suite de la page restent où
+    // ils étaient.
+    final heroUnderBar = isTv || !widget.embedded;
+    final heroTop = heroUnderBar ? 0.0 : headerInset;
+    final heroExtend = !isTv && !widget.embedded ? headerInset : 0.0;
     final data = homeProvider.homeData;
     final discovery = data == null
         ? const <Media>[]
@@ -197,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen>
       backgroundColor: AppColors.background,
       body: homeProvider.isLoading
           ? HomeSkeleton(
-              heroHeight: HeroBanner.heightFor(context),
+              heroHeight: HeroBanner.heightFor(context) + heroExtend,
               topInset: heroTop,
             )
           : homeProvider.errorMessage != null
@@ -216,11 +234,11 @@ class _HomeScreenState extends State<HomeScreen>
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
-                          // Le carrousel commence sous la barre du haut, pas
-                          // derrière elle : posée sur l'affiche, elle masquait
-                          // le haut du poster et le titre. Sauf sur
-                          // téléviseur ([heroTop]), et sans bandeau, où le
-                          // texte d'accueil passerait sous la barre.
+                          // Le carrousel commence derrière la barre du haut
+                          // sur téléviseur et sur téléphone ([heroTop]) ; sur
+                          // grand écran, sous l'en-tête de verre. Sans
+                          // bandeau, le texte d'accueil passerait sous la
+                          // barre : il garde sa marge.
                           SliverToBoxAdapter(
                             child: SizedBox(
                               height:
@@ -233,6 +251,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 slides: heroSlides,
                                 onPlay: (slide) => _onHeroPlay(context, slide),
                                 onInfo: (slide) => _onHeroInfo(context, slide),
+                                extendTop: heroExtend,
                                 // On a television the banner is where the
                                 // remote starts. See below for why it is not
                                 // the first row.
@@ -332,8 +351,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                               ),
                             ],
-                            const SliverToBoxAdapter(
-                                child: SizedBox(height: 48)),
+                            const SliverScrollEnd(),
                           ],
                         ],
                       ),
@@ -343,14 +361,22 @@ class _HomeScreenState extends State<HomeScreen>
                     // maintenant lecture/pause. La Siri Remote a toujours
                     // cette touche ; les autres télécommandes pas toutes, ou
                     // ne savent pas la tenir, et la notification y prend
-                    // aussi le focus, pour OK (ADR-0136).
+                    // aussi le focus, pour OK (ADR-0136). Une invitation à
+                    // regarder ensemble s'empile dessous (ADR-0148).
                     if (!isPhone)
                       Positioned(
                         top: headerInset + 6,
                         right: AppLayout.pagePadding(context),
-                        child: RemotePlaybackBanner.notice(
-                          hold: isTv,
-                          selectable: isTv && !AppPlatform.isTvOS,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            RemotePlaybackBanner.notice(
+                              hold: isTv,
+                              selectable: isTv && !AppPlatform.isTvOS,
+                            ),
+                            const WatchPartyInviteBanner(),
+                          ],
                         ),
                       ),
                     if (isPhone)
@@ -360,7 +386,15 @@ class _HomeScreenState extends State<HomeScreen>
                         bottom: 14,
                         child: SafeArea(
                           top: false,
-                          child: Center(child: RemotePlaybackBanner()),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Center(
+                                child: WatchPartyInviteBanner(compact: true),
+                              ),
+                              Center(child: RemotePlaybackBanner()),
+                            ],
+                          ),
                         ),
                       ),
                   ],

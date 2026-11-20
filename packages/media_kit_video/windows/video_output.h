@@ -13,35 +13,74 @@
 
 #include <client.h>
 #include <render.h>
+#include <render_d3d11.h>
 #include <render_gl.h>
 
+#include <atomic>
 #include <future>
 #include <memory>
+#include <string>
 
 #include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>
 #include <flutter/standard_method_codec.h>
 
 #include "angle_surface_manager.h"
+#include "d3d11_surface_manager.h"
 #include "thread_pool.h"
 
 typedef struct _VideoOutputConfiguration {
   std::optional<int64_t> width;
   std::optional<int64_t> height;
   bool enable_hardware_acceleration;
+  // Onyx : le premier chemin de rendu matériel essayé (ADR-0158, phase 2).
+  // "d3d11" : le rendu D3D11 de libmpv, puis ANGLE, puis le logiciel.
+  // "angle" (défaut, et toute autre valeur) : ANGLE, puis le logiciel.
+  std::string render_api;
 
   _VideoOutputConfiguration(std::optional<int64_t> width = std::nullopt,
                             std::optional<int64_t> height = std::nullopt,
-                            bool enable_hardware_acceleration = true)
+                            bool enable_hardware_acceleration = true,
+                            std::string render_api = "angle")
       : width(width),
         height(height),
-        enable_hardware_acceleration(enable_hardware_acceleration) {}
+        enable_hardware_acceleration(enable_hardware_acceleration),
+        render_api(render_api) {}
 } VideoOutputConfiguration;
+
+// Onyx : texture, largeur, hauteur, et le chemin de rendu retenu ("d3d11",
+// "angle" ou "sw"), que Dart lit pour choisir le décodeur (ADR-0158).
+typedef std::function<void(int64_t, int64_t, int64_t, const std::string&)>
+    TextureUpdateCallback;
 
 class VideoOutput {
  public:
   int64_t texture_id() const { return texture_id_; }
+
+  // Onyx : le chemin de rendu retenu à la création, et ce que ses rendus ont
+  // donné. Une texture D3D11 qui n'a jamais rendu une image est ce que Dart
+  // guette pour retomber sur ANGLE (ADR-0158, phase 2, point 4).
+  const std::string& render_api() const { return render_api_; }
+  int64_t rendered_frames() const { return rendered_frames_.load(); }
+  int64_t failed_frames() const { return failed_frames_.load(); }
+  // La cause relevée au premier rendu D3D11 raté sur un périphérique perdu
+  // (TDR, pilote redémarré) ; 0 sinon.
+  int64_t device_removed_reason() const {
+    return device_removed_reason_.load();
+  }
+
+  // Onyx : quitte le rendu D3D11 pour ANGLE (puis le logiciel), sans changer
+  // de lecteur mpv (ADR-0158, phase 2, point 4). Libérer le contexte de rendu
+  // coupe la vidéo de mpv (sa piste est désélectionnée, le son continue) :
+  // Dart la resélectionne ensuite. Rend le chemin retenu ; rien ne change si
+  // la sortie n'est pas en D3D11.
+  std::string FallbackToANGLE();
+
   int64_t width() const {
+    // D3D11
+    if (d3d11_surface_manager_ != nullptr && texture_id_) {
+      return d3d11_surface_manager_->width();
+    }
     // H/W
     if (surface_manager_ != nullptr && texture_id_) {
       return surface_manager_->width();
@@ -53,6 +92,10 @@ class VideoOutput {
     return width_.value_or(1);
   }
   int64_t height() const {
+    // D3D11
+    if (d3d11_surface_manager_ != nullptr && texture_id_) {
+      return d3d11_surface_manager_->height();
+    }
     // H/W
     if (surface_manager_ != nullptr && texture_id_) {
       return surface_manager_->height();
@@ -71,12 +114,21 @@ class VideoOutput {
 
   ~VideoOutput();
 
-  void SetTextureUpdateCallback(
-      std::function<void(int64_t, int64_t, int64_t)> callback);
+  void SetTextureUpdateCallback(TextureUpdateCallback callback);
 
   void SetSize(std::optional<int64_t> width, std::optional<int64_t> height);
 
  private:
+  // Onyx : un essai par chemin. Chacun ne garde son état que si
+  // mpv_render_context_create réussit, et laisse tout propre sinon.
+  bool InitializeD3D11();
+
+  bool InitializeANGLE();
+
+  void InitializeSoftware();
+
+  void SetUpdateCallback();
+
   void NotifyRender();
 
   void Render();
@@ -111,6 +163,9 @@ class VideoOutput {
   // H/W rendering.
 
   std::unique_ptr<ANGLESurfaceManager> surface_manager_ = nullptr;
+  // Onyx : le rendu D3D11 de libmpv (ADR-0158). Exclusif avec
+  // |surface_manager_| : un seul des deux est non nul.
+  std::unique_ptr<D3D11SurfaceManager> d3d11_surface_manager_ = nullptr;
   std::unordered_map<int64_t,
                      std::unique_ptr<FlutterDesktopGpuSurfaceDescriptor>>
       textures_ = {};
@@ -121,10 +176,15 @@ class VideoOutput {
   std::unordered_map<int64_t, std::unique_ptr<FlutterDesktopPixelBuffer>>
       pixel_buffer_textures_ = {};
 
+  std::string render_api_ = "sw";
+  std::atomic<int64_t> rendered_frames_{0};
+  std::atomic<int64_t> failed_frames_{0};
+  std::atomic<int64_t> device_removed_reason_{0};
+
   // Public notifier. This is called when a new texture is registered & texture
   // ID is changed. Only happens when video output resolution changes.
-  std::function<void(int64_t, int64_t, int64_t)> texture_update_callback_ =
-      [](int64_t, int64_t, int64_t) {};
+  TextureUpdateCallback texture_update_callback_ =
+      [](int64_t, int64_t, int64_t, const std::string&) {};
 };
 
 #endif  // VIDEO_OUTPUT_H_

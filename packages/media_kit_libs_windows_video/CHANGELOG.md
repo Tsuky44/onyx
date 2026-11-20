@@ -1,6 +1,7 @@
 ## Onyx
 
-- **PERF**(windows): `libmpv-2.dll` is patched at configure time (`windows/patch_libmpv.ps1`) so that mpv loads its `d3d11-egl` interop and keeps D3D11-decoded frames on the GPU instead of `d3d11va-copy`. See `docs/adr/0019-decodage-sans-copie-sous-windows.md`.
+- **CHANGE**(windows): libmpv now comes from mpv's own release, `libmpv-v0.42.0-x86_64-w64-mingw32-lgpl.zip` (LGPLv3), pinned by SHA-256. `windows/check_libmpv.ps1` loads the DLL after each extraction and fails the build if a decoder, libcurl, libass, libplacebo or a function media_kit calls is missing. See `docs/adr/0158-libmpv-officiel-et-rendu-d3d11-sous-windows.md`.
+- **REMOVED**(windows): the `patch_libmpv.ps1` binary patch (`d3d11-egl` interop, unused since `docs/adr/0095-recopie-systematique-sous-windows.md`).
 - **FIX**(windows): the pinned libmpv archive is re-extracted whenever it changes; an existing build used to keep the previous DLL.
 
 ## 1.0.11

@@ -49,12 +49,25 @@ class PlaybackAccess {
         queryParameters: {...uri.queryParameters, ...query}).toString();
   }
 
+  final Completer<void> _lost = Completer<void>();
+
+  /// Se complète quand le serveur refuse de renouveler ce ticket parce qu'il
+  /// ne le connaît plus : redémarré pendant la lecture, il a oublié ses
+  /// tickets. Réessayer le même ne servirait à rien — le journal d'un
+  /// utilisateur le montre refusé toutes les cinq minutes jusqu'à l'échéance,
+  /// puis les aperçus coupés et le flux arrêté seize minutes plus tard. C'est
+  /// au lecteur d'en ouvrir un neuf.
+  Future<void> get lost => _lost.future;
+
   Future<void> _refresh() async {
     if (_closed || _refreshing) return;
     _refreshing = true;
     try {
       final deadline = await _renew();
       if (!_closed) _expiresAt = deadline;
+    } on PlaybackTicketRejected {
+      _timer?.cancel();
+      if (!_closed && !_lost.isCompleted) _lost.complete();
     } catch (_) {
       // The current deadline is unchanged. A network failure must never cause
       // a downgrade to a public URL; the next interval can retry renewal.
@@ -76,6 +89,15 @@ class PlaybackAccess {
 
   @override
   String toString() => 'PlaybackAccess(protected)';
+}
+
+/// Ce que lève un renouvellement que le serveur refuse : il ne connaît plus
+/// le ticket. Une panne du réseau, elle, n'en est pas un.
+class PlaybackTicketRejected implements Exception {
+  const PlaybackTicketRejected();
+
+  @override
+  String toString() => 'PlaybackTicketRejected';
 }
 
 /// Diagnostics may contain engine/Dio exceptions with nested URLs. Remove the

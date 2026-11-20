@@ -25,4 +25,6 @@ class NativeVideoController extends PlatformVideoController {
 
   @override
   Future<void> setSize({int? width, int? height}) => throw UnimplementedError();
+
+  static Future<Map<String, Object?>?> windowsGraphicsAdapter() async => null;
 }

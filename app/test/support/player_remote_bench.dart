@@ -280,7 +280,6 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
             onBack: _leave,
             onToggleSubtitles: () {},
             onOpenAudio: () {},
-            onCycleSpeed: () {},
             onOpenSettings: () {},
             onToggleFullscreen: () {},
             onOpenMenu: _openMenu,

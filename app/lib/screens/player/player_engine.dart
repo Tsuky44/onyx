@@ -8,6 +8,7 @@ import 'package:onyx_mpv_macos/onyx_mpv_macos.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/mpv_native_view.dart';
 import 'playback/mpv_startup_trace.dart';
+import 'windows_video_render.dart';
 
 /// A libmpv instance together with the video texture it renders into.
 ///
@@ -46,7 +47,48 @@ class PlayerEngine {
   /// réglages d'écran qui n'étaient que pour ce fichier-là.
   bool reusable = true;
 
-  PlayerEngine._(this.player, this.videoController);
+  /// Le chemin de rendu demandé à la sortie Windows à la création (ADR-0158,
+  /// phase 2), null ailleurs. Un réglage changé depuis ne s'applique qu'à un
+  /// moteur neuf ([PlayerEnginePool.acquire]) ; seule une bascule vers ANGLE
+  /// en pleine lecture ([fallbackToAngle]) le change en route.
+  String? requestedRenderApi;
+
+  PlayerEngine._(this.player, this.videoController, {this.requestedRenderApi});
+
+  /// Le chemin que la sortie Windows a retenu, une fois la texture créée.
+  /// Null hors de Windows, ou si le contrôleur vidéo n'a pas pu naître.
+  ///
+  /// L'attendre ne retarde rien : `Player.open` attend de toute façon ce même
+  /// contrôleur avant d'ouvrir quoi que ce soit.
+  Future<VideoRenderPath?> get renderPath async {
+    final controller = videoController;
+    if (controller == null || !AppPlatform.isWindows) return null;
+    try {
+      final platform = await controller.platform.future;
+      return VideoRenderPath.parse(platform.renderApi);
+    } catch (e) {
+      debugPrint('PlayerEngine: chemin de rendu inconnu: $e');
+      return null;
+    }
+  }
+
+  /// Ce que la sortie a rendu (ADR-0158, phase 2, point 4) : null hors de
+  /// Windows.
+  Future<Map<String, Object?>?> renderInfo() async {
+    final controller = videoController;
+    if (controller == null || !AppPlatform.isWindows) return null;
+    return (await controller.platform.future).renderInfo();
+  }
+
+  /// Fait passer la sortie de D3D11 à ANGLE sans changer de lecteur, et rend
+  /// le chemin retenu (ADR-0158, phase 2, point 4).
+  Future<String?> fallbackToAngle() async {
+    final controller = videoController;
+    if (controller == null || !AppPlatform.isWindows) return null;
+    final api = await (await controller.platform.future).fallbackToAngle();
+    if (api != null && api != 'd3d11') requestedRenderApi = 'angle';
+    return api;
+  }
 
   factory PlayerEngine._create() {
     if (MpvNativeView.enabled) {
@@ -71,7 +113,16 @@ class PlayerEngine {
     final player = mk.Player(
       configuration: const mk.PlayerConfiguration(logLevel: _logLevel),
     );
-    return PlayerEngine._(player, VideoController(player));
+    final renderApi = WindowsVideoRender.nativeRequest;
+    return PlayerEngine._(
+      player,
+      VideoController(
+        player,
+        configuration:
+            VideoControllerConfiguration(windowsRenderApi: renderApi),
+      ),
+      requestedRenderApi: renderApi,
+    );
   }
 
   /// Verbeux, pour que la trace de démarrage ([MpvStartupProbe]) voie
@@ -81,6 +132,33 @@ class PlayerEngine {
   /// n'écrit presque rien à ce niveau (debug et trace, eux, suivent chaque
   /// paquet et restent coupés).
   static const _logLevel = mk.MPVLogLevel.v;
+
+  int _readsInFlight = 0;
+  Completer<void>? _readsDone;
+
+  /// Lit [names] hors du thread de l'interface ([MpvNativeOutput]).
+  ///
+  /// Compté : la destruction du moteur attend la fin des lectures en cours,
+  /// sans quoi l'isolate lirait un contexte mpv déjà libéré.
+  Future<Map<String, String?>> readProperties(List<String> names) async {
+    _readsInFlight++;
+    try {
+      return await (await nativeOutput).getProperties(names);
+    } finally {
+      if (--_readsInFlight == 0) {
+        _readsDone?.complete();
+        _readsDone = null;
+      }
+    }
+  }
+
+  /// Détruit le moteur une fois ses lectures hors interface terminées.
+  Future<void> _dispose() async {
+    if (_readsInFlight > 0) {
+      await (_readsDone ??= Completer<void>()).future;
+    }
+    await player.dispose();
+  }
 
   /// Waits out the parked unload, if there is one. Idempotent.
   Future<void> settle() async {
@@ -111,11 +189,22 @@ class PlayerEnginePool {
   static PlayerEngine? _idle;
 
   /// Takes the warm engine, or builds one when the pool is empty.
+  ///
+  /// Un moteur préparé pour un autre chemin de rendu que celui demandé
+  /// maintenant (réglage changé, D3D11 marqué en panne, admin connecté après
+  /// le préchauffage) est jeté : le choix s'applique à la lecture suivante.
   static PlayerEngine acquire() {
     final warm = _idle;
     if (warm != null) {
       _idle = null;
-      return warm;
+      final wanted = WindowsVideoRender.nativeRequest;
+      if (warm.requestedRenderApi == wanted) return warm;
+      debugPrint('PlayerEnginePool: rendu ${warm.requestedRenderApi} → '
+          '$wanted, moteur reconstruit');
+      unawaited(warm.settle().then((_) => warm._dispose()).catchError((_) {
+        // Une instance déjà détruite refuse la commande : il n'y a plus rien
+        // à arrêter.
+      }));
     }
     return PlayerEngine._create();
   }
@@ -130,7 +219,7 @@ class PlayerEnginePool {
           .then((output) => output.setProperty('vo', 'null'))
           .catchError((Object e) {
         debugPrint('PlayerEnginePool: sortie vidéo non rendue: $e');
-      }).whenComplete(() => engine.player.dispose().catchError((_) {
+      }).whenComplete(() => engine._dispose().catchError((_) {
                 // Une instance déjà détruite refuse la commande : il n'y a
                 // plus rien à arrêter.
               })));
@@ -141,7 +230,7 @@ class PlayerEnginePool {
       // `dispose` stops the player on its way out, so this covers the unload
       // too; racing it with a separate `stop` would only produce a rejected
       // command against an instance that is already gone.
-      unawaited(engine.player.dispose().catchError((_) {
+      unawaited(engine._dispose().catchError((_) {
         // Une instance déjà détruite refuse la commande : il n'y a plus rien à arrêter.
       }));
       return;

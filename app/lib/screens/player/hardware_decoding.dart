@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../utils/app_platform.dart';
 import '../../utils/mpv_native_view.dart';
+import 'windows_video_render.dart';
 
 /// Which hardware decoding path libmpv is asked for.
 ///
@@ -87,13 +88,18 @@ abstract final class HardwareDecoding {
   /// platform whose hardware path is a lottery. Elsewhere they still mean what
   /// they say — copy back, or do not decode in hardware — using that platform's
   /// own spelling.
-  static String get mpvValue => resolve(
+  static String get mpvValue => mpvValueFor(null);
+
+  /// La même chose pour un moteur dont la sortie a retenu [renderPath]
+  /// (Windows, ADR-0158). Null : le chemin n'est pas connu, traité comme ANGLE.
+  static String mpvValueFor(VideoRenderPath? renderPath) => resolve(
         preference: _preference,
         isAndroid: AppPlatform.isAndroid,
         isMacOS: AppPlatform.isMacOS,
         isWindows: AppPlatform.isWindows,
         macOSNativeOutput: MpvNativeView.enabled,
         zeroCopyFailed: _zeroCopyFailed,
+        windowsRenderPath: renderPath,
       );
 
   /// The platform-by-platform mapping, as a pure function so it can be checked
@@ -105,6 +111,7 @@ abstract final class HardwareDecoding {
     bool isWindows = false,
     bool macOSNativeOutput = false,
     bool zeroCopyFailed = false,
+    VideoRenderPath? windowsRenderPath,
   }) {
     switch (preference) {
       case HardwareDecodingPreference.off:
@@ -112,6 +119,10 @@ abstract final class HardwareDecoding {
       case HardwareDecodingPreference.copy:
         if (isAndroid) return 'mediacodec-copy';
         if (isMacOS) return 'videotoolbox-copy';
+        if (isWindows) {
+          return windowsValue(windowsRenderPath,
+              zeroCopyFailed: zeroCopyFailed);
+        }
         return 'auto-copy-safe';
       case HardwareDecodingPreference.auto:
         // Android: the zero-copy path, explicitly. `auto-safe` leaves the choice
@@ -138,21 +149,42 @@ abstract final class HardwareDecoding {
               ? 'videotoolbox'
               : 'videotoolbox-copy';
         }
-        // Windows : toujours la recopie (ADR-0095). Sans copie, mpv dessine
-        // depuis la surface du décodeur, que FFmpeg alloue plus grande que
-        // l'image, et une bande verte apparaît sur certains fichiers — en
-        // 1080p comme en 4K, d'une hauteur qu'aucun rognage ne couvre à coup
-        // sûr. La recopie ne sort que l'image utile.
-        if (isWindows) return 'auto-copy-safe';
+        if (isWindows) {
+          return windowsValue(windowsRenderPath,
+              zeroCopyFailed: zeroCopyFailed);
+        }
         return 'auto-safe';
     }
   }
+
+  /// Le décodeur matériel de Windows (« Rapide » comme « Compatible ») selon
+  /// le chemin de rendu retenu (ADR-0158, phase 2, point 3).
+  ///
+  /// - D3D11 : `auto-safe`, le `d3d11va` de mpv seul, quelle que soit la
+  ///   préférence (décision de Tsuky : le nouveau rendu force le sans-copie).
+  ///   Il recopie lui-même la zone utile sur le GPU (`CopySubresourceRegion1`) :
+  ///   ni bande verte, ni passage par la mémoire vive. Sauf si cet appareil a
+  ///   déjà été pris à décoder en logiciel : la copie, comme sur Android.
+  /// - ANGLE : `auto-copy-safe`, la recopie de l'ADR-0095. Sans copie, mpv
+  ///   dessinait depuis la surface du décodeur, que FFmpeg alloue plus grande
+  ///   que l'image, et une bande verte apparaissait sur certains fichiers.
+  /// - Logiciel, ou chemin inconnu : inchangé, `auto-copy-safe`.
+  ///
+  /// « Logiciel » (`no`) ne passe pas par ici : il vaut partout.
+  static String windowsValue(VideoRenderPath? renderPath,
+          {bool zeroCopyFailed = false}) =>
+      renderPath == VideoRenderPath.d3d11 && !zeroCopyFailed
+          ? 'auto-safe'
+          : 'auto-copy-safe';
 
   /// La hauteur d'image à partir de laquelle le décodage sans copie se paie,
   /// et celle du rattrapage logiciel → copie.
   static const int zeroCopyMinHeight = 1440;
 
-  static String describe() => '${_preference.name} → $mpvValue';
+  /// `auto → auto-safe` : la préférence et ce que mpv reçoit vraiment, pour
+  /// le chemin de rendu de la lecture ([renderPath], Windows).
+  static String describe([VideoRenderPath? renderPath]) =>
+      '${_preference.name} → ${mpvValueFor(renderPath)}';
 
   @visibleForTesting
   static void overrideWith(HardwareDecodingPreference value) {

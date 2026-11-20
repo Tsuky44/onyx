@@ -7,11 +7,28 @@ import 'package:flutter/material.dart';
 abstract final class OnyxChromeTheme {
   const OnyxChromeTheme._();
 
-  /// Below this width the chrome switches to its compact arrangement.
-  ///
-  /// The wide arrangement puts the title block and five utility icons on one
-  /// row, which needs roughly 700px of content before it starts colliding.
+  /// Sous cette largeur, le chrome d'une souris prend ses tailles serrées et
+  /// range les onglets derrière un bouton, comme un écran tenu en main : la
+  /// rangée d'onglets et leur volet demandent la largeur d'un moniteur.
   static const double compactBreakpoint = 800;
+
+  /// Sous cette hauteur, le volet des onglets (238 de contenu, plus ses
+  /// rangées) mangerait l'image d'une fenêtre : mêmes onglets, derrière le
+  /// bouton.
+  static const double tabsPaneMinHeight = 560;
+
+  /// Le chrome d'une souris porte-t-il les onglets sous sa barre, avec le
+  /// volet d'un téléviseur (ADR-0139) ? Sinon un bouton de la rangée ouvre la
+  /// feuille du bas. Une seule réponse pour le chrome, qui dessine, et pour
+  /// l'écran du lecteur, qui pose la feuille.
+  static bool pointerCarriesTabs(Size size) =>
+      size.width >= compactBreakpoint && size.height >= tabsPaneMinHeight;
+
+  /// Où tombe le milieu de lecture/pause sur un écran tenu en main, en
+  /// fraction de la hauteur : un peu au-dessus du centre, parce que la barre
+  /// du bas pèse plus que celle du haut. L'anneau d'attente s'y pose aussi
+  /// (ADR-0140), à la place du bouton.
+  static const double handheldCentreAt = 0.42;
 
   /// À partir de cette largeur, un écran tenu en main est une tablette : son
   /// chrome garde les tailles d'un doigt mais s'écarte davantage des bords,
@@ -154,8 +171,8 @@ class OnyxChromeMetrics {
   /// Gap between two icons in a cluster.
   final double clusterGap;
 
-  /// Stacked arrangement: title block, scrubber, transport, then utilities on
-  /// their own row — the phone's layout.
+  /// Les tailles serrées : une fenêtre étroite, un écran tenu en main, un
+  /// téléviseur. Le curseur du volume y est plus court.
   final bool isCompact;
 
   /// Height of the TMDB logo in the top bar, and the size of the title text
@@ -172,43 +189,47 @@ class OnyxChromeMetrics {
   /// Width of the timeline still shown above the scrubber.
   final double previewWidth;
 
+  /// Les tailles d'un écran à souris, pour l'arrangement de l'ADR-0139 :
+  /// celui d'un téléviseur, à la distance d'un moniteur. Les boutons sont les
+  /// disques de verre de tous les arrangements (`OnyxIconButton.glassDisc`).
   const OnyxChromeMetrics.wide()
       : gutter = 32,
-        hitSize = 40,
-        iconSize = 22,
+        hitSize = 44,
+        iconSize = 21,
         playIconSize = 34,
         titleSize = 28,
-        metaSize = 14,
+        metaSize = 15,
         timeSize = 13,
-        barThickness = 4,
-        barThicknessActive = 6,
+        barThickness = 3,
+        barThicknessActive = 5,
         handleSize = 13,
         clusterGap = 4,
         isCompact = false,
         logoHeight = 38,
         brandTextSize = 18,
-        bottomInset = 24,
-        topInset = 12,
+        bottomInset = 12,
+        topInset = 28,
         skipIntroTextSize = 14,
         previewWidth = 320;
 
+  /// Les mêmes dans une fenêtre étroite.
   const OnyxChromeMetrics.compact()
       : gutter = 16,
         hitSize = 44,
         iconSize = 21,
         playIconSize = 32,
         titleSize = 18,
-        metaSize = 12,
-        timeSize = 12,
-        barThickness = 4,
-        barThicknessActive = 6,
+        metaSize = 14,
+        timeSize = 13,
+        barThickness = 3,
+        barThicknessActive = 5,
         handleSize = 13,
-        clusterGap = 0,
+        clusterGap = 4,
         isCompact = true,
-        logoHeight = 26,
+        logoHeight = 28,
         brandTextSize = 15,
-        bottomInset = 16,
-        topInset = 12,
+        bottomInset = 10,
+        topInset = 24,
         skipIntroTextSize = 13,
         previewWidth = 208;
 

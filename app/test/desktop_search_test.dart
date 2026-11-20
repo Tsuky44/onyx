@@ -14,9 +14,10 @@ import 'package:onyx/providers/watch_lists_provider.dart';
 import 'package:onyx/screens/library/widgets/library_spotlight.dart';
 import 'package:onyx/screens/requests/request_detail_screen.dart';
 import 'package:onyx/screens/requests/widgets/request_media_card.dart';
-import 'package:onyx/screens/search/desktop/desktop_search_chips.dart';
+import 'package:onyx/screens/search/search_chips.dart';
 import 'package:onyx/screens/search/desktop/desktop_search_hotkey.dart';
 import 'package:onyx/screens/search/desktop/desktop_search_sheet.dart';
+import 'package:onyx/utils/responsive.dart';
 import 'package:onyx/screens/shell/desktop_header_search.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/services/download_manager.dart';
@@ -62,12 +63,13 @@ class _SignedIn extends FakeAuth {
 Future<SearchCatalogApi> _pump(
   WidgetTester tester, {
   bool canRequest = false,
+  Size size = const Size(1400, 900),
 }) async {
   SharedPreferences.setMockInitialValues({});
   final api = _server();
   final auth = _SignedIn(api, Permissions(requestMedia: canRequest));
   addTearDown(auth.dispose);
-  await tester.binding.setSurfaceSize(const Size(1400, 900));
+  await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(MultiProvider(
     providers: [
@@ -165,8 +167,10 @@ void main() {
     await _type(tester, 'Du');
 
     expect(
-      [for (final card in tester.widgetList<MediaCard>(find.byType(MediaCard)))
-        card.media.title],
+      [
+        for (final card in tester.widgetList<MediaCard>(find.byType(MediaCard)))
+          card.media.title
+      ],
       ['Dune', 'Dunkerque'],
     );
     expect(_highlightOf(tester, 'Dune'), PosterHighlight.lifted);
@@ -218,8 +222,27 @@ void main() {
         reason: 'le volet suit la sélection');
   });
 
-  testWidgets('Échap referme le voile et rend la page d’avant',
+  // Comme le volet d'une bibliothèque (ADR-0156) : un bon tiers de l'écran
+  // à 1920 px, et quatre affiches par ligne à côté.
+  testWidgets('à 1920 px, le volet a les proportions de l’Apple TV',
       (tester) async {
+    await _pump(tester, size: const Size(1920, 1080));
+    await _type(tester, 'Du');
+
+    // La marge de page lue là où le volet la lit : le banc règle la
+    // surface, pas la MediaQuery.
+    final padding =
+        AppLayout.pagePadding(tester.element(find.byType(DesktopSearchSheet)));
+    expect(tester.getRect(find.byType(LibrarySpotlight)).width,
+        closeTo((padding * 2 + 374 + 170) * 1.5, 1));
+    final grid = tester.widget<SliverGrid>(find.byType(SliverGrid).first);
+    expect(
+        (grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount)
+            .crossAxisCount,
+        4);
+  });
+
+  testWidgets('Échap referme le voile et rend la page d’avant', (tester) async {
     await _pump(tester);
     await _type(tester, 'Du');
 
@@ -229,8 +252,8 @@ void main() {
     expect(find.text('Accueil'), findsOneWidget);
     expect(tester.widget<TextField>(_field).controller!.text, isEmpty);
     expect(_fieldHasFocus(tester), isFalse);
-    final search = Provider.of<SearchProvider>(
-        tester.element(_field), listen: false);
+    final search =
+        Provider.of<SearchProvider>(tester.element(_field), listen: false);
     expect(search.isExpanded, isFalse,
         reason: 'l’en-tête rend sa place aux onglets');
   });
@@ -267,8 +290,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      [for (final card in tester.widgetList<MediaCard>(find.byType(MediaCard)))
-        card.media.title],
+      [
+        for (final card in tester.widgetList<MediaCard>(find.byType(MediaCard)))
+          card.media.title
+      ],
       ['Dark'],
     );
     expect(_fieldHasFocus(tester), isTrue,
@@ -277,8 +302,8 @@ void main() {
     // Une nouvelle frappe repart de « Tout ».
     await _type(tester, 'Dr');
     expect(find.byType(MediaCard), findsOneWidget);
-    expect(tester.widget<MediaCard>(find.byType(MediaCard)).media.title,
-        'Drive');
+    expect(
+        tester.widget<MediaCard>(find.byType(MediaCard)).media.title, 'Drive');
   });
 
   testWidgets(
@@ -319,8 +344,8 @@ void main() {
     );
     expect(
       [
-        for (final card
-            in tester.widgetList<RequestMediaCard>(find.byType(RequestMediaCard)))
+        for (final card in tester
+            .widgetList<RequestMediaCard>(find.byType(RequestMediaCard)))
           card.item.title
       ],
       ['Dune : Deuxième partie'],
@@ -328,8 +353,8 @@ void main() {
 
     await _key(tester, LogicalKeyboardKey.arrowDown);
     await _key(tester, LogicalKeyboardKey.arrowDown);
-    expect(_highlightOf(tester, 'Dune : Deuxième partie'),
-        PosterHighlight.ringed);
+    expect(
+        _highlightOf(tester, 'Dune : Deuxième partie'), PosterHighlight.ringed);
 
     await _key(tester, LogicalKeyboardKey.enter);
     expect(find.byType(RequestDetailScreen), findsOneWidget);

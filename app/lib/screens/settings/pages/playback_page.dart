@@ -6,6 +6,7 @@ import '../../../utils/app_platform.dart';
 import '../../player/display_frame_rate.dart';
 import '../../player/playback/auto_quality.dart';
 import '../../player/hardware_decoding.dart';
+import '../../player/windows_video_render.dart';
 import '../widgets/settings_dropdown_label.dart';
 import '../widgets/settings_scope.dart';
 import '../widgets/settings_ui.dart';
@@ -159,8 +160,15 @@ class _PlaybackPageState extends State<PlaybackPage> {
               SettingsChoiceTile<HardwareDecodingPreference>(
                 icon: Icons.memory_rounded,
                 title: tr('Décodage matériel'),
-                subtitle:
-                    tr('Passez sur « Compatible » si l’image est noire ou '
+                // Sous Windows, le rendu Direct3D 11 décode toujours sans
+                // copie (ADR-0158) : « Compatible » ne vaut que pour l'ancien.
+                subtitle: AppPlatform.isWindows
+                    ? tr('Passez sur « Compatible » si l’image est noire ou '
+                        'verte alors que le son fonctionne. « Compatible » '
+                        'ne s’applique qu’au rendu vidéo Ancien : avec '
+                        'Nouveau ou Automatique, le décodage se fait '
+                        'toujours sans copie.')
+                    : tr('Passez sur « Compatible » si l’image est noire ou '
                         'verte alors que le son fonctionne.'),
                 footnote: tr('Prend effet à la prochaine lecture.'),
                 value: HardwareDecoding.preference,
@@ -174,6 +182,29 @@ class _PlaybackPageState extends State<PlaybackPage> {
                   if (mounted) setState(() {});
                 },
               ),
+              // Les deux rendus de Windows cohabitent (ADR-0158, phase 2) :
+              // le choix est ouvert à tous, Automatique par défaut.
+              if (AppPlatform.isWindows)
+                SettingsChoiceTile<WindowsVideoRenderChoice>(
+                  icon: Icons.layers_rounded,
+                  title: tr('Rendu vidéo'),
+                  subtitle: tr('Ancien : ANGLE, avec la recopie de chaque '
+                      'image. Nouveau : mpv dessine lui-même en Direct3D 11, '
+                      'sans recopie, quel que soit le décodage matériel. '
+                      'Automatique : le nouveau, et l’ancien dès qu’il ne '
+                      'montre rien.'),
+                  footnote: tr('Prend effet à la prochaine lecture.'),
+                  value: WindowsVideoRender.stored,
+                  options: [
+                    (WindowsVideoRenderChoice.legacy, tr('Ancien')),
+                    (WindowsVideoRenderChoice.d3d11, tr('Nouveau')),
+                    (WindowsVideoRenderChoice.auto, tr('Automatique')),
+                  ],
+                  onChanged: (value) async {
+                    await WindowsVideoRender.setChoice(value);
+                    if (mounted) setState(() {});
+                  },
+                ),
               // Android seul laisse une app choisir le mode d'affichage.
               if (AppPlatform.isAndroid)
                 SettingsSwitchTile(

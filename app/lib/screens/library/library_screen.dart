@@ -17,7 +17,10 @@ import '../shell/shell_tabs.dart';
 import '../../tv/tv_mode.dart';
 import 'widgets/catalog_header.dart';
 import 'widgets/catalog_sort_capsule.dart';
+import 'widgets/library_desktop_spotlight.dart';
+import 'widgets/spotlight_scale.dart';
 import 'widgets/library_tv_view.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 enum _SortOption { recent, title, progress }
 
@@ -57,6 +60,17 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   _SortOption _sort = _SortOption.recent;
   bool _loadScheduled = false;
+
+  /// Le titre que le volet du bureau présente : le dernier que le pointeur
+  /// ou le clavier a désigné. Un `ValueNotifier` : survoler une affiche ne
+  /// redessine que la fiche, pas la grille.
+  final ValueNotifier<int?> _presented = ValueNotifier<int?>(null);
+
+  @override
+  void dispose() {
+    _presented.dispose();
+    super.dispose();
+  }
 
   bool get _isShows => widget.library.kind == LibraryKind.shows;
 
@@ -110,7 +124,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final library = widget.library;
     _loadIfMissing(lp);
 
-    final horizontalPadding = AppLayout.pagePadding(context);
     final compact = AppLayout.isCompact(context);
     final error = lp.libraryError(library);
     // Rien de reçu encore se lit comme un chargement, pas comme « vide ».
@@ -157,93 +170,139 @@ class _LibraryScreenState extends State<LibraryScreen> {
               message: error,
               onRetry: () => lp.loadLibrary(library),
             )
-          : PosterGridZoomRegion(
-              child: CustomScrollView(
-                scrollCacheExtent: AppLayout.imageCacheExtent(context),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontalPadding,
-                        shellTabTopInset(context, embedded: widget.embedded),
-                        horizontalPadding,
-                        0,
-                      ),
-                      // Pendant le chargement, le tri n'a rien à trier, et il
-                      // était la seule cible sous l'en-tête : Bas depuis
-                      // l'onglet sautait au bout de la ligne, sur ce petit
-                      // menu, et l'on croyait l'appui perdu (vu au simulateur
-                      // Apple TV, phase 2 de la refonte dpad). La grille
-                      // arrivée, Bas tombait alors sur l'affiche la plus à
-                      // droite, sous le menu.
-                      child: ExcludeFocus(
-                        excluding: loading,
-                        child: CatalogHeader<_SortOption>(
-                          title: ShellTabs.label(library),
-                          countLabel: loading
-                              ? null
-                              : tr('{0} titre{1}',
-                                  [count, count > 1 ? 's' : '']),
-                          sortOptions: sortOptions,
-                          sort: _sort,
-                          onSortChanged: (v) => setState(() => _sort = v),
-                          compact: compact,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (loading)
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                          horizontalPadding, 24, horizontalPadding, 48),
-                      sliver: const PosterGridSkeleton(),
-                    )
-                  else if (entries.isEmpty)
-                    SliverFillRemaining(
-                      child: EmptyStateView(
-                        icon: libraryIcon(library.kind),
-                        title: tr('Bibliothèque vide'),
-                        message: tr('Les fichiers ajoutés au dossier de cette '
-                            'bibliothèque apparaissent ici d’eux-mêmes.'),
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontalPadding,
-                        24,
-                        horizontalPadding,
-                        MediaQuery.paddingOf(context).bottom + 48,
-                      ),
-                      sliver: SliverLayoutBuilder(
-                        builder: (context, constraints) => SliverGrid(
-                          gridDelegate: AppLayout.posterGridDelegate(
-                            context,
-                            constraints.crossAxisExtent,
-                            compact: compact,
-                            withMeta: false,
-                          ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final entry = entries[index];
-                              final movie = entry.movie;
-                              return MediaCard(
-                                media: entry.media,
-                                item: movie,
-                                watched: movie?.isFinished ?? false,
-                                progress: movie == null || movie.isFinished
-                                    ? null
-                                    : movie.percentWatched,
-                              );
-                            },
-                            childCount: entries.length,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+          // Sur un grand écran du bureau, la fiche du titre survolé à gauche,
+          // comme dans la recherche (ADR-0140).
+          : LayoutBuilder(builder: (context, box) {
+              final spotlight = !compact &&
+                  !loading &&
+                  entries.isNotEmpty &&
+                  LibraryDesktopSpotlight.fits(box.maxWidth);
+              final grid = _grid(
+                  context, lp, entries, loading, count, sortOptions,
+                  spotlight: spotlight,
+                  // À côté du volet, les affiches du mur d'un téléviseur
+                  // (ADR-0156).
+                  tileScale: spotlight
+                      ? SpotlightScale.tileScaleFor(box.maxWidth)
+                      : 1);
+              if (!spotlight) return grid;
+              return LibraryDesktopSpotlight(
+                entries: entries,
+                presented: _presented,
+                child: grid,
+              );
+            }),
+    );
+  }
+
+  Widget _grid(
+    BuildContext context,
+    LibraryProvider lp,
+    List<LibraryEntry> entries,
+    bool loading,
+    int count,
+    Map<_SortOption, String> sortOptions, {
+    required bool spotlight,
+    double tileScale = 1,
+  }) {
+    final library = widget.library;
+    final horizontalPadding = AppLayout.pagePadding(context);
+    final compact = AppLayout.isCompact(context);
+    return PosterGridZoomRegion(
+      split: spotlight,
+      child: CustomScrollView(
+        scrollCacheExtent: AppLayout.imageCacheExtent(context),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                shellTabTopInset(context, embedded: widget.embedded),
+                horizontalPadding,
+                0,
+              ),
+              // Pendant le chargement, le tri n'a rien à trier, et il
+              // était la seule cible sous l'en-tête : Bas depuis
+              // l'onglet sautait au bout de la ligne, sur ce petit
+              // menu, et l'on croyait l'appui perdu (vu au simulateur
+              // Apple TV, phase 2 de la refonte dpad). La grille
+              // arrivée, Bas tombait alors sur l'affiche la plus à
+              // droite, sous le menu.
+              child: ExcludeFocus(
+                excluding: loading,
+                child: CatalogHeader<_SortOption>(
+                  title: ShellTabs.label(library),
+                  countLabel: loading
+                      ? null
+                      : tr('{0} titre{1}', [count, count > 1 ? 's' : '']),
+                  sortOptions: sortOptions,
+                  sort: _sort,
+                  onSortChanged: (v) => setState(() => _sort = v),
+                  compact: compact,
+                ),
               ),
             ),
+          ),
+          if (loading)
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                  horizontalPadding, 24, horizontalPadding, 48),
+              sliver: const PosterGridSkeleton(),
+            )
+          else if (entries.isEmpty)
+            SliverFillRemaining(
+              child: EmptyStateView(
+                icon: libraryIcon(library.kind),
+                title: tr('Bibliothèque vide'),
+                message: tr('Les fichiers ajoutés au dossier de cette '
+                    'bibliothèque apparaissent ici d’eux-mêmes.'),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                24,
+                horizontalPadding,
+                SliverScrollEnd.extentOf(context),
+              ),
+              sliver: SliverLayoutBuilder(
+                builder: (context, constraints) => SliverGrid(
+                  gridDelegate: AppLayout.posterGridDelegate(
+                    context,
+                    constraints.crossAxisExtent,
+                    compact: compact,
+                    withMeta: false,
+                    tileScale: tileScale,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final entry = entries[index];
+                      final movie = entry.movie;
+                      final card = MediaCard(
+                        media: entry.media,
+                        item: movie,
+                        watched: movie?.isFinished ?? false,
+                        progress: movie == null || movie.isFinished
+                            ? null
+                            : movie.percentWatched,
+                        // Le volet dit déjà le titre survolé.
+                        showDetails: !spotlight,
+                      );
+                      if (!spotlight) return card;
+                      return LibrarySpotlightTarget(
+                        media: entry.media,
+                        presented: _presented,
+                        child: card,
+                      );
+                    },
+                    childCount: entries.length,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -313,16 +313,21 @@ class EndCardNextEpisodeButton extends StatelessWidget {
   final bool primary;
   final bool enabled;
 
+  /// Replaces « Épisode suivant » when the page knows better — « Passer à
+  /// l'épisode 4 » over a hole, so the tap says what it skips to.
+  final String? label;
+
   const EndCardNextEpisodeButton({
     super.key,
     required this.onTap,
     required this.primary,
     this.enabled = true,
+    this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    final label = Text(tr('Épisode suivant'));
+    final label = Text(this.label ?? tr('Épisode suivant'));
     const icon = Icon(Icons.skip_next_rounded, size: 19);
     final padding = EdgeInsets.symmetric(
       horizontal: primary ? 28 : 22,

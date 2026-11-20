@@ -15,7 +15,15 @@ import '../../utils/poster_grid_zoom.dart';
 class PosterGridZoomRegion extends StatefulWidget {
   final Widget child;
 
-  const PosterGridZoomRegion({super.key, required this.child});
+  /// La grille est celle d'une vue partagée, à côté d'un volet : ses modes
+  /// d'affichage sont les siens (voir [PosterGridZoom.split]).
+  final bool split;
+
+  const PosterGridZoomRegion({
+    super.key,
+    required this.child,
+    this.split = false,
+  });
 
   /// Seuls un ordinateur et un navigateur ont une molette : sur un téléphone ou
   /// un téléviseur, la région ne fait que transmettre sa page.
@@ -31,7 +39,7 @@ class _PosterGridZoomRegionState extends State<PosterGridZoomRegion> {
   /// qu'un pincement fasse sauter dix colonnes d'un coup.
   static const double _scrollPerStep = 40;
 
-  final PosterGridZoom _zoom = PosterGridZoom();
+  late PosterGridZoom _zoom = PosterGridZoom(split: widget.split);
   double _pendingScroll = 0;
   bool _modifierHeld = false;
 
@@ -43,6 +51,15 @@ class _PosterGridZoomRegionState extends State<PosterGridZoomRegion> {
     PosterGridZoom.load();
     if (!PosterGridZoomRegion.supported) return;
     HardwareKeyboard.instance.addHandler(_onKey);
+  }
+
+  @override
+  void didUpdateWidget(PosterGridZoomRegion oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.split == widget.split) return;
+    // La fenêtre a passé le seuil du volet : l'autre grille, l'autre choix.
+    _zoom.dispose();
+    _zoom = PosterGridZoom(split: widget.split);
   }
 
   @override

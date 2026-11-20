@@ -48,6 +48,10 @@ class _Api extends ApiClient {
   List<MediaLibrary> listed = const [];
   final List<String> calls = [];
   Exception? failure;
+  LibraryFolders folders = LibraryFolders.none;
+
+  @override
+  Future<LibraryFolders> getLibraryFolders() async => folders;
 
   @override
   Future<List<MediaLibrary>> getLibraries() async => listed;
@@ -240,6 +244,90 @@ void main() {
     expect(provider.libraries.single.name, 'Vidéos de famille');
     expect(find.text('Vidéos de famille'), findsOneWidget);
     expect(find.text('/media/famille'), findsOneWidget);
+  });
+
+  test('contrat : les dossiers que le serveur propose', () {
+    final found = LibraryFolders.fromJson(
+        jsonDecode(File('../contract/library_folders.json').readAsStringSync())
+            as Map<String, dynamic>);
+    expect(found.root, 'root-value');
+    expect(found.folders.single.path, 'path-value');
+    expect(found.folders.single.name, 'name-value');
+    expect(found.folders.single.kind, LibraryKind.shows);
+  });
+
+  group('le formulaire repris des dossiers du serveur (ADR-0155)', () {
+    _Api withFolders() => _Api()
+      ..folders = const LibraryFolders(root: '/media', folders: [
+        LibraryFolder(
+            path: '/media/Films', name: 'Films', kind: LibraryKind.movies),
+        LibraryFolder(
+            path: '/media/Séries', name: 'Séries', kind: LibraryKind.shows),
+        LibraryFolder(
+            path: '/media/Concerts', name: 'Concerts', kind: LibraryKind.other),
+      ]);
+
+    String field(WidgetTester tester, int index) => tester
+        .widget<TextField>(find.byType(TextField).at(index))
+        .controller!
+        .text;
+
+    Finder segment(String label) => find.descendant(
+        of: find.byType(SegmentedButton<LibraryKind>),
+        matching: find.text(label));
+
+    testWidgets('il s’ouvre prérempli avec le premier dossier libre',
+        (tester) async {
+      final api = withFolders();
+      await _pumpGroup(tester, api);
+      await tester.tap(find.text('Ajouter'));
+      await tester.pumpAndSettle();
+
+      expect(field(tester, 0), 'Films');
+      expect(field(tester, 1), '/media/Films');
+      expect(find.byType(ChoiceChip), findsNWidgets(3));
+
+      await tester.tap(find.text('Enregistrer'));
+      await tester.pumpAndSettle();
+      expect(api.calls, ['create Films movies /media/Films']);
+    });
+
+    testWidgets('le type choisi fait suivre le dossier proposé',
+        (tester) async {
+      await _pumpGroup(tester, withFolders());
+      await tester.tap(find.text('Ajouter'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(segment('Séries'));
+      await tester.pumpAndSettle();
+      expect(field(tester, 0), 'Séries');
+      expect(field(tester, 1), '/media/Séries');
+    });
+
+    testWidgets('ce qui est tapé à la main n’est jamais remplacé',
+        (tester) async {
+      final api = withFolders();
+      await _pumpGroup(tester, api);
+      await tester.tap(find.text('Ajouter'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(0), 'Mes concerts');
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Concerts'));
+      await tester.pumpAndSettle();
+      expect(field(tester, 0), 'Mes concerts',
+          reason: 'le nom choisi reste, la pastille ne prend que le dossier');
+      expect(field(tester, 1), '/media/Concerts');
+
+      await tester.enterText(find.byType(TextField).at(1), '/media/perso');
+      await tester.tap(segment('Films'));
+      await tester.pumpAndSettle();
+      expect(field(tester, 1), '/media/perso',
+          reason: 'un dossier tapé à la main ne suit pas le type');
+
+      await tester.tap(find.text('Enregistrer'));
+      await tester.pumpAndSettle();
+      expect(api.calls, ['create Mes concerts movies /media/perso']);
+    });
   });
 
   testWidgets('le refus du serveur reste sous le formulaire, la saisie aussi',

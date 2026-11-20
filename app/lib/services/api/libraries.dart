@@ -40,6 +40,20 @@ mixin _LibraryEndpoints {
         .toList();
   }
 
+  /// Les dossiers que le serveur voit sous son point de montage et qu'aucune
+  /// bibliothèque n'a encore, pour préremplir une création (ADR-0155). Un
+  /// serveur plus ancien ne les connaît pas : rien à proposer, le formulaire
+  /// se remplit à la main.
+  Future<LibraryFolders> getLibraryFolders() async {
+    try {
+      final response = await _dio.get('/api/libraries/folders');
+      return LibraryFolders.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return LibraryFolders.none;
+      rethrow;
+    }
+  }
+
   Future<MediaLibrary> createLibrary({
     required String name,
     required LibraryKind kind,

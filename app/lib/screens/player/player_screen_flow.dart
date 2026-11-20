@@ -40,6 +40,12 @@ extension _PlayerFlow on _PlayerScreenState {
       return;
     }
     if (_episodeNav?.revealUpcomingEpisodeCard() ?? false) return;
+    // « Fermer » sur la carte du trou voulait dire « ne saute pas l'épisode
+    // manquant » : la fin du fichier n'y répond pas autrement (ADR-0147).
+    if (_episodeNav?.upcomingGapDeclined ?? false) {
+      unawaited(_leavePlayer());
+      return;
+    }
     if (_episodeNav?.nextEpisode != null && !_endCardVisible) {
       _autoAdvanceToNextEpisode();
       return;

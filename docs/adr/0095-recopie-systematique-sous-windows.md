@@ -51,6 +51,46 @@ l'ADR-0019 a écarté ; à rouvrir si la charge processeur en 4K devient un prob
 ## Conséquences
 
 - Un 4K HDR coûte de nouveau la recopie (~24 Mo par image, ADR-0019) : charge processeur plus
-  élevée sur ces fichiers. Le correctif de libmpv de l'ADR-0019 reste en place, pour le jour où le
-  sans-copie pourra revenir derrière une détection fiable.
+  élevée sur ces fichiers. Le correctif de libmpv de l'ADR-0019 devait rester en place pour le jour où le
+  sans-copie reviendrait ; il a été retiré avec le passage au libmpv officiel (ADR-0158, phase 1,
+  voir la dernière révision).
 - Le réglage « copie » et le réglage « auto » donnent la même valeur sous Windows.
+
+## Révision du 2026-11-19 — les voies sans copie étudiées, la recopie reste
+
+Relu dans le source de mpv (master) : `hwdec_d3d11egl.c`, notre interop, déclare à ANGLE la
+texture du décodeur à sa taille complète (`texdesc.Width/Height`) et compte sur le recadrage des
+coordonnées. `hwdec_d3d11va.c`, celui de mpv seul, recopie la zone utile (`D3D11_BOX` aux
+dimensions de l'image) avec `CopySubresourceRegion1` quand `d3d11va-zero-copy=no`. C'est cette
+étape qui manque à notre chemin.
+
+Voies étudiées pour retrouver le sans-copie, toutes écartées :
+
+- **La fenêtre mpv de l'ADR-0061 pour toutes les lectures** : bonne pour le HDR et le Dolby Vision,
+  mais elle coûte la réutilisation du moteur, casse les animations (zoom d'entrée, fondus) et
+  repose sur deux fenêtres synchronisées et une fonction Windows non documentée. Trop fragile pour
+  le cas général.
+- **Un libmpv construit par nous**, avec la recopie GPU de la zone utile ajoutée à
+  `hwdec_d3d11egl.c` : solide, mais c'est une chaîne de build Windows (MinGW, FFmpeg, libplacebo) à
+  maintenir en permanence.
+- **`dxva2-egl`**, présent dans mpv sans correctif : il rogne bien (`StretchRect` aux dimensions de
+  l'image), mais il convertit en RVB 8 bits par le pilote (plus de 10 bits ni de HDR, une matrice de
+  couleurs laissée au pilote) et attend jusqu'à 8 ms par image sur le fil de rendu.
+
+La recopie reste donc la valeur de Windows. Elle ne coûte qu'en 4K HDR. Les saccades et le
+décalage du son signalés le même jour venaient du relais local (ADR-0036), pas d'elle. Seule voie
+gardée ouverte, sans rien à maintenir : proposer la recopie de la zone utile à mpv lui-même. Une
+fois fusionnée, les builds de shinchiro l'apporteront au prochain changement de `LIBMPV`.
+
+## Révision du 2026-11-19 (2) — la recopie n'est plus que le chemin « Ancien » et le repli
+
+Le sans-copie est revenu par le rendu D3D11 de libmpv 0.42.0 ([ADR-0158](0158-libmpv-officiel-et-rendu-d3d11-sous-windows.md), phase 2). La recopie `d3d11va-copy` (`auto-copy-safe`) reste, mais ne sert plus qu'à deux cas :
+
+- le rendu **Ancien** (ANGLE), que l'utilisateur peut choisir dans le réglage « Rendu vidéo » ;
+- le **repli automatique** : quand le rendu D3D11 ne montre rien ou perd son périphérique, la lecture passe sur ANGLE, et la machine retient l'échec par adaptateur et pilote.
+
+Le défaut de tous les utilisateurs Windows est désormais **Automatique** : D3D11 → ANGLE → logiciel. Ce qui est dit plus haut de « la valeur de Windows » vaut pour ANGLE seulement. `HardwareDecoding` décide selon le chemin retenu : D3D11 → `auto-safe`, ANGLE ou chemin inconnu → `auto-copy-safe`.
+
+Le correctif binaire de libmpv n'existe plus (phase 1) : la recopie n'a plus rien à garder en réserve.
+
+Le statut reste « accepté » pour le rendu Ancien. Il ne sera revu que si l'ADR-0158 est acceptée.

@@ -134,7 +134,10 @@ func TestAPIContract(t *testing.T) {
 	watchLists := filled[models.WatchListsResponse]()
 	watchLists.Mine[0].Kind = models.WatchListKindWatchLater
 	watchLists.Shared[0].Kind = models.WatchListKindCustom
+	watchLists.Mine[0].NextItem.MediaType = string(models.TypeShow)
+	watchLists.Shared[0].NextItem.MediaType = string(models.TypeMovie)
 	watchList := filled[models.WatchListDetail]()
+	watchList.NextItem.MediaType = string(models.TypeMovie)
 	watchList.Kind = models.WatchListKindCustom
 	watchList.Items[0].MediaType = string(models.TypeShow)
 	watchListItem := filled[models.WatchListItem]()
@@ -154,31 +157,34 @@ func TestAPIContract(t *testing.T) {
 	linkTest.Service = "mediahub"
 
 	contract := map[string]interface{}{
-		"home":               filled[models.HomeResponse](),
-		"media_details":      filled[models.MediaDetails](),
-		"next_episode":       filled[nextEpisodeResponse](),
-		"next_episode_none":  nextEpisodeResponse{},
-		"show_resume":        filled[resumeEpisodeResponse](),
-		"show_resume_none":   resumeEpisodeResponse{},
-		"episode_timestamps": filled[episodeTimestampsResponse](),
-		"media_tracks":       tracks,
-		"progress":           filled[progressResponse](),
-		"progress_revision":  filled[models.ProgressRevision](),
-		"scan_status":        filled[scanStatusResponse](),
-		"ping":               pingPayload(),
-		"libraries":          []libraries.Library{filled[libraries.Library]()},
-		"remote_posters":     filled[models.RemotePosters](),
-		"announcement":       filled[announcementResponse](),
-		"announcement_none":  announcementResponse{},
-		"watch_lists":        watchLists,
-		"watch_list":         watchList,
-		"watch_list_item":    watchListItem,
-		"requests_mine":      myRequests,
-		"requests_feed":      requestFeed,
-		"requests_access":    requestAccess,
-		"request_releases":   filled[releasesResponse](),
-		"mediahub_link_test": linkTest,
-		"mediahub_sso":       filled[mediahub.SSOTicket](),
+		"home":                 filled[models.HomeResponse](),
+		"media_details":        filled[models.MediaDetails](),
+		"next_episode":         filled[nextEpisodeResponse](),
+		"next_episode_none":    nextEpisodeResponse{},
+		"show_resume":          filled[resumeEpisodeResponse](),
+		"show_resume_none":     resumeEpisodeResponse{},
+		"episode_timestamps":   filled[episodeTimestampsResponse](),
+		"media_tracks":         tracks,
+		"progress":             filled[progressResponse](),
+		"progress_revision":    filled[models.ProgressRevision](),
+		"scan_status":          filled[scanStatusResponse](),
+		"ping":                 pingPayload(),
+		"libraries":            []libraries.Library{filled[libraries.Library]()},
+		"library_folders":      filled[libraryFoldersResponse](),
+		"remote_posters":       filled[models.RemotePosters](),
+		"announcement":         filled[announcementResponse](),
+		"announcement_none":    announcementResponse{},
+		"watch_lists":          watchLists,
+		"watch_list":           watchList,
+		"watch_list_item":      watchListItem,
+		"requests_mine":        myRequests,
+		"requests_feed":        requestFeed,
+		"requests_access":      requestAccess,
+		"request_releases":     filled[releasesResponse](),
+		"mediahub_link_test":   linkTest,
+		"mediahub_sso":         filled[mediahub.SSOTicket](),
+		"watch_party_invites":  filled[watchPartyInvitesResponse](),
+		"watch_party_invitees": filled[watchPartyInviteesResponse](),
 	}
 
 	update := os.Getenv("ONYX_UPDATE_CONTRACT") != ""

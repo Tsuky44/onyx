@@ -1,8 +1,63 @@
+import 'package:flutter/foundation.dart';
+
 import 'playback_session.dart';
+
+/// Relève les diagnostics de mpv d'un seul appel hors du thread de
+/// l'interface quand [batch] est là, propriété par propriété par [read]
+/// sinon.
+///
+/// `getProperty` de media_kit lit depuis le thread de l'interface et attend
+/// que le cœur de mpv soit libre : treize lectures toutes les cinq secondes
+/// pendant toute la lecture, chaque seconde avec l'onglet Stats ouvert, y
+/// compris pendant un seek ou un remplissage du cache.
+final class MpvDiagnosticsReader {
+  MpvDiagnosticsReader({required this.read, this.batch});
+
+  final Future<String?> Function(String name) read;
+  final Future<Map<String, String?>> Function(List<String> names)? batch;
+
+  bool _batchBroken = false;
+
+  Future<PlaybackDiagnostics> call() async {
+    final batch = this.batch;
+    if (batch != null && !_batchBroken) {
+      try {
+        final values = await batch(mpvDiagnosticProperties);
+        return readMpvDiagnostics((name) async => values[name]);
+      } catch (e) {
+        // Un libmpv que l'isolate ne trouve pas : le relevé repasse par le
+        // thread de l'interface, comme avant, sans retenter à chaque fois.
+        _batchBroken = true;
+        debugPrint('mpv: relevé hors interface impossible ($e) — '
+            'relevé direct');
+      }
+    }
+    return readMpvDiagnostics(read);
+  }
+}
+
+/// Les propriétés que lit [readMpvDiagnostics] : à demander d'un seul appel,
+/// hors du thread de l'interface, quand le moteur le permet.
+const mpvDiagnosticProperties = [
+  'video-codec',
+  'hwdec-current',
+  'container-fps',
+  'frame-drop-count',
+  'decoder-frame-drop-count',
+  'audio-params/channel-count',
+  'audio-out-params/channel-count',
+  'audio-codec-name',
+  'frame-count',
+  'estimated-vf-fps',
+  'video-bitrate',
+  'audio-bitrate',
+  'demuxer-cache-state/total-bytes',
+];
 
 /// Ce que mpv sait dire de la lecture en cours, lu propriété par propriété.
 ///
 /// [read] rend la valeur d'une propriété mpv, ou null quand il ne l'a pas.
+/// Chaque nom lu figure dans [mpvDiagnosticProperties].
 Future<PlaybackDiagnostics> readMpvDiagnostics(
     Future<String?> Function(String name) read) async {
   return PlaybackDiagnostics(

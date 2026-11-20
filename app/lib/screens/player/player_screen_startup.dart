@@ -28,11 +28,15 @@ extension _PlayerStartup on _PlayerScreenState {
     final actualMedia = _info.media;
     final item = _info.item;
 
-    _resumePosition = widget.resumeAtSeconds ??
-        (item != null && !item.isFinished ? item.currentPositionSeconds : 0);
+    final knownDuration = _info.knownDurationSeconds;
+    _resumePosition = usableResumePoint(
+        widget.resumeAtSeconds ??
+            (item != null && !item.isFinished ? item.currentPositionSeconds : 0),
+        durationSeconds: knownDuration);
     final resumePositionFuture = _loadResumePosition(apiClient, actualMedia).then((position) {
-      _resumePosition = position;
-      return position;
+      _resumePosition =
+          usableResumePoint(position, durationSeconds: knownDuration);
+      return _resumePosition;
     });
 
     await _playerController.init(

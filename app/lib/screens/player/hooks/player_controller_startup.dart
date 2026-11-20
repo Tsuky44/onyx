@@ -190,7 +190,7 @@ extension PlayerControllerStartup on PlayerController {
         await access.close();
         return;
       }
-      _playbackAccess = access;
+      _adoptAccess(access);
       // Un média partagé arrive d'un autre serveur : son nom rejoint ceux
       // qu'on garde en cache DNS, pour les lectures suivantes.
       DnsWarmup.watch([access.origin]);

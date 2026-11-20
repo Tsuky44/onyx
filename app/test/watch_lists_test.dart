@@ -321,13 +321,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('bob'), findsOneWidget);
     expect(find.text('carol'), findsOneWidget);
-    expect(find.byIcon(AppIcons.check), findsNothing);
+    expect(find.text('Voir'), findsNothing,
+        reason: 'un serveur d’avant les rôles ne sait qu’inviter à remplir');
+    expect(find.text('Peut ajouter des titres'), findsNothing);
 
-    await tester.tap(find.text('carol'));
+    // La rangée de carol, la seconde : « Ajouter ».
+    await tester.tap(find.text('Ajouter').last);
     await tester.pumpAndSettle();
     expect(requests, contains('PUT /api/lists/2/members/3'));
-    expect(find.byIcon(AppIcons.check), findsOneWidget,
-        reason: 'carol est cochée avec les invités que le serveur renvoie');
+    expect(find.text('Peut ajouter des titres'), findsOneWidget,
+        reason: 'carol est invitée avec ce que le serveur renvoie');
   });
   testWidgets(
       'la feuille « Partager » invite à voir seulement, puis à ajouter, '
@@ -349,25 +352,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Aucun accès'), findsNWidgets(2));
 
-    await tester.tap(find.text('carol'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Peut voir'));
+    // Chaque rangée a ses trois cases ; celles de carol sont les secondes.
+    await tester.tap(find.text('Voir').last);
     await tester.pumpAndSettle();
     expect(requests, contains('body {"role":"viewer"}'));
     expect(provider.detail(2)!.members.single.role, WatchListRole.viewer);
     expect(find.text('Peut voir'), findsOneWidget,
-        reason: 'la ligne de carol dit son accès, choix repliés');
+        reason: 'la ligne de carol dit son accès');
 
-    await tester.tap(find.text('carol'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Peut ajouter des titres'));
+    await tester.tap(find.text('Ajouter').last);
     await tester.pumpAndSettle();
     expect(requests, contains('body {"role":"editor"}'));
     expect(provider.detail(2)!.members.single.role, WatchListRole.editor);
 
-    await tester.tap(find.text('carol'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Aucun accès').last);
+    await tester.tap(find.text('Aucun').last);
     await tester.pumpAndSettle();
     expect(requests, contains('DELETE /api/lists/2/members/3'));
     expect(provider.detail(2)!.members, isEmpty);

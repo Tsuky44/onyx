@@ -33,9 +33,9 @@ class _OnyxChromeLayout extends MultiChildLayoutDelegate {
   /// Les commandes de lecture d'un écran tenu en main, au milieu de l'image.
   static const String centre = 'centre';
 
-  /// Où tombe leur milieu, en fraction de la hauteur : un peu au-dessus du
-  /// centre, parce que la barre du bas pèse plus que celle du haut.
-  static const double _centreAt = 0.42;
+  /// Où tombe leur milieu, en fraction de la hauteur : voir
+  /// [OnyxChromeTheme.handheldCentreAt].
+  static const double _centreAt = OnyxChromeTheme.handheldCentreAt;
 
   /// Ce qui les sépare au moins de la rangée du titre, sur un écran trop bas
   /// pour que la fraction suffise.

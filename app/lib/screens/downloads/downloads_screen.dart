@@ -17,6 +17,7 @@ import 'download_group_headers.dart';
 import 'widgets/download_row.dart';
 import 'widgets/download_tv_row.dart';
 import 'widgets/downloads_header.dart';
+import '../../widgets/global/sliver_scroll_end.dart';
 
 /// Ce qui est sur l'appareil, et rien d'autre.
 ///
@@ -127,7 +128,7 @@ class DownloadsScreen extends StatelessWidget {
               ..._groupSlivers(_groupByShow(onDevice), pad: pad, tv: false),
             ],
           ],
-          const SliverToBoxAdapter(child: SizedBox(height: 48)),
+          const SliverScrollEnd(),
         ],
       ),
     );

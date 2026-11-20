@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/app_download.dart';
@@ -195,6 +196,10 @@ void main() {
     // Les onglets s'effacent : ils ne se choisissent plus.
     await tester.tap(find.text('Films'), warnIfMissed: false);
     expect(selected, isEmpty);
+    // Sous Windows et macOS, ce clic tombe sur le verre, qui déplace la
+    // fenêtre et attend un éventuel second clic pour l'agrandir (ADR-0157) :
+    // on laisse passer ce délai, sans quoi son minuteur survit au test.
+    await tester.pump(kDoubleTapTimeout);
 
     // Le retour rappelle la page quittée et y ramène.
     await tester.tap(find.text('Séries').last);

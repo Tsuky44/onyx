@@ -94,6 +94,26 @@ void main() {
       }
       expect(verdicts, 0);
     });
+
+    test(
+        'une image qui dépasse à peine son budget n’est pas lente '
+        '(une Apple TV 4K était jugée lente)', () {
+      final watch = FrameBudgetWatch(frameBudget: budget, window: 30);
+      var verdict = false;
+      for (var i = 0; i < 30; i++) {
+        verdict = watch.add(
+            build: fast, raster: const Duration(milliseconds: 20));
+      }
+      expect(verdict, isFalse);
+    });
+
+    test('le budget suit la fréquence de l’écran, le cinéma se juge à 60 Hz',
+        () {
+      expect(FrameBudgetWatch.budgetFor(60).inMicroseconds, 16667);
+      expect(FrameBudgetWatch.budgetFor(120).inMicroseconds, 8333);
+      expect(FrameBudgetWatch.budgetFor(24).inMicroseconds, 16667);
+      expect(FrameBudgetWatch.budgetFor(null).inMicroseconds, 16667);
+    });
   });
 
   group('la lecture reste en Direct Play, dessinée au plus simple', () {
@@ -140,6 +160,14 @@ void main() {
       expect(find.text('b'), findsOneWidget);
     });
 
+    test('le verre ne floute pas sur le web, ordinateur compris (ADR-0153)',
+        () {
+      expect(glassBlursFor(isWeb: false, isLite: false), isTrue);
+      expect(glassBlursFor(isWeb: false, isLite: true), isFalse);
+      expect(glassBlursFor(isWeb: true, isLite: false), isFalse);
+      expect(glassBlursFor(isWeb: true, isLite: true), isFalse);
+    });
+
     testWidgets('le mouvement géométrique tombe à zéro, le fondu reste',
         (tester) async {
       late Duration move;
@@ -170,27 +198,53 @@ void main() {
     });
     tearDown(LiteMode.resetForTest);
 
-    test('« Désactivé » l’emporte sur une mesure, « Auto » la rejuge',
-        () async {
-      await LiteMode.noteSustainedJank();
-      expect(LiteMode.isLite, isTrue);
-      expect(LiteMode.reason, LiteModeReason.measured);
-
-      await LiteMode.setPreference(LiteModePreference.off);
+    test('des saccades proposent le mode léger sans l’activer (ADR-0141)',
+        () {
+      LiteMode.noteSustainedJank();
+      expect(LiteMode.suggestion.value, isTrue);
       expect(LiteMode.isLite, isFalse);
-
-      await LiteMode.setPreference(LiteModePreference.auto);
-      expect(LiteMode.isLite, isFalse,
-          reason: 'revenir à Auto efface la mesure précédente');
-
-      await LiteMode.setPreference(LiteModePreference.on);
-      expect(LiteMode.reason, LiteModeReason.chosen);
+      expect(LiteMode.reason, LiteModeReason.none);
     });
 
-    test('la mesure est gardée pour le démarrage suivant', () async {
-      await LiteMode.noteSustainedJank();
+    test('accepter passe sur « Activé »', () async {
+      LiteMode.noteSustainedJank();
+      await LiteMode.acceptSuggestion();
+      expect(LiteMode.isLite, isTrue);
+      expect(LiteMode.preference, LiteModePreference.on);
+      expect(LiteMode.reason, LiteModeReason.chosen);
+      expect(LiteMode.suggestion.value, isFalse);
+    });
+
+    test('un refus est gardé, « Auto » choisi de nouveau l’oublie', () async {
+      LiteMode.noteSustainedJank();
+      await LiteMode.declineSuggestion();
+      expect(LiteMode.isLite, isFalse);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool('lite_mode_measured_slow'), isTrue);
+      expect(prefs.getBool('lite_mode_suggestion_declined'), isTrue);
+
+      LiteMode.noteSustainedJank();
+      expect(LiteMode.suggestion.value, isFalse,
+          reason: 'la question ne revient pas après un non');
+
+      await LiteMode.setPreference(LiteModePreference.auto);
+      LiteMode.noteSustainedJank();
+      expect(LiteMode.suggestion.value, isTrue);
+    });
+
+    test('« Désactivé » ne demande rien', () async {
+      await LiteMode.setPreference(LiteModePreference.off);
+      LiteMode.noteSustainedJank();
+      expect(LiteMode.suggestion.value, isFalse);
+    });
+
+    test('l’ancienne mesure, qui imposait le mode léger, est effacée',
+        () async {
+      SharedPreferences.setMockInitialValues(
+          {'lite_mode_measured_slow': true});
+      await LiteMode.initialize();
+      expect(LiteMode.isLite, isFalse);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.containsKey('lite_mode_measured_slow'), isFalse);
       expect(TvMode.isTv, isFalse);
     });
   });

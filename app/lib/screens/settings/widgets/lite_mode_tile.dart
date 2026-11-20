@@ -18,8 +18,6 @@ class _LiteModeTileState extends State<LiteModeTile> {
     switch (LiteMode.reason) {
       case LiteModeReason.hardware:
         return tr('Actif : cet appareil a peu de ressources.');
-      case LiteModeReason.measured:
-        return tr('Actif : l’interface saccadait sur cet appareil.');
       case LiteModeReason.chosen:
         return tr('Actif.');
       case LiteModeReason.none:
@@ -29,7 +27,8 @@ class _LiteModeTileState extends State<LiteModeTile> {
 
   @override
   Widget build(BuildContext context) {
-    // Lu pour être reconstruit quand la mesure des images l'active d'elle-même.
+    // Lu pour être reconstruit quand la proposition du mode léger est
+    // acceptée pendant que la page est ouverte.
     LiteScope.of(context);
     return SettingsChoiceTile<LiteModePreference>(
       icon: Icons.speed_rounded,
