@@ -1,0 +1,23 @@
+{
+  "root": "root-value",
+  "path": "path-value",
+  "parent": "parent-value",
+  "breadcrumb": [
+    {
+      "name": "name-value",
+      "path": "path-value"
+    }
+  ],
+  "folders": [
+    {
+      "name": "name-value",
+      "path": "path-value",
+      "kind": "shows",
+      "covered": true,
+      "video_count": 1,
+      "video_count_capped": true
+    }
+  ],
+  "readable": true,
+  "empty_root": true
+}

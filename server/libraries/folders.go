@@ -58,17 +58,7 @@ func SuggestFolders(root string, libs []Library) ([]Folder, error) {
 		return nil, fmt.Errorf("libraries: read %s: %w", root, err)
 	}
 
-	covered := func(path string) bool {
-		for _, lib := range libs {
-			taken := filepath.Clean(lib.Path)
-			// Le dossier d'une bibliothèque, ou un dossier dans le sien : ses
-			// fichiers seraient comptés deux fois.
-			if path == taken || strings.HasPrefix(path, taken+string(filepath.Separator)) {
-				return true
-			}
-		}
-		return false
-	}
+	covered := func(path string) bool { return covers(libs, path) }
 
 	folders := []Folder{}
 	sawFolder := false

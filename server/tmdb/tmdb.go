@@ -38,7 +38,37 @@ func Get(client *http.Client, pathAndQuery string) (*http.Response, error) {
 
 // GetContext est Get, abandonné quand ctx se termine.
 func GetContext(ctx context.Context, client *http.Client, pathAndQuery string) (*http.Response, error) {
-	key := config.TMDBAPIKey()
+	return getWithKey(ctx, client, config.TMDBAPIKey(), pathAndQuery)
+}
+
+// ErrInvalidKey : TMDB a refusé la clé (401).
+var ErrInvalidKey = errors.New("tmdb: API key rejected")
+
+// CheckKey demande à TMDB si key est une clé valide, par sa route de
+// configuration, la plus légère. C'est le seul appel du paquet qui prend une
+// clé explicite : l'assistant du premier lancement teste celle qu'on vient de
+// saisir, avant de l'enregistrer (ADR-0164).
+//
+// Rend nil pour une clé acceptée, ErrNoKey pour une clé vide, ErrInvalidKey
+// quand TMDB la refuse, et toute autre erreur (réseau, DNS, délai, 5xx) pour
+// un TMDB qu'on ne joint pas. Aucune de ces erreurs ne cite la clé.
+func CheckKey(ctx context.Context, client *http.Client, key string) error {
+	key = strings.TrimSpace(key)
+	resp, err := getWithKey(ctx, client, key, "/configuration")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	switch {
+	case resp.StatusCode == http.StatusOK:
+		return nil
+	case resp.StatusCode == http.StatusUnauthorized:
+		return ErrInvalidKey
+	}
+	return fmt.Errorf("tmdb: GET /configuration: HTTP %d", resp.StatusCode)
+}
+
+func getWithKey(ctx context.Context, client *http.Client, key, pathAndQuery string) (*http.Response, error) {
 	if key == "" {
 		return nil, ErrNoKey
 	}

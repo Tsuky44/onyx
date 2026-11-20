@@ -155,6 +155,10 @@ func TestAPIContract(t *testing.T) {
 	requestAccess.Service = "mediahub"
 	linkTest := filled[mediaHubLinkResult]()
 	linkTest.Service = "mediahub"
+	tmdbKeyTest := filled[tmdbKeyTestResult]()
+	tmdbKeyTest.Reason = tmdbReasonOK
+	// À la racine, parent est null : le contrat montre le cas d'un sous-dossier
+	// (parent rempli), et l'app lit aussi null.
 
 	contract := map[string]interface{}{
 		"home":                 filled[models.HomeResponse](),
@@ -171,6 +175,9 @@ func TestAPIContract(t *testing.T) {
 		"ping":                 pingPayload(),
 		"libraries":            []libraries.Library{filled[libraries.Library]()},
 		"library_folders":      filled[libraryFoldersResponse](),
+		"fs_browse":            filled[libraries.Listing](),
+		"setup_state":          filled[setupStateResponse](),
+		"tmdb_key_test":        tmdbKeyTest,
 		"remote_posters":       filled[models.RemotePosters](),
 		"announcement":         filled[announcementResponse](),
 		"announcement_none":    announcementResponse{},
