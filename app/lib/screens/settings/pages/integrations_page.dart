@@ -1,14 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../models/request_service.dart';
-import '../../../providers/media_requests_provider.dart';
+import '../../../models/models.dart';
 import '../../../services/api_client.dart';
 import '../../../theme/app_colors.dart';
-import '../../../tv/tv_deferred_keyboard.dart';
+import '../widgets/integration_fields.dart';
+import '../widgets/request_service_form.dart';
 import '../widgets/settings_ui.dart';
+import '../widgets/tmdb_settings_form.dart';
 import '../../../l10n/tr.dart';
 
 /// TMDB (métadonnées, affiches, catalogue de demandes), Fanart.tv (affiches
@@ -16,6 +15,13 @@ import '../../../l10n/tr.dart';
 /// OnyxHub à la même adresse est reconnu par le serveur), Overseerr ou
 /// Jellyseerr (ADR-0136). Les clés ne sont jamais renvoyées en clair par le
 /// serveur.
+///
+/// Les formulaires de TMDB et du service de demandes sont ceux de l'assistant
+/// de première installation (ADR-0165). Le service de demandes reste grisé
+/// tant que le serveur n'a pas de clé TMDB : il refuserait de l'enregistrer. Le
+/// groupe TMDB est juste au-dessus : le verrou n'a pas de bouton de retour,
+/// que la télécommande n'aurait pas besoin de défiler à la main (un seul
+/// défilement par pas de focus, ADR-0110).
 class IntegrationsPage extends StatefulWidget {
   const IntegrationsPage({super.key});
 
@@ -24,37 +30,18 @@ class IntegrationsPage extends StatefulWidget {
 }
 
 class _IntegrationsPageState extends State<IntegrationsPage> {
-  static const _languages = [
-    ('fr-FR', 'Français'),
-    ('en-US', 'English'),
-    ('es-ES', 'Español'),
-    ('de-DE', 'Deutsch'),
-    ('it-IT', 'Italiano'),
-  ];
-
-  final _tmdbKey = TextEditingController();
   final _fanartKey = TextEditingController();
-  final _mediaHubUrl = TextEditingController();
-  final _mediaHubKey = TextEditingController();
 
   ServerSettings? _settings;
-  String _language = 'fr-FR';
 
-  /// Le service choisi dans le formulaire, enregistré ou non.
-  RequestService _service = RequestService.mediaHub;
-
-  /// Faux pour un serveur d'avant le choix : il ne connaît que MediaHub, et
-  /// refuserait un réglage qu'il ne lit pas.
+  /// Faux pour un serveur d'avant le choix : il ne connaît que MediaHub.
   bool _canChooseService = false;
-  String? _error;
-  bool _savingTmdb = false;
-  bool _savingFanart = false;
-  bool _savingMediaHub = false;
-  bool _testingMediaHub = false;
 
-  /// Les réserves du dernier test de liaison réussi (compte absent du
-  /// service, notifications de MediaHub sans adresse).
-  List<String> _linkNotes = const [];
+  /// Ce que le serveur dit de l'installation ; null pour un serveur d'avant
+  /// l'assistant, qui ne verrouille rien (comportement d'avant).
+  SetupState? _guide;
+  String? _error;
+  bool _savingFanart = false;
 
   @override
   void initState() {
@@ -64,23 +51,13 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
 
   @override
   void dispose() {
-    _tmdbKey.dispose();
     _fanartKey.dispose();
-    _mediaHubUrl.dispose();
-    _mediaHubKey.dispose();
     super.dispose();
   }
 
   void _apply(ServerSettings settings) {
     _settings = settings;
-    _language = _languages.any((l) => l.$1 == settings.tmdbLanguage)
-        ? settings.tmdbLanguage
-        : 'fr-FR';
-    _mediaHubUrl.text = settings.mediaHubUrl;
-    _service = settings.requestService;
-    _tmdbKey.clear();
     _fanartKey.clear();
-    _mediaHubKey.clear();
   }
 
   Future<void> _load() async {
@@ -95,10 +72,12 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
         // avant, ce que tout serveur sait faire.
         debugPrint('IntegrationsPage: choix du service inconnu ($error)');
       }
+      final guide = await _readGuide(api);
       if (!mounted) return;
       setState(() {
         _apply(settings);
         _canChooseService = canChoose;
+        _guide = guide;
         _error = null;
       });
     } catch (e) {
@@ -108,27 +87,26 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
     }
   }
 
-  Future<void> _saveTmdb({bool clearKey = false}) async {
-    setState(() => _savingTmdb = true);
-    final key = _tmdbKey.text.trim();
+  Future<SetupState?> _readGuide(ApiClient api) async {
     try {
-      final updated = await context.read<ApiClient>().updateServerSettings(
-            tmdbApiKey: key.isEmpty ? null : key,
-            clearTmdbApiKey: clearKey,
-            tmdbLanguage: _language,
-          );
-      if (!mounted) return;
-      setState(() => _apply(updated));
-      showSettingsSnack(
-          context, clearKey ? tr('Clé TMDB effacée.') : tr('TMDB enregistré.'));
-    } catch (e) {
-      if (mounted) {
-        showSettingsSnack(
-            context, settingsErrorText(e, tr('Échec de l’enregistrement.')),
-            error: true);
-      }
+      return await api.getSetupGuide();
+    } catch (error) {
+      // Sans réponse, rien n'est verrouillé : c'est le serveur qui refusera
+      // (409) un service de demandes sans TMDB, avec sa raison.
+      debugPrint('IntegrationsPage: état de l’installation inconnu ($error)');
+      return null;
     }
-    if (mounted) setState(() => _savingTmdb = false);
+  }
+
+  /// TMDB vient d'être enregistré ou effacé : le verrou du service de demandes
+  /// suit ce que le serveur en dit.
+  Future<void> _tmdbSaved(ServerSettings updated) async {
+    final guide = await _readGuide(context.read<ApiClient>());
+    if (!mounted) return;
+    setState(() {
+      _apply(updated);
+      _guide = guide;
+    });
   }
 
   Future<void> _saveFanart({bool clearKey = false}) async {
@@ -154,89 +132,6 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
       }
     }
     if (mounted) setState(() => _savingFanart = false);
-  }
-
-  /// Le service du formulaire n'est plus celui des réglages : la clé
-  /// enregistrée est celle de l'ancien.
-  bool get _serviceChanged =>
-      _settings != null && _service != _settings!.requestService;
-
-  Future<void> _saveMediaHub({bool clearKey = false}) async {
-    final key = _mediaHubKey.text.trim();
-    final settings = _settings;
-    if (!clearKey &&
-        settings != null &&
-        _serviceChanged &&
-        settings.mediaHubApiKeySet &&
-        key.isEmpty) {
-      // Laisser vide garderait la clé de l'ancien service, que le nouveau
-      // refuserait à la première demande.
-      showSettingsSnack(
-          context,
-          tr('Collez la clé de {0} : celle de {1} ne lui sert pas.',
-              [_service.label, settings.requestService.label]),
-          error: true);
-      return;
-    }
-    setState(() => _savingMediaHub = true);
-    final service = _service;
-    try {
-      final updated = await context.read<ApiClient>().updateServerSettings(
-            mediaHubUrl: _mediaHubUrl.text.trim(),
-            mediaHubApiKey: key.isEmpty ? null : key,
-            clearMediaHubApiKey: clearKey,
-            // Effacer la clé n'enregistre pas un service à moitié choisi.
-            requestService: _canChooseService && !clearKey ? service : null,
-          );
-      if (!mounted) return;
-      setState(() {
-        _apply(updated);
-        _linkNotes = const [];
-      });
-      // L'onglet Demandes paraît ou disparaît avec le compagnon.
-      unawaited(context.read<MediaRequestsProvider>().recheckCompanion());
-      showSettingsSnack(
-          context,
-          clearKey
-              ? tr('Clé effacée.')
-              : tr('{0} enregistré.', [service.label]));
-    } catch (e) {
-      if (mounted) {
-        showSettingsSnack(
-            context, settingsErrorText(e, tr('Échec de l’enregistrement.')),
-            error: true);
-      }
-    }
-    if (mounted) setState(() => _savingMediaHub = false);
-  }
-
-  /// Les valeurs du formulaire, pas encore enregistrées, sont celles qu'on
-  /// teste : on vérifie avant d'enregistrer, pas après.
-  Future<void> _testMediaHub() async {
-    setState(() => _testingMediaHub = true);
-    try {
-      final result = await context.read<ApiClient>().testMediaHubLink(
-            url: _mediaHubUrl.text.trim(),
-            apiKey: _mediaHubKey.text.trim(),
-            service: _canChooseService ? _service : null,
-          );
-      if (!mounted) return;
-      if (result == null) {
-        showSettingsSnack(context,
-            tr('Ce serveur est trop ancien pour cette fonction. Mettez-le à jour.'),
-            error: true);
-      } else {
-        setState(() => _linkNotes = result.ok ? result.notes : const []);
-        showSettingsSnack(context, result.message, error: !result.ok);
-      }
-    } catch (e) {
-      if (mounted) {
-        showSettingsSnack(
-            context, settingsErrorText(e, tr('Le test n’a pas pu se faire.')),
-            error: true);
-      }
-    }
-    if (mounted) setState(() => _testingMediaHub = false);
   }
 
   Widget _status(bool configured) => SettingsPill(
@@ -267,39 +162,7 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
                 'demandes.'),
             padded: true,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _KeyField(
-                    controller: _tmdbKey,
-                    label: tr('Clé API TMDB'),
-                    configured: settings.tmdbApiKeySet,
-                    hint: settings.tmdbApiKeyHint,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownMenu<String>(
-                    initialSelection: _language,
-                    label: Text(tr('Langue des métadonnées')),
-                    leadingIcon: const Icon(Icons.translate_rounded),
-                    expandedInsets: EdgeInsets.zero,
-                    onSelected: (value) {
-                      if (value != null) setState(() => _language = value);
-                    },
-                    dropdownMenuEntries: [
-                      for (final (code, label) in _languages)
-                        DropdownMenuEntry(value: code, label: label),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  _Actions(
-                    saving: _savingTmdb,
-                    onSave: () => _saveTmdb(),
-                    onClear: settings.tmdbApiKeySet
-                        ? () => _saveTmdb(clearKey: true)
-                        : null,
-                  ),
-                ],
-              ),
+              TmdbSettingsForm(settings: settings, onSaved: _tmdbSaved),
             ],
           ),
           SettingsGroup(
@@ -313,14 +176,14 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _KeyField(
+                  IntegrationKeyField(
                     controller: _fanartKey,
                     label: tr('Clé API Fanart.tv'),
                     configured: settings.fanartApiKeySet,
                     hint: settings.fanartApiKeyHint,
                   ),
                   const SizedBox(height: 14),
-                  _Actions(
+                  IntegrationActions(
                     saving: _savingFanart,
                     onSave: () => _saveFanart(),
                     onClear: settings.fanartApiKeySet
@@ -335,192 +198,18 @@ class _IntegrationsPageState extends State<IntegrationsPage> {
             title: tr('Service de demandes'),
             trailing: _status(
                 settings.mediaHubUrl.isNotEmpty && settings.mediaHubApiKeySet),
-            footer: _service.isSeerr
-                ? tr(
-                    'Les demandes faites depuis l’onglet Demander sont '
-                    'transmises à {0}, qui les confie à Radarr et Sonarr. La '
-                    'clé API se lit dans {0}, sous Paramètres → Général. Un '
-                    'compte Onyx y agit comme le compte du même nom ; sans '
-                    'homonyme, il passe par le compte de la clé.',
-                    [_service.label])
-                : tr(
-                    'Les demandes faites depuis l’onglet Demander sont '
-                    'transmises à MediaHub pour être téléchargées. La clé est '
-                    'PLAYER_INTEGRATION_API_KEY de MediaHub. Pour que MediaHub '
-                    'prévienne Onyx des imports, réglez-y ONYX_WEBHOOK_URL sur '
-                    '{0}/api/integrations/mediahub/events.',
-                    [context.read<ApiClient>().baseUrl]),
+            // Une seule rangée pour le groupe : le choix et son formulaire
+            // vont ensemble, sans le filet qui sépare deux réglages.
             children: [
-              // Une seule rangée pour le groupe : le choix et son formulaire
-              // vont ensemble, sans le filet qui sépare deux réglages.
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_canChooseService)
-                    SettingsChoiceTile<RequestService>(
-                      title: tr('Service'),
-                      subtitle: tr('Celui qui reçoit les demandes et les fait '
-                          'télécharger.'),
-                      value: _service,
-                      options: [
-                        for (final service in RequestService.values)
-                          (service, service.label),
-                      ],
-                      // Les réserves du dernier test parlaient de l'autre service.
-                      onChanged: (service) => setState(() {
-                        _service = service;
-                        _linkNotes = const [];
-                      }),
-                    ),
-                  Padding(
-                    // Le retrait de 16 de la rangée du choix, juste au-dessus.
-                    padding: EdgeInsets.fromLTRB(
-                        16, _canChooseService ? 2 : 14, 16, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TvDeferredKeyboard(
-                          builder: (context, focusNode, canRequestFocus) =>
-                              TextField(
-                            focusNode: focusNode,
-                            canRequestFocus: canRequestFocus,
-                            controller: _mediaHubUrl,
-                            keyboardType: TextInputType.url,
-                            decoration: InputDecoration(
-                              labelText: tr('Adresse de {0}', [_service.label]),
-                              hintText: _service.urlExample,
-                              prefixIcon: const Icon(Icons.link_rounded),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _KeyField(
-                          controller: _mediaHubKey,
-                          label: _service.isSeerr
-                              ? tr('Clé API {0}', [_service.label])
-                              : tr('Clé d’intégration MediaHub'),
-                          // La clé enregistrée est celle du service des réglages :
-                          // un autre choisi, il n'y en a pas encore pour lui.
-                          configured:
-                              settings.mediaHubApiKeySet && !_serviceChanged,
-                          hint: settings.mediaHubApiKeyHint,
-                        ),
-                        const SizedBox(height: 14),
-                        for (final note in _linkNotes) ...[
-                          SettingsBanner(note),
-                          const SizedBox(height: 10),
-                        ],
-                        _Actions(
-                          saving: _savingMediaHub || _testingMediaHub,
-                          onTest: _testMediaHub,
-                          testing: _testingMediaHub,
-                          onSave: () => _saveMediaHub(),
-                          onClear: settings.mediaHubApiKeySet
-                              ? () => _saveMediaHub(clearKey: true)
-                              : null,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              RequestServiceForm(
+                settings: settings,
+                canChooseService: _canChooseService,
+                locked: _guide != null && !_guide!.requestsAvailable,
+                onSaved: (updated) => setState(() => _apply(updated)),
               ),
             ],
           ),
         ],
-      ],
-    );
-  }
-}
-
-class _KeyField extends StatefulWidget {
-  const _KeyField({
-    required this.controller,
-    required this.label,
-    required this.configured,
-    required this.hint,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final bool configured;
-  final String? hint;
-
-  @override
-  State<_KeyField> createState() => _KeyFieldState();
-}
-
-class _KeyFieldState extends State<_KeyField> {
-  bool _obscure = true;
-
-  @override
-  Widget build(BuildContext context) {
-    return TvDeferredKeyboard(
-      builder: (context, focusNode, canRequestFocus) => TextField(
-        focusNode: focusNode,
-        canRequestFocus: canRequestFocus,
-        controller: widget.controller,
-        obscureText: _obscure,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          hintText: widget.configured
-              ? tr('Clé active {0} — laisser vide pour la garder',
-                  [widget.hint ?? '••••'])
-              : tr('Coller la clé'),
-          prefixIcon: const Icon(Icons.key_rounded),
-          suffixIcon: IconButton(
-            tooltip: _obscure ? tr('Afficher') : tr('Masquer'),
-            onPressed: () => setState(() => _obscure = !_obscure),
-            icon: Icon(_obscure
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Actions extends StatelessWidget {
-  const _Actions({
-    required this.saving,
-    required this.onSave,
-    required this.onClear,
-    this.onTest,
-    this.testing = false,
-  });
-
-  final bool saving;
-  final VoidCallback onSave;
-  final VoidCallback? onClear;
-
-  /// Seul le service de demandes se teste : c'est le serveur qui doit le
-  /// joindre.
-  final VoidCallback? onTest;
-  final bool testing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.end,
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        if (onClear != null)
-          TextButton(
-            onPressed: saving ? null : onClear,
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text(tr('Effacer la clé')),
-          ),
-        if (onTest != null)
-          OutlinedButton(
-            onPressed: saving ? null : onTest,
-            child: Text(testing ? tr('Test…') : tr('Tester')),
-          ),
-        FilledButton(
-          onPressed: saving ? null : onSave,
-          child: Text(
-              saving && !testing ? tr('Enregistrement…') : tr('Enregistrer')),
-        ),
       ],
     );
   }

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/tr.dart';
 import '../../../models/models.dart';
+import '../../../providers/library_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_type.dart';
 import '../../../tv/tv_deferred_keyboard.dart';
 import 'settings_ui.dart';
 import '../../../widgets/global/onyx_dialog.dart';
 import '../../../theme/app_icons.dart';
+import 'folder_picker.dart';
 
 /// Ce qu'un administrateur a saisi pour une bibliothèque.
 typedef LibraryDraft = ({String name, LibraryKind kind, String path});
@@ -20,12 +22,16 @@ typedef LibraryDraft = ({String name, LibraryKind kind, String path});
 ///
 /// À la création, [loadFolders] donne les dossiers que le serveur voit sous
 /// son point de montage : le premier préremplit le formulaire, les autres se
-/// proposent d'un geste (ADR-0155).
+/// proposent d'un geste (ADR-0155). Quand [browse] est donné et que le serveur
+/// sait explorer ses dossiers, le chemin se choisit dans l'explorateur
+/// ([FolderPicker], ADR-0165) et la saisie à la main passe sous « Avancé » ; un
+/// serveur plus ancien garde le formulaire d'avant.
 Future<bool> showLibraryEditor(
   BuildContext context, {
   MediaLibrary? library,
   required Future<void> Function(LibraryDraft draft) onSubmit,
   Future<LibraryFolders> Function()? loadFolders,
+  FolderLoader? browse,
 }) async {
   final saved = await showOnyxDialog<bool>(
     context: context,
@@ -33,9 +39,26 @@ Future<bool> showLibraryEditor(
       library: library,
       onSubmit: onSubmit,
       loadFolders: loadFolders,
+      browse: browse,
     ),
   );
   return saved == true;
+}
+
+/// Le formulaire d'une nouvelle bibliothèque, branché sur le serveur : celui des
+/// Paramètres et de l'assistant de première installation (ADR-0165). Rend vrai
+/// quand la bibliothèque est créée (le serveur lance alors son analyse).
+Future<bool> showNewLibraryEditor(
+  BuildContext context,
+  LibraryProvider provider,
+) {
+  return showLibraryEditor(
+    context,
+    onSubmit: (draft) => provider.createLibrary(
+        name: draft.name, kind: draft.kind, path: draft.path),
+    loadFolders: provider.apiClient.getLibraryFolders,
+    browse: (path) => provider.apiClient.browseFolders(path: path),
+  );
 }
 
 @visibleForTesting
@@ -45,11 +68,13 @@ class LibraryEditorDialog extends StatefulWidget {
     required this.library,
     required this.onSubmit,
     this.loadFolders,
+    this.browse,
   });
 
   final MediaLibrary? library;
   final Future<void> Function(LibraryDraft draft) onSubmit;
   final Future<LibraryFolders> Function()? loadFolders;
+  final FolderLoader? browse;
 
   @override
   State<LibraryEditorDialog> createState() => _LibraryEditorDialogState();
@@ -68,13 +93,50 @@ class _LibraryEditorDialogState extends State<LibraryEditorDialog> {
   String? _suggestedName;
   String? _suggestedPath;
 
+  /// Faux quand le serveur a dit qu'il ne sait pas explorer : le formulaire
+  /// d'avant, chemin tapé et pastilles de dossiers libres.
+  late bool _browsable = widget.browse != null;
+
+  /// L'explorateur est ouvert : à la création tant qu'aucun dossier n'est
+  /// choisi, à la modification quand on demande à changer de dossier.
+  late bool _pickerOpen = !_editing;
+
   bool get _editing => widget.library != null;
 
   @override
   void initState() {
     super.initState();
     final load = widget.loadFolders;
+    // Avec l'explorateur, les pastilles ne servent plus : il montre tout.
+    if (!_editing && load != null && !_browsable) _loadFolders(load);
+  }
+
+  /// Le serveur ne sait pas explorer : on revient au formulaire d'avant, et on
+  /// va chercher les pastilles qu'il pouvait proposer.
+  void _browseUnsupported() {
+    if (!_browsable) return;
+    setState(() => _browsable = false);
+    final load = widget.loadFolders;
     if (!_editing && load != null) _loadFolders(load);
+  }
+
+  /// Reprend le dossier choisi dans l'explorateur : son chemin, son type deviné
+  /// (à la création seulement : le type d'une bibliothèque ne change pas), et
+  /// son nom tant que le nom est vide ou vient d'une proposition (ADR-0155).
+  void _usePick(FolderPick pick) {
+    setState(() {
+      final name = _name.text.trim();
+      if (name.isEmpty || name == _suggestedName) {
+        _name.text = pick.name;
+        _suggestedName = pick.name;
+      }
+      _path.text = pick.path;
+      _suggestedPath = pick.path;
+      final kind = pick.kind;
+      if (kind != null && !_editing) _kind = kind;
+      _pickerOpen = false;
+      _error = null;
+    });
   }
 
   Future<void> _loadFolders(Future<LibraryFolders> Function() load) async {
@@ -177,6 +239,62 @@ class _LibraryEditorDialogState extends State<LibraryEditorDialog> {
     );
   }
 
+  /// Le dossier choisi, l'explorateur quand il est ouvert, et la saisie à la
+  /// main repliée sous « Avancé ».
+  List<Widget> _browserSection() {
+    final chosen = _path.text.trim();
+    return [
+      Text(
+        tr('Dossier'),
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: AppType.subhead,
+        ),
+      ),
+      const SizedBox(height: 8),
+      if (chosen.isNotEmpty && !_pickerOpen)
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.folder_outlined),
+          title: Text(chosen, maxLines: 2, overflow: TextOverflow.ellipsis),
+          trailing: TextButton(
+            onPressed:
+                _saving ? null : () => setState(() => _pickerOpen = true),
+            child: Text(tr('Changer')),
+          ),
+        ),
+      if (_pickerOpen)
+        FolderPicker(
+          loadFolder: widget.browse!,
+          initialPath: chosen.isEmpty ? null : chosen,
+          enabled: !_saving,
+          onChoose: _usePick,
+          onUnsupported: _browseUnsupported,
+        ),
+      Theme(
+        // Pas de filet haut et bas autour du repli.
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: Text(
+            tr('Avancé : saisir le chemin à la main'),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: AppType.footnote,
+            ),
+          ),
+          children: [
+            _field(
+              _path,
+              label: tr('Dossier'),
+              hint: tr('Chemin complet sur le serveur'),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return OnyxDialog(
@@ -198,19 +316,21 @@ class _LibraryEditorDialogState extends State<LibraryEditorDialog> {
             maxLength: 40,
           ),
           const SizedBox(height: 14),
-          _field(
-            _path,
-            label: tr('Dossier'),
-            hint: tr('Chemin complet sur le serveur'),
-          ),
-          if (_folders.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            _FolderChoices(
-              folders: _folders,
-              path: _path,
-              enabled: !_saving,
-              onChoose: (folder) => setState(() => _useFolder(folder)),
+          if (_browsable) ..._browserSection() else ...[
+            _field(
+              _path,
+              label: tr('Dossier'),
+              hint: tr('Chemin complet sur le serveur'),
             ),
+            if (_folders.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              _FolderChoices(
+                folders: _folders,
+                path: _path,
+                enabled: !_saving,
+                onChoose: (folder) => setState(() => _useFolder(folder)),
+              ),
+            ],
           ],
           const SizedBox(height: 6),
           Text(

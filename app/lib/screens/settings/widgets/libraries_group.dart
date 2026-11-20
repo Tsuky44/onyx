@@ -30,12 +30,7 @@ class _LibrariesGroupState extends State<LibrariesGroup> {
 
   Future<void> _add() async {
     final provider = context.read<LibraryProvider>();
-    final saved = await showLibraryEditor(
-      context,
-      onSubmit: (draft) => provider.createLibrary(
-          name: draft.name, kind: draft.kind, path: draft.path),
-      loadFolders: provider.apiClient.getLibraryFolders,
-    );
+    final saved = await showNewLibraryEditor(context, provider);
     if (saved && mounted) {
       showSettingsSnack(
           context, tr('Bibliothèque ajoutée. Le serveur analyse son dossier.'));
@@ -49,6 +44,7 @@ class _LibrariesGroupState extends State<LibrariesGroup> {
       library: library,
       onSubmit: (draft) =>
           provider.updateLibrary(library, name: draft.name, path: draft.path),
+      browse: (path) => provider.apiClient.browseFolders(path: path),
     );
     if (saved && mounted) {
       showSettingsSnack(context, tr('Bibliothèque enregistrée.'));
