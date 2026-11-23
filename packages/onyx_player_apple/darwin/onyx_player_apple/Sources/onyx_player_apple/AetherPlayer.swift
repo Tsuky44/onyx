@@ -105,6 +105,15 @@ final class AetherPlayer {
     // Le HLS de transcodage du serveur n'est pas concerné : AVPlayer parle
     // directement au serveur. Voir ADR-0092.
     options.progressiveSegmentDelivery = isRawFile
+    // Une session HLS du serveur va droit à AVPlayer. Sans ceci, le moteur
+    // tente d'abord de la démultiplexer comme un fichier, échoue (FFmpeg ne
+    // lit pas une playlist ici), relit la playlist et télécharge la tête du
+    // premier segment pour vérifier qu'il n'est pas du HEVC en MPEG-TS, puis
+    // seulement la confie à AVPlayer, qui redemande le tout. Le serveur
+    // n'envoie à ce client que du fMP4 : la vérification ne trouve jamais
+    // rien, et chaque changement de qualité payait ces allers-retours, plus
+    // l'attente d'un segment que le transcodage n'a pas encore écrit.
+    options.nativeRemoteHLS = !isRawFile
     let loadOptions = options
     let start: Double? = startMs > 0 ? Double(startMs) / 1000 : nil
     loadTask = Task { [weak self] in
@@ -273,7 +282,8 @@ final class AetherPlayer {
       videoFormat: StatusMapping.videoFormat(engine.videoFormat),
       errorKind: errorKind,
       errorMessage: errorMessage,
-      videoRoute: engine.videoRoute.rawValue)
+      videoRoute: engine.videoRoute.rawValue,
+      firstFrameShown: engine.hasFirstFrameReadyForDisplay)
   }
 
   func stats() -> OnyxApplePlaybackStats {
@@ -315,6 +325,7 @@ final class AetherPlayer {
       Self.signal(engine.$sourceVideoHeight),
       Self.signal(engine.$videoFormat),
       Self.signal(engine.$videoRoute),
+      Self.signal(engine.$hasFirstFrameReadyForDisplay),
       Self.signal(engine.clock.$currentTime.throttle(for: .milliseconds(250), scheduler: tick, latest: true)),
       Self.signal(engine.clock.$bufferedPosition.throttle(for: .milliseconds(250), scheduler: tick, latest: true)),
     ]

@@ -3,6 +3,7 @@ import 'messages.g.dart' as pigeon show engineLog;
 
 export 'messages.g.dart'
     show
+        OnyxAppleDeviceCapabilities,
         OnyxApplePlaybackState,
         OnyxApplePictureInPicture,
         OnyxApplePlaybackStats,
@@ -64,6 +65,21 @@ class OnyxApplePlayer {
   /// Si l'appareil sait faire l'image dans l'image : iPhone et iPad.
   static Future<bool> supportsPictureInPicture() =>
       OnyxApplePlayerApi().supportsPictureInPicture();
+
+  /// Ce que la puce décode en matériel. Une Apple TV HD n'a pas de décodeur
+  /// HEVC : l'app demande alors ces fichiers transcodés au serveur.
+  static Future<OnyxAppleDeviceCapabilities> deviceCapabilities() =>
+      OnyxApplePlayerApi().deviceCapabilities();
+
+  /// Paie d'avance ce que le premier lecteur du processus paie une seule
+  /// fois : le chargement des bibliothèques FFmpeg d'AetherEngine, son pont
+  /// de journal, la catégorie de la session audio. Un lecteur créé puis
+  /// détruit, sans rien ouvrir ; c'est le chemin d'un écran de lecture
+  /// refermé avant son ouverture.
+  static Future<void> prewarm() async {
+    final player = await create();
+    await player.release();
+  }
 
   /// Crée le lecteur natif. Rien n'est chargé tant qu'[open] n'est pas appelé.
   static Future<OnyxApplePlayer> create() async {

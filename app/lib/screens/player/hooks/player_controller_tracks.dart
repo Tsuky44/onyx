@@ -8,9 +8,15 @@ extension PlayerControllerTracks on PlayerController {
     required ApiClient apiClient,
     required int mediaId,
     required PlayerPlaybackPreferences? inheritedPreferences,
+    Future<MediaTracks?>? pendingTracks,
+    bool nothingOpen = false,
   }) async {
     try {
-      final tracks = await _loadTracks(apiClient, mediaId);
+      // [pendingTracks] : la demande partie dès le début de `init`.
+      // [nothingOpen] : l'ouverture du fichier a été sautée, la session du
+      // serveur est la première chose que le moteur ouvrira.
+      final tracks =
+          await (pendingTracks ?? _loadTracks(apiClient, mediaId));
       if (_disposed || tracks == null) return;
       // Arrivée pendant le démarrage, la liste peut faire changer de piste
       // audio — ce qui relance le chargement : la ligne doit le situer.
@@ -37,6 +43,15 @@ extension PlayerControllerTracks on PlayerController {
       // first moment the web can pick a quality. Nothing is playing yet on that
       // platform — init deliberately opened nothing.
       if (await _startWebTranscode()) return;
+
+      // Avant l'audio et le Dolby Vision : une image que la puce ne décode
+      // pas emporte les deux, et son barreau ne dépasse pas ce qu'elle
+      // affiche.
+      if (_directPlayCannotDecodeVideo()) {
+        _notifyTracksChanged();
+        await _transcodeForUndecodableVideo(openFileOnFailure: nothingOpen);
+        return;
+      }
 
       if (_directPlayCannotDecodeAudio(_selectedAudioIndex)) {
         _notifyTracksChanged();
@@ -358,21 +373,6 @@ extension PlayerControllerTracks on PlayerController {
     _applyAudioSelection();
   }
 
-  /// Si la piste [index] serait muette en Direct Play.
-  ///
-  /// Le moteur local la liste et la sélectionne sans broncher — le démuxeur la
-  /// connaît — puis n'a rien pour la décoder : l'image défile, sans son et sans
-  /// erreur. C'est le cas du TrueHD (Atmos compris) sous mpv, et du TrueHD, du
-  /// DTS ou de l'(E-)AC-3 sous ExoPlayer quand l'appareil n'a ni décodeur ni
-  /// passthrough pour eux.
-  bool _directPlayCannotDecodeAudio(int index) {
-    if (_hlsOnly || currentQuality != null) return false;
-    final audio = mediaTracks?.audio ?? const <MediaAudioTrack>[];
-    if (index < 0 || index >= audio.length) return false;
-    return !PlaybackCapabilitiesResolver.current
-        .decodesInDirectPlay(audio[index].codec);
-  }
-
   /// Ce qu'on fait d'une panne du moteur.
   ///
   /// Après la première image, seule une source perdue se rattrape ici (voir
@@ -424,22 +424,6 @@ extension PlayerControllerTracks on PlayerController {
     // côté serveur — voir [PlaybackReporter.flushLogs].
     _reporter.flushLogs(_apiClient);
     _onFailure?.call();
-  }
-
-  /// Passe en HLS à la résolution de la source, pour que le serveur décode la
-  /// piste que le moteur local ne sait pas lire.
-  ///
-  /// La résolution d'origine est ce qui laisse l'image recopiée plutôt que
-  /// ré-encodée : seul l'audio coûte alors quelque chose au serveur.
-  Future<void> _transcodeForUndecodableAudio() async {
-    final track = mediaTracks!.audio[_selectedAudioIndex];
-    final quality = qualityForSourceHeight(mediaTracks!.video?.height ?? 0);
-    debugPrint("Player: ${track.codec} illisible en Direct Play "
-        "(${PlaybackCapabilitiesResolver.current.label}) — HLS $quality");
-    // L'Auto ne ramènera pas la lecture sur une piste muette.
-    _directPlayRuledOut = true;
-    _autoCeilingKey = quality;
-    await switchToQuality(quality);
   }
 
   /// Turn subtitles on (first available track) or off.

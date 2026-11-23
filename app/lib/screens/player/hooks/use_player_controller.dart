@@ -12,12 +12,14 @@ import '../playback/audio_language_gap.dart';
 import '../playback/audio_track_pairing.dart';
 import '../playback/auto_quality.dart';
 import '../playback/carried_subtitle.dart';
+import '../playback/direct_play_video_gate.dart';
 import '../playback/embedded_subtitle_pairing.dart';
 import '../playback/hls_retain_window.dart';
 import '../playback/live_subtitles.dart';
 import '../playback/playback_engine.dart';
 import '../playback/playback_session.dart';
 import '../playback/playback_stats.dart';
+import '../playback/resume_settle.dart';
 import '../playback/series_track_memory.dart';
 import '../playback/startup_timeline.dart';
 import '../playback/stream_cut_recovery.dart';
@@ -42,6 +44,7 @@ import '../player_playback_preferences.dart';
 part 'player_controller_auto.dart';
 part 'player_controller_cut.dart';
 part 'player_controller_diagnostics.dart';
+part 'player_controller_direct_play_gate.dart';
 part 'player_controller_dolby_vision.dart';
 part 'player_controller_hls.dart';
 part 'player_controller_language.dart';
@@ -139,7 +142,9 @@ class PlayerController {
       // Le tampon qui se remplit au démarrage n'est pas une ligne qui cale.
       _noteDisturbance();
       _mark('shown');
-      _printStartup();
+      // Un moteur qui annonce sa première image la montre avant que
+      // l'horloge tourne : la ligne attend alors `playing` pour se clore.
+      if (_startup.hasPlayed) _printStartup();
       _startTimelinePreviews();
       _onFirstFrame?.call();
       unawaited(_onPictureLive());
@@ -520,6 +525,7 @@ class PlayerController {
   StreamSubscription? _bufferingSubscription;
   StreamSubscription? _reapplySubscription;
   StreamSubscription? _failureSubscription;
+  StreamSubscription? _firstFrameSubscription;
   StreamCutRecovery? _cuts;
   bool _disposed = false;
 
@@ -550,6 +556,7 @@ class PlayerController {
   void _notePlaying() {
     final millis = _startup.notePlaying();
     if (millis != null) _stats.noteStartup(millis);
+    if (hasFirstFrame) _printStartup();
   }
 
   /// Prints the start-up line, once. An unfinished one is printed too — on the
@@ -719,6 +726,7 @@ class PlayerController {
     _bufferingSubscription?.cancel();
     _reapplySubscription?.cancel();
     _failureSubscription?.cancel();
+    _firstFrameSubscription?.cancel();
     _positionSubscription = null;
     _durationSubscription = null;
     _completedSubscription = null;
@@ -758,6 +766,7 @@ class PlayerController {
     _bufferingSubscription?.cancel();
     _reapplySubscription?.cancel();
     _failureSubscription?.cancel();
+    _firstFrameSubscription?.cancel();
     // Leaving the player screen must not leave hls.js segment loaders running
     // against a <video> that is about to disappear.
     WebPlayback.clearSubtitles();

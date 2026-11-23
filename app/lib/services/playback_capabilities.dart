@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:onyx_player_android/onyx_player_android.dart';
+import 'package:onyx_player_apple/onyx_player_apple.dart';
 
 import '../utils/app_platform.dart';
 import '../utils/mpv_native_view.dart';
@@ -30,6 +31,7 @@ class PlaybackCapabilities {
     required this.dolbyVision,
     required this.label,
     this.missingDirectPlayAudio = const {},
+    this.directPlayVideo,
     bool? dolbyVisionInDirectPlay,
   }) : dolbyVisionInDirectPlay = dolbyVisionInDirectPlay ?? dolbyVision;
 
@@ -84,6 +86,23 @@ class PlaybackCapabilities {
   /// Faux, un profil 5 ouvert en Direct Play sort rose et vert sans la moindre
   /// erreur : il part en HLS, où le serveur applique la RPU (ADR-0060).
   final bool dolbyVisionInDirectPlay;
+
+  /// Ce que la puce décode elle-même quand le moteur **local** lit le fichier
+  /// (Direct Play). Null partout où le moteur lit tout à une vitesse
+  /// regardable ; posé sur un appareil Apple sans décodeur HEVC matériel, où
+  /// AetherEngine décode en logiciel ce qu'une puce de 2014 ne tient pas.
+  final DirectPlayVideoLimits? directPlayVideo;
+
+  /// Si l'image de ce fichier se lit en Direct Play sans décodage logiciel.
+  /// Une image dont le serveur ne dit rien passe : ne rien supposer garde le
+  /// Direct Play qui marchait déjà.
+  bool playsVideoDirectly({
+    required String codec,
+    required int height,
+    required int bitDepth,
+  }) =>
+      directPlayVideo?.allows(codec: codec, height: height, bitDepth: bitDepth) ??
+      true;
 
   /// Si le moteur local sait décoder [codec] (nom ffprobe) en Direct Play.
   bool decodesInDirectPlay(String codec) {
@@ -186,6 +205,37 @@ class PlaybackCapabilities {
     dolbyVisionInDirectPlay: true,
     label: 'aetherengine',
   );
+
+  /// AetherEngine sur une puce sans décodeur HEVC matériel : l'Apple TV HD
+  /// (A8), en pratique. Voir l'ADR « Apple TV HD : H.264 matériel ou
+  /// transcodage ».
+  ///
+  /// AetherEngine y lit tout, mais en logiciel dès que VideoToolbox refuse une
+  /// session matérielle : du HEVC 1080p sur deux cœurs de 2014 saccade, et un
+  /// 4K ne se lit pas. Seul le H.264 8 bits jusqu'en 1080p y passe par la
+  /// puce ; le reste se demande au serveur, en H.264 SDR, qu'AVPlayer lit
+  /// alors en matériel. L'appareil ne sort ni HDR ni 10 bits.
+  static const aetherWithoutHevc = PlaybackCapabilities(
+    container: 'fmp4',
+    videoCodecs: {'h264'},
+    audioCodecs: {'aac', 'ac3', 'eac3', 'alac', 'flac'},
+    maxAudioChannels: 8,
+    maxVideoBitDepth: 8,
+    hdr: false,
+    dolbyVision: false,
+    dolbyVisionInDirectPlay: true,
+    directPlayVideo: DirectPlayVideoLimits(
+      codecs: {'h264'},
+      // 1088 : la hauteur codée d'un 1080p, que certains serveurs rapportent.
+      maxHeight: 1088,
+      maxBitDepth: 8,
+    ),
+    label: 'aetherengine (sans décodeur HEVC matériel)',
+  );
+
+  /// Ce que la puce de cet appareil Apple a répondu.
+  factory PlaybackCapabilities.fromApple(OnyxAppleDeviceCapabilities device) =>
+      device.hardwareHevc ? aether : aetherWithoutHevc;
 
   /// Ce qu'ExoPlayer a mesuré sur cet appareil.
   ///
@@ -397,6 +447,40 @@ String? canonicalAudioCodec(String codec) {
   }
 }
 
+/// Ce que la puce décode en matériel quand le moteur local lit le fichier.
+///
+/// Distinct de [PlaybackCapabilities.videoCodecs], qui dit ce que le serveur
+/// peut envoyer dans un segment : ici c'est le fichier d'origine qui est jugé,
+/// avant de l'ouvrir.
+@immutable
+class DirectPlayVideoLimits {
+  const DirectPlayVideoLimits({
+    required this.codecs,
+    required this.maxHeight,
+    required this.maxBitDepth,
+  });
+
+  /// Noms canoniques, comme [PlaybackCapabilities.videoCodecs].
+  final Set<String> codecs;
+  final int maxHeight;
+  final int maxBitDepth;
+
+  /// [codec] est le nom ffprobe du serveur. Vide ou hauteur nulle : le
+  /// serveur ne sait pas, et on ne retire pas le Direct Play sur un doute.
+  bool allows({
+    required String codec,
+    required int height,
+    required int bitDepth,
+  }) {
+    final name = codec.trim().toLowerCase();
+    if (name.isEmpty) return true;
+    if (!codecs.contains(_videoCodecAliases[name] ?? name)) return false;
+    return height <= maxHeight && bitDepth <= maxBitDepth;
+  }
+
+  static const _videoCodecAliases = {'avc': 'h264', 'avc1': 'h264'};
+}
+
 /// Résout les capacités de cet appareil, une fois par processus.
 abstract final class PlaybackCapabilitiesResolver {
   static PlaybackCapabilities? _current;
@@ -428,7 +512,16 @@ abstract final class PlaybackCapabilitiesResolver {
         _current = PlaybackCapabilities.legacy;
       }
     } else if (AppPlatform.isApple) {
-      _current = PlaybackCapabilities.aether;
+      try {
+        _current = PlaybackCapabilities.fromApple(
+          await OnyxApplePlayer.deviceCapabilities(),
+        );
+      } catch (error) {
+        // Un hôte plus ancien que ce contrat. Supposer la puce capable garde
+        // ce qui marchait : AetherEngine lit tout, au pire en logiciel.
+        debugPrint('PlaybackCapabilities: interrogation impossible ($error)');
+        _current = PlaybackCapabilities.aether;
+      }
     } else if (MpvNativeView.enabled) {
       _current = PlaybackCapabilities.mpvGpuNext;
     } else if (AppPlatform.isWindows) {

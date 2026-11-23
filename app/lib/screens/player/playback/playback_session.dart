@@ -307,6 +307,14 @@ abstract interface class PlaybackSession {
   Stream<void> get trackChanges;
   Stream<PlaybackVideoParams> get videoParamChanges;
 
+  /// La première image de ce média est à l'écran, lecture lancée ou non.
+  ///
+  /// Pour un moteur qui le sait (AetherEngine le lit sur sa couche vidéo) :
+  /// le contrôleur lève alors son cache à l'image même. Un moteur qui se tait
+  /// ici laisse le contrôleur le déduire, plus tard, des dimensions et de
+  /// l'horloge qui avance.
+  Stream<void> get firstFrames;
+
   /// Les pannes que le moteur rapporte.
   ///
   /// Un moteur qui se tait sur ce flux n'est pas un moteur qui ne tombe jamais

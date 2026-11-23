@@ -24,10 +24,22 @@ final class FastStart {
   /// d'AetherEngine, calibré pour un direct servi en temps réel : un fichier
   /// arrive en général plus vite que sa lecture, et la réserve grossit.
   static let minimumBufferAhead: Double = 2.0
+  /// Une réserve qui se remplit au moins deux fois plus vite qu'elle ne se lit
+  /// ne peut pas se vider : la moitié suffit alors pour partir. Sur une ligne
+  /// qui porte juste le débit du film, la seconde suivante coûte une seconde
+  /// d'écran noir de plus, pour une marge dont cette ligne-là n'a pas besoin.
+  static let minimumGrowingBufferAhead: Double = 1.0
+  static let minimumFillRate: Double = 2.0
+  /// La mesure du remplissage ne vaut rien sur moins que ça : les fragments
+  /// arrivent par paquets d'une demi-seconde de film.
+  private static let minimumFillSample: TimeInterval = 0.2
   /// Un démarrage qui n'a pas eu lieu dans ce délai n'attend plus sa réserve :
   /// il est en panne, et ce n'est pas à ce raccourci de s'en mêler.
   private static let window: Duration = .seconds(20)
-  private static let pollInterval: Duration = .milliseconds(150)
+  /// 50 ms et non 150 : le seuil franchi, chaque tour d'attente est du noir à
+  /// l'écran, et relire trois propriétés d'AVPlayer ne coûte rien, même à la
+  /// puce d'une Apple TV HD.
+  private static let pollInterval: Duration = .milliseconds(50)
 
   private var task: Task<Void, Never>?
 
@@ -40,6 +52,9 @@ final class FastStart {
     let previousItem = engine.currentAVPlayerItem
     task = Task { @MainActor in
       let deadline = ContinuousClock.now + Self.window
+      // Le premier relevé d'une réserve non vide : de quoi mesurer à quelle
+      // vitesse elle grossit.
+      var firstSample: (at: TimeInterval, ahead: Double)?
       while !Task.isCancelled, ContinuousClock.now < deadline {
         try? await Task.sleep(for: Self.pollInterval)
         guard let player = engine.currentAVPlayer,
@@ -57,10 +72,19 @@ final class FastStart {
                 !item.isPlaybackBufferEmpty
           else { continue }
           let ahead = Self.bufferedAhead(of: item)
-          guard ahead >= Self.minimumBufferAhead else { continue }
+          let now = ProcessInfo.processInfo.systemUptime
+          var fillRate: Double?
+          if let first = firstSample {
+            let elapsed = now - first.at
+            if elapsed >= Self.minimumFillSample { fillRate = (ahead - first.ahead) / elapsed }
+          } else if ahead > 0 {
+            firstSample = (now, ahead)
+          }
+          guard Self.isEnough(ahead: ahead, fillRate: fillRate) else { continue }
           EngineLog.emit(
             "[Onyx] démarrage sans attendre le second segment (réserve "
-              + String(format: "%.2f", ahead) + " s)")
+              + String(format: "%.2f", ahead) + " s, remplissage "
+              + (fillRate.map { String(format: "%.1f", $0) + "x" } ?? "inconnu") + ")")
           player.playImmediately(atRate: player.defaultRate > 0 ? player.defaultRate : 1)
           return
         @unknown default:
@@ -73,6 +97,15 @@ final class FastStart {
   func cancel() {
     task?.cancel()
     task = nil
+  }
+
+  /// Si la réserve [ahead] (secondes) suffit pour partir. [fillRate] est ce
+  /// qu'elle gagne par seconde d'horloge pendant l'attente, où la lecture ne
+  /// la consomme pas ; nil tant qu'il n'est pas mesuré.
+  static func isEnough(ahead: Double, fillRate: Double?) -> Bool {
+    if ahead >= minimumBufferAhead { return true }
+    guard let fillRate, fillRate >= minimumFillRate else { return false }
+    return ahead >= minimumGrowingBufferAhead
   }
 
   /// Secondes contiguës en mémoire devant la position de lecture. Le premier

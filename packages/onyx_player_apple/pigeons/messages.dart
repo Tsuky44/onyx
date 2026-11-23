@@ -128,6 +128,7 @@ class OnyxApplePlayerStatus {
     required this.audioTracks,
     required this.subtitleTracks,
     required this.videoFormat,
+    required this.firstFrameShown,
     this.videoSize,
     this.pixelAspectRatio,
     this.selectedAudioTrackId,
@@ -173,6 +174,26 @@ class OnyxApplePlayerStatus {
   /// Le chemin vidéo du moteur (`loopback`, `software`, `remoteBypass`,
   /// `none`…). Sur `software`, il n'y a pas d'`AVPlayer`.
   final String? videoRoute;
+
+  /// La première image de ce média est à l'écran, lecture lancée ou non.
+  ///
+  /// Le verrou du moteur (`hasFirstFrameReadyForDisplay`), remis à faux à
+  /// chaque ouverture. L'app s'en sert pour lever son cache à l'image même,
+  /// sans attendre que l'horloge ait avancé : la couche vidéo tient une image
+  /// avant que la réserve ne laisse partir la lecture.
+  final bool firstFrameShown;
+}
+
+/// Ce que la puce de cet appareil décode en matériel, pour décider avant
+/// d'ouvrir un fichier s'il vaut mieux le demander transcodé au serveur.
+///
+/// Une Apple TV HD (puce A8) n'a pas de décodeur HEVC : AetherEngine y décode
+/// en logiciel, ce qu'une puce de 2014 ne tient pas en temps réel.
+class OnyxAppleDeviceCapabilities {
+  OnyxAppleDeviceCapabilities({required this.hardwareHevc});
+
+  /// `VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC)`.
+  final bool hardwareHevc;
 }
 
 /// Un sous-titre image, placé en fractions de l'image vidéo.
@@ -335,6 +356,9 @@ abstract class OnyxApplePlayerApi {
   /// Si l'appareil sait faire l'image dans l'image (iPhone et iPad ; ni Mac, ni
   /// Apple TV, où le lecteur n'en a pas l'usage).
   bool supportsPictureInPicture();
+
+  /// Ce que la puce décode en matériel. Ne dépend d'aucun lecteur.
+  OnyxAppleDeviceCapabilities deviceCapabilities();
 
   /// Arme ou désarme la fenêtre pour ce lecteur. Armée, le système l'ouvre de
   /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne

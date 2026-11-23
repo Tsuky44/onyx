@@ -71,6 +71,7 @@ class AetherPlaybackSession implements PlaybackSession {
   final _tracks = StreamController<void>.broadcast();
   final _videoParams = StreamController<PlaybackVideoParams>.broadcast();
   final _failures = StreamController<PlaybackFailure>.broadcast();
+  final _firstFrames = StreamController<void>.broadcast();
 
   Duration _lastPosition = Duration.zero;
   Duration _nativeDuration = Duration.zero;
@@ -78,6 +79,7 @@ class AetherPlaybackSession implements PlaybackSession {
   bool _lastPlaying = false;
   bool _lastBuffering = false;
   bool _lastEnded = false;
+  bool _lastFirstFrame = false;
   int _lastTrackCount = -1;
   PlaybackFailure? _lastFailure;
   final ValueNotifier<PlaybackVideoParams> _params =
@@ -148,6 +150,11 @@ class AetherPlaybackSession implements PlaybackSession {
       _params.value = params;
       _videoParams.add(params);
     }
+
+    // Après les dimensions : le contrôleur cadre l'image avant de la montrer.
+    // Le verrou du moteur retombe à chaque ouverture, d'où le front montant.
+    if (status.firstFrameShown && !_lastFirstFrame) _firstFrames.add(null);
+    _lastFirstFrame = status.firstFrameShown;
   }
 
   /// Le rapport d'image tient compte des pixels non carrés : un DVD 720×576
@@ -360,6 +367,9 @@ class AetherPlaybackSession implements PlaybackSession {
   Stream<PlaybackVideoParams> get videoParamChanges => _videoParams.stream;
 
   @override
+  Stream<void> get firstFrames => _firstFrames.stream;
+
+  @override
   Stream<PlaybackFailure> get failures => _failures.stream;
 
   // --- Réglages ----------------------------------------------------------
@@ -432,6 +442,7 @@ class AetherPlaybackSession implements PlaybackSession {
     await _tracks.close();
     await _videoParams.close();
     await _failures.close();
+    await _firstFrames.close();
     _params.dispose();
     cues.dispose();
     bitmaps.dispose();

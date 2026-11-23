@@ -79,6 +79,7 @@ import 'widgets/tabs/player_watch_party_tab.dart';
 import 'widgets/watch_party_overlay.dart';
 import 'widgets/player_invite_overlay.dart';
 import 'playback/live_subtitles.dart';
+import 'playback/resume_settle.dart';
 import 'playback/relay_trigger.dart';
 import 'playback/remote_seek.dart';
 import 'playback/skip_segments.dart';

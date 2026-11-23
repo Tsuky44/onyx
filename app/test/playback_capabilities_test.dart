@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx_player_android/onyx_player_android.dart';
+import 'package:onyx_player_apple/onyx_player_apple.dart';
 import 'package:onyx/services/playback_capabilities.dart';
 
 /// Ce qui est protégé ici n'est pas une conversion mais une asymétrie de
@@ -53,6 +54,53 @@ void main() {
       expect(caps.hdr, isTrue);
       expect(caps.videoCodecs, PlaybackCapabilities.mpv.videoCodecs);
       expect(caps.audioCodecs, PlaybackCapabilities.mpv.audioCodecs);
+    });
+  });
+
+  group('appareils Apple', () {
+    test('une puce avec décodeur HEVC lit tout tel quel', () {
+      final caps = PlaybackCapabilities.fromApple(
+          OnyxAppleDeviceCapabilities(hardwareHevc: true));
+      expect(caps, same(PlaybackCapabilities.aether));
+      expect(caps.directPlayVideo, isNull);
+      expect(
+        caps.playsVideoDirectly(codec: 'hevc', height: 2160, bitDepth: 10),
+        isTrue,
+      );
+    });
+
+    test('une Apple TV HD ne lit en Direct Play que le H.264 8 bits 1080p',
+        () {
+      // AetherEngine y décoderait le reste en logiciel : sur une puce A8,
+      // l'image saccade. Déclarer moins coûte du CPU au serveur ; déclarer
+      // plus coûte le film.
+      final caps = PlaybackCapabilities.fromApple(
+          OnyxAppleDeviceCapabilities(hardwareHevc: false));
+      expect(caps, same(PlaybackCapabilities.aetherWithoutHevc));
+
+      bool direct(String codec, int height, [int bitDepth = 8]) => caps
+          .playsVideoDirectly(codec: codec, height: height, bitDepth: bitDepth);
+      expect(direct('h264', 1080), isTrue);
+      expect(direct('H264', 1088), isTrue);
+      expect(direct('h264', 2160), isFalse);
+      expect(direct('h264', 1080, 10), isFalse);
+      expect(direct('hevc', 1080), isFalse);
+      expect(direct('av1', 720), isFalse);
+      // Le serveur ne dit rien de l'image : on ne retire pas le Direct Play
+      // sur un doute.
+      expect(direct('', 0), isTrue);
+    });
+
+    test('une Apple TV HD demande au serveur du H.264 SDR 8 bits', () {
+      final params =
+          PlaybackCapabilities.aetherWithoutHevc.toQueryParameters();
+      expect(params['vcodec'], 'h264');
+      expect(params['bitdepth'], '8');
+      expect(params['hdr'], '0');
+      expect(params['container'], 'fmp4');
+      // Le son, lui, traverse comme sur les autres appareils Apple.
+      expect(params['acodec'], PlaybackCapabilities.aether
+          .toQueryParameters()['acodec']);
     });
   });
 

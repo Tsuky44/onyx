@@ -349,6 +349,11 @@ class MpvPlaybackSession implements PlaybackSession {
     );
   }
 
+  /// mpv ne dit pas quand sa première image est peinte : le contrôleur le
+  /// déduit des dimensions et de l'horloge.
+  @override
+  Stream<void> get firstFrames => const Stream<void>.empty();
+
   /// Muet, délibérément.
   ///
   /// libmpv rapporte bien ses pannes, mais media_kit les publie sur un flux

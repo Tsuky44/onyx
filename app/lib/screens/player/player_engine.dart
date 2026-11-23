@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart' as mk;
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:onyx_mpv_macos/onyx_mpv_macos.dart';
+import 'package:onyx_player_apple/onyx_player_apple.dart';
 
 import '../../utils/app_platform.dart';
 import '../../utils/mpv_native_view.dart';
@@ -262,8 +263,13 @@ class PlayerEnginePool {
     // build, so there is nothing to gain and a stray <video> to avoid.
     if (AppPlatform.isWeb) return;
     // Les appareils Apple lisent par AetherEngine (ADR-0038) : un moteur mpv
-    // préparé d'avance n'y servirait jamais.
-    if (AppPlatform.isApple) return;
+    // préparé d'avance n'y servirait jamais. Sur l'Apple TV, c'est lui qu'on
+    // amorce : le premier lecteur du processus charge FFmpeg et son pont de
+    // journal, ce qu'une Apple TV HD ne fait pas en un clin d'œil.
+    if (AppPlatform.isApple) {
+      if (AppPlatform.isTvOS) unawaited(_prewarmAether());
+      return;
+    }
     if (_idle != null) return;
     try {
       _idle = PlayerEngine._create();
@@ -271,6 +277,15 @@ class PlayerEnginePool {
       // A player that cannot be built ahead of time will simply be built on
       // demand; failing to prewarm must never stop the app from starting.
       debugPrint('PlayerEnginePool: prewarm failed: $e');
+    }
+  }
+
+  static Future<void> _prewarmAether() async {
+    try {
+      await OnyxApplePlayer.prewarm();
+    } catch (e) {
+      // Sans amorce, la première lecture paie simplement ce coût elle-même.
+      debugPrint('PlayerEnginePool: amorce AetherEngine impossible : $e');
     }
   }
 }

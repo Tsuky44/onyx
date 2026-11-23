@@ -22,6 +22,22 @@ void main() {
         startsWith('PLAYER STARTUP: play=280ms playing=11800ms shown=12000ms'));
   });
 
+  test('une image montrée avant que l’horloge tourne ne clôt pas la ligne',
+      () {
+    // AetherEngine annonce sa première image avant que la réserve ne laisse
+    // partir la lecture : le contrôleur attend `playing` pour clore, sans
+    // quoi le total du démarrage ne serait jamais mesuré.
+    final startup = timeline();
+    at(900);
+    startup.mark('shown');
+    expect(startup.hasPlayed, isFalse);
+    at(1400);
+    expect(startup.notePlaying(), 1400);
+    expect(startup.hasPlayed, isTrue);
+    expect(startup.close(),
+        startsWith('PLAYER STARTUP: shown=900ms playing=1400ms'));
+  });
+
   test('the line names the slowest step, where to look first', () {
     final startup = timeline();
     at(280);
