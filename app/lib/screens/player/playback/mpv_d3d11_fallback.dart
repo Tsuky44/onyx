@@ -75,6 +75,18 @@ class MpvD3D11Fallback {
   bool _busy = false;
   bool _done = false;
 
+  /// `audio-fallback-to-null` pour le chemin [path].
+  ///
+  /// Libérer le contexte de rendu coupe la vidéo de mpv. Sans périphérique
+  /// audio (bureau à distance sans le son, carte désactivée), il n'a alors plus
+  /// rien à lire : il finit le fichier, l'app y voit une coupure du flux et
+  /// rouvre, et la qualité Auto quittait le Direct Play (essai du 2026-11-23).
+  /// Une sortie nulle garde une chaîne audio, donc la lecture. Les autres
+  /// chemins n'ont pas de bascule et gardent le défaut de mpv ; le moteur est
+  /// mis en commun, d'où le `no` explicite.
+  static String nullAudioFallback(VideoRenderPath? path) =>
+      path == VideoRenderPath.d3d11 ? 'yes' : 'no';
+
   /// La règle, à part pour être testée sans GPU.
   static D3D11Health judge({
     required Map<String, Object?>? info,

@@ -402,6 +402,8 @@ class MpvPlaybackSession implements PlaybackSession {
     await _set(platform, 'hr-seek', 'yes');
     _renderPath = WindowsVideoRender.active = await _engine.renderPath;
     await _set(platform, 'hwdec', HardwareDecoding.mpvValueFor(_renderPath));
+    await _set(platform, 'audio-fallback-to-null',
+        MpvD3D11Fallback.nullAudioFallback(_renderPath));
     // Le rendu direct est une source connue de gels périodiques avec l'API de
     // rendu de libmpv qu'utilise media_kit. Android n'utilise pas cette API —
     // il reçoit une vraie Surface — et la copie supplémentaire y est tout sauf
@@ -491,6 +493,8 @@ class MpvPlaybackSession implements PlaybackSession {
         platform, 'demuxer-readahead-secs', '${profile.hlsReadaheadSecs}');
     _renderPath = WindowsVideoRender.active = await _engine.renderPath;
     await _set(platform, 'hwdec', HardwareDecoding.mpvValueFor(_renderPath));
+    await _set(platform, 'audio-fallback-to-null',
+        MpvD3D11Fallback.nullAudioFallback(_renderPath));
     if (!AppPlatform.isAndroid && !MpvNativeView.enabled) {
       await _set(platform, 'vd-lavc-dr', 'no');
     }

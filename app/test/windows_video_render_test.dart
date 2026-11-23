@@ -158,6 +158,22 @@ void main() {
     });
   });
 
+  // Essai du 2026-11-23 : sans périphérique audio, libérer le contexte D3D11
+  // laissait mpv sans rien à lire. Il finissait le fichier, l'app y voyait une
+  // coupure du flux et rouvrait, et la qualité Auto quittait le Direct Play.
+  group('the live fallback never leaves mpv with nothing to play', () {
+    test('on the D3D11 texture, a missing audio device plays to null', () {
+      expect(MpvD3D11Fallback.nullAudioFallback(VideoRenderPath.d3d11), 'yes');
+    });
+
+    test('every other path keeps mpv’s default, on a pooled engine too', () {
+      expect(MpvD3D11Fallback.nullAudioFallback(VideoRenderPath.angle), 'no');
+      expect(
+          MpvD3D11Fallback.nullAudioFallback(VideoRenderPath.software), 'no');
+      expect(MpvD3D11Fallback.nullAudioFallback(null), 'no');
+    });
+  });
+
   test('the plugin names map to the render paths', () {
     expect(VideoRenderPath.parse('d3d11'), VideoRenderPath.d3d11);
     expect(VideoRenderPath.parse('angle'), VideoRenderPath.angle);
