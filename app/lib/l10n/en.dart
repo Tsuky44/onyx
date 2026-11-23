@@ -3136,6 +3136,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Preview on hover',
   'Laisser la souris sur une carte de « Reprendre » l’agrandit avec des images de là où vous vous êtes arrêté et le résumé.':
       'Resting the mouse on a Continue watching card enlarges it with pictures from where you stopped and the synopsis.',
+  'Sons de navigation':
+      'Navigation sounds',
+  'Le clic de l’Apple TV quand vous vous déplacez dans les menus, ouvrez une page ou revenez en arrière. Jamais pendant une lecture.':
+      'The Apple TV click when you move through the menus, open a page or go back. Never during playback.',
   'Voir la fiche':
       'View details',
   'Un message de votre serveur':

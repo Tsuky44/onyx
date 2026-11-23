@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../../services/new_episodes/new_episode_alerts.dart';
 import '../../../tv/tv_mode.dart';
+import '../../../tv/tv_navigation_sound.dart';
 import '../../../utils/app_platform.dart';
 import 'logs_page.dart';
 import '../widgets/about_group.dart';
 import '../widgets/lite_mode_tile.dart';
+import '../widgets/navigation_sound_tile.dart';
 import '../widgets/new_episode_alerts_group.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/global/interface_tour/interface_tour.dart';
@@ -60,6 +62,13 @@ class _DevicePageState extends State<DevicePage> {
             const LiteModeTile(),
           ],
         ),
+        // Sur Apple TV seulement : ailleurs le système joue ses propres
+        // sons, ou n'en a pas.
+        if (TvNavigationSound.supported)
+          SettingsGroup(
+            title: tr('Son'),
+            children: const [NavigationSoundTile()],
+          ),
         SettingsGroup(
           title: tr('Langue'),
           children: [

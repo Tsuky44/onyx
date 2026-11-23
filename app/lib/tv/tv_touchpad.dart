@@ -9,6 +9,7 @@ import 'siri_remote_touches.dart';
 import 'touchpad_motion.dart';
 import 'tv_key_repeat.dart';
 import 'tv_mode.dart';
+import 'tv_navigation_sound.dart';
 import 'tv_page.dart';
 import 'tv_touchpad_pace.dart';
 
@@ -405,6 +406,9 @@ abstract final class TvTouchpad {
       return false;
     }
     _lastStepAt = gliding && _alongRow(direction) ? _now : null;
+    // Un pas du pavé n'est pas une touche : c'est ici qu'il s'annonce au
+    // clic de navigation, qui sonnera si le focus bouge.
+    TvNavigationSound.noteStep();
     final stepper = glideStepper;
     if (coasting && stepper != null) {
       stepper(direction);
@@ -526,7 +530,12 @@ abstract final class TvTouchpad {
   /// Toute touche reprend la main sur la lancée : OK, Retour, une flèche du
   /// pavé directionnel. Seule la flèche que le moteur tire du geste qui l'a
   /// lancée ne la coupe pas.
+  ///
+  /// C'est aussi par ici que le clic de navigation apprend qu'une flèche
+  /// vient d'arriver ([TvNavigationSound.noteKey]) : cet observateur voit
+  /// toutes les touches de la télécommande, et n'existe que sur Apple TV.
   static bool _observeKey(KeyEvent event) {
+    TvNavigationSound.noteKey(event);
     debugPrint(
         'ONYXHW ${DateTime.now().millisecondsSinceEpoch} ${event.runtimeType} ${event.logicalKey.debugName} focus=${FocusManager.instance.primaryFocus?.debugLabel}');
     if (event is! KeyDownEvent || _coastTimer == null) return false;

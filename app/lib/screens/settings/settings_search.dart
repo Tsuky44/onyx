@@ -4,6 +4,7 @@ import '../../l10n/tr.dart';
 import '../../models/models.dart';
 import '../../services/new_episodes/new_episode_alerts.dart';
 import '../../tv/tv_mode.dart';
+import '../../tv/tv_navigation_sound.dart';
 import '../../utils/app_platform.dart';
 import '../../utils/store_build.dart';
 import '../../widgets/global/resume_preview/hover_preview_preference.dart';
@@ -178,6 +179,9 @@ List<_Setting> _settings(Permissions p) {
           'tv television remote telecommande dpad'),
     _s(SettingsSections.device, tr('Affichage'), tr('Mode léger'),
         'lite performance animations lent fluide'),
+    if (TvNavigationSound.supported)
+      _s(SettingsSections.device, tr('Son'), tr('Sons de navigation'),
+          'son clic clics click sound bruit focus telecommande muet'),
     _s(SettingsSections.device, tr('Langue'), tr('Langue de l’interface'),
         'language francais english langue traduction'),
     if (NewEpisodeAlerts.supported) ...[

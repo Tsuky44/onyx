@@ -47,6 +47,7 @@ import 'tv/tv_focus_guard.dart';
 import 'tv/tv_focus_entry.dart';
 import 'tv/tv_key_repeat.dart';
 import 'tv/tv_mode.dart';
+import 'tv/tv_navigation_sound.dart';
 import 'tv/input/tv_repeat_cadence.dart';
 import 'tv/nav/tv_nav_engine.dart';
 import 'tv/nav/tv_nav_root.dart';
@@ -223,6 +224,9 @@ void main() async {
     AutoQualityPreference.initialize(),
     // Si la souris qui s'attarde sur « Reprendre » en ouvre l'aperçu.
     HoverPreviewPreference.initialize(),
+    // Sur Apple TV, le clic du système quand le focus se déplace : Flutter
+    // mène le focus, tvOS ne le joue donc pas de lui-même.
+    TvNavigationSound.initialize(),
     // Les réglages de lecture que le player consulte sans attendre — le saut
     // d'intro automatique — chargés une fois pour toutes.
     PlaybackPreferencesStorage.initialize(),
@@ -557,7 +561,12 @@ class OnyxApp extends StatelessWidget {
                           )
                         : AppTheme.dark,
                     scrollBehavior: AppScrollBehavior(),
-                    navigatorObservers: [searchRouteObserver],
+                    navigatorObservers: [
+                      searchRouteObserver,
+                      // Sur Apple TV, les sons d'une page qui s'ouvre ou
+                      // se referme. Ailleurs, il ne fait rien.
+                      TvNavigationSound.routeObserver,
+                    ],
                     // The D-pad's centre button and a controller's A, folded into the
                     // bindings Flutter already has for Enter. Everything that was
                     // keyboard-activatable becomes remote-activatable, app-wide,
