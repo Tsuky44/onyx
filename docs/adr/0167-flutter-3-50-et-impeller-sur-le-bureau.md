@@ -4,7 +4,8 @@
   de l'ADR-0158 (rendu D3D11 de libmpv, version 1.2.0) se juge encore une semaine sur les journaux
   avant que cette montée parte. Décision de Tsuky (2026-11-23) : Impeller sous Windows aussi, pas
   seulement sur Mac. Le plan d'origine gardait Skia sous Windows et prévoyait un essai d'Impeller à
-  part, piloté par un réglage. Tranche la piste « Impeller sous Windows » que l'ADR-0025 laissait
+  part, piloté par un réglage. Tsuky veut aussi un seul SDK (monter `C:\src\flutter` en place,
+  sans copie à côté), puis une version de test. Tranche la piste « Impeller sous Windows » que l'ADR-0025 laissait
   « à essayer avec une mesure en main » : la mesure est ci-dessous.
 - **Date :** 2026-11-23
 - **Portée :** `.github/workflows/{ci,release,server,tvos}.yml` (`FLUTTER_VERSION`,
@@ -175,17 +176,44 @@ coût est à connaître avant de publier.
 | Plein écran aller-retour, image dans l'image aller-retour (sur ANGLE) | image juste, lecture reprise |
 | Dolby Vision 5 (Paradise S2E5, 4K HEVC, fenêtre gpu-next sous l'app, ADR-0061) | image à travers la surface transparente, sous-titres et commandes par-dessus |
 
-**Incident, non reproduit.** Un lancement de la build Impeller a planté avant la première image :
-`0xc0000005` à l'adresse 0, dans un fil du pilote AMD D3D11 (`amdxx64.dll`), juste après la
-création des surfaces D3D11. Il n'a pas été reproduit sur les relances suivantes, ni sur aucune
-autre build profile de la journée. Les vidages des 18–20 novembre (en 3.44) sont d'autres
-plantages, dans `flutter_windows.dll` sous libmpv. À surveiller dans les journaux de la version de
-test.
+### Plantages au lancement : une régression de la 3.50 sous Windows, pas d'Impeller
 
-**`set_impeller_switch(Disabled)` n'a pas eu d'effet** dans la build profile 3.50.1, alors que les
-sources le transmettent. La variable d'environnement, elle, repasse bien en Skia. La cause n'est
-pas trouvée. Avant de s'appuyer sur ce levier comme repli en release, il faut le revérifier : en
-release, c'est le seul.
+Deux lancements de la build Impeller ont planté avant la première image, en `0xc0000005`. Les
+deux vidages (`%LOCALAPPDATA%\CrashDumps\app.exe.71128.dmp`, `app.exe.74960.dmp`) montrent la même
+chose : un fil du **pilote AMD D3D11** (`amdxx64.dll`) saute à une adresse invalide juste après la
+création des surfaces D3D11. Pour mesurer, j'ai fait 20 lancements de 10 s par build, sans rien
+toucher (l'app est seulement ouverte sur l'accueil) :
+
+| Build | Plantages au lancement |
+|---|---|
+| 3.44.4 Skia (la build de la ligne de base) | **0 / 20** |
+| 3.50.1 Skia (même build que la suivante, `--enable-impeller=false`) | **2 / 20** |
+| 3.50.1 Impeller | **2 / 20** |
+
+La 3.50 plante donc environ une fois sur dix au lancement sur cette machine (RX 6800 XT, pilote
+32.0.21045.5002), **avec Skia comme avec Impeller**. Le moteur de rendu n'y est pour rien ; c'est
+ce que la 3.50 a changé dans la mise en place d'ANGLE sous Windows. Elle crée d'abord un contexte
+OpenGL ES 3, avec repli ES2 (`egl/manager.cc`), et aucun réglage ne permet de revenir en arrière.
+Les vidages des 18–20 novembre (en 3.44) sont d'autres plantages, dans `flutter_windows.dll` sous
+libmpv, en pleine lecture. **Cela bloque une version de test** : à trancher avec Tsuky. Les pistes :
+un autre pilote AMD, une 3.47.x, ou un ticket Flutter avec les vidages.
+
+### Sans GPU utilisable
+
+`egl/manager.cc` essaie ANGLE sur D3D11, puis D3D11 niveau 9_3, puis **D3D11 WARP**, le rendu
+logiciel de Direct3D. Une machine virtuelle ou un bureau à distance sans GPU retombe donc sur WARP,
+et Impeller y tourne sur le processeur, lentement. Si même WARP échoue, Impeller n'a pas de repli
+logiciel (`flutter_windows_engine.cc`, test du moteur `RunWithoutANGLEOnImpellerFailsToStart`) :
+`FlutterDesktopViewControllerCreate` rend nul, `FlutterWindow::OnCreate` échoue et l'app **se ferme
+aussitôt, sans fenêtre ni message**. Skia, lui, retombait sur le compositeur logiciel. Ce cas n'a pas
+pu être provoqué ici : il faudrait une machine sans D3D11, et forcer WARP passe par un réglage
+système.
+
+**`set_impeller_switch(Disabled)` n'a eu aucun effet** dans deux builds profile 3.50.1 : le journal
+annonce encore Impeller. Pourtant les sources le transmettent, et le test du moteur
+`RunSkiaWithoutANGLEUsesSoftware` le couvre. La variable d'environnement, elle, repasse bien en
+Skia. La cause n'est pas trouvée. Un repli dans le runner (recréer le contrôleur en Skia quand
+Impeller échoue) ne peut donc pas s'appuyer sur ce levier pour l'instant.
 
 ### Android, analyse, tests
 
@@ -221,8 +249,10 @@ release, c'est le seul.
   `release.yml`/`tvos.yml` avec le nouveau flutter-tvos, les builds Android/Windows/macOS/iOS de
   `release.yml` sans publier, et l'image serveur (`server.yml` construit le web en 3.50.1).
 - **Le web** (`server.yml`, skwasm, ADR-0152) change de Flutter sans avoir été vérifié ici.
-- Sous Windows, une panne de surface GPU laisse la fenêtre noire au lieu de retomber en logiciel
-  (machines virtuelles, bureau à distance sans GPU). À surveiller dans les retours de la version de
-  test.
+- Sous Windows, sans D3D11 du tout (pas même WARP), l'app se ferme au lancement au lieu de
+  retomber en logiciel. Le cas est rare (WARP fait partie de Windows), mais il est muet : rien ne
+  le signale à l'utilisateur.
+- Les plantages au lancement de la 3.50 (une fois sur dix ici) bloquent la version de test tant
+  qu'ils ne sont pas compris.
 - `tool/frame_timeline.dart` reste dans le dépôt pour refaire la mesure à l'identique à la
   prochaine montée.
