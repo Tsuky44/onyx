@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:media_kit/media_kit.dart';
 import 'utils/app_platform.dart';
+import 'services/background_memory_trim.dart';
+import 'widgets/global/background_motion_gate.dart';
 import 'utils/mpv_native_view.dart';
 import 'utils/window_controls.dart';
 import 'services/api_client.dart';
@@ -267,6 +269,7 @@ void main() async {
 
   await Future.wait(independent);
   AppImageCache.configure(lite: LiteMode.isLite);
+  BackgroundMemoryTrim.attach();
   // Des saccades mesurées proposent le mode léger, sans l'imposer (ADR-0141).
   LiteModeSuggestion.attach(rootNavigatorKey);
   // Sans attendre : il ne sert qu'à poser sans fondu les images déjà sur
@@ -590,22 +593,24 @@ class OnyxApp extends StatelessWidget {
                             TvBackIntent: TvBackAction(),
                           },
                     builder: (context, child) {
-                      final content = Listener(
-                        behavior: HitTestBehavior.translucent,
-                        onPointerDown: _handleMouseBackButton,
-                        child: Column(
-                          children: [
-                            if (useDesktopCaptionBar)
-                              const DesktopCaptionSlot(),
-                            Expanded(
-                              child: CaptionBarPeek(
-                                child: ColoredBox(
-                                  color: AppColors.background,
-                                  child: child ?? const SizedBox.shrink(),
+                      final content = BackgroundMotionGate(
+                        child: Listener(
+                          behavior: HitTestBehavior.translucent,
+                          onPointerDown: _handleMouseBackButton,
+                          child: Column(
+                            children: [
+                              if (useDesktopCaptionBar)
+                                const DesktopCaptionSlot(),
+                              Expanded(
+                                child: CaptionBarPeek(
+                                  child: ColoredBox(
+                                    color: AppColors.background,
+                                    child: child ?? const SizedBox.shrink(),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                       if (dpad) {
