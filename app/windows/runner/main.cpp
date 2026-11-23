@@ -19,6 +19,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   flutter::DartProject project(L"data");
 
+  // Le rendu de l'interface est celui du moteur par défaut : Impeller sur
+  // OpenGL ES (ANGLE) depuis Flutter 3.47 (ADR-0167). Impeller n'a pas de
+  // rendu logiciel de secours : si la surface GPU échoue, la fenêtre reste
+  // noire. Hors release, FLUTTER_ENGINE_SWITCHES=1 et
+  // FLUTTER_ENGINE_SWITCH_1=enable-impeller=false repassent en Skia pour
+  // comparer. En 3.50.1, `set_impeller_switch(Disabled)` n'a pas eu d'effet
+  // ici : ne pas s'y fier comme repli sans l'avoir revérifié.
+
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
 
