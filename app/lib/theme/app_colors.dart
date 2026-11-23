@@ -1,3 +1,4 @@
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 /// Quiet Premium tokens — OLED charcoal stage, blue accent sparingly, white focus.

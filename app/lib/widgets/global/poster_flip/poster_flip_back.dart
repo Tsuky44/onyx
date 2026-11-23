@@ -1,5 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import '../../../l10n/tr.dart';

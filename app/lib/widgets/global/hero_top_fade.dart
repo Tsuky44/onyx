@@ -1,3 +1,4 @@
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 /// L'image d'un bandeau sous la barre du haut du téléphone (ADR-0144) : elle

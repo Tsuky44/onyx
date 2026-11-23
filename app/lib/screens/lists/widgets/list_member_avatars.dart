@@ -1,3 +1,4 @@
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import '../../../screens/settings/widgets/settings_ui.dart' show UserAvatar;

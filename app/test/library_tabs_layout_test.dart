@@ -1,4 +1,5 @@
 import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/app_download.dart';

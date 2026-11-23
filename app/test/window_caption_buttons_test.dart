@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/desktop_window.dart';

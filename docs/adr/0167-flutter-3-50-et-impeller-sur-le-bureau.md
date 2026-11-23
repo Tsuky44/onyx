@@ -14,7 +14,9 @@
   du moteur), `app/android/` (Gradle, AGP, Kotlin) et les `buildscript` de `onyx_player_android`
   et `onyx_background_downloads`, `shaders/scroll_edge_blur.frag`,
   `screens/shell/desktop_header_search.dart` (flèches de la recherche),
-  `screens/player/playback/mpv_diagnostics.dart`, `tool/frame_timeline.dart` (nouveau, non livré).
+  `screens/player/playback/mpv_diagnostics.dart`, `tool/frame_timeline.dart` (nouveau, non livré),
+  l'`ignore` des imports de Material (548 fichiers) et `test/material_ui_migration_guard_test.dart`
+  (nouveau).
 
 ## Contexte
 
@@ -90,7 +92,7 @@ Ce que les sources du SDK 3.50.1 montrent, lu dans `engine/src/flutter/shell/pla
 - L'outil réordonne les registres de plugins générés (le `media_kit_video` surchargé passe en
   dernier) : c'est un fichier produit par l'outil, gardé tel quel.
 
-### Point ouvert : `package:flutter/material.dart` est déprécié
+### Dette connue : l'ancien Material, en attendant `material_ui`
 
 Depuis la 3.47, `material.dart` et `cupertino.dart` sont dépréciés au profit des paquets
 `material_ui` et `cupertino_ui`. Ce sont **551 des 554** remarques de `flutter analyze` en 3.50.1,
@@ -98,8 +100,19 @@ et la CI échoue sur les `info`. `material_ui` est une **copie distincte** de Ma
 et son `MaterialApp` sont d'autres classes. Il faut donc aussi `MaterialUiCompatibilityBridge` et
 les localisations de `material_ui`, parce que douze dépendances importent encore
 `flutter/material.dart` (dpad, media_kit_video, audio_video_progress_bar, window_manager,
-mobile_scanner, octo_image…). La question est posée à Tsuky : migrer dans cette montée, ou plus
-tard, à part. La branche n'est pas verte en analyse tant que ce n'est pas tranché.
+mobile_scanner, octo_image…).
+
+Décision de Tsuky (2026-11-23) : **la migration se fera plus tard, à part**, après Impeller. Une
+seule variable change à la fois. D'ici là :
+
+- chaque import déprécié (548 fichiers de `lib/`, `test/` et `tool/`) porte
+  `// ignore: deprecated_member_use` sur la ligne d'avant ;
+- `test/material_ui_migration_guard_test.dart` garde la dette sous contrôle :
+  - cet `ignore` n'est admis qu'au-dessus de ces imports (ailleurs, seulement les quatre de
+    `tv_nav_harness.dart`, avec leur raison) ;
+  - un import déprécié sans son `ignore` est refusé ;
+  - le nombre de fichiers sur l'ancien Material ne dépasse pas un plafond, 548, que la migration
+    fait baisser.
 
 ## Mesure
 
@@ -217,14 +230,14 @@ Impeller échoue) ne peut donc pas s'appuyer sur ce levier pour l'instant.
 
 ### Android, analyse, tests
 
-- `flutter test` en 3.50.1 : 2841 réussis, 11 ignorés, 1 échec, le même qu'en 3.44
+- `flutter test` en 3.50.1 : 2844 réussis (dont le guard de Material), 11 ignorés, 1 échec, le même qu'en 3.44
   (`onyx_player_apple_sources_test` : fins de ligne CRLF du Swift généré dans une copie Windows).
 - `flutter build apk --debug` : construit. Depuis le vrai chemin du worktree : sous un lecteur
   `subst`, la compilation Kotlin incrémentale échoue, parce que le projet et le cache pub ne sont
   pas sur la même racine.
 - `flutter build windows --profile` : construit, sans avertissement de shader.
-- `flutter analyze` : seules restent les dépréciations de `material.dart`/`cupertino.dart` (point
-  ouvert ci-dessus).
+- `flutter analyze` : aucun problème, une fois l'`ignore` posé sur les imports dépréciés (voir
+  « Dette connue »).
 
 ## Conséquences
 

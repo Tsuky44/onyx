@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 

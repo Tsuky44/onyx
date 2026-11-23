@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import '../../l10n/tr.dart';

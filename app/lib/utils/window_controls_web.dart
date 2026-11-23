@@ -1,6 +1,7 @@
 import 'dart:js_interop';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
