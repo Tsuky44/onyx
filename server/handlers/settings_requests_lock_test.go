@@ -108,14 +108,17 @@ func TestAnExistingRequestSetupIsNeverBlocked(t *testing.T) {
 		t.Fatalf("effacement de la clé : HTTP %d : %s", rec.Code, rec.Body.String())
 	}
 
-	for name, body := range map[string]string{
-		"rejouer les valeurs":     `{"request_service":"jellyseerr","mediahub_url":"http://seerr:5055/","mediahub_api_key":"cle"}`,
-		"un réglage sans rapport": `{"tmdb_language":"fr-FR","playback_logs_enabled":true}`,
-		"effacer la clé":          `{"clear_mediahub_api_key":true}`,
-		"effacer l'adresse":       `{"mediahub_url":""}`,
+	// Dans l'ordre : rejouer les valeurs n'a de sens que tant que l'adresse et
+	// la clé sont encore en place. Une map donnerait un ordre aléatoire, et
+	// « effacer l'adresse » avant « rejouer » en ferait une vraie configuration.
+	for _, step := range []struct{ name, body string }{
+		{"rejouer les valeurs", `{"request_service":"jellyseerr","mediahub_url":"http://seerr:5055/","mediahub_api_key":"cle"}`},
+		{"un réglage sans rapport", `{"tmdb_language":"fr-FR","playback_logs_enabled":true}`},
+		{"effacer la clé", `{"clear_mediahub_api_key":true}`},
+		{"effacer l'adresse", `{"mediahub_url":""}`},
 	} {
-		if rec := putSettings(t, body); rec.Code != http.StatusOK {
-			t.Errorf("%s : HTTP %d, want 200 : %s", name, rec.Code, rec.Body.String())
+		if rec := putSettings(t, step.body); rec.Code != http.StatusOK {
+			t.Errorf("%s : HTTP %d, want 200 : %s", step.name, rec.Code, rec.Body.String())
 		}
 	}
 }
