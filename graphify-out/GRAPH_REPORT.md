@@ -1,9 +1,9 @@
-# Graph Report - phase2-d3d11-checks-f0af87  (2026-11-23)
+# Graph Report - project playeur  (2026-11-23)
 
 ## Corpus Check
-- 2308 files · ~5,081,630 words
+- 2308 files · ~5,081,421 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 179 file(s) not represented in the graph (top: (none) 44, .csv 24, .xml 20)
+- Unclassified: 177 file(s) not represented in the graph (top: (none) 43, .csv 24, .xml 20)
 
 ## Summary
 - 34830 nodes · 69051 edges · 987 communities (801 shown, 186 thin omitted)
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b16242c1`
+- Built from commit: `45962944`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
