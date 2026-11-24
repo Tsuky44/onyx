@@ -8,11 +8,15 @@ name: Apple TV
 # telecommande. Ici, ni image, ni tag de version, ni Release : le serveur ne
 # voit rien passer.
 #
-# La version reste celle du dernier tag vX.Y.Z (le build s'ajoute a la version
-# deja publiee sur TestFlight), sauf version explicite. Le numero de build est
-# l'horodatage UTC du lancement : toujours plus grand que les numeros de run de
-# release.yml dans la meme version, et le prochain release.yml ouvre une
-# version neuve, ou son numero de run repart sans conflit.
+# La version se calcule seule (scripts/ci/resolve-version.sh), sauf version
+# explicite : la premiere fois apres une publication globale, une version
+# au-dessus de son tag vX.Y.Z ; ensuite la meme, tant qu'aucune publication
+# globale n'est passee. Jamais celle du dernier tag : App Store Connect ferme
+# une version des qu'elle est approuvee, et refusait alors le build.
+# La version envoyee est notee par un tag build/tvos/X.Y.Z, que release.yml
+# lit : sa prochaine version part au-dessus, toutes plateformes alignees.
+# Le numero de build est l'horodatage UTC du lancement, toujours croissant
+# dans une meme version.
 #
 # Declenchement :
 #   - Actions -> Apple TV -> Run workflow (une fois ce fichier sur la branche
@@ -60,6 +64,8 @@ jobs:
   build:
     needs: test
     runs-on: macos-latest
+    permissions:
+      contents: write # noter la version envoyee par un tag build/tvos/X.Y.Z
     env:
       FLUTTER_TVOS_VERSION: v3.44.9-tvos.1.5.1
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -91,10 +97,7 @@ jobs:
           if [ -n "${VERSION_INPUT// /}" ]; then
             VERSION="${VERSION_INPUT#v}"
           else
-            # Tri semantique : un tri alphabetique placerait v1.0.9 apres v1.0.34.
-            VERSION="$(git tag -l 'v*' --sort=-v:refname \
-              | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)"
-            VERSION="${VERSION#v}"
+            VERSION="$(bash scripts/ci/resolve-version.sh platform tvos)"
           fi
           if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::Version invalide : '$VERSION' (format attendu : X.Y.Z)"
@@ -174,3 +177,16 @@ jobs:
           set -euo pipefail
           bash scripts/ci/testflight-upload.sh app/build/tvos/archive/Runner.xcarchive
           echo "TestFlight Apple TV : $VERSION ($BUILD_NUMBER) envoye, disponible apres le traitement Apple (10 a 30 min)." >> "$GITHUB_STEP_SUMMARY"
+
+      # Apres l'envoi seulement : une version qu'Apple a refusee n'est pas
+      # sortie. Sans ce tag, la prochaine publication globale ne saurait pas
+      # que l'Apple TV est deja a cette version. Un echec ici ne rougit pas un
+      # run dont le build est bien parti : il le dit, avec quoi faire.
+      - name: Noter la version envoyee
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          if ! bash scripts/ci/resolve-version.sh record tvos "$VERSION"; then
+            echo "::warning::Version $VERSION non notee. A la main : git tag build/tvos/$VERSION && git push origin build/tvos/$VERSION. Sans ce tag, la prochaine publication globale peut reprendre ce numero et voir son envoi Apple TV refuse."
+          fi

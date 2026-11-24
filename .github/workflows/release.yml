@@ -16,8 +16,10 @@ name: Release
 #       major -> X.0.0  changement structurel profond ; master uniquement
 #     Le niveau est verrouille par la branche : master n'accepte que prod et
 #     major, toute autre branche n'accepte que test.
-#     la version est calculee a partir du dernier tag vX.Y.Z, et le tag est cree
-#     par la GitHub Release. Rien a taper, rien a retenir.
+#     la version est calculee a partir de la plus haute version deja sortie
+#     (dernier tag vX.Y.Z, ou une plateforme publiee seule depuis : voir
+#     scripts/ci/resolve-version.sh), et le tag est cree par la GitHub Release.
+#     Rien a taper, rien a retenir.
 #   - en ligne de commande : `gh workflow run release.yml -f bump=test`
 #   - ou, comme avant, `git tag v1.0.1 && git push origin v1.0.1`
 #
@@ -128,11 +130,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Tri semantique (-v:refname) : un tri alphabetique placerait v1.0.9
-          # apres v1.0.34.
-          LATEST="$(git tag -l 'v*' --sort=-v:refname \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)"
-          LATEST="${LATEST#v}"
+          # La derniere publication globale, pour le resume du run.
+          LATEST="$(bash scripts/ci/resolve-version.sh latest-release)"
+          if [ "$LATEST" = "0.0.0" ]; then LATEST=""; fi
           echo "Dernier tag : ${LATEST:-aucun}"
 
           # Le niveau suit la branche : master publie en production (prod ou
@@ -154,13 +154,12 @@ jobs:
           elif [ -n "${VERSION_INPUT// /}" ]; then
             VERSION="${VERSION_INPUT#v}"
           else
-            IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST:-0.0.0}"
-            case "$BUMP_INPUT" in
-              major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-              prod)  MINOR=$((MINOR + 1)); PATCH=0 ;;
-              *)     PATCH=$((PATCH + 1)) ;; # test
-            esac
-            VERSION="$MAJOR.$MINOR.$PATCH"
+            # Au-dessus de la plus haute version connue, pas seulement du
+            # dernier tag vX.Y.Z : une Apple TV sortie seule en 1.2.1 (tag
+            # build/tvos/1.2.1) fait partir cette publication en 1.2.2, et
+            # toutes les plateformes s'y alignent. Calculee a partir du seul
+            # dernier tag, elle retombait sur 1.2.1 et Apple refusait l'envoi.
+            VERSION="$(bash scripts/ci/resolve-version.sh release "${BUMP_INPUT:-test}")"
           fi
 
           if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
