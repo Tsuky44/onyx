@@ -5,6 +5,7 @@ import 'package:onyx/screens/shell/shell_header_zone.dart';
 import 'package:onyx/screens/shell/shell_tab_stack.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/tv/nav/tv_focusable.dart';
+import 'package:onyx/tv/nav/tv_region.dart';
 import 'package:onyx/widgets/global/glass_chrome.dart';
 import 'package:onyx/widgets/global/media_card.dart';
 import 'package:onyx/widgets/global/media_row.dart';
@@ -109,12 +110,16 @@ class _ShellState extends State<_Shell> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Le bouton du bandeau, au-dessus des rangées.
+                        // Le bouton du bandeau, au-dessus des rangées : un
+                        // bouton de Material dans sa diapositive, comme
+                        // `HeroCarousel` le pose.
                         Padding(
                           padding: const EdgeInsets.all(28),
-                          child: ElevatedButton(
-                            onPressed: () {},
-                            child: const Text('Bandeau'),
+                          child: TvRegion.slide(
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              child: const Text('Bandeau'),
+                            ),
                           ),
                         ),
                         MediaRow(
@@ -255,6 +260,22 @@ void main() {
         await nav.press(direction);
         expect(_focused(), expected, reason: '${direction.name} → $expected');
       }
+    });
+
+    // Vu sur une Apple TV : le bouton du bandeau, un bouton de Material,
+    // n'entrait pas dans la mémoire de la page, et Haut depuis une carte du
+    // milieu de la rangée le saute pour la barre. Bas depuis la barre rendait
+    // alors la carte de la rangée, sous un bandeau pourtant affiché.
+    testWidgets('redescendre de la barre ramène au bandeau, pas à la rangée',
+        (tester) async {
+      final nav = await pump(tester);
+      await _focusOn(tester, 'Bandeau');
+      await nav.press(_down);
+      await nav.press(_right);
+      expect(_focused(), 'Reprendre 1');
+      await _focusOn(tester, 'Accueil');
+      await nav.press(_down);
+      expect(_focused(), 'Bandeau');
     });
   });
 }

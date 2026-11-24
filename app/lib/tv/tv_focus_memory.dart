@@ -116,8 +116,46 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
     _parent?.forget(node);
   }
 
+  /// Les zones par lesquelles on entre tant qu'elles sont à l'écran, avant
+  /// toute mémoire : la diapositive du bandeau de l'accueil
+  /// (`TvRegion.slide`).
+  ///
+  /// Vu sur une Apple TV : Bas depuis la barre rendait la carte de la rangée
+  /// où l'on était passé, sous un bandeau pourtant affiché. Ses boutons, de
+  /// Material, n'entraient pas dans la mémoire, et Haut depuis une carte du
+  /// milieu de la rangée le sautait pour la barre.
+  final Set<FocusNode> _leads = <FocusNode>{};
+
+  /// Inscrit [zone] comme entrée de cette zone tant qu'elle est à l'écran.
+  /// Rendu par un [removeLead], au `dispose` de [zone].
+  void addLead(FocusNode zone) => _leads.add(zone);
+
+  void removeLead(FocusNode zone) => _leads.remove(zone);
+
+  /// Le premier élément d'une zone d'entrée ([addLead]) entièrement à
+  /// l'écran, ou nul : page défilée plus bas, diapositive hors parcours.
+  FocusNode? _leadEntry() {
+    if (_leads.isEmpty) return null;
+    final zone = _node.rect;
+    for (final lead in _leads) {
+      if (lead.context == null) continue;
+      for (final node in lead.traversalDescendants) {
+        if (node.context == null || node.rect.isEmpty) continue;
+        final rect = node.rect;
+        if (rect.top >= zone.top &&
+            rect.bottom <= zone.bottom &&
+            rect.left >= zone.left &&
+            rect.right <= zone.right) {
+          return node;
+        }
+      }
+    }
+    return null;
+  }
+
   /// Où le focus entre dans la zone, quand le parcours a trouvé [landed] depuis
-  /// [from] : l'élément mémorisé, ou le premier visible à la première visite
+  /// [from] : le premier élément d'une zone d'entrée à l'écran ([addLead]),
+  /// sinon l'élément mémorisé, ou le premier visible à la première visite
   /// d'une zone [TvFocusMemory.entersAtTop]. Nul pour garder [landed] — un
   /// déplacement interne à la zone, ou rien à rendre.
   @visibleForTesting
@@ -129,6 +167,8 @@ class TvFocusMemoryState extends State<TvFocusMemory> {
           current: () => _node.traversalDescendants);
       return identical(first, landed) ? null : first;
     }
+    final lead = _leadEntry();
+    if (lead != null) return identical(lead, landed) ? null : lead;
     final target = _remembered;
     if (target == null) return widget.entersAtTop ? _enterAtTop() : null;
     if (identical(landed, target)) return null;
