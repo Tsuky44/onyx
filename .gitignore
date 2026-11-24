@@ -66,6 +66,11 @@ CLAUDE.local.md
 # jour) ni son cache, propre à chaque machine (le nom de son dossier en dépend).
 graphify-out/cache/
 graphify-out/20*/
+# Écrits par graphify 0.9.118 à chaque mise à jour : le cache du découpage en
+# communautés (~2 Mo) et les libellés en attente. Recalculés, jamais lus par
+# `graphify query`.
+graphify-out/.graphify_partition_cache.json
+graphify-out/.graphify_labels.pending.json
 app/graphify-out/
 
 # Prototypes / maquettes de test (jamais versionnés)
