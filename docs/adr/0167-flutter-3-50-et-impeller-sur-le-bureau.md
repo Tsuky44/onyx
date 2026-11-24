@@ -15,6 +15,9 @@
   et `onyx_background_downloads`, `shaders/scroll_edge_blur.frag`,
   `screens/shell/desktop_header_search.dart` (flèches de la recherche),
   `screens/player/playback/mpv_diagnostics.dart`, `tool/frame_timeline.dart` (nouveau, non livré),
+  `windows/runner/angle_multithread_protection.{h,cpp}`, `flutter_window.cpp` et `CMakeLists.txt`
+  (protection D3D11, plantages au lancement), `tool/windows_launch_stress.ps1` et
+  `test/windows_angle_protection_guard_test.dart` (nouveaux),
   l'`ignore` des imports de Material (548 fichiers) et `test/material_ui_migration_guard_test.dart`
   (nouveau).
 
@@ -211,15 +214,81 @@ l'app journalisait (`32.0.21045.5002`) à `32.0.21045.29003` (17/11/2026, selon 
 La 3.50 plante donc au lancement **une fois sur dix à une fois sur trois** sur cette machine (RX
 6800 XT), **avec Skia comme avec Impeller**, en bureau à distance comme à la console. La 3.44.4, elle,
 ne plante jamais dans les mêmes conditions. Ni le pilote à jour ni la console ne changent rien.
-Le moteur de rendu n'y est pour rien. Le suspect est ce
-que la 3.50 a changé dans la mise en place d'ANGLE sous Windows : elle crée d'abord un contexte
-OpenGL ES 3, avec repli ES2 (`egl/manager.cc`), et aucun réglage ne permet de revenir en arrière.
-C'est une hypothèse, pas encore une preuve.
 Les vidages des 18–20 novembre (en 3.44) sont d'autres plantages, dans `flutter_windows.dll` sous
-libmpv, en pleine lecture. **Cela bloque une version de test** : à trancher avec Tsuky.
-`C:\src\flutter` est monté en 3.50.1 à sa demande, et la copie à part est supprimée. Le pilote à
-jour n'y change rien. Prochaines étapes : refaire les mêmes 20 lancements en 3.47.9 (dernière 3.47)
-pour savoir quelle version l'a introduit, puis ouvrir un ticket Flutter avec les vidages.
+libmpv, en pleine lecture.
+
+#### La cause : ANGLE ne protège plus le contexte D3D11 (flutter/flutter#196618)
+
+C'est un bogue connu de Flutter 3.50 sous Windows, classé P0 :
+[flutter/flutter#196618](https://github.com/flutter/flutter/issues/196618). Pour la 3.50, Flutter
+a monté ANGLE (de `84027aca9b` en 3.47.8 à `a8d74ca3e5`). Le nouvel ANGLE remplace son verrou
+global par un verrou par display (commit ANGLE `d778c8969d`). Flutter compile ANGLE de telle sorte
+que ce verrou-là ne fait rien : `eglSwapBuffers` n'exclut plus les appels GL. Le fil raster qui
+présente une image et le fil IO qui envoie une image décodée au GPU passent alors **en même temps**
+dans le contexte immédiat D3D11 du même appareil. Le pilote finit par appeler un pointeur libéré.
+Le moteur de rendu n'y change rien, d'où Skia autant qu'Impeller. Les cas rapportés touchent AMD
+(`amdxx64.dll`, comme ici) et NVIDIA (`nvwgf2umx.dll`).
+
+Nos vidages concordent : le fil fautif appartient au pilote AMD, et il est rattaché au premier
+appareil D3D11 du processus, celui de Flutter. Le plantage survient 3 à 7 s après le lancement,
+quand l'accueil décode ses affiches. libmpv n'y est pour rien : dans un des vidages, il n'est même
+pas encore démarré. **Aucune bibliothèque n'est en cause** : aucun plugin natif Windows n'a changé
+de version avec la montée (`app_links`, `connectivity_plus`, `flutter_secure_storage_windows`,
+`media_kit_libs_windows_video`, `screen_brightness_windows`, `screen_retriever_windows`,
+`window_manager` et notre `media_kit_video` sont identiques). L'ANGLE de Flutter est lié dans
+`flutter_windows.dll`. Le `libEGL.dll` livré à côté de l'app est celui de libmpv (media_kit), une
+autre copie d'ANGLE, qui n'a pas changé.
+
+Côté Flutter, la mitigation est
+[flutter/flutter#196897](https://github.com/flutter/flutter/pull/196897), fusionnée le 19
+novembre : elle active la protection multithread D3D11 (`ID3D10Multithread`) sur l'appareil
+d'ANGLE. Elle n'est pas dans la 3.50.1. Elle est prévue pour la 3.50.2
+([#196991](https://github.com/flutter/flutter/pull/196991), approuvée, pas encore fusionnée au
+24 novembre). Le vrai correctif doit venir d'ANGLE
+([#197238](https://github.com/flutter/flutter/issues/197238), sans date).
+
+#### Notre correctif : la même protection, posée par le runner
+
+Le runner (`windows/runner/angle_multithread_protection.cpp`) fait ce que fera la 3.50.2. Comme
+l'ANGLE de Flutter n'expose ni EGL ni son appareil, il résout `D3D11CreateDevice` par
+`GetProcAddress`. Avant la création du `FlutterViewController`, le runner détourne cet import-là
+de `flutter_windows.dll`, et seulement pour `D3D11CreateDevice`. Chaque appareil créé par Flutter
+reçoit `SetMultithreadProtected(TRUE)` avant sa première image. La protection marche aussi en
+release, et la retombée WARP est couverte. Quand la 3.50.2 arrivera, le double appel restera sans
+effet. Les appareils de libmpv (ANGLE de media_kit, rendu D3D11 de la phase 2) ne passent pas par
+ce détour. En profile, le runner écrit `protection multithread D3D11 active` sur la sortie
+standard.
+
+Mesure le même jour, même pilote, même build profile, à la console :
+
+| Build | Sans protection | Avec protection |
+|---|---|---|
+| 3.50.1 Skia | 6 / 20 | **0 / 40** |
+| 3.50.1 Impeller | 2 / 20 (et 1 / 1 juste avant le correctif) | **0 / 40** |
+
+La protection était active sur les 80 lancements protégés, avec un seul appareil D3D11 par
+lancement.
+
+La lecture marche avec la protection (Impeller, à la console) : Dracula en AV1 4K, en
+`hwdec=d3d11va` et `render=d3d11`. La suite de tests donne 2848 réussis, 11 ignorés et un échec,
+`onyx_player_apple_sources_test`, qui échouait déjà en 3.44.
+
+Une première version passait par le `libEGL.dll` voisin pour retrouver le display de Flutter. Elle
+tombait sur l'ANGLE de libmpv, d'où le détour de `GetProcAddress`.
+
+#### Pour que ça ne revienne pas
+
+- `test/windows_angle_protection_guard_test.dart` vérifie trois choses : que le runner pose la
+  protection avant de créer le moteur, qu'il vise bien `flutter_windows.dll` et
+  `D3D11CreateDevice`, et que le script de lancements cherche la ligne du runner. Il **échoue à
+  chaque montée de Flutter** (plancher de `pubspec.yaml` différent de `_stressedFlutter`). Il faut
+  alors repasser le test de lancements, puis noter le résultat ici.
+- `tool/windows_launch_stress.ps1` lance l'app 40 fois (10 s chacune) et compte les arrêts et les
+  lancements sans protection. Il liste les vidages produits et rend 1 au moindre échec. À passer
+  sur une vraie machine avec GPU, en profile, avec et sans `-Skia`. La CI ne le peut pas (pas de
+  GPU, et le pilote compte).
+- Le détour pourra partir quand le moteur posera lui-même la protection (3.50.2) **et** que le
+  test de lancements restera à zéro sans lui. Il faudra le vérifier, pas le supposer.
 
 ### Sans GPU utilisable
 
@@ -275,7 +344,9 @@ Impeller échoue) ne peut donc pas s'appuyer sur ce levier pour l'instant.
 - Sous Windows, sans D3D11 du tout (pas même WARP), l'app se ferme au lancement au lieu de
   retomber en logiciel. Le cas est rare (WARP fait partie de Windows), mais il est muet : rien ne
   le signale à l'utilisateur.
-- Les plantages au lancement de la 3.50 (une fois sur dix ici) bloquent la version de test tant
-  qu'ils ne sont pas compris.
+- Les plantages au lancement de la 3.50 sont compris (flutter/flutter#196618) et corrigés par la
+  protection du runner (0 sur 80 lancements). Le runner détourne un import de
+  `flutter_windows.dll` : ce code dépend du moteur, et le test de garde impose de le revérifier
+  à chaque montée.
 - `tool/frame_timeline.dart` reste dans le dépôt pour refaire la mesure à l'identique à la
   prochaine montée.

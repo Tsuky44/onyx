@@ -5124,9 +5124,9 @@
     "semantic_hash": ""
   },
   "app/windows/runner/flutter_window.cpp": {
-    "mtime": 1795437819.9691262,
-    "seen": 1795442360.312629,
-    "ast_hash": "719da106b1efcd0b12be34d5f56ec310",
+    "mtime": 1795510666.9800084,
+    "seen": 1795511878.6913126,
+    "ast_hash": "2a6cfed1da4ed872d7ce725e68ccacda",
     "semantic_hash": ""
   },
   "app/windows/runner/flutter_window.h": {
@@ -9930,9 +9930,9 @@
     "semantic_hash": ""
   },
   "app/windows/runner/CMakeLists.txt": {
-    "mtime": 1795437819.9676259,
-    "seen": 1795442360.3136292,
-    "ast_hash": "028602ab9754bffe716659ada7590d29",
+    "mtime": 1795510196.6602201,
+    "seen": 1795511878.6941683,
+    "ast_hash": "3a84da90a69987559e24ea47814480cd",
     "semantic_hash": ""
   },
   "app/windows/updater/CMakeLists.txt": {
@@ -15000,15 +15000,39 @@
     "semantic_hash": ""
   },
   "docs/adr/0167-flutter-3-50-et-impeller-sur-le-bureau.md": {
-    "mtime": 1795508992.146515,
-    "seen": 1795509098.0322046,
-    "ast_hash": "43e9f25bfc0ee49aa5e0b9461c5f4f53",
+    "mtime": 1795512028.2206964,
+    "seen": 1795512116.364518,
+    "ast_hash": "efaa19cdbc6ffe8eb5e879499caa20e2",
     "semantic_hash": ""
   },
   "app/test/material_ui_migration_guard_test.dart": {
     "mtime": 1795443580.6670265,
     "seen": 1795443927.4005237,
     "ast_hash": "191ab184aa8b430d9fc49f0934bdfa5a",
+    "semantic_hash": ""
+  },
+  "app/test/windows_angle_protection_guard_test.dart": {
+    "mtime": 1795510745.5820951,
+    "seen": 1795511878.6913126,
+    "ast_hash": "321445b3b144449b396ce8c0c6f669cb",
+    "semantic_hash": ""
+  },
+  "app/tool/windows_launch_stress.ps1": {
+    "mtime": 1795510211.2293782,
+    "seen": 1795511878.6913126,
+    "ast_hash": "13ee481ab784cf14d7196820b285147d",
+    "semantic_hash": ""
+  },
+  "app/windows/runner/angle_multithread_protection.cpp": {
+    "mtime": 1795510656.7952116,
+    "seen": 1795511878.6913126,
+    "ast_hash": "10705451e705acd762094fca2e8172c5",
+    "semantic_hash": ""
+  },
+  "app/windows/runner/angle_multithread_protection.h": {
+    "mtime": 1795510633.9744349,
+    "seen": 1795511878.6913126,
+    "ast_hash": "30ca5bfdfd787673261db48848c1a99c",
     "semantic_hash": ""
   }
 }
