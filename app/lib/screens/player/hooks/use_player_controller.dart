@@ -20,6 +20,7 @@ import '../playback/playback_session.dart';
 import '../playback/playback_stats.dart';
 import '../playback/series_track_memory.dart';
 import '../playback/startup_timeline.dart';
+import '../playback/playback_rescue.dart';
 import '../playback/stream_cut_recovery.dart';
 import 'playback_reporter.dart';
 import 'use_auto_quality.dart';
@@ -45,6 +46,7 @@ part 'player_controller_diagnostics.dart';
 part 'player_controller_dolby_vision.dart';
 part 'player_controller_hls.dart';
 part 'player_controller_language.dart';
+part 'player_controller_rescue.dart';
 part 'player_controller_startup.dart';
 part 'player_controller_subtitle_offer.dart';
 part 'player_controller_tracks.dart';
@@ -108,6 +110,13 @@ class PlayerController {
   /// démarrage : une panne connue à la seconde deux n'a aucune raison d'être
   /// annoncée à la seconde vingt-cinq.
   PlaybackFailure? startupFailure;
+
+  /// La lecture s'est figée après sa première image et rien ne l'a relancée
+  /// ([PlaybackRescue]) : l'écran propose de réessayer, avec [rescueFailure]
+  /// quand le moteur a nommé la panne.
+  bool rescueExhausted = false;
+  PlaybackFailure? get rescueFailure => _rescueFailure;
+  PlaybackFailure? _rescueFailure;
 
   /// The decoder has read this file's dimensions — it knows what it is about to
   /// draw, but has not necessarily drawn it yet.
@@ -521,6 +530,7 @@ class PlayerController {
   StreamSubscription? _reapplySubscription;
   StreamSubscription? _failureSubscription;
   StreamCutRecovery? _cuts;
+  PlaybackRescue? _rescue;
   bool _disposed = false;
 
   /// Aspect ratio of the current video (width / height).
@@ -706,6 +716,7 @@ class PlayerController {
     _disposeTimelinePreviews();
     unawaited(_releasePlaybackAccess());
     _disposed = true;
+    _rescue?.dispose();
     _deferredSubtitleExtractTimer?.cancel();
     _deferredSubtitleExtractTimer = null;
     _stopSubtitleWatch();
@@ -742,6 +753,7 @@ class PlayerController {
     // scroll in the app judder instead.
     unawaited(DisplayFrameRate.release());
     _disposed = true;
+    _rescue?.dispose();
     _deferredSubtitleExtractTimer?.cancel();
     _deferredSubtitleExtractTimer = null;
     _stopSubtitleWatch();

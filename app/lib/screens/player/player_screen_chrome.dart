@@ -584,8 +584,10 @@ extension _PlayerChrome on _PlayerScreenState {
       (_playerController.isBuffering && _isInitialized);
 
   /// L'anneau d'attente, là où est lecture/pause sur un écran tenu en main,
-  /// au milieu ailleurs (ADR-0140).
+  /// au milieu ailleurs (ADR-0140). Un seul, toujours à la même place de la
+  /// pile : il garde son tour d'une attente à la suivante.
   Widget _buildLoadingRing(bool isTv) => PlayerLoadingSpinner(
+        visible: _awaitingPicture,
         centreAt: _handheld ? OnyxChromeTheme.handheldCentreAt : 0.5,
         scale: PlayerTvScale.factorFor(
           MediaQuery.sizeOf(context).width,

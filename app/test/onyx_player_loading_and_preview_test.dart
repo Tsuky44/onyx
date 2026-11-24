@@ -176,6 +176,61 @@ void main() {
       expect(ring.dy, closeTo(390 * OnyxChromeTheme.handheldCentreAt, 0.5));
     });
 
+    // Vu sur une Apple TV : deux anneaux, un par attente, qui se relayaient
+    // en repartant de zéro et claquaient à l'écran sans fondu.
+    testWidgets('un seul anneau paraît et s’efface en fondu, sans repartir de '
+        'zéro', (tester) async {
+      Widget host({required bool visible}) => MaterialApp(
+            home: Scaffold(
+              body: Stack(children: [PlayerLoadingSpinner(visible: visible)]),
+            ),
+          );
+      double opacity() => tester
+          .widget<FadeTransition>(find
+              .ancestor(
+                of: find.byType(OnyxLoadingRing),
+                matching: find.byType(FadeTransition),
+              )
+              .first)
+          .opacity
+          .value;
+      double turn() => (tester
+              .widget<CustomPaint>(find.descendant(
+                of: find.byType(OnyxLoadingRing),
+                matching: find.byType(CustomPaint),
+              ))
+              .painter! as OnyxLoadingRingPainter)
+          .turn;
+
+      await tester.pumpWidget(host(visible: false));
+      expect(find.byType(OnyxLoadingRing), findsNothing,
+          reason: 'sans attente, aucune animation ne tourne');
+
+      await tester.pumpWidget(host(visible: true));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(opacity(), inExclusiveRange(0, 1), reason: 'il paraît en fondu');
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(opacity(), 1);
+
+      // L'attente cesse puis reprend aussitôt (une recherche après un
+      // tampon) : l'anneau est encore là et continue son tour.
+      final state = tester.state(find.byType(OnyxLoadingRing));
+      await tester.pumpWidget(host(visible: false));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(opacity(), inExclusiveRange(0, 1), reason: 'il s’efface en fondu');
+      final before = turn();
+      await tester.pumpWidget(host(visible: true));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.state(find.byType(OnyxLoadingRing)), same(state));
+      expect(turn(), isNot(before));
+
+      await tester.pumpWidget(host(visible: false));
+      await tester.pumpAndSettle();
+      expect(find.byType(OnyxLoadingRing), findsNothing);
+    });
+
     testWidgets('ne tourne pas sous « réduire les animations »',
         (tester) async {
       await tester.pumpWidget(

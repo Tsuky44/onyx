@@ -455,6 +455,7 @@ extension PlayerControllerHls on PlayerController {
     final target = absoluteSeconds < 0 ? 0 : absoluteSeconds;
     _noteDisturbance();
     _stats.noteSeek();
+    _rescue?.noteSeek(target);
 
     if (currentQuality == null) {
       await session.seek(Duration(seconds: target));
@@ -491,6 +492,7 @@ extension PlayerControllerHls on PlayerController {
     if (target.isNegative) target = Duration.zero;
     _noteDisturbance();
     _stats.noteSeek();
+    _rescue?.noteSeek(target.inSeconds);
     if (currentQuality == null) {
       position = target;
       _onPositionChanged?.call();

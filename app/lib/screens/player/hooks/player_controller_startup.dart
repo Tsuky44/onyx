@@ -112,6 +112,7 @@ extension PlayerControllerStartup on PlayerController {
     });
 
     _cuts = _newCutRecovery();
+    _rescue = _newRescue();
     _completedSubscription = session.completions.listen((_) {
       if (_disposed) return;
       // Un serveur qui s'arrête fait annoncer au moteur la fin du fichier :

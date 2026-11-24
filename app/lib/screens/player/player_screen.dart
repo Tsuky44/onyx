@@ -657,23 +657,28 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     PlayerTvScale.layer(isTv: isTv, child: _buildChrome(isTv)),
                     if (_buildPauseInfo(isTv) case final pauseInfo?) pauseInfo,
                     ..._buildOverChrome(isTv),
-                    // Start-up spinner. IgnorePointer like the one below: loading is
-                    // exactly when the user may want to go back, so the cover must
-                    // never eat taps meant for the chrome.
-                    //
-                    // Past the deadline it stops being a spinner and starts being a
+                    // L'anneau d'attente : démarrage, tampon, changement de
+                    // qualité. IgnorePointer: loading is exactly when the user
+                    // may want to go back, so the cover must never eat taps
+                    // meant for the chrome.
+                    _buildLoadingRing(isTv),
+                    // Past the start-up deadline the spinner gives way to a
                     // question, which does take input — there is a button on it.
-                    if (!_playerController.hasFirstFrame)
-                      if (_startupStalled)
-                        Positioned.fill(
-                          child: StalledStartup(
-                            failure: _playerController.startupFailure,
-                            onRetry: _retryPlayback,
-                            onBack: _leavePlayer,
-                          ),
-                        )
-                      else
-                        _buildLoadingRing(isTv),
+                    // La même question pour une lecture figée après sa
+                    // première image que rien n'a relancée (`PlaybackRescue`),
+                    // au lieu d'un anneau sans fin puis d'un écran noir.
+                    if (_playerController.hasFirstFrame
+                        ? _playerController.rescueExhausted
+                        : _startupStalled)
+                      Positioned.fill(
+                        child: StalledStartup(
+                          failure: _playerController.hasFirstFrame
+                              ? _playerController.rescueFailure
+                              : _playerController.startupFailure,
+                          onRetry: _retryPlayback,
+                          onBack: _leavePlayer,
+                        ),
+                      ),
                     // Les fenêtres de question sont à l'échelle du lecteur, comme
                     // le chrome : voir [PlayerTvScale].
                     if (_handoff.handedOffTo != null)
@@ -688,9 +693,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           ),
                         ),
                       ),
-                    if (_playerController.isSwitchingQuality ||
-                        (_playerController.isBuffering && _isInitialized))
-                      _buildLoadingRing(isTv),
                     if (_stillWatchingAsked)
                       PlayerTvScale.layer(
                         isTv: isTv,

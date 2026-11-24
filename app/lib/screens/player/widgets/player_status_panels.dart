@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../services/client_log.dart';
 import '../playback/playback_session.dart';
+import '../../../theme/app_motion.dart';
 import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
 import 'onyx/onyx_loading_ring.dart';
@@ -16,13 +17,29 @@ import 'player_question_window.dart';
 /// un écran tenu en main, là où est lecture/pause ([centreAt]) : il prend la
 /// place du bouton au lieu de se poser dessous.
 ///
+/// Un seul anneau pour toute la lecture, qui paraît et s'efface en fondu
+/// ([visible]). L'écran en montait deux, un pour le démarrage et un pour le
+/// tampon : au passage de l'un à l'autre l'anneau repartait de zéro, les deux
+/// se superposaient un instant, et chaque attente brève le faisait claquer à
+/// l'écran puis disparaître. Vu sur une Apple TV : « l'animation n'est pas
+/// fluide ». L'anneau reste monté le temps de son fondu de sortie, et tourne
+/// sans à-coup d'une attente à la suivante.
+///
 /// IgnorePointer, not AbsorbPointer: it covers the whole screen and sits above
 /// the controls, so absorbing taps made every player button dead for as long
 /// as a seek took to load. Loading is exactly when the user is most likely to
 /// want to pause, seek again or go back, so the spinner has to be purely
 /// decorative.
-class PlayerLoadingSpinner extends StatelessWidget {
-  const PlayerLoadingSpinner({super.key, this.centreAt = 0.5, this.scale = 1});
+class PlayerLoadingSpinner extends StatefulWidget {
+  const PlayerLoadingSpinner({
+    super.key,
+    this.visible = true,
+    this.centreAt = 0.5,
+    this.scale = 1,
+  });
+
+  /// Le lecteur attend son image.
+  final bool visible;
 
   /// Où tombe son milieu, en fraction de la hauteur.
   final double centreAt;
@@ -32,21 +49,66 @@ class PlayerLoadingSpinner extends StatelessWidget {
   final double scale;
 
   @override
+  State<PlayerLoadingSpinner> createState() => _PlayerLoadingSpinnerState();
+}
+
+class _PlayerLoadingSpinnerState extends State<PlayerLoadingSpinner>
+    with SingleTickerProviderStateMixin {
+  /// Le fondu : à zéro, l'anneau n'est plus monté et ne coûte plus rien.
+  late final AnimationController _fade = AnimationController(
+    vsync: this,
+    value: widget.visible ? 1 : 0,
+  )..addStatusListener(_onFadeStatus);
+
+  late final Animation<double> _opacity =
+      CurvedAnimation(parent: _fade, curve: AppMotion.curve);
+
+  bool get _mounted => _fade.status != AnimationStatus.dismissed;
+
+  void _onFadeStatus(AnimationStatus status) {
+    // Démonter l'anneau à la fin de la sortie, le monter au début de l'entrée.
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(covariant PlayerLoadingSpinner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.visible == widget.visible) return;
+    _fade.duration = AppMotion.fade(context, AppMotion.emphasis);
+    if (widget.visible) {
+      _fade.forward();
+    } else {
+      _fade.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _fade.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final size = OnyxLoadingRing.defaultSize * scale;
+    final size = OnyxLoadingRing.defaultSize * widget.scale;
     return Positioned.fill(
       child: IgnorePointer(
-        child: LayoutBuilder(
-          builder: (context, constraints) => Stack(
-            children: [
-              Positioned(
-                left: (constraints.maxWidth - size) / 2,
-                top: constraints.maxHeight * centreAt - size / 2,
-                child: OnyxLoadingRing(size: size),
+        child: !_mounted
+            ? null
+            : LayoutBuilder(
+                builder: (context, constraints) => Stack(
+                  children: [
+                    Positioned(
+                      left: (constraints.maxWidth - size) / 2,
+                      top: constraints.maxHeight * widget.centreAt - size / 2,
+                      child: FadeTransition(
+                        opacity: _opacity,
+                        child: OnyxLoadingRing(size: size),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
