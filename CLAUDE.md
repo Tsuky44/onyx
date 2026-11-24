@@ -19,6 +19,7 @@ Le dépôt utilise 4 branches strictes :
   1. **JAMAIS** de push ou de merge automatique vers `master`.
   2. Uniquement sur demande explicite de l'utilisateur, **demande une double confirmation** avant d'exécuter l'opération.
   3. Après confirmation : exécute `git checkout master && git merge beta`, puis demande explicitement s'il faut lancer une **Release Prod**.
+- **Isolation de `CLAUDE.local.md` :** Le fichier `CLAUDE.local.md` doit être listé dans `.gitignore` et ne **JAMAIS** être commité, pushé ni propagé en dehors des environnements locaux/branches personnelles (`tsuky` et `fytroz`) vers `beta` ou `master`. Si ce fichier apparaît suivi par Git lors d'un `merge` ou d'un `commit`, retire-le immédiatement de l'index (`git rm --cached CLAUDE.local.md`) avant de valider.
 
 ## 2. Gestion des Releases & Périmètres
 
