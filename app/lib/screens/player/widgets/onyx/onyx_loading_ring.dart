@@ -31,14 +31,32 @@ import 'onyx_chrome_theme.dart';
 /// (`repaint:`), rien n'est reconstruit, et un [RepaintBoundary] l'isole. Ni
 /// `saveLayer` ni calque d'opacité : son arrivée en fondu et sa respiration
 /// passent par l'alpha des traits.
+///
+/// Il part comme il arrive ([present]) : en fondu, et sans perdre son tour si
+/// l'attente reprend aussitôt. Démonté net à la fin de chaque attente, il
+/// claquait à l'écran et repartait du haut à la suivante, ce qui, dans une
+/// suite de tampons courts après une recherche, se lisait comme une saccade.
 class OnyxLoadingRing extends StatefulWidget {
-  const OnyxLoadingRing({super.key, this.size = defaultSize});
+  const OnyxLoadingRing({
+    super.key,
+    this.size = defaultSize,
+    this.present = true,
+    this.onGone,
+  });
 
   /// Le diamètre : celui du disque de lecture/pause qu'il remplace sur un
   /// écran tenu en main, un peu moins que sa cible de 78.
   static const double defaultSize = 52;
 
   final double size;
+
+  /// Faux : l'attente est finie. L'anneau s'efface comme il est arrivé, sans
+  /// cesser de tourner, puis appelle [onGone]. Redevenu vrai avant la fin, il
+  /// remonte de là où il en était, sur le même tour.
+  final bool present;
+
+  /// L'anneau a fini de s'effacer : il peut être démonté.
+  final VoidCallback? onGone;
 
   @override
   State<OnyxLoadingRing> createState() => _OnyxLoadingRingState();
@@ -54,7 +72,26 @@ class _OnyxLoadingRingState extends State<OnyxLoadingRing>
   late final AnimationController _arrival = AnimationController(
     vsync: this,
     duration: AppMotion.standard,
-  )..forward();
+  )
+    ..addStatusListener(_onArrivalStatus)
+    ..forward();
+
+  void _onArrivalStatus(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed && !widget.present) {
+      widget.onGone?.call();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant OnyxLoadingRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.present == widget.present) return;
+    if (widget.present) {
+      _arrival.forward();
+    } else {
+      _arrival.reverse();
+    }
+  }
 
   OnyxLoadingRingPainter? _painter;
 

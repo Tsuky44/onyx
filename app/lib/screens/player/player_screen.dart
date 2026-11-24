@@ -663,15 +663,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     // Past the start-up deadline the wait stops being a spinner
                     // and starts being a question, which does take input — there
                     // is a button on it. The spinner itself is posed once, below.
-                    if (!_playerController.hasFirstFrame)
-                      if (_startupStalled)
-                        Positioned.fill(
-                          child: StalledStartup(
-                            failure: _playerController.startupFailure,
-                            onRetry: _retryPlayback,
-                            onBack: _leavePlayer,
-                          ),
+                    // La même question pour une lecture figée après sa
+                    // première image que rien n'a relancée (`PlaybackRescue`),
+                    // au lieu d'un anneau sans fin puis d'un écran noir.
+                    if (_playerController.hasFirstFrame
+                        ? _playerController.rescueExhausted
+                        : _startupStalled)
+                      Positioned.fill(
+                        child: StalledStartup(
+                          failure: _playerController.hasFirstFrame
+                              ? _playerController.rescueFailure
+                              : _playerController.startupFailure,
+                          onRetry: _retryPlayback,
+                          onBack: _leavePlayer,
                         ),
+                      ),
                     // Les fenêtres de question sont à l'échelle du lecteur, comme
                     // le chrome : voir [PlayerTvScale].
                     if (_handoff.handedOffTo != null)
@@ -687,8 +693,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         ),
                       ),
                     // Une seule fois : posé aussi pour le tampon, l'anneau était
-                    // là deux fois au démarrage, deux têtes décalées.
-                    if (_awaitingPicture) _buildLoadingRing(isTv),
+                    // là deux fois au démarrage, deux têtes décalées. Toujours
+                    // posé : c'est lui qui s'efface quand l'attente cesse
+                    // (`_awaitingPicture`, dans `_buildLoadingRing`).
+                    _buildLoadingRing(isTv),
                     if (_stillWatchingAsked)
                       PlayerTvScale.layer(
                         isTv: isTv,

@@ -363,6 +363,50 @@ void main() {
       expect(find.byType(FadeTransition), findsNothing);
     });
 
+    // Vu sur une Apple TV : démonté net à la fin de chaque attente, l'anneau
+    // claquait à l'écran et repartait du haut à la suivante.
+    testWidgets('il part en fondu, et garde son tour si l’attente reprend',
+        (tester) async {
+      Widget host({required bool visible}) => MaterialApp(
+            home: Scaffold(
+              body: Stack(children: [PlayerLoadingSpinner(visible: visible)]),
+            ),
+          );
+
+      await tester.pumpWidget(host(visible: false));
+      expect(find.byType(OnyxLoadingRing), findsNothing,
+          reason: 'sans attente, aucune animation ne tourne');
+
+      await tester.pumpWidget(host(visible: true));
+      await tester.pump(AppMotion.standard);
+      await tester.pump();
+      expect(painterOf(tester).opacity, 1);
+
+      // L'attente cesse : il s'efface, toujours en mouvement.
+      final state = tester.state(find.byType(OnyxLoadingRing));
+      await tester.pumpWidget(host(visible: false));
+      await tester.pump(AppMotion.standard ~/ 2);
+      expect(painterOf(tester).opacity, inExclusiveRange(0, 1));
+      final turn = painterOf(tester).turn;
+
+      // Elle reprend avant la fin du fondu : le même anneau, sur son tour.
+      await tester.pumpWidget(host(visible: true));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(tester.state(find.byType(OnyxLoadingRing)), same(state));
+      expect(painterOf(tester).turn, greaterThan(turn));
+      await tester.pump(AppMotion.standard);
+      expect(painterOf(tester).opacity, 1);
+
+      // Elle cesse pour de bon : une fois effacé, il est démonté.
+      await tester.pumpWidget(host(visible: false));
+      // Une image après la fin du fondu : c'est là que l'animation se dit
+      // terminée.
+      await tester.pump(AppMotion.standard);
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump();
+      expect(find.byType(OnyxLoadingRing), findsNothing);
+    });
+
     testWidgets('chaque image ne repeint que lui, sans rien reconstruire',
         (tester) async {
       await pumpRing(tester, lite: true, tv: true);

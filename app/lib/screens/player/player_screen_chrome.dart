@@ -519,7 +519,7 @@ extension _PlayerChrome on _PlayerScreenState {
           currentMode: _displayMode,
           onModeChanged: _updateDisplayMode,
           playbackRate: _playbackRate,
-              playbackRates: _PlayerScreenState._playbackRates,
+          playbackRates: _PlayerScreenState._playbackRates,
           onRateChanged: _setPlaybackRate,
           onSeekToAbsolute: _seekTo,
           initialSection: section,
@@ -577,7 +577,12 @@ extension _PlayerChrome on _PlayerScreenState {
   /// Le lecteur attend quelque chose : la première image, un changement de
   /// qualité, ou le tampon après une recherche. Une seule réponse pour
   /// l'anneau d'attente et pour le bouton lecture qui lui cède la place.
-  bool get _awaitingPicture => playerAwaitsPicture(
+  ///
+  /// Une lecture figée que rien n'a relancée n'attend plus : elle a son
+  /// panneau, comme un démarrage qui a dépassé son délai.
+  bool get _awaitingPicture =>
+      !_playerController.rescueExhausted &&
+      playerAwaitsPicture(
         hasFirstFrame: _playerController.hasFirstFrame,
         startupStalled: _startupStalled,
         isSwitchingQuality: _playerController.isSwitchingQuality,
@@ -589,6 +594,7 @@ extension _PlayerChrome on _PlayerScreenState {
   /// autre couche se pose avant lui dans la pile.
   Widget _buildLoadingRing(bool isTv) => PlayerLoadingSpinner(
         key: const ValueKey('player-wait'),
+        visible: _awaitingPicture,
         isTv: isTv,
         centreAt: _handheld ? OnyxChromeTheme.handheldCentreAt : 0.5,
       );
@@ -664,15 +670,13 @@ extension _PlayerChrome on _PlayerScreenState {
           : null,
       onLockScreen: _handheld ? _lockScreen : null,
       onSkipNext: nav?.nextEpisode != null ? _goToNextEpisode : null,
-      onSkipPrevious: _episodesPanel.previousEpisode != null
-          ? _goToPreviousEpisode
-          : null,
+      onSkipPrevious:
+          _episodesPanel.previousEpisode != null ? _goToPreviousEpisode : null,
       onOpenEpisodes: _info.isEpisode && _apiClient != null
           ? () => _showTab(OnyxTab.episodes)
           : null,
       onOpenInfo: () => _showTab(OnyxTab.info),
-      onSkipIntro:
-          (nav?.showSkipIntro ?? false) ? _skipIntroFromControl : null,
+      onSkipIntro: (nav?.showSkipIntro ?? false) ? _skipIntroFromControl : null,
       skipIntroCountdown: nav?.introAutoSkipCountdown,
       skipSegment: nav?.skipSegment ?? SkipSegment.intro,
       chapterMarks: _chapterMarks,

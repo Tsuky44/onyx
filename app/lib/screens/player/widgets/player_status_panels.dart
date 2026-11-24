@@ -46,12 +46,21 @@ bool playerAwaitsPicture({
 ///
 /// Sur un téléviseur ([isTv]), la couche se pose elle-même à l'échelle du
 /// lecteur ([PlayerTvScale.layer]), comme tout ce qui est dessiné sur l'image.
-class PlayerLoadingSpinner extends StatelessWidget {
+///
+/// Toujours posé par l'écran, qui dit seulement s'il attend ([visible]) :
+/// l'anneau reste le temps de s'effacer, et garde son tour d'une attente à la
+/// suivante.
+class PlayerLoadingSpinner extends StatefulWidget {
   const PlayerLoadingSpinner({
     super.key,
+    this.visible = true,
     this.isTv = false,
     this.centreAt = 0.5,
   });
+
+  /// Le lecteur attend son image. Faux, l'anneau s'efface en fondu puis se
+  /// démonte : sans attente, aucune animation ne tourne.
+  final bool visible;
 
   final bool isTv;
 
@@ -59,10 +68,31 @@ class PlayerLoadingSpinner extends StatelessWidget {
   final double centreAt;
 
   @override
+  State<PlayerLoadingSpinner> createState() => _PlayerLoadingSpinnerState();
+}
+
+class _PlayerLoadingSpinnerState extends State<PlayerLoadingSpinner> {
+  /// L'anneau est dans l'arbre : pendant l'attente, et le temps de son fondu
+  /// de sortie.
+  late bool _mounted = widget.visible;
+
+  @override
+  void didUpdateWidget(covariant PlayerLoadingSpinner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.visible) _mounted = true;
+  }
+
+  void _onGone() {
+    if (!mounted || widget.visible) return;
+    setState(() => _mounted = false);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (!_mounted) return const SizedBox.shrink();
     const size = OnyxLoadingRing.defaultSize;
     return PlayerTvScale.layer(
-      isTv: isTv,
+      isTv: widget.isTv,
       child: Positioned.fill(
         child: IgnorePointer(
           child: LayoutBuilder(
@@ -70,8 +100,11 @@ class PlayerLoadingSpinner extends StatelessWidget {
               children: [
                 Positioned(
                   left: (constraints.maxWidth - size) / 2,
-                  top: constraints.maxHeight * centreAt - size / 2,
-                  child: const OnyxLoadingRing(),
+                  top: constraints.maxHeight * widget.centreAt - size / 2,
+                  child: OnyxLoadingRing(
+                    present: widget.visible,
+                    onGone: _onGone,
+                  ),
                 ),
               ],
             ),
