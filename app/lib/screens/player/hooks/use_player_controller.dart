@@ -1,4 +1,5 @@
 import 'dart:async';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import '../../../models/models.dart';
 import '../../../models/series_track_preferences.dart';

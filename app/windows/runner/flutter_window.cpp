@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include "angle_multithread_protection.h"
 #include "flutter/generated_plugin_registrant.h"
 #include "video_backdrop.h"
 
@@ -16,6 +17,12 @@ bool FlutterWindow::OnCreate() {
   }
 
   RECT frame = GetClientArea();
+
+  // Avant la création du moteur, donc de l'appareil D3D11 d'ANGLE : sans cette
+  // protection, la 3.50 plante au lancement une fois sur trois à une fois sur
+  // dix (ADR-0167, flutter/flutter#196618). À garder tant qu'ANGLE n'exclut
+  // pas de nouveau ses appels EGL des appels GL (flutter/flutter#197238).
+  angle_multithread_protection::Install();
 
   // The size here must match the window dimensions to avoid unnecessary surface
   // creation / destruction in the startup path.

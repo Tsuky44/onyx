@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart' as mk;
 

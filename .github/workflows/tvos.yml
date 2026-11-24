@@ -61,7 +61,7 @@ jobs:
     needs: test
     runs-on: macos-latest
     env:
-      FLUTTER_TVOS_VERSION: v3.44.9-tvos.1.5.1
+      FLUTTER_TVOS_VERSION: v3.50.1-tvos.1.12.2
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}

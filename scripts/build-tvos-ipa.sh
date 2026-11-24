@@ -28,7 +28,7 @@
 
 set -euo pipefail
 
-FLUTTER_TVOS_VERSION="v3.44.9-tvos.1.5.1"
+FLUTTER_TVOS_VERSION="v3.50.1-tvos.1.12.2"
 FLUTTER_TVOS_DIR="${FLUTTER_TVOS_DIR:-$HOME/.flutter-tvos}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../utils/external_url.dart';
 
 import 'package:dio/dio.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/media_request.dart';

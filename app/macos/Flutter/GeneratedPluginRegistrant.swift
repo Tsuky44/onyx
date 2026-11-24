@@ -11,7 +11,6 @@ import file_picker_darwin
 import flutter_local_notifications
 import flutter_secure_storage_darwin
 import media_kit_libs_macos_video
-import media_kit_video
 import mobile_scanner
 import onyx_mpv_macos
 import onyx_player_apple
@@ -21,6 +20,7 @@ import screen_retriever_macos
 import shared_preferences_foundation
 import sqflite_darwin
 import wakelock_plus
+import media_kit_video
 import window_manager
 import workmanager_apple
 
@@ -31,7 +31,6 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterLocalNotificationsPlugin.register(with: registry.registrar(forPlugin: "FlutterLocalNotificationsPlugin"))
   FlutterSecureStorageDarwinPlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStorageDarwinPlugin"))
   MediaKitLibsMacosVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitLibsMacosVideoPlugin"))
-  MediaKitVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitVideoPlugin"))
   MobileScannerPlugin.register(with: registry.registrar(forPlugin: "MobileScannerPlugin"))
   OnyxMpvMacosPlugin.register(with: registry.registrar(forPlugin: "OnyxMpvMacosPlugin"))
   OnyxPlayerApplePlugin.register(with: registry.registrar(forPlugin: "OnyxPlayerApplePlugin"))
@@ -41,6 +40,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
   SqflitePlugin.register(with: registry.registrar(forPlugin: "SqflitePlugin"))
   WakelockPlusMacosPlugin.register(with: registry.registrar(forPlugin: "WakelockPlusMacosPlugin"))
+  MediaKitVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitVideoPlugin"))
   WindowManagerPlugin.register(with: registry.registrar(forPlugin: "WindowManagerPlugin"))
   WorkmanagerPlugin.register(with: registry.registrar(forPlugin: "WorkmanagerPlugin"))
 }

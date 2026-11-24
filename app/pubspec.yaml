@@ -5,6 +5,10 @@ publish_to: none
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
+  # Le SDK des workflows (ADR-0167). Sans ce plancher, un SDK 3.44 échoue plus
+  # loin, sur un paquet du lock qui exige 3.47. La version de langage, elle,
+  # reste sur `sdk` : la relever est un autre changement.
+  flutter: '>=3.50.1'
 
 dependencies:
   flutter:
@@ -85,7 +89,11 @@ dependencies:
 
   # Sélecteur de fichier natif : la photo de profil (ADR-0078).
   # 13 : `FilePicker.pickFile` (fichier unique) remplace `platform.pickFiles`.
-  file_picker: ^13.1.0
+  # Sous 13.4 : celle-ci déprécie `getDirectoryPath` pour `pickDirectory`, qui
+  # rend une URI `content://` sur Android là où la bibliothèque de l'appareil
+  # attend un chemin. Changement à mener à part de la montée de Flutter
+  # (ADR-0167).
+  file_picker: '>=13.1.0 <13.4.0'
   qr_flutter: ^4.1.0
 
   # Backlight control for the player's brightness bar. Only the *application*

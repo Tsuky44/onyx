@@ -1,6 +1,7 @@
 import '../../services/playback_access.dart';
 import 'dart:async';
 import 'package:flutter/gestures.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';

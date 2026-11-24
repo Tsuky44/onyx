@@ -1,5 +1,5 @@
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 
 import '../theme/lite_mode.dart';
 import '../tv/tv_mode.dart';
