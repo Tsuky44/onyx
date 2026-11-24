@@ -1,9 +1,9 @@
-# Graph Report - flutter-3-50-85638b  (2026-11-24)
+# Graph Report - project playeur  (2026-11-24)
 
 ## Corpus Check
-- 2315 files · ~5,089,665 words
+- 2315 files · ~5,089,456 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 179 file(s) not represented in the graph (top: (none) 44, .csv 24, .xml 20)
+- Unclassified: 177 file(s) not represented in the graph (top: (none) 43, .csv 24, .xml 20)
 
 ## Summary
 - 34905 nodes · 69141 edges · 960 communities (763 shown, 197 thin omitted)
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8b601cb9`
+- Built from commit: `e54e6844`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
