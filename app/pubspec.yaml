@@ -46,8 +46,9 @@ dependencies:
   # et `flutter/cupertino.dart` y sont dépréciés (ADR-0168). Ce sont des copies
   # distinctes (leur `Theme` n'est pas celui du SDK) ; les dépendances qui
   # importent encore l'ancien Material passent par `LegacyMaterialBridge`
-  # (theme/legacy_material_bridge.dart). Plancher 1.11.1 : la version dont le
-  # rendu a été comparé aux captures d'avant la migration. Déjà tirés par
+  # (theme/legacy_material_bridge.dart). Plancher 1.11.1 : la version dont les
+  # valeurs par défaut ont été comparées, classe par classe, au Material du SDK
+  # 3.50.1. Déjà tirés par
   # cached_network_image et cupertino_icons.
   material_ui: ^1.11.1
   cupertino_ui: ^1.1.7
