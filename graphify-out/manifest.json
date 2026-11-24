@@ -1632,15 +1632,15 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen.dart": {
-    "mtime": 1795506849.9947023,
-    "seen": 1795507211.0715687,
-    "ast_hash": "18a0fb68811640ce0a667595c484ea8f",
+    "mtime": 1795512904.44945,
+    "seen": 1795513350.4087713,
+    "ast_hash": "b5c84a908e0c4244e559b38b7e56203b",
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_chrome.dart": {
-    "mtime": 1795506849.9987025,
-    "seen": 1795507211.0715709,
-    "ast_hash": "a05b83ad19a8189ca55504d67856be48",
+    "mtime": 1795512904.4488585,
+    "seen": 1795513350.4087732,
+    "ast_hash": "9e5b3f843f929fd0fe1f5b0d1d9cc650",
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_flow.dart": {
@@ -1650,9 +1650,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_remote.dart": {
-    "mtime": 1795506849.9987025,
-    "seen": 1795507211.071581,
-    "ast_hash": "9407d4b43d9a7d1dfed860d5e46724f9",
+    "mtime": 1795512904.4491167,
+    "seen": 1795513350.4087787,
+    "ast_hash": "3ec341e7695fd2f3dbee0e26a1f95ef1",
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_startup.dart": {
@@ -1812,9 +1812,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/player_status_panels.dart": {
-    "mtime": 1795506849.9987025,
-    "seen": 1795507211.071742,
-    "ast_hash": "14e961840606a24a765b8efd678bc394",
+    "mtime": 1795512904.448378,
+    "seen": 1795513350.4088492,
+    "ast_hash": "eb21e741c1c8e52deceb999ff1b92616",
     "semantic_hash": ""
   },
   "app/lib/screens/player/widgets/player_tap_zones.dart": {
@@ -12306,9 +12306,9 @@
     "semantic_hash": ""
   },
   "app/test/support/player_remote_bench.dart": {
-    "mtime": 1795506849.9987025,
-    "seen": 1795507211.0735445,
-    "ast_hash": "0436baf70b065b9e528408368010189f",
+    "mtime": 1795512904.4185436,
+    "seen": 1795513350.4107275,
+    "ast_hash": "aa1e52d648cee8a8e43cc6fb49e8989c",
     "semantic_hash": ""
   },
   "app/lib/tv/input/tv_field_key_handler.dart": {
@@ -14999,12 +14999,6 @@
     "ast_hash": "86d7d56eb11ce3cbee42f1cc04651606",
     "semantic_hash": ""
   },
-  "app/lib/screens/player/widgets/player_wait_cancel.dart": {
-    "mtime": 1795506849.9987025,
-    "seen": 1795507211.0717545,
-    "ast_hash": "9285a1cfc86bc3430795baced56132ce",
-    "semantic_hash": ""
-  },
   "app/lib/screens/settings/widgets/navigation_sound_tile.dart": {
     "mtime": 1795506168.1786618,
     "seen": 1795507211.0720985,
@@ -15029,16 +15023,10 @@
     "ast_hash": "42c854c557704784c8a2186ae395993c",
     "semantic_hash": ""
   },
-  "app/test/player_wait_cancel_test.dart": {
-    "mtime": 1795506849.9987025,
-    "seen": 1795507211.07334,
-    "ast_hash": "566cf2f11adb41b5447880af1b8eb8e5",
-    "semantic_hash": ""
-  },
   "app/test/player_wait_guard_test.dart": {
-    "mtime": 1795506849.9987025,
-    "seen": 1795507211.0733428,
-    "ast_hash": "25d4fd17793a11f1ed7e4c4345fdbc6b",
+    "mtime": 1795512904.4497237,
+    "seen": 1795513350.4105194,
+    "ast_hash": "259d1f1123ac7312f95cef893a3a09f7",
     "semantic_hash": ""
   },
   "app/test/tv_navigation_sound_host_test.dart": {
@@ -15066,9 +15054,9 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-23-fytroz-l-attente-du-lecteur-vit-et-s-annule.md": {
-    "mtime": 1795506849.9987025,
-    "seen": 1795507211.07634,
-    "ast_hash": "867a93a91008cd0e331af6a14b19acfe",
+    "mtime": 1795512968.5977716,
+    "seen": 1795513350.4130197,
+    "ast_hash": "e9d8771cb6562ed653a1bf2072320f52",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-23-fytroz-sons-de-navigation-apple-tv.md": {
