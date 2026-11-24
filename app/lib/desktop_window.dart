@@ -11,6 +11,7 @@ import 'tv/tv_mode.dart';
 import 'utils/app_platform.dart';
 import 'utils/responsive.dart';
 import 'utils/window_controls.dart';
+import 'widgets/global/background_motion_gate.dart';
 import 'widgets/global/window_caption_buttons.dart';
 
 /// Custom caption bar is Windows-only; macOS keeps native traffic lights.
@@ -191,7 +192,13 @@ class _WindowCaptionHostState extends State<WindowCaptionHost> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _claim(TickerMode.valuesOf(context).enabled);
+    final onStage = TickerMode.valuesOf(context).enabled;
+    // La fenêtre qui perd le focus coupe aussi les animations
+    // (BackgroundMotionGate) sans qu'aucune page ne couvre l'en-tête : garder
+    // alors ce qu'on avait, sinon la bande du haut revient sous les contrôles
+    // de l'en-tête.
+    if (context.motionFrozenByGate) return;
+    _claim(onStage);
   }
 
   @override

@@ -45,6 +45,14 @@ class _DesktopHeaderSearchState extends State<DesktopHeaderSearch>
   final FocusNode _focusNode = FocusNode(debugLabel: 'desktop-header-search');
   final DesktopSearchController _selection = DesktopSearchController();
 
+  /// Garde le champ en vie quand l'infobulle change de forme. Ouverte, la
+  /// recherche vide le message de l'infobulle : [Tooltip] rend alors son
+  /// enfant seul, sans son habillage, et sans clé le champ était démonté puis
+  /// recréé. Son `EditableText` fermait la connexion de saisie, alors que le
+  /// [_focusNode], qui est à nous, gardait le focus : le champ semblait actif
+  /// mais n'entendait plus le clavier, et il fallait cliquer une seconde fois.
+  final GlobalKey _fieldKey = GlobalKey(debugLabel: 'desktop-header-field');
+
   RecentSearches? _recents;
 
   /// La feuille de résultats, tant qu'elle est dans la pile.
@@ -269,6 +277,7 @@ class _DesktopHeaderSearchState extends State<DesktopHeaderSearch>
           message: open ? '' : tr('Rechercher ({0})', [_shortcutLabel]),
           waitDuration: _tooltipDelay,
           child: AnimatedContainer(
+            key: _fieldKey,
             duration: AppMotion.move(context),
             curve: AppMotion.curve,
             width: widget.width,

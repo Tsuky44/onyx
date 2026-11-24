@@ -35,6 +35,11 @@ trous.
    qu'on regarde le film dans une autre fenêtre, figé à mi-fondu il resterait sur l'image), et tout
    ce qui n'est pas un ordinateur (sur téléphone, `inactive` veut dire fenêtre partagée ou boîte
    système, l'app est bien regardée).
+   Troisième exception (ajoutée ensuite) : la souris au-dessus de la fenêtre. Sans elle, choisir un
+   film dans l'app quand le focus est ailleurs ne montrait pas la carte sélectionnée, puisque ses
+   animations de survol étaient figées aussi. Un `MouseRegion` sur la porte relève le mouvement tant
+   que le curseur est sur la fenêtre, et le fige de nouveau dès qu'il en sort. Une fenêtre vraiment
+   recouverte (curseur sur une autre) reste figée, ce qui était le but.
 2. **`BackgroundMemoryTrim`** : après 45 s sans que l'app soit visible (réduite, cachée), vide le
    cache d'images décodées. Les fichiers restent sur disque ; seul le décodage est à refaire au
    retour, ce qui coûte un éclair de vignette. Le délai évite de vider pour un aller-retour rapide.

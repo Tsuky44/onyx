@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/services/background_memory_trim.dart';
@@ -48,6 +49,31 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(tester.hasRunningAnimations, isTrue);
+  });
+
+  testWidgets(
+      'sans le focus, la souris au-dessus de la fenêtre garde le mouvement '
+      'et la quitter le fige', (tester) async {
+    await tester.pumpWidget(_app());
+    AppForeground.debugSetFocused(false);
+    await tester.pump();
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(tester.hasRunningAnimations, isFalse);
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: const Offset(-50, -50));
+    await mouse.moveTo(const Offset(10, 10));
+    await tester.pump();
+    await tester.pump();
+    expect(tester.hasRunningAnimations, isTrue);
+
+    await mouse.moveTo(const Offset(-50, -50));
+    await tester.pump();
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(tester.hasRunningAnimations, isFalse);
   });
 
   testWidgets('hors bureau, perdre le focus ne fige rien', (tester) async {
