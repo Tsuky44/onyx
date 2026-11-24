@@ -2,8 +2,7 @@ import 'widgets/setup_code_hint.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart' show DioException;
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../device_library/device_library_entry.dart';
 import '../../tv/tv_deferred_keyboard.dart';
 import 'package:provider/provider.dart';

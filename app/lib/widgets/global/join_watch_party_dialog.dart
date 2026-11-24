@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../navigation/search_route_observer.dart';
 import '../../providers/auth_provider.dart';

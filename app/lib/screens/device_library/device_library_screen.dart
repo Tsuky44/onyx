@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/tr.dart';
 import '../../models/device_video.dart';

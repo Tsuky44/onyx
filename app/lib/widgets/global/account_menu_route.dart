@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/tr.dart';
 import '../../theme/app_motion.dart';

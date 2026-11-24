@@ -1,5 +1,4 @@
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Tracks navigator stack / player route for search chrome visibility.
 class SearchRouteObserver extends NavigatorObserver {

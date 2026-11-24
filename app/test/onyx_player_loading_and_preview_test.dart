@@ -1,6 +1,5 @@
 import 'package:flutter/gestures.dart';
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_chrome_theme.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_controls_layer.dart';
