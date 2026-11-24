@@ -42,6 +42,21 @@ dependencies:
   # n'est pas avoir *ce* serveur.
   connectivity_plus: ^7.3.1
 
+  # Material et Cupertino, sortis du SDK depuis Flutter 3.47 : `flutter/material.dart`
+  # et `flutter/cupertino.dart` y sont dépréciés (ADR-0168). Ce sont des copies
+  # distinctes (leur `Theme` n'est pas celui du SDK) ; les dépendances qui
+  # importent encore l'ancien Material passent par `LegacyMaterialBridge`
+  # (theme/legacy_material_bridge.dart). Plancher 1.11.1 : la version dont le
+  # rendu a été comparé aux captures d'avant la migration. Déjà tirés par
+  # cached_network_image et cupertino_icons.
+  material_ui: ^1.11.1
+  cupertino_ui: ^1.1.7
+  # Les traductions de l'ancien Material, pour les dépendances qui y sont
+  # restées (LegacyMaterialBridge). Déjà tiré par material_ui. Celles de
+  # material_ui servent à l'app (l10n/material_localizations.dart).
+  flutter_localizations:
+    sdk: flutter
+
   # UI & Media Kit Packages
   cached_network_image: ^4.0.0
   # Already pulled in by cached_network_image; declared so the app can widen the

@@ -1,7 +1,6 @@
 import 'dart:async';
 
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import '../../../l10n/tr.dart';
 import '../../../models/media_request.dart';

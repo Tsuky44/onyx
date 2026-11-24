@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart' show DioException;
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../models/server_activity.dart';
 import '../../../theme/app_colors.dart';

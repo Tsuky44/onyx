@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/services/app_image_cache.dart';
 import 'package:onyx/widgets/global/app_network_image.dart';

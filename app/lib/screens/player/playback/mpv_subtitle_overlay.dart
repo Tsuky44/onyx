@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:media_kit/media_kit.dart' as mk;
 
 /// Les sous-titres texte, au-dessus de la vue native de mpv.

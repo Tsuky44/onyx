@@ -1,7 +1,6 @@
 import 'dart:async';
 
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:onyx/screens/player/hooks/use_player_popup.dart';
 import 'package:onyx/screens/player/playback/playback_session.dart';

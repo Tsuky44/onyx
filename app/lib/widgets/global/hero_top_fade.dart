@@ -1,5 +1,4 @@
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// L'image d'un bandeau sous la barre du haut du téléphone (ADR-0144) : elle
 /// garde le cadrage qu'elle avait sous la barre, un peu plus bas, et sort du

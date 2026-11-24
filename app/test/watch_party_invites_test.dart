@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/watch_party_invite.dart';
 import 'package:onyx/screens/player/hooks/use_player_invite.dart';

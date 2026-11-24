@@ -5,8 +5,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:media_kit/media_kit.dart';
@@ -71,6 +70,7 @@ import 'screens/player/player_engine.dart';
 import 'screens/shell/main_shell.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
+import 'theme/legacy_material_bridge.dart';
 import 'theme/lite_mode.dart';
 import 'desktop_window.dart';
 import 'widgets/global/lite_mode_suggestion.dart';
@@ -79,6 +79,7 @@ import 'widgets/global/smooth_wheel_scroll.dart';
 import 'widgets/global/resume_preview/hover_preview_preference.dart';
 import 'l10n/app_language.dart';
 import 'l10n/localized_asset.dart';
+import 'l10n/material_localizations.dart';
 import 'l10n/tr.dart';
 import 'services/watch_party_invites.dart';
 
@@ -539,6 +540,12 @@ class OnyxApp extends StatelessWidget {
                     navigatorKey: rootNavigatorKey,
                     title: 'Onyx',
                     debugShowCheckedModeBanner: false,
+                    // Les textes de Material dans la langue de l'app ; une
+                    // autre langue reconstruit l'app (ADR-0168).
+                    locale: AppMaterialLocalizations.localeOf(
+                        AppLanguage.current),
+                    supportedLocales: AppMaterialLocalizations.supportedLocales,
+                    localizationsDelegates: AppMaterialLocalizations.delegates,
                     // Sur un téléviseur, chaque page est mise en page sur une
                     // largeur fixe puis mise à l'échelle de l'écran, pour que l'app
                     // ait la même taille quelle que soit la densité annoncée —
@@ -594,7 +601,10 @@ class OnyxApp extends StatelessWidget {
                             TvBackIntent: TvBackAction(),
                           },
                     builder: (context, child) {
-                      final content = BackgroundMotionGate(
+                      // Les dépendances encore sur l'ancien Material voient le
+                      // thème de l'app (ADR-0168).
+                      final content = LegacyMaterialBridge(
+                          child: BackgroundMotionGate(
                         child: Listener(
                           behavior: HitTestBehavior.translucent,
                           onPointerDown: _handleMouseBackButton,
@@ -613,7 +623,7 @@ class OnyxApp extends StatelessWidget {
                             ],
                           ),
                         ),
-                      );
+                      ));
                       if (dpad) {
                         return TvNavRoot.belowApp(
                           profileKey: _navProfileKey(context),

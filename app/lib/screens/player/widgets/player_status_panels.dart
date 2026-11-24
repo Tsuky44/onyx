@@ -1,7 +1,6 @@
 // Les panneaux d'état du lecteur : ce qui remplace l'image quand elle ne
 // vient pas, ou quand la lecture est ailleurs. Sortis de player_screen.dart.
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../../../services/client_log.dart';

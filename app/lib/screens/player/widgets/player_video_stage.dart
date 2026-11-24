@@ -1,5 +1,4 @@
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// L'image du film, rétrécie dans un coin quand une page de fin la remplace.
 ///
