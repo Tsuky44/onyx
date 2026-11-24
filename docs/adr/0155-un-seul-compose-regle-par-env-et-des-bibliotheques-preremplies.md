@@ -1,6 +1,14 @@
 # ADR-0155 — Un seul docker-compose réglé par .env, et des bibliothèques préremplies
 
-> Précisé par l'ADR-0164 (assistant d'installation)
+> Précisé par l'ADR-0164 (assistant d'installation).
+>
+> **Réduit encore le 2026-11-20, à la demande de l'utilisateur** (« un compose le plus simple
+> possible ») : `docker-compose.yml` ne porte plus que l'image, le port, `./data` et `./media`
+> (une douzaine de lignes), sans variable ni `env_file`. `.env.example` est supprimé ; les
+> réglages avancés (`PUID`/`PGID`, `TZ`, `VIDEO_ENCODER`, HTTPS…) se posent dans un bloc
+> `environment:` du compose, listés dans `server/README.md`. Les points 1 et 2 de la décision
+> ci-dessous ne décrivent plus le fichier ; le serveur du point 3 et la fenêtre du point 4 sont
+> inchangés.
 
 - **Statut :** accepté, à la demande de l'utilisateur (2026-11-18 : « refais un compose propre […]
   pour que les utilisateurs aient juste à le prendre et à remplir », puis « préremplir ça en
