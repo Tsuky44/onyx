@@ -9,13 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 /// faire jouer : `PlayerScreen` ne se monte pas sans moteur ni serveur.
 ///
 /// Les règles elles-mêmes sont éprouvées là où elles vivent (`PlayerExit`
-/// dans `player_exit_test.dart`, l'anneau et « Annuler » dans leurs tests, la
-/// télécommande sur le banc `PlayerRemoteBench`). Ce fichier vérifie
+/// dans `player_exit_test.dart`, l'anneau dans le sien). Ce fichier vérifie
 /// seulement que l'écran passe bien par elles : c'est ce qu'une fusion défait
 /// sans rien casser d'autre (ADR du 2026-11-23).
 const _screen = 'lib/screens/player/player_screen.dart';
 const _flow = 'lib/screens/player/player_screen_flow.dart';
-const _remote = 'lib/screens/player/player_screen_remote.dart';
 
 void main() {
   test('l’écran ne pose l’anneau d’attente qu’une fois', () {
@@ -48,24 +46,6 @@ void main() {
       reason: 'Sans cette annulation, ce qui est en vol aboutit après le '
           'Retour : une session HLS s’ouvre et joue, du son sans image '
           '($_flow).',
-    );
-  });
-
-  test('« Annuler » n’est pas la barre de commandes', () {
-    final browsing = RegExp(
-      r'bool get _remoteBrowsingControls =>(.*?);',
-      dotAll: true,
-    ).firstMatch(File(_remote).readAsStringSync())?.group(1);
-
-    expect(browsing, isNotNull,
-        reason: '_remoteBrowsingControls a disparu de $_remote.');
-    expect(
-      browsing,
-      contains('!_waitCancelFocusNode.hasFocus'),
-      reason: 'Si « Annuler » compte pour une commande du chrome, Retour '
-          'devant un lancement qui tarde « range la barre » au lieu de '
-          'quitter : il faut deux appuis, et le compte à rebours du chrome '
-          'lui retire le focus ($_remote).',
     );
   });
 }

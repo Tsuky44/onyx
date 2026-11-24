@@ -1,22 +1,23 @@
-# ADR 2026-11-23 (fytroz) — L'attente du lecteur vit toujours, et s'annule d'un geste
+# ADR 2026-11-23 (fytroz) : L'attente du lecteur vit toujours, et s'annule d'un geste
 
 - **Statut :** accepté. Le Dart est analysé et testé. **Rien n'a été regardé sur une vraie Apple TV**
   (voir « À vérifier ») : la cause de l'anneau figé est lue dans le code, pas mesurée.
 - **Date :** 2026-11-23
 - **Portée :** `screens/player/widgets/onyx/onyx_loading_ring.dart`,
   `widgets/player_status_panels.dart` (`PlayerLoadingSpinner`, `playerAwaitsPicture`),
-  `widgets/player_wait_cancel.dart` (nouveau), `hooks/use_player_exit.dart` (nouveau, `PlayerExit`),
+  `hooks/use_player_exit.dart` (nouveau, `PlayerExit`),
   `player_screen.dart`, `player_screen_chrome.dart` (`_awaitingPicture`, `_buildLoadingRing`),
-  `player_screen_flow.dart` (`_leavePlayer`, `_syncProgressOnExit`), `player_screen_remote.dart`
-  (`_remoteBrowsingControls`, `_buildWaitCancel`), `theme/app_motion.dart` (`waitTurn`,
-  `waitBreath`).
+  `player_screen_flow.dart` (`_leavePlayer`, `_syncProgressOnExit`), `theme/app_motion.dart`
+  (`waitTurn`, `waitBreath`).
 - **Contredit** le point 3 de l'[ADR-0140](0140-l-attente-du-lecteur-prend-la-place-de-la-lecture.md)
   et pose une exception à l'[ADR-0101](0101-le-mode-leger-reconnait-les-ordinateurs-modestes.md).
 
 ## Contexte
 
 Retour d'usage sur Apple TV, dont une Apple TV HD : « Le truc de chargement ne tourne pas, fais en
-sorte de régler ça et de faire une belle annulation quand ça tourne. »
+sorte de régler ça et de faire une belle annulation quand ça tourne. » La dictée avait écrit
+« annulation » pour « animation », ce que l'utilisateur a précisé le 2026-11-24 : la demande était
+un anneau qui tourne, et bien.
 
 À la lecture du code :
 
@@ -37,8 +38,6 @@ sorte de régler ça et de faire une belle annulation quand ça tourne. »
   destruction de l'écran, après la réponse du serveur et le fondu de sortie. Une session HLS
   demandée avant le Retour (changement de qualité, saut, repli en transcodage) s'ouvrait donc après
   lui, par `session.open(…, play: true)` : du son sans image.
-- **Rien à l'écran ne dit qu'on peut renoncer** : le chrome d'un téléviseur n'a pas de bouton Retour
-  (ADR-0124).
 
 ## Décision
 
@@ -70,28 +69,13 @@ sorte de régler ça et de faire une belle annulation quand ça tourne. »
    l'accueil qu'on rejoint relit le serveur. Dans les deux cas la sortie n'a lieu qu'une fois, et un
    échec ne la retient pas. Le fondu de sortie est celui de la page, qui part maintenant dans le
    geste.
-4. **« Annuler », sur un téléviseur, devant un lancement qui tarde** (`PlayerWaitCancel`). Passé
-   quatre secondes sans rien à l'image, une capsule de verre arrive en fondu sous l'anneau et prend
-   la télécommande si elle n'était posée sur rien : OK annule, comme Retour depuis le début. La
-   première image la retire, que la lecture soit partie ou non.
-   - Elle ne prend jamais le focus à une commande du chrome.
-   - Elle n'est pas la barre de commandes (`_remoteBrowsingControls`) : Retour y quitte d'un seul
-     appui, les flèches y font ce qu'elles font lecteur garé, et le compte à rebours du chrome ne
-     lui retire pas le focus.
-   - Elle ne répond que 600 ms après son arrivée : un appui parti avant qu'elle soit lisible
-     n'était pas pour elle.
 
 ### Écarté
 
-- **« Annuler » devant un tampon vide ou un changement de qualité.** Le film a commencé :
-  « Annuler » y voudrait dire autre chose (annuler le changement ?), et y poser le focus ferait
-  quitter le film à qui appuie sur OK pour mettre en pause. Retour y quitte tout de suite, sans rien
-  d'écrit.
-- **« Annuler » hors d'un téléviseur.** Les chromes du doigt et de la souris portent une flèche de
-  retour.
-- **En faire une rangée du chrome**, pour l'atteindre par Haut. Il aurait fallu le dessiner dans
-  `OnyxControlsLayer`, qui disparaît avec le chrome. Depuis une commande, Retour range la barre et
-  rend la télécommande à « Annuler ».
+- **Un bouton « Annuler » sous l'anneau d'un téléviseur**, après quatre secondes sans image. Livré
+  le 2026-11-23 sur la lecture « annulation » de la demande, retiré le lendemain : elle disait
+  « animation ». Retour quitte déjà tout de suite pendant une attente (point 3), et une capsule de
+  plus sous l'anneau prenait la télécommande à qui ne l'avait pas demandée.
 - **Dépiler d'abord dans tous les cas.** L'écran d'où l'on vient relit le serveur à la sortie du
   lecteur : devant un film qui joue, il relirait la position d'il y a cinq secondes, ou un épisode
   pas encore marqué vu.
@@ -107,8 +91,8 @@ sorte de régler ça et de faire une belle annulation quand ça tourne. »
   `play: true` sans le relire non plus. La destruction de l'écran, qui suit maintenant le Retour
   d'un fondu, les arrête.
 - Épinglé par `onyx_player_loading_and_preview_test.dart` (l'anneau vit), `player_exit_test.dart`
-  (la sortie), `player_wait_cancel_test.dart` (« Annuler », dans les deux systèmes de navigation) et
-  `player_wait_guard_test.dart` (l'écran passe bien par ces règles : il ne se monte pas en test).
+  (la sortie) et `player_wait_guard_test.dart` (l'écran passe bien par ces règles : il ne se monte
+  pas en test).
 
 ## À vérifier
 

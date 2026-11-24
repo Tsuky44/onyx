@@ -585,14 +585,12 @@ extension _PlayerChrome on _PlayerScreenState {
       );
 
   /// L'anneau d'attente, là où est lecture/pause sur un écran tenu en main,
-  /// au milieu ailleurs (ADR-0140), et sous lui l'offre d'annuler un
-  /// lancement ([_buildWaitCancel]). La clé garde leur état quand une autre
-  /// couche se pose avant eux dans la pile.
+  /// au milieu ailleurs (ADR-0140). La clé garde son tour en cours quand une
+  /// autre couche se pose avant lui dans la pile.
   Widget _buildLoadingRing(bool isTv) => PlayerLoadingSpinner(
         key: const ValueKey('player-wait'),
         isTv: isTv,
         centreAt: _handheld ? OnyxChromeTheme.handheldCentreAt : 0.5,
-        cancel: _buildWaitCancel(isTv),
       );
 
   Widget _buildChrome(bool isTv) {

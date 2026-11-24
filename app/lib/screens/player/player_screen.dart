@@ -70,7 +70,6 @@ import 'widgets/player_screen_lock.dart';
 import 'widgets/player_status_panels.dart';
 import 'widgets/player_tap_zones.dart';
 import 'widgets/player_video_stage.dart';
-import 'widgets/player_wait_cancel.dart';
 import 'widgets/still_watching_prompt.dart';
 import 'widgets/pause_info_overlay.dart';
 import 'widgets/tabs/player_chapters_tab.dart';
@@ -289,10 +288,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   /// the screen saying so. OK on the bar itself toggles playback.
   final FocusNode _progressFocusNode = FocusNode(debugLabel: 'player-progress');
 
-  /// « Annuler », sous l'anneau d'un lancement : voir [_buildWaitCancel].
-  final FocusNode _waitCancelFocusNode =
-      FocusNode(debugLabel: 'player-wait-cancel');
-
   /// Which control the remote is handed the next time the HUD comes up: the
   /// scrubber when it arrived with a seek, play/pause otherwise.
   _RemoteEntry _remoteEntry = _RemoteEntry.playPause;
@@ -500,7 +495,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _keyboardFocusNode.dispose();
     _playPauseFocusNode.dispose();
     _progressFocusNode.dispose();
-    _waitCancelFocusNode.dispose();
     _controlsTimer?.cancel();
     _startupWatchdog?.cancel();
     _relayTimer?.cancel();

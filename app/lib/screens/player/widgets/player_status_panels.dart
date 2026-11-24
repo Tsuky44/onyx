@@ -45,14 +45,12 @@ bool playerAwaitsPicture({
 /// decorative.
 ///
 /// Sur un téléviseur ([isTv]), la couche se pose elle-même à l'échelle du
-/// lecteur ([PlayerTvScale.layer]), comme tout ce qui est dessiné sur l'image :
-/// l'anneau et ce qui est dessous se mettent en page ensemble.
+/// lecteur ([PlayerTvScale.layer]), comme tout ce qui est dessiné sur l'image.
 class PlayerLoadingSpinner extends StatelessWidget {
   const PlayerLoadingSpinner({
     super.key,
     this.isTv = false,
     this.centreAt = 0.5,
-    this.cancel,
   });
 
   final bool isTv;
@@ -60,40 +58,24 @@ class PlayerLoadingSpinner extends StatelessWidget {
   /// Où tombe son milieu, en fraction de la hauteur.
   final double centreAt;
 
-  /// Ce qui se pose sous l'anneau : l'offre d'annuler un lancement qui tarde
-  /// (`PlayerWaitCancel`). Seule partie de la couche qui prend un toucher.
-  final Widget? cancel;
-
-  /// L'écart entre l'anneau et ce qui est posé dessous.
-  static const double cancelGap = 22;
-
   @override
   Widget build(BuildContext context) {
     const size = OnyxLoadingRing.defaultSize;
-    final cancel = this.cancel;
     return PlayerTvScale.layer(
       isTv: isTv,
       child: Positioned.fill(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final top = constraints.maxHeight * centreAt - size / 2;
-            return Stack(
+        child: IgnorePointer(
+          child: LayoutBuilder(
+            builder: (context, constraints) => Stack(
               children: [
                 Positioned(
                   left: (constraints.maxWidth - size) / 2,
-                  top: top,
-                  child: const IgnorePointer(child: OnyxLoadingRing()),
+                  top: constraints.maxHeight * centreAt - size / 2,
+                  child: const OnyxLoadingRing(),
                 ),
-                if (cancel != null)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: top + size + cancelGap,
-                    child: Center(child: cancel),
-                  ),
               ],
-            );
-          },
+            ),
+          ),
         ),
       ),
     );
