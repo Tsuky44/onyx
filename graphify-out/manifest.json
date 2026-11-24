@@ -666,9 +666,9 @@
     "semantic_hash": ""
   },
   "app/lib/desktop_window.dart": {
-    "mtime": 1795524421.5896184,
-    "seen": 1795524572.516001,
-    "ast_hash": "b3a2b66bc410d6913bf7adf8f7a6e139",
+    "mtime": 1795529384.6734135,
+    "seen": 1795529471.443258,
+    "ast_hash": "b561c051f846b3edee24e59858c43ac7",
     "semantic_hash": ""
   },
   "app/lib/l10n/app_language.dart": {
@@ -3654,9 +3654,9 @@
     "semantic_hash": ""
   },
   "app/macos/Flutter/GeneratedPluginRegistrant.swift": {
-    "mtime": 1795524487.2972505,
-    "seen": 1795524572.517507,
-    "ast_hash": "a42525c91811c4938b3e8dc4e2538c62",
+    "mtime": 1795525788.8682568,
+    "seen": 1795529010.2878592,
+    "ast_hash": "df28dce79093d7c4787c3e76d4564b55",
     "semantic_hash": ""
   },
   "app/macos/Runner/AppDelegate.swift": {
@@ -5112,9 +5112,9 @@
     "semantic_hash": ""
   },
   "app/windows/flutter/generated_plugin_registrant.cc": {
-    "mtime": 1795524487.29925,
-    "seen": 1795524572.5180073,
-    "ast_hash": "53e48d4e30f91f633ae1e76553064b94",
+    "mtime": 1795525788.859245,
+    "seen": 1795529010.288359,
+    "ast_hash": "c88649a2f0b642a65cd0056ac12c5170",
     "semantic_hash": ""
   },
   "app/windows/flutter/generated_plugin_registrant.h": {
@@ -13872,9 +13872,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/shell/desktop_header_search.dart": {
-    "mtime": 1795524422.0268652,
-    "seen": 1795524572.5170064,
-    "ast_hash": "fb3bd580b9a5987b3c0b604b5c425de3",
+    "mtime": 1795528906.4303038,
+    "seen": 1795529010.286859,
+    "ast_hash": "bdcb1819bbd71e83b37d7f4374986236",
     "semantic_hash": ""
   },
   "app/test/desktop_search_grid_test.dart": {
@@ -13884,9 +13884,9 @@
     "semantic_hash": ""
   },
   "app/test/desktop_search_test.dart": {
-    "mtime": 1795524422.2876544,
-    "seen": 1795524572.517507,
-    "ast_hash": "6623abbcb121093a814478486428a945",
+    "mtime": 1795528877.8383572,
+    "seen": 1795529010.2878592,
+    "ast_hash": "b4aee8deb48ab5c9e4746863b44bd579",
     "semantic_hash": ""
   },
   "docs/adr/0139-sur-le-bureau-la-recherche-s-ouvre-dans-l-en-tete-sous-un-voile-ctrl-k.md": {
@@ -14508,9 +14508,9 @@
     "semantic_hash": ""
   },
   "app/test/window_caption_buttons_test.dart": {
-    "mtime": 1795524422.5579658,
-    "seen": 1795524572.5180073,
-    "ast_hash": "1d1468115ee3de4dcfe1270f95fbdb69",
+    "mtime": 1795529338.6969094,
+    "seen": 1795529471.4462578,
+    "ast_hash": "423d7040973674efdd140dfc15078f62",
     "semantic_hash": ""
   },
   "docs/adr/0157-sous-windows-les-controles-de-la-fenetre-vivent-dans-l-en-tete-de-verre.md": {
@@ -14952,21 +14952,21 @@
     "semantic_hash": ""
   },
   "app/lib/widgets/global/background_motion_gate.dart": {
-    "mtime": 1795427127.629103,
-    "seen": 1795524572.5170064,
-    "ast_hash": "6fd81587054a608e60282a6a90c50244",
+    "mtime": 1795530219.594818,
+    "seen": 1795530328.626746,
+    "ast_hash": "de2ddc9d2912b86c0ba72b6beba5faac",
     "semantic_hash": ""
   },
   "app/test/background_motion_gate_test.dart": {
-    "mtime": 1795524422.2796543,
-    "seen": 1795524572.517507,
-    "ast_hash": "b80cf3f55fb4cbe387f1ffd71ab6e12d",
+    "mtime": 1795530225.4369118,
+    "seen": 1795530328.626746,
+    "ast_hash": "4ba54257552e39bbfab42ac649bcefb1",
     "semantic_hash": ""
   },
   "docs/adr/0166-l-app-de-bureau-fige-son-mouvement-sans-le-focus-et-rend-ses-images.md": {
-    "mtime": 1795429861.439901,
-    "seen": 1795524572.5195053,
-    "ast_hash": "24a6f4dc0e37d0462394ebfdda90c05a",
+    "mtime": 1795530252.8604457,
+    "seen": 1795530328.630067,
+    "ast_hash": "9909358fe3f6a627f349c6e5cb4eae53",
     "semantic_hash": ""
   },
   "app/lib/utils/idle_hold.dart": {
