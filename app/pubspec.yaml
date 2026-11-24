@@ -51,6 +51,11 @@ dependencies:
   # cached_network_image et cupertino_icons.
   material_ui: ^1.11.1
   cupertino_ui: ^1.1.7
+  # Les traductions de l'ancien Material, pour les dépendances qui y sont
+  # restées (LegacyMaterialBridge). Déjà tiré par material_ui. Celles de
+  # material_ui servent à l'app (l10n/material_localizations.dart).
+  flutter_localizations:
+    sdk: flutter
 
   # UI & Media Kit Packages
   cached_network_image: ^4.0.0

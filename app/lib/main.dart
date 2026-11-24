@@ -79,6 +79,7 @@ import 'widgets/global/smooth_wheel_scroll.dart';
 import 'widgets/global/resume_preview/hover_preview_preference.dart';
 import 'l10n/app_language.dart';
 import 'l10n/localized_asset.dart';
+import 'l10n/material_localizations.dart';
 import 'l10n/tr.dart';
 import 'services/watch_party_invites.dart';
 
@@ -539,6 +540,12 @@ class OnyxApp extends StatelessWidget {
                     navigatorKey: rootNavigatorKey,
                     title: 'Onyx',
                     debugShowCheckedModeBanner: false,
+                    // Les textes de Material dans la langue de l'app ; une
+                    // autre langue reconstruit l'app (ADR-0168).
+                    locale: AppMaterialLocalizations.localeOf(
+                        AppLanguage.current),
+                    supportedLocales: AppMaterialLocalizations.supportedLocales,
+                    localizationsDelegates: AppMaterialLocalizations.delegates,
                     // Sur un téléviseur, chaque page est mise en page sur une
                     // largeur fixe puis mise à l'échelle de l'écran, pour que l'app
                     // ait la même taille quelle que soit la densité annoncée —

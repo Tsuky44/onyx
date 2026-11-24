@@ -1,9 +1,9 @@
-// Les seuls imports de l'ancien Material dans `lib/` : c'est le rôle de ce
+// Le seul import de l'ancien Material dans `lib/` : c'est le rôle de ce
 // fichier (ADR-0168, liste du test material_ui_migration_guard_test.dart).
 // ignore: deprecated_member_use
-import 'package:flutter/cupertino.dart' as legacy_cupertino;
-// ignore: deprecated_member_use
 import 'package:flutter/material.dart' as legacy;
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as legacy_l10n;
 import 'package:material_ui/material_ui.dart';
 
 /// Le thème et les textes de l'app, vus par l'**ancien** Material.
@@ -17,17 +17,16 @@ import 'package:material_ui/material_ui.dart';
 /// du système), et `MaterialLocalizations.of` échoue faute de textes.
 ///
 /// Ce pont, posé une fois dans `MaterialApp.builder`, donne à ces widgets un
-/// ancien `Theme` tiré de celui de l'app, et les textes anglais de l'ancien
-/// Material, comme avant la migration (Material n'est pas traduit,
-/// ADR-0047).
+/// ancien `Theme` tiré de celui de l'app, et les textes de l'ancien Material
+/// dans la langue de l'app, comme ceux de `material_ui`
+/// (`AppMaterialLocalizations`).
 ///
 /// Pourquoi pas `MaterialUiCompatibilityBridge`, le pont de `material_ui` :
 /// il est lui-même déprécié (il faudrait un `ignore` de plus à chaque
-/// usage), il recalcule l'ancien thème à chaque construction, et ses textes
-/// par défaut viennent de `flutter_localizations`, qui embarquerait les
-/// traductions de Material dans 80 langues sans qu'aucune ne serve. Celui-ci
-/// fait la même correspondance (couleurs, textes, densité, plateforme), garde
-/// le résultat par thème, et ne tire que les textes anglais.
+/// usage) et il recalcule l'ancien thème à chaque construction. Celui-ci
+/// fait la même correspondance (couleurs, textes, densité, plateforme) et
+/// garde le résultat par thème. Les textes sont les mêmes : ceux de
+/// `flutter_localizations`, dépréciés avec l'ancien Material.
 ///
 /// À retirer quand plus aucune dépendance n'importe l'ancien Material : le
 /// test de garde en tient la liste.
@@ -41,10 +40,15 @@ class LegacyMaterialBridge extends StatelessWidget {
   static final Expando<legacy.ThemeData> _legacyThemes =
       Expando<legacy.ThemeData>('LegacyMaterialBridge');
 
+  /// Les traductions de l'ancien Material et de l'ancien Cupertino : ce sont
+  /// d'autres types que ceux de `material_ui` et `cupertino_ui`, que
+  /// l'app fournit déjà. La langue est celle de l'app, héritée.
   static const List<LocalizationsDelegate<dynamic>> _legacyDelegates =
       <LocalizationsDelegate<dynamic>>[
-    legacy.DefaultMaterialLocalizations.delegate,
-    legacy_cupertino.DefaultCupertinoLocalizations.delegate,
+    // ignore: deprecated_member_use
+    legacy_l10n.GlobalMaterialLocalizations.delegate,
+    // ignore: deprecated_member_use
+    legacy_l10n.GlobalCupertinoLocalizations.delegate,
   ];
 
   @override

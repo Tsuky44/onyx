@@ -2,7 +2,9 @@
 
 - **Statut :** accepté, en cours. `flutter analyze` est propre et la suite de tests passe ; le
   dictionnaire couvre chaque texte passé à `tr()`. **L'interface anglaise n'a été relue sur aucun
-  écran réel** : ni les débordements de mise en page, ni le ton, ni les pluriels.
+  écran réel** : ni les débordements de mise en page, ni le ton, ni les pluriels. La conséquence
+  « Material n'est pas localisé » est remplacée par
+  l'[ADR-0168](0168-material-ui-a-la-place-du-material-du-sdk.md) : Material suit la langue.
 - **Date :** 2026-10-06
 - **Portée :** `app/lib/l10n/` (`tr.dart`, `app_language.dart`, `en.dart`), tous les textes
   affichés de `app/lib/`, le réglage « Langue » de `device_page.dart`, le démarrage dans
@@ -52,5 +54,9 @@ gagne une étape — envelopper le texte dans `tr()` et ajouter son entrée.
   passer par `tr()` ; le test de couverture ne voit que les littéraux directs.
 - Les textes légaux et les descriptions d'autorisations d'iOS restent en français. (Les messages du
   serveur, d'abord laissés en français, sont traduits depuis l'ADR-0138.)
-- Material n'est pas localisé (`flutter_localizations` n'est pas embarqué) : ses rares textes
-  propres, comme la page des licences, restent en anglais dans les deux langues.
+- ~~Material n'est pas localisé (`flutter_localizations` n'est pas embarqué) : ses rares textes
+  propres, comme la page des licences, restent en anglais dans les deux langues.~~
+  **Remplacé par l'ADR-0168 (2026-11-24, décision de Tsuky) :** Material suit la langue de l'app.
+  Ses textes propres (copier/coller, infobulle du bouton retour, page des licences, sélecteur de
+  date) passent en français ou en anglais avec `AppLanguage`, ceux des dépendances restées sur
+  l'ancien Material compris (`l10n/material_localizations.dart`, `LegacyMaterialBridge`).

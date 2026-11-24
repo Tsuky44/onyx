@@ -54,7 +54,8 @@ void main() {
     expect(seen.theme.colorScheme.onSurface, AppColors.textPrimary);
     expect(seen.theme.textTheme.bodyMedium?.fontFamily, AppTheme.fontFamily);
     expect(seen.theme.textTheme.bodyMedium?.color, AppColors.textPrimary);
-    // Material n'est pas traduit (ADR-0047) : les textes anglais de toujours.
+    // L'app de test n'a pas de langue : l'anglais par défaut. La langue de
+    // l'app est vérifiée par material_localizations_test.dart.
     expect(seen.localizations?.backButtonTooltip, 'Back');
   });
 

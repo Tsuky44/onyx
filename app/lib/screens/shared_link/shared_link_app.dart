@@ -14,6 +14,8 @@ import '../../theme/legacy_material_bridge.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import 'shared_link_screen.dart';
+import '../../l10n/app_language.dart';
+import '../../l10n/material_localizations.dart';
 import '../../l10n/tr.dart';
 
 /// Le code du lien de partage que cette page ouvre, ou nul si elle n'en ouvre
@@ -81,6 +83,10 @@ class SharedLinkApp extends StatelessWidget {
       child: MaterialApp(
         title: tr('Onyx'),
         debugShowCheckedModeBanner: false,
+        // Les textes de Material dans la langue de l'app (ADR-0168).
+        locale: AppMaterialLocalizations.localeOf(AppLanguage.current),
+        supportedLocales: AppMaterialLocalizations.supportedLocales,
+        localizationsDelegates: AppMaterialLocalizations.delegates,
         theme: AppTheme.dark,
         color: AppColors.background,
         // La page porte le nom de la route que le navigateur a donnée — le

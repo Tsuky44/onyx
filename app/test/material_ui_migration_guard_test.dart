@@ -20,10 +20,15 @@ const Map<String, String> _legacyImports = {
           'window_manager…) : il doit construire un ancien `Theme`',
   'test/legacy_material_bridge_test.dart':
       'vérifie ce que voit un widget de l’ancien Material sous le pont',
+  'test/material_localizations_test.dart':
+      'vérifie qu’un widget de l’ancien Material lit la langue de l’app',
 };
 
 /// Les autres `// ignore: deprecated_member_use` admis, et pourquoi.
 const Map<String, String> _otherIgnores = {
+  'lib/theme/legacy_material_bridge.dart':
+      'les délégués de `flutter_localizations`, dépréciés avec l’ancien '
+          'Material : ce sont les seuls à traduire ses textes',
   'test/support/tv_nav_harness.dart':
       '`keyEventManager.keyMessageHandler` : seul chemin pour simuler la touche '
           'Retour du système, que `flutter_test` ne sait pas nommer',
