@@ -34,7 +34,7 @@ Les décisions d'architecture sont dans [`docs/adr/`](../docs/adr/).
 
 ## ⚙️ Comment lancer le serveur (Docker Compose)
 
-Le dépôt fournit à la racine un seul `docker-compose.yml` (Docker Compose 2.24 ou plus récent). Il ne contient que ce que Docker doit savoir et n'exige aucun réglage : tout le reste se fait dans l'assistant de l'app.
+Le dépôt fournit à la racine un seul `docker-compose.yml`, d'une douzaine de lignes. Il ne contient que ce que Docker doit savoir et n'exige aucun réglage : tout le reste se fait dans l'assistant de l'app.
 
 ### 1. Démarrage
 ```bash
@@ -50,7 +50,7 @@ Ouvrez `http://<votre-serveur>:8080` et créez votre compte : le premier devient
 Si vous créez le compte depuis Internet plutôt que depuis la machine ou le réseau local, l'app demande le **code d'installation** que le serveur écrit dans son journal au démarrage : `docker logs onyx-server`.
 
 ### 3. Vos médias
-Le serveur voit vos médias sous `/media`. Sans réglage, le compose monte `./media`, le dossier à côté de lui : Docker le crée **vide** au premier lancement, donc mettez-y vos médias, ou réglez `MEDIA_PATH` pour pointer vers le dossier qui les contient. `MEDIA_PATH` se pose dans un fichier `.env` (`cp .env.example .env`, puis décommentez la ligne). `.env` est facultatif : `.env.example` décrit les autres réglages, tous commentés (`MEDIA_ACCESS`, `ONYX_PORT`, `ONYX_DATA`, `ONYX_VERSION`, `PUID`/`PGID`, `TZ`, puis un bloc Avancé : transcodage, HTTPS, proxys, surveillance, journal). Il est passé tel quel au serveur : une ligne décommentée suffit.
+Le serveur voit vos médias sous `/media`. Le compose monte `./media`, le dossier à côté de lui : Docker le crée **vide** au premier lancement, donc mettez-y vos médias, ou remplacez `./media` par le chemin du dossier qui les contient, dans le fichier `docker-compose.yml`. Les réglages avancés (`PUID`/`PGID`, `TZ`, `VIDEO_ENCODER`, `MAX_TRANSCODES`, `TLS_CERT_FILE`/`TLS_KEY_FILE`, `TRUSTED_PROXIES`, `LIBRARY_WATCH`, `LIBRARY_POLL_INTERVAL`, `LOG_LEVEL`, `LOG_FORMAT`) se posent dans un bloc `environment:` sous le service ; le transcodage matériel ajoute aussi `devices: ["/dev/dri:/dev/dri"]`.
 
 Une bibliothèque se crée depuis l'app, qui propose les sous-dossiers de `/media` (`MEDIA_ROOT` le change, hors de Docker).
 

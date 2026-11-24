@@ -6,6 +6,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:onyx_mpv_macos/onyx_mpv_macos.dart';
 
 import '../../utils/app_platform.dart';
+import '../../utils/idle_hold.dart';
 import '../../utils/mpv_native_view.dart';
 import 'playback/mpv_startup_trace.dart';
 import 'windows_video_render.dart';
@@ -179,6 +180,9 @@ class PlayerEngine {
 /// the user is staring at a spinner — so it is done once, off the critical
 /// path, and the same engine is handed to every playback that follows.
 ///
+/// Un moteur prêt n'attend que [idleLimit] : passé ce délai, il est détruit
+/// et la lecture suivante en construit un neuf (ADR-0166).
+///
 /// At most one engine is idle at a time. A second one is only ever built when a
 /// playback starts while the previous screen still holds its engine (the
 /// episode auto-advance builds the new screen before the old one is disposed);
@@ -186,7 +190,26 @@ class PlayerEngine {
 class PlayerEnginePool {
   PlayerEnginePool._();
 
-  static PlayerEngine? _idle;
+  /// Combien de temps un moteur prêt attend sa lecture avant d'être détruit.
+  ///
+  /// Deux minutes couvrent l'épisode suivant choisi à la main et le film
+  /// lancé juste après l'ouverture de l'app ; au-delà, le contexte libmpv et
+  /// ses surfaces ne font qu'occuper la mémoire. Le reconstruire coûte une
+  /// fraction de seconde au lancement suivant.
+  static const Duration idleLimit = Duration(minutes: 2);
+
+  static final IdleHold<PlayerEngine> _idle = IdleHold<PlayerEngine>(
+    limit: idleLimit,
+    discard: _discard,
+  );
+
+  /// Détruit un moteur qui n'est plus voulu, après son arrêt en cours.
+  static void _discard(PlayerEngine engine) {
+    unawaited(engine.settle().then((_) => engine._dispose()).catchError((_) {
+      // Une instance déjà détruite refuse la commande : il n'y a plus rien
+      // à arrêter.
+    }));
+  }
 
   /// Takes the warm engine, or builds one when the pool is empty.
   ///
@@ -194,17 +217,13 @@ class PlayerEnginePool {
   /// maintenant (réglage changé, D3D11 marqué en panne, admin connecté après
   /// le préchauffage) est jeté : le choix s'applique à la lecture suivante.
   static PlayerEngine acquire() {
-    final warm = _idle;
+    final warm = _idle.take();
     if (warm != null) {
-      _idle = null;
       final wanted = WindowsVideoRender.nativeRequest;
       if (warm.requestedRenderApi == wanted) return warm;
       debugPrint('PlayerEnginePool: rendu ${warm.requestedRenderApi} → '
           '$wanted, moteur reconstruit');
-      unawaited(warm.settle().then((_) => warm._dispose()).catchError((_) {
-        // Une instance déjà détruite refuse la commande : il n'y a plus rien
-        // à arrêter.
-      }));
+      _discard(warm);
     }
     return PlayerEngine._create();
   }
@@ -225,7 +244,7 @@ class PlayerEnginePool {
               })));
       return;
     }
-    if (_idle != null) {
+    if (_idle.isHolding) {
       // Already holding one — a second idle engine is memory nobody asked for.
       // `dispose` stops the player on its way out, so this covers the unload
       // too; racing it with a separate `stop` would only produce a rejected
@@ -248,7 +267,7 @@ class PlayerEnginePool {
     engine.pendingStop = engine.player.stop().catchError((_) {
       // Un arrêt refusé ne doit pas bloquer la lecture qui attend ce moteur.
     });
-    _idle = engine;
+    _idle.put(engine);
   }
 
   /// Builds the first engine ahead of time, so the first playback of the
@@ -264,9 +283,9 @@ class PlayerEnginePool {
     // Les appareils Apple lisent par AetherEngine (ADR-0038) : un moteur mpv
     // préparé d'avance n'y servirait jamais.
     if (AppPlatform.isApple) return;
-    if (_idle != null) return;
+    if (_idle.isHolding) return;
     try {
-      _idle = PlayerEngine._create();
+      _idle.put(PlayerEngine._create());
     } catch (e) {
       // A player that cannot be built ahead of time will simply be built on
       // demand; failing to prewarm must never stop the app from starting.

@@ -1,52 +1,13 @@
-# Onyx, le serveur.
-#
-#   1. docker compose up -d
-#   2. Ouvrez http://<votre-serveur>:8080 et créez votre compte : c'est le
-#      compte propriétaire.
-#   3. L'assistant de l'app guide le reste : les bibliothèques (il explore
-#      /media), la clé TMDB et le service de demandes, chacun avec son test.
-#
-# Ce fichier ne demande aucun réglage et n'a pas à être modifié. Seul Docker a
-# besoin de savoir où sont vos médias : sans MEDIA_PATH, c'est le dossier
-# ./media à côté de ce fichier (Docker le crée vide, mettez-y vos médias). Pour
-# un dossier ailleurs, copiez .env.example en .env et réglez MEDIA_PATH ; les
-# autres réglages de .env sont facultatifs. Le transcodage matériel et un
-# second disque de médias se décommentent plus bas.
-#
-# Docker Compose 2.24 ou plus récent : c'est la version qui accepte
-# `required: false` sur env_file, donc un .env absent n'est pas une erreur.
-
+# Onyx, le serveur : `docker compose up -d`, puis http://<serveur>:8080.
+# Créez votre compte : l'assistant guide le reste (bibliothèques, TMDB, demandes).
 services:
   onyx:
-    image: ghcr.io/tsuky44/onyx-server:${ONYX_VERSION:-latest}
-    # Pour construire l'image depuis les sources de ce dépôt (sans l'app web
-    # embarquée, que publish-image.sh y ajoute) :
-    # build: ./server
+    image: ghcr.io/tsuky44/onyx-server:latest
     container_name: onyx-server
-    # L'image des versions est publiée pour amd64 seulement (ADR-0051).
     platform: linux/amd64
     restart: unless-stopped
     ports:
-      - "${ONYX_PORT:-8080}:8080"
+      - "8080:8080"
     volumes:
-      # La base, les sous-titres extraits et les aperçus de lecture.
-      - ${ONYX_DATA:-./data}:/app/data
-      # Vos médias, vus par le serveur sous /media. ro : Onyx les lit sans les
-      # toucher ; MEDIA_ACCESS=rw l'autorise à supprimer un titre depuis l'app.
-      - ${MEDIA_PATH:-./media}:/media:${MEDIA_ACCESS:-ro}
-      # Un autre disque ? Montez-le sous /media, il sera proposé aussi :
-      # - /mnt/disque2/Films:/media/Films-disque2:ro
-    # Les réglages facultatifs de .env (PUID, TZ, VIDEO_ENCODER…) sont passés au
-    # serveur. Le fichier peut ne pas exister.
-    env_file:
-      - path: .env
-        required: false
-    # Transcodage par le circuit vidéo (Intel, AMD) : décommentez ces deux
-    # lignes et mettez VIDEO_ENCODER=auto dans .env.
-    # devices:
-    #   - /dev/dri:/dev/dri
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - ./data:/app/data   # la base et le cache
+      - ./media:/media:ro  # vos médias : remplacez ./media par votre dossier

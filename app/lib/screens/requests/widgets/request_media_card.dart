@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../models/media_request.dart';
 import '../../../utils/poster_url.dart';
 import '../../../widgets/global/poster_card.dart';

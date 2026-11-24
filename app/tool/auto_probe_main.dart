@@ -8,7 +8,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:media_kit/media_kit.dart' show MediaKit;
 import 'package:onyx/models/models.dart';
 import 'package:onyx/models/server_account.dart';

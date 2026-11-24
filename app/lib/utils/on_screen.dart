@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 /// continuaient de réveiller l'app pour rien.
 abstract final class AppForeground {
   static final ValueNotifier<bool> _visible = ValueNotifier<bool>(true);
+  static final ValueNotifier<bool> _focused = ValueNotifier<bool>(true);
   static AppLifecycleListener? _listener;
 
   static ValueListenable<bool> get visible {
@@ -19,15 +20,30 @@ abstract final class AppForeground {
 
   static bool get isVisible => visible.value;
 
+  /// La fenêtre a le focus (`resumed`). Plus strict que [visible] : une
+  /// fenêtre qu'une autre recouvre ou qui a perdu le focus est `inactive`, et
+  /// Flutter continue d'y dessiner chaque image alors que personne ne la
+  /// regarde. Sert à figer le mouvement décoratif (voir `BackgroundMotionGate`),
+  /// pas à arrêter le réseau.
+  static ValueListenable<bool> get focused {
+    _listen();
+    return _focused;
+  }
+
   static void _listen() {
     if (_listener != null) return;
     final binding = WidgetsBinding.instance;
     final initial = binding.lifecycleState;
-    if (initial != null) _visible.value = _isVisible(initial);
+    if (initial != null) _apply(initial);
     _listener = AppLifecycleListener(
       binding: binding,
-      onStateChange: (state) => _visible.value = _isVisible(state),
+      onStateChange: _apply,
     );
+  }
+
+  static void _apply(AppLifecycleState state) {
+    _visible.value = _isVisible(state);
+    _focused.value = state == AppLifecycleState.resumed;
   }
 
   static bool _isVisible(AppLifecycleState state) =>
@@ -38,6 +54,12 @@ abstract final class AppForeground {
   static void debugSetVisible(bool visible) {
     _listen();
     _visible.value = visible;
+  }
+
+  @visibleForTesting
+  static void debugSetFocused(bool focused) {
+    _listen();
+    _focused.value = focused;
   }
 }
 

@@ -106,11 +106,20 @@ class AppImageCache {
   /// on screen a second earlier. Desktop and web have the headroom to hold it;
   /// mobile and the Apple TV keep Flutter's defaults.
   ///
+  /// Le plafond du bureau est passé de 300 à 150 Mo (ADR-0166) : les images
+  /// sont décodées à la taille de leur place (ADR-0087), une affiche de grille
+  /// pèse donc quelques centaines de Ko, et 150 Mo tiennent encore plusieurs
+  /// grilles et une fiche. Les 150 Mo de plus restaient pris toute la session
+  /// pour éviter un éclair de vignette sur un retour lointain.
+  ///
   /// En mode léger (ADR-0086), le plafond descend sous celui de Flutter : sur
   /// une Apple TV HD ou un boîtier à 2 Go, les 100 Mo d'images décodées
   /// disputent la mémoire au décodeur vidéo, et c'est le film qui saccade. Une
   /// affiche redécodée au retour coûte un éclair de vignette, pas une image
   /// perdue.
+  /// Plafond du cache d'images décodées sur bureau et sur le web.
+  static const int desktopMaxBytes = 150 << 20;
+
   static void configure({bool lite = false}) {
     if (lite) {
       PaintingBinding.instance.imageCache
@@ -120,8 +129,8 @@ class AppImageCache {
     }
     if (AppPlatform.isMobile || AppPlatform.isTvOS) return;
     PaintingBinding.instance.imageCache
-      ..maximumSizeBytes = 300 << 20
-      ..maximumSize = 2000;
+      ..maximumSizeBytes = desktopMaxBytes
+      ..maximumSize = 1500;
   }
 }
 

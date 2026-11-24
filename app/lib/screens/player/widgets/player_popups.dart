@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'onyx/onyx_menu_style.dart';
 import 'player_settings_anchor.dart';

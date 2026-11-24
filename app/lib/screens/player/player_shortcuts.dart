@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../../theme/app_colors.dart';
@@ -97,7 +97,9 @@ void togglePlayerMute(PlaybackSession session) {
   session.setVolume(_volumeBeforeMute[session] ?? 100);
 }
 
-const List<(String, String)> _helpRows = [
+/// La fiche d'aide : chaque paire est lue par `tr()` à l'affichage.
+@visibleForTesting
+const List<(String, String)> playerShortcutHelpRows = [
   ('Espace  ·  K', 'Lecture / pause'),
   ('←  ·  J', 'Reculer de 10 s'),
   ('→  ·  L', 'Avancer de 10 s'),
@@ -122,7 +124,7 @@ Future<void> showPlayerShortcutsHelp(BuildContext context) {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final (keys, action) in _helpRows)
+            for (final (keys, action) in playerShortcutHelpRows)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 
+import '../utils/on_screen.dart';
 import 'api_client.dart';
 
 /// Est-ce que le serveur répond ?
@@ -18,16 +19,19 @@ import 'api_client.dart';
 /// à portée. Ce qui compte n'est pas d'avoir du réseau, c'est d'avoir *ce*
 /// serveur.
 class ServerReachability extends ChangeNotifier with WidgetsBindingObserver {
-  ServerReachability(this._api);
+  /// [probe] remplace le client du sondage, pour les tests.
+  ServerReachability(this._api, {Dio? probe})
+      : _dio = probe ??
+            Dio(BaseOptions(
+              connectTimeout: const Duration(seconds: 4),
+              receiveTimeout: const Duration(seconds: 4),
+            ));
 
   final ApiClient _api;
 
   /// Client à part : les délais de l'app (10 s de connexion) sont taillés pour
   /// des appels qui doivent aboutir, pas pour un sondage qui doit conclure vite.
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 4),
-    receiveTimeout: const Duration(seconds: 4),
-  ));
+  final Dio _dio;
 
   /// Optimiste au démarrage : l'app affiche sa bibliothèque et le premier
   /// sondage corrige en une poignée de secondes. L'inverse ferait clignoter
@@ -54,12 +58,25 @@ class ServerReachability extends ChangeNotifier with WidgetsBindingObserver {
     // sondage : une erreur de connexion déclenche une vérification immédiate.
     ApiClient.onConnectionError = _onApiConnectionError;
     ApiClient.onConnectionSuccess = _onApiSuccess;
+    AppForeground.visible.addListener(_visibilityChanged);
     unawaited(check());
+    _arm();
+  }
+
+  /// Une app cachée (réduite, en arrière-plan) ne sonde plus : elle se
+  /// réveillait toutes les 45 s pour une réponse que personne ne lisait. Un
+  /// appel qui échoue pendant ce temps (battement d'un film qui joue, fenêtre
+  /// réduite) déclenche quand même sa vérification, et le retour au premier
+  /// plan sonde aussitôt (ADR-0166).
+  void _visibilityChanged() {
+    if (AppForeground.isVisible) unawaited(check());
     _arm();
   }
 
   void _arm() {
     _timer?.cancel();
+    _timer = null;
+    if (!AppForeground.isVisible) return;
     // Hors ligne on guette le retour, en ligne on se contente de vérifier que
     // rien n'est tombé. Deux rythmes, une seule horloge.
     _timer = Timer.periodic(
@@ -116,6 +133,7 @@ class ServerReachability extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     _timer?.cancel();
     if (_started) {
+      AppForeground.visible.removeListener(_visibilityChanged);
       WidgetsBinding.instance.removeObserver(this);
       ApiClient.onConnectionError = null;
       ApiClient.onConnectionSuccess = null;

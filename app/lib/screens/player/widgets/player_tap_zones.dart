@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../pinch_zoom_fit.dart';
 import 'pointer_click_zone.dart';

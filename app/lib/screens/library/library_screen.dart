@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../desktop_window.dart';
@@ -29,6 +29,10 @@ const Map<_SortOption, String> _sortLabels = {
   _SortOption.title: 'A → Z',
   _SortOption.progress: 'En cours',
 };
+
+/// Les libellés de tri, lus par `tr()` à l'affichage.
+@visibleForTesting
+Iterable<String> get librarySortLabels => _sortLabels.values;
 
 /// L'icône d'une bibliothèque, d'après ce qu'elle contient. [selected] rend la
 /// variante pleine, celle d'un onglet actif.

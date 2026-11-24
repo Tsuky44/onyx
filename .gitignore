@@ -55,7 +55,7 @@ server/data/
 /data/
 /mediahub/
 
-# Les réglages du serveur, clés comprises : chacun copie .env.example.
+# Un .env posé à côté du compose pourrait porter des clés : jamais versionné.
 /.env
 
 # Préférences Claude perso (une par dev, recréées par le setup script de
@@ -70,3 +70,6 @@ app/graphify-out/
 
 # Prototypes / maquettes de test (jamais versionnés)
 prototypes/
+
+# Mesures RAM/CPU de scripts/perf/measure-windows.ps1
+perf-out/

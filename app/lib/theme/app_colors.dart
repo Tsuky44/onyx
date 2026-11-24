@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Quiet Premium tokens — OLED charcoal stage, blue accent sparingly, white focus.
 abstract final class AppColors {

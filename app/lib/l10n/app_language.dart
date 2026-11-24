@@ -17,6 +17,9 @@ enum AppLanguage {
   /// liste quand l'interface est dans une langue qu'on ne lit pas.
   final String nativeName;
 
+  /// La locale Flutter de cette langue, pour que Material la suive.
+  Locale get locale => Locale(code);
+
   static const String _preferenceKey = 'app_language';
 
   /// Français tant que rien n'a été décidé : c'est aussi ce que voient les

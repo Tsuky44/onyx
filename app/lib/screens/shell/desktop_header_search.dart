@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -44,6 +44,14 @@ class _DesktopHeaderSearchState extends State<DesktopHeaderSearch>
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode(debugLabel: 'desktop-header-search');
   final DesktopSearchController _selection = DesktopSearchController();
+
+  /// Garde le champ en vie quand l'infobulle change de forme. Ouverte, la
+  /// recherche vide le message de l'infobulle : [Tooltip] rend alors son
+  /// enfant seul, sans son habillage, et sans clé le champ était démonté puis
+  /// recréé. Son `EditableText` fermait la connexion de saisie, alors que le
+  /// [_focusNode], qui est à nous, gardait le focus : le champ semblait actif
+  /// mais n'entendait plus le clavier, et il fallait cliquer une seconde fois.
+  final GlobalKey _fieldKey = GlobalKey(debugLabel: 'desktop-header-field');
 
   RecentSearches? _recents;
 
@@ -238,7 +246,7 @@ class _DesktopHeaderSearchState extends State<DesktopHeaderSearch>
 
     return Actions(
       actions: <Type, Action<Intent>>{
-        DirectionalCaretMovementIntent: _VerticalArrowAction(
+        ExtendSelectionVerticallyToAdjacentLineIntent: _VerticalArrowAction(
           (forward) => _arrow(
             forward ? TraversalDirection.down : TraversalDirection.up,
           ),
@@ -269,6 +277,7 @@ class _DesktopHeaderSearchState extends State<DesktopHeaderSearch>
           message: open ? '' : tr('Rechercher ({0})', [_shortcutLabel]),
           waitDuration: _tooltipDelay,
           child: AnimatedContainer(
+            key: _fieldKey,
             duration: AppMotion.move(context),
             curve: AppMotion.curve,
             width: widget.width,
@@ -298,9 +307,12 @@ class _DesktopHeaderSearchState extends State<DesktopHeaderSearch>
 /// second gestionnaire de touches (ADR-0110).
 ///
 /// Le champ range Haut, Bas, Page précédente et Page suivante sous une seule
-/// action, déclarée pour [DirectionalCaretMovementIntent] : c'est sous ce
-/// type qu'il cherche qui la remplace. Déclarée pour la ligne seule, elle
-/// n'était jamais trouvée.
+/// action, typée [DirectionalCaretMovementIntent]. Depuis Flutter 3.47, le
+/// remplaçant se cherche sous le type exact de l'intention
+/// ([ExtendSelectionVerticallyToAdjacentLineIntent]) et non plus sous ce
+/// type commun : déclarée pour celui-ci, l'action n'était plus jamais
+/// trouvée et Bas restait au curseur (ADR-0167). Page précédente et Page
+/// suivante gardent l'action du champ.
 class _VerticalArrowAction extends Action<DirectionalCaretMovementIntent> {
   _VerticalArrowAction(this.take);
 

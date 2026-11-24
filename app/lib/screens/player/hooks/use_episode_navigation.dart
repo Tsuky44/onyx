@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../playback/audio_language_gap.dart';
 import '../playback/playback_session.dart';
 import '../playback/skip_segments.dart';

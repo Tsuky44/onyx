@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/tv/nav/onyx_dpad.dart' show TvNavScope;
 import 'package:onyx/tv/nav/tv_nav_engine.dart';

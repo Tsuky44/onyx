@@ -23,7 +23,7 @@ final class MpvDiagnosticsReader {
     if (batch != null && !_batchBroken) {
       try {
         final values = await batch(mpvDiagnosticProperties);
-        return readMpvDiagnostics((name) async => values[name]);
+        return await readMpvDiagnostics((name) async => values[name]);
       } catch (e) {
         // Un libmpv que l'isolate ne trouve pas : le relevé repasse par le
         // thread de l'interface, comme avant, sans retenter à chaque fois.

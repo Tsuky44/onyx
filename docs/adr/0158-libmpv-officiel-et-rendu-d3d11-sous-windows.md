@@ -416,3 +416,80 @@ Le statut reste « proposé ».
 - ANGLE reste le repli. Il ne se retirera qu'avec une nouvelle ADR.
 - Il n'existe pas d'index des ADR : le statut se lit dans l'en-tête de chaque fichier.
 
+### 2026-11-23 — phase 2, vérifications locales avant la version de test pour tous
+
+Machine de Tsuky : Windows 11, AMD Radeon RX 6800 XT (pilote 32.0.21045.5002), builds profile
+`STORE_BUILD=true`, branche coupée de `tsuky`. La séance passait par le bureau à distance, **sans
+périphérique audio** (« There are no playback devices available »). D'où le bug ci-dessous, et une
+sortie audio nulle ajoutée aux builds de mesure pour que les deux chemins aient un son, comme chez
+un utilisateur. Le journal complet de mpv a été écrit dans un fichier par un patch local, jamais
+commité.
+
+**Lancement sans réglage enregistré** : `WindowsVideoRender: auto → d3d11 · AMD Radeon RX 6800 XT`,
+puis `render path: d3d11 (asked d3d11)`. Conforme.
+
+**La bascule D3D11 → ANGLE en pleine lecture** (`ONYX_FORCE_D3D11_FALLBACK=true`, réglage
+Automatique, HEVC Main 10 3832×1600 Dolby Vision 8, Direct Play) :
+
+| | Résultat |
+|---|---|
+| Ligne « échec D3D11 » | `forcé pour l'essai (aucune image rendue en 3s…) · AMD Radeon RX 6800 XT (pilote …) · réglage auto, lectures suivantes en angle` |
+| Ligne « après la bascule » | `hwdec=d3d11va-copy · rendu=angle · 46 rendus, 0 ratés` |
+| Image | revenue, sans image sur l'écran pendant environ 1,3 s, dont 0,8 s à regarnir le cache. Son, position et pistes gardés |
+| Disque | `windows_d3d11_failed_adapter` absent après la séance : rien de retenu |
+
+**Bug trouvé et corrigé : sans périphérique audio, la bascule finissait le fichier.** Libérer le
+contexte D3D11 coupe la vidéo de mpv. Sans chaîne audio, mpv n'avait plus rien à lire (« finished
+playback, video output initialization failed »). `StreamCutRecovery` y voyait une coupure du flux
+(« fin annoncée à 2833s sur 8700s »), rouvrait le fichier, et la qualité Auto quittait le Direct
+Play pour un transcodage 2160p-20m. Sur la texture D3D11, `audio-fallback-to-null=yes` garde
+désormais une chaîne audio nulle. Les autres chemins gardent le défaut de mpv, posé explicitement à
+cause du moteur mis en commun (`MpvD3D11Fallback.nullAudioFallback`, testé). Rejoué sans aucune
+option d'essai : sortie nulle, pas de fin, pas de descente, image revenue en ANGLE.
+
+Un détail sans effet est resté tel quel. Après la bascule, le message natif `VideoOutput.Resize`
+annonce encore `renderApi: d3d11`, parce que `InitializeANGLE` redimensionne avant de poser
+`render_api_`. La réponse de la bascule arrive ensuite dans la même file du fil principal et remet
+`angle` côté Dart. La ligne ne passe que par `std::cout`, jamais par le `ClientLog`.
+
+**Les recherches.** Même fichier (le HEVC 4K ci-dessus, 2 h 25), même départ, cinq clics de même
+amplitude (environ 862 s) sur la barre de progression, aux mêmes pixels. Les deux séries ont été
+faites l'une après l'autre, D3D11 d'abord, donc côté serveur à froid. Réseau 50 à 80 Mbit/s.
+
+| Cible | D3D11 : image / reprise / attente cache | ANGLE : image / reprise / attente cache |
+|---|---|---|
+| 1523 s | 1,01 / 2,07 / 0,77 s | 1,13 / 2,20 / 0,79 s |
+| 2385 s | 1,96 / 3,07 / 0,78 s | 1,96 / 2,96 / 0,67 s |
+| 3248 s | 0,48 / 1,59 / 0,78 s | 0,60 / 1,89 / 0,96 s |
+| 4111 s | 0,94 / 1,54 / 0,30 s | 1,08 / 1,80 / 0,43 s |
+| 4974 s | 0,72 / 1,71 / 0,69 s | 0,81 / 1,76 / 0,67 s |
+| **Moyenne** | **1,02 / 2,00 / 0,66 s** | **1,12 / 2,12 / 0,70 s** |
+
+Les deux chemins sont à égalité, D3D11 un peu devant malgré son passage à froid. `ra_d3d11` a
+compilé deux shaders, au démarrage seulement (sommets 120 ms, fragments 42 ms), et **aucun** après
+les recherches. La piste des compilations est écartée. Le « +2,90 s / +4,05 s » du 2026-11-19
+s'explique par la position (distance à l'image clé) et le réseau de ce jour-là, pas par le rendu.
+
+**Le parcours d'usage sur D3D11** (Automatique) :
+
+| Cas | Résultat |
+|---|---|
+| Plein écran, aller et retour | image juste, une texture par taille (1730×972, puis 1264×710) |
+| Redimensionnement, quatre tailles | une texture par taille (884×496, 1384×778, 624×350, 1264×710), aucun rendu raté |
+| Image dans l'image, aller et retour | petite fenêtre rendue (texture 464×260), retour à 1264×710 |
+| Enchaînement d'épisodes (S1E12 → S1E13) | automatique, `d3d11va` sur D3D11, `shown` 669 ms. Le second moteur est voulu : le nouvel écran se construit avant que l'ancien rende le sien, comme sur ANGLE |
+| Dolby Vision profil 5 (lancé par Tsuky) | « profil 5 niveau 6 · RPU appliqué », fenêtre `gpu-next` sous l'app, couleurs justes, sous-titres et commandes par-dessus, fenêtre qui suit le redimensionnement, aucune fausse retombée D3D11 |
+| Film normal après le DV5 | moteur neuf, de nouveau sur la texture D3D11, image juste |
+
+Deux constats sur le DV5, sans correctif. Sa ligne `Playback:` dit `render=d3d11` alors que l'image
+sort par la fenêtre. Et le décodeur suit la texture du moteur : `auto-safe` (`d3d11va` sans copie
+dans `gpu-next`, le cas ordinaire de mpv) là où ANGLE donnait `auto-copy-safe`. L'image est juste.
+À garder en tête en lisant les journaux des testeurs.
+
+**Ce qui n'a pas été vu sur cette machine** : un vrai écran noir de D3D11 ou un TDR, d'autres GPU
+(Intel, NVIDIA, portables à deux GPU), un `hwdec=no` sur D3D11. C'est ce que la version de test pour
+tous doit montrer dans les journaux serveur.
+
+Rien ne bloque la version de test pour tous du côté de ces vérifications. Le statut reste
+« proposé ».
+

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/locale_formats.dart';
 import '../../l10n/tr.dart';
@@ -27,20 +27,23 @@ class CartelFact {
 
 /// Libellé du statut TMDB dans la langue de l'interface.
 String detailStatusLabel(String status) {
-  const map = {
-    'Released': 'Sorti',
-    'Post Production': 'Post-production',
-    'In Production': 'En production',
-    'Planned': 'Planifié',
-    'Rumored': 'Rumeur',
-    'Canceled': 'Annulé',
-    'Ended': 'Terminé',
-    'Returning Series': 'En cours',
-    'Pilot': 'Pilote',
-  };
-  final label = map[status];
+  final label = kDetailStatusLabels[status];
   return label == null ? status : tr(label);
 }
+
+/// Statuts TMDB connus, lus par `tr()` à l'affichage.
+@visibleForTesting
+const kDetailStatusLabels = {
+  'Released': 'Sorti',
+  'Post Production': 'Post-production',
+  'In Production': 'En production',
+  'Planned': 'Planifié',
+  'Rumored': 'Rumeur',
+  'Canceled': 'Annulé',
+  'Ended': 'Terminé',
+  'Returning Series': 'En cours',
+  'Pilot': 'Pilote',
+};
 
 /// Une date écrite en toutes lettres.
 String detailDateLabel(String date) {
@@ -51,61 +54,65 @@ String detailDateLabel(String date) {
 /// Nom de langue en français pour le cartel.
 String formatLanguage(String? code) {
   if (code == null || code.isEmpty) return '';
-  const languages = {
-    'fr': 'Français',
-    'en': 'Anglais',
-    'es': 'Espagnol',
-    'it': 'Italien',
-    'de': 'Allemand',
-    'ja': 'Japonais',
-    'ko': 'Coréen',
-    'zh': 'Chinois',
-    'pt': 'Portugais',
-    'ru': 'Russe',
-    'nl': 'Néerlandais',
-    'sv': 'Suédois',
-    'no': 'Norvégien',
-    'da': 'Danois',
-    'fi': 'Finnois',
-    'pl': 'Polonais',
-    'hi': 'Hindi',
-    'ar': 'Arabe',
-    'tr': 'Turc',
-  };
-  final lower = code.toLowerCase();
-  final name = languages[lower];
+  final name = kDetailLanguages[code.toLowerCase()];
   return name == null ? code.toUpperCase() : tr(name);
 }
+
+/// Langues du cartel, lues par `tr()` à l'affichage.
+@visibleForTesting
+const kDetailLanguages = {
+  'fr': 'Français',
+  'en': 'Anglais',
+  'es': 'Espagnol',
+  'it': 'Italien',
+  'de': 'Allemand',
+  'ja': 'Japonais',
+  'ko': 'Coréen',
+  'zh': 'Chinois',
+  'pt': 'Portugais',
+  'ru': 'Russe',
+  'nl': 'Néerlandais',
+  'sv': 'Suédois',
+  'no': 'Norvégien',
+  'da': 'Danois',
+  'fi': 'Finnois',
+  'pl': 'Polonais',
+  'hi': 'Hindi',
+  'ar': 'Arabe',
+  'tr': 'Turc',
+};
 
 /// Nom de pays en français pour le cartel.
 String formatCountry(String? code) {
   if (code == null || code.isEmpty) return '';
-  const countries = {
-    'FR': 'France',
-    'US': 'États-Unis',
-    'GB': 'Royaume-Uni',
-    'CA': 'Canada',
-    'DE': 'Allemagne',
-    'IT': 'Italie',
-    'ES': 'Espagne',
-    'JP': 'Japon',
-    'KR': 'Corée du Sud',
-    'CN': 'Chine',
-    'AU': 'Australie',
-    'BE': 'Belgique',
-    'CH': 'Suisse',
-    'SE': 'Suède',
-    'NO': 'Norvège',
-    'DK': 'Danemark',
-    'NL': 'Pays-Bas',
-    'IN': 'Inde',
-    'BR': 'Brésil',
-    'MX': 'Mexique',
-  };
-  final upper = code.toUpperCase();
-  final name = countries[upper];
+  final name = kDetailCountries[code.toUpperCase()];
   return name == null ? code : tr(name);
 }
+
+/// Pays du cartel, lus par `tr()` à l'affichage.
+@visibleForTesting
+const kDetailCountries = {
+  'FR': 'France',
+  'US': 'États-Unis',
+  'GB': 'Royaume-Uni',
+  'CA': 'Canada',
+  'DE': 'Allemagne',
+  'IT': 'Italie',
+  'ES': 'Espagne',
+  'JP': 'Japon',
+  'KR': 'Corée du Sud',
+  'CN': 'Chine',
+  'AU': 'Australie',
+  'BE': 'Belgique',
+  'CH': 'Suisse',
+  'SE': 'Suède',
+  'NO': 'Norvège',
+  'DK': 'Danemark',
+  'NL': 'Pays-Bas',
+  'IN': 'Inde',
+  'BR': 'Brésil',
+  'MX': 'Mexique',
+};
 
 /// Formate un montant en dollars (« 190 M $US », « $190M » en anglais).
 String formatMoney(int? amount) =>
@@ -152,8 +159,9 @@ class DetailInfoTable extends StatelessWidget {
     final original = details.originalTitle;
     final date = details.releaseDate;
     final language = details.originalLanguage;
-    final country =
-        details.countries.isNotEmpty ? details.countries.first : null;
+    final country = details.countries.isNotEmpty
+        ? details.countries.first
+        : null;
     final director = details.director;
     final writers = details.writers;
     final seasons = details.numberOfSeasons;
@@ -195,11 +203,9 @@ class DetailInfoTable extends StatelessWidget {
         CartelFact(
           icon: AppIcons.collection,
           label: tr('Saisons'),
-          value:
-              [
+          value: [
             trPlural(seasons, '{0} saison', '{0} saisons'),
-            if (episodes > 0)
-              trPlural(episodes, '{0} épisode', '{0} épisodes'),
+            if (episodes > 0) trPlural(episodes, '{0} épisode', '{0} épisodes'),
           ].join(', '),
         ),
       if (rating > 0)
@@ -315,10 +321,7 @@ class DetailInfoTable extends StatelessWidget {
               collectionName != null) ...[
             const SizedBox(height: 6),
             for (final row in rows)
-              _CartelDetailRow(
-                label: row.label,
-                value: row.value,
-              ),
+              _CartelDetailRow(label: row.label, value: row.value),
             if (studios.isNotEmpty)
               _CartelDetailRow(
                 label: tr('Studios'),
@@ -339,8 +342,10 @@ class DetailInfoTable extends StatelessWidget {
               children: [
                 for (final tag in keywords)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(999),
@@ -369,8 +374,10 @@ class DetailInfoTable extends StatelessWidget {
     if (rating <= 0 && rows.isEmpty && studios.isEmpty) {
       return const SizedBox.shrink();
     }
-    final divider =
-        Divider(height: 1, color: Colors.white.withValues(alpha: 0.06));
+    final divider = Divider(
+      height: 1,
+      color: Colors.white.withValues(alpha: 0.06),
+    );
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
@@ -577,9 +584,7 @@ class _CartelDetailRow extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 0.045),
-          ),
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.045)),
         ),
       ),
       padding: const EdgeInsets.symmetric(vertical: 7),

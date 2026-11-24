@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show debugDefaultTargetPlatformOverride;
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/models/media_request.dart';
@@ -140,7 +142,57 @@ PosterHighlight _highlightOf(WidgetTester tester, String title) => tester
         (widget) => widget is PosterCard && widget.title == title))
     .highlight;
 
+/// Un clavier qui note ce que le champ lui demande : ouvrir et fermer sa
+/// connexion de saisie.
+class _KeyboardLog with TextInputControl {
+  final List<String> calls = [];
+
+  @override
+  void attach(TextInputClient client, TextInputConfiguration configuration) =>
+      calls.add('attach');
+
+  @override
+  void detach(TextInputClient client) => calls.add('detach');
+
+  @override
+  void show() => calls.add('show');
+
+  @override
+  void hide() => calls.add('hide');
+}
+
 void main() {
+  testWidgets(
+      'un clic de souris ouvre la recherche sans fermer la saisie du champ : '
+      'on tape tout de suite, sans second clic', (tester) async {
+    // Le champ gardait le focus, mais l'infobulle qui se vide à l'ouverture
+    // le démontait : sa connexion de saisie se fermait, et la frappe ne
+    // tombait nulle part avant un second clic.
+    final keyboard = _KeyboardLog();
+    TextInput.setInputControl(keyboard);
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      TextInput.restorePlatformInputControl();
+    });
+    await _pump(tester);
+    keyboard.calls.clear();
+
+    final click = await tester.startGesture(
+      tester.getCenter(_field),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump(const Duration(milliseconds: 40));
+    await click.up();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DesktopSearchSheet), findsOneWidget);
+    expect(_fieldHasFocus(tester), isTrue);
+    expect(keyboard.calls, contains('attach'));
+    expect(keyboard.calls, isNot(contains('detach')),
+        reason: 'la connexion ouverte au clic doit rester ouverte');
+  });
+
   testWidgets(
       'cliquer le champ pose le voile sur la page sans la quitter, et le '
       'champ garde le focus', (tester) async {

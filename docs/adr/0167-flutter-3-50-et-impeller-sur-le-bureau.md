@@ -1,0 +1,352 @@
+# ADR-0167 — Flutter 3.50 et Impeller sur le bureau, Windows compris
+
+- **Statut :** proposé. Branche à part (`claude/flutter-3-50-85638b`), rien de publié : la phase 2
+  de l'ADR-0158 (rendu D3D11 de libmpv, version 1.2.0) se juge encore une semaine sur les journaux
+  avant que cette montée parte. Décision de Tsuky (2026-11-23) : Impeller sous Windows aussi, pas
+  seulement sur Mac. Le plan d'origine gardait Skia sous Windows et prévoyait un essai d'Impeller à
+  part, piloté par un réglage. Tsuky veut aussi un seul SDK (monter `C:\src\flutter` en place,
+  sans copie à côté), puis une version de test. Tranche la piste « Impeller sous Windows » que l'ADR-0025 laissait
+  « à essayer avec une mesure en main » : la mesure est ci-dessous.
+- **Date :** 2026-11-23
+- **Portée :** `.github/workflows/{ci,release,server,tvos}.yml` (`FLUTTER_VERSION`,
+  `FLUTTER_TVOS_VERSION`), `scripts/build-tvos-ipa.sh`, `app/pubspec.yaml` (plancher `flutter`,
+  `file_picker` bloqué sous 13.4), `app/pubspec.lock`, `app/windows/runner/main.cpp` (commentaire
+  du moteur), `app/android/` (Gradle, AGP, Kotlin) et les `buildscript` de `onyx_player_android`
+  et `onyx_background_downloads`, `shaders/scroll_edge_blur.frag`,
+  `screens/shell/desktop_header_search.dart` (flèches de la recherche),
+  `screens/player/playback/mpv_diagnostics.dart`, `tool/frame_timeline.dart` (nouveau, non livré),
+  `windows/runner/angle_multithread_protection.{h,cpp}`, `flutter_window.cpp` et `CMakeLists.txt`
+  (protection D3D11, plantages au lancement), `tool/windows_launch_stress.ps1` et
+  `test/windows_angle_protection_guard_test.dart` (nouveaux),
+  l'`ignore` des imports de Material (548 fichiers) et `test/material_ui_migration_guard_test.dart`
+  (nouveau).
+
+## Contexte
+
+L'app était en Flutter 3.44 (3.44.2 en CI, 3.44.4 en local), avec flutter-tvos `v3.44.9`. Sur le
+bureau, l'interface passait par Skia : Metal sur Mac, ANGLE/D3D11 sous Windows. Depuis la 3.47,
+Impeller est le moteur par défaut sur macOS, Windows et Linux. La 3.50 apporte des correctifs pour
+Windows (OpenGL ES 3 par défaut avec repli ES2, une recopie plein écran de moins par image, un
+plantage corrigé sur les textures externes).
+
+Version retenue : **3.50.1** (stable du 2026-11-20, Dart 3.14.0, révision `ae9b586f34`). Le numéro
+vient de `releases_windows.json` de Flutter, et le zip a été vérifié par son SHA-256. Pour tvOS :
+**flutter-tvos `v3.50.1-tvos.1.12.2`**, la dernière étiquette sur la même ligne.
+
+Ce que les sources du SDK 3.50.1 montrent, lu dans `engine/src/flutter/shell/platform/` :
+
+- **Windows** (`windows/flutter_windows_engine.cc`) : `enable_impeller = true` par défaut. Le
+  client C++ expose `DartProject::set_impeller_switch(ImpellerSwitch)`. Hors release,
+  `FLUTTER_ENGINE_SWITCHES` passe outre (`--enable-impeller=false`) ; en release, les variables
+  d'environnement sont ignorées (`common/engine_switches.cc`, `#ifndef FLUTTER_RELEASE`). Impeller
+  n'a **pas de rendu logiciel de secours** : sans surface GPU, le moteur refuse de démarrer.
+- **macOS** (`darwin/macos/framework/Source/FlutterDartProject.mm`) : Impeller est actif par défaut
+  (`FLTEnableImpeller`). Le wide gamut vaut `enableImpeller && MTLGPUFamilyApple3`, puis le moteur
+  le règle par écran selon `canRepresentDisplayGamut:NSDisplayGamutP3`. Contrairement à iOS
+  (`FLTEnableWideGamut`), **macOS n'a pas d'interrupteur propre au wide gamut** : il vient avec
+  Impeller sur un Mac Apple Silicon et un écran P3, ou disparaît avec lui.
+
+## Décision
+
+1. **Flutter 3.50.1 partout** : les trois workflows, avec flutter-tvos `v3.50.1-tvos.1.12.2` dans
+   `release.yml`, `tvos.yml` et `scripts/build-tvos-ipa.sh`. tvOS est monté en même temps parce
+   que le lock résolu par la 3.50 exige Flutter ≥ 3.47 (`material_ui`, `cupertino_ui`, `hooks`…) :
+   flutter-tvos 3.44 ne le résoudrait plus.
+2. **Impeller sur le bureau, Windows compris.** Rien n'est forcé dans `main.cpp`, puisque le défaut
+   de la 3.50 est Impeller. Le journal le confirme au lancement : `Using the Impeller rendering
+   backend (OpenGLESSDF)`. Le commentaire de `main.cpp` dit comment repasser en Skia hors release
+   pour comparer.
+3. **Wide gamut sur Mac : gardé**, puisqu'il ne se sépare pas d'Impeller. Les deux lecteurs du Mac
+   n'y passent pas : `onyx_player_apple` (AetherEngine) et `onyx_mpv_macos` posent des vues natives
+   composées par le système (`PlayerSurfaceView`, `MpvHostView`), et la couleur de la vidéo HDR/DV ne
+   dépend donc pas de la surface Flutter. Seule la texture de media_kit (BGRA 8 bits sRGB) passe par
+   cette surface ; Impeller la gère en couleur sRGB étendue. L'iPhone tourne déjà ainsi.
+4. **`pub upgrade` dans les contraintes existantes**, sans montée majeure. Les majeures disponibles
+   (`flutter_local_notifications` 23, `window_manager` 0.7, `screen_retriever` 0.4…) restent hors
+   de cette montée. `file_picker` est bloqué sous 13.4 : la 13.4 déprécie `getDirectoryPath` pour
+   `pickDirectory`, qui rend une URI `content://` sur Android, là où la bibliothèque de l'appareil
+   attend un chemin. Le plancher `flutter: '>=3.50.1'` est ajouté à l'app. La version de langage
+   (`sdk`) reste la même : la relever est un autre changement.
+5. **Les forks de `packages/`** (media_kit_video et libs, `onyx_*`) gardent leurs contraintes. Ils
+   compilent et passent leurs tests en 3.50.1 sans changement.
+
+### Ruptures corrigées
+
+- **Les flèches de la recherche du bureau** (`desktop_header_search.dart`). Depuis la 3.47
+  (flutter/flutter#180883), `Action.overridable` cherche son remplaçant sous le **type exact de
+  l'intention** (`ExtendSelectionVerticallyToAdjacentLineIntent`), et non plus sous le paramètre de
+  type de l'action (`DirectionalCaretMovementIntent`). Déclarée sous ce dernier, l'action n'était
+  plus trouvée : Bas restait au curseur du champ au lieu d'entrer dans la grille. Trois tests de
+  `desktop_search_test.dart` l'ont attrapé. L'action est maintenant déclarée sous l'intention de
+  ligne. C'est la seule clé de ce genre dans `lib/`.
+- `mpv_diagnostics.dart` : `return await` dans le `try` (nouvelle règle
+  `unawaited_return_in_try_block`). Un échec du relevé groupé retombe bien sur le relevé direct.
+- Deux imports de `rendering.dart` devenus inutiles (`ScrollCacheExtent` est exporté par
+  `material.dart` en 3.50).
+- **Android, outillage.** La 3.50 refuse de construire sous Gradle 9.3.1, AGP 9.1.1 et Kotlin
+  2.4.10 (`DependencyVersionChecker.kt`). Le projet avait Gradle 9.1.0, AGP 9.0.1 et Kotlin 2.3.20.
+  Il passe aux versions du gabarit de la 3.50 : Gradle 9.5.0, AGP 9.3.1, Kotlin 2.4.20, toutes dans
+  les mêmes majeures. Les `buildscript` de `onyx_player_android` et `onyx_background_downloads`
+  suivent, pour ne pas avoir deux AGP dans la même build. La 3.50 prévient que `workmanager_android`
+  applique encore le plugin Kotlin et qu'une version future le refusera.
+- **`shaders/scroll_edge_blur.frag`** (ADR-0144) n'a plus qu'une sortie. Le compilateur de la 3.50
+  signale qu'un `return` anticipé à côté d'un échantillonneur peut faire échouer le shader sous
+  Windows (flutter/flutter#190809). Avec Impeller, Windows passe désormais par là.
+- L'outil réordonne les registres de plugins générés (le `media_kit_video` surchargé passe en
+  dernier) : c'est un fichier produit par l'outil, gardé tel quel.
+
+### Dette connue : l'ancien Material, en attendant `material_ui`
+
+Depuis la 3.47, `material.dart` et `cupertino.dart` sont dépréciés au profit des paquets
+`material_ui` et `cupertino_ui`. Ce sont **551 des 554** remarques de `flutter analyze` en 3.50.1,
+et la CI échoue sur les `info`. `material_ui` est une **copie distincte** de Material : son `Theme`
+et son `MaterialApp` sont d'autres classes. Il faut donc aussi `MaterialUiCompatibilityBridge` et
+les localisations de `material_ui`, parce que douze dépendances importent encore
+`flutter/material.dart` (dpad, media_kit_video, audio_video_progress_bar, window_manager,
+mobile_scanner, octo_image…).
+
+Décision de Tsuky (2026-11-23) : **la migration se fera plus tard, à part**, après Impeller. Une
+seule variable change à la fois. D'ici là :
+
+- chaque import déprécié (548 fichiers de `lib/`, `test/` et `tool/`) porte
+  `// ignore: deprecated_member_use` sur la ligne d'avant ;
+- `test/material_ui_migration_guard_test.dart` garde la dette sous contrôle :
+  - cet `ignore` n'est admis qu'au-dessus de ces imports (ailleurs, seulement les quatre de
+    `tv_nav_harness.dart`, avec leur raison) ;
+  - un import déprécié sans son `ignore` est refusé ;
+  - le nombre de fichiers sur l'ancien Material ne dépasse pas un plafond, 548, que la migration
+    fait baisser.
+
+## Mesure
+
+### Temps d'image sous Windows
+
+Machine de Tsuky : Windows 11, AMD Radeon RX 6800 XT (pilote 32.0.21045.5002). Builds profile
+`STORE_BUILD=true`. Fenêtre à sa taille de lancement. Compte connecté au vrai serveur, rendu vidéo
+réglé sur « Nouveau » (D3D11).
+
+**Méthode, à refaire à l'identique :**
+
+1. Lancement avec un VM service fixe, par les variables que l'embedder lit hors release :
+   `FLUTTER_ENGINE_SWITCHES=2`, `FLUTTER_ENGINE_SWITCH_1=vm-service-port=8181`,
+   `FLUTTER_ENGINE_SWITCH_2=disable-service-auth-codes`. Attente de 12 s, puis un clic sur le logo
+   pour le focus. Pour Skia sur une build 3.50 : `SWITCHES=3` et
+   `SWITCH_3=enable-impeller=false`.
+2. Pour chaque geste, `dart tool/frame_timeline.dart record <libellé> <fichier.jsonl> <s>`. La
+   timeline du VM est un tampon circulaire (~280 images) : lue une seule fois, elle tronquait le
+   relevé. L'outil la relit donc chaque seconde et dédoublonne. UI = `Animator::BeginFrame`,
+   raster = `GPURasterizer::Draw`.
+3. Les gestes, dans l'ordre, deux fois (passage 1 à froid, passage 2 à chaud) :
+   **accueil** (14 s : trois crans de molette ×5 vers le bas, retour en haut), **fiche** (22 s :
+   Films, première affiche, défilement, retour, Accueil), **lecteur** (40 s : la même fiche,
+   Lecture/Reprendre d'un film 1080p H.264 en Direct Play, 12 s de lecture, commandes affichées
+   puis masquées, retour). Les coordonnées exactes sont dans la note de session
+   `flutter-3-50-protocole-mesure.md`.
+
+Médianes UI / raster (ms), puis images au-delà de 16,7 ms UI / raster :
+
+| Passage | 3.44.4 Skia | 3.50.1 Skia | 3.50.1 Impeller |
+|---|---|---|---|
+| accueil-1 | 0,56 / 1,72 · 5 / 6 | 2,35 / 1,72 · 6 / 7 | 2,23 / 2,94 · 5 / 1 |
+| fiche-1 | 0,55 / 1,83 · 12 / 6 | 2,15 / 1,94 · 15 / 13 | 2,15 / 3,63 · 13 / 2 |
+| lecteur-1 | 0,57 / 1,57 · 14 / 9 | 2,09 / 1,79 · 12 / 6 | 2,11 / 3,37 · 17 / 6 |
+| accueil-2 | 0,56 / 1,78 · 6 / 4 | 1,98 / 1,63 · 6 / 2 | 1,95 / 3,06 · 5 / 1 |
+| fiche-2 | 0,58 / 1,83 · 10 / 7 | 2,06 / 1,60 · 11 / 4 | 2,00 / 3,23 · 17 / 6 |
+| lecteur-2 | 0,58 / 1,66 · 11 / 3 | 2,07 / 1,58 · 16 / 4 | 2,11 / 2,77 · 16 / 3 |
+| **Total > 16,7 ms** | **58 / 35** | **66 / 36** | **73 / 19** |
+
+Raster p99 au premier passage (saccades de premier affichage) : accueil 20,3 → 20,7 → **5,6 ms** ;
+fiche 35,3 → 37,5 → **6,9 ms**.
+
+Lecture :
+
+- **Le temps UI médian passe de 0,6 à 2,1 ms avec le SDK 3.50, en Skia comme en Impeller.** Cela
+  vient du framework ou du moteur de la 3.50, pas du moteur de rendu. La cause n'est pas trouvée.
+  Le surcoût reste à un huitième du budget d'une image.
+- **Impeller double le raster médian** (1,7 → 3,2 ms), mais **divise par deux les images raster
+  hors budget** (35 → 19). Au premier affichage, elles passent de 21 (3.44) ou 26 (3.50 Skia) à 9 :
+  sans compilation de shaders à la volée, les saccades de première visite disparaissent presque.
+
+### Mémoire et processeur au repos
+
+`scripts/perf/measure-windows.ps1`, 20 s par scénario, 20 s d'échauffement :
+
+| Scénario | 3.44.4 Skia | 3.50.1 Skia | 3.50.1 Impeller |
+|---|---|---|---|
+| Accueil : CPU moyen / mémoire privée | 0,54 % / 516 Mo | 0,70 % / 528 Mo | 1,00 % / 705 Mo |
+| Arrière-plan | 0,02 % / 514 Mo | 0,06 % / 521 Mo | 0,05 % / 648 Mo |
+| Réduite | 0,06 % / 509 Mo | 0,05 % / 506 Mo | 0,02 % / 647 Mo |
+
+L'ensemble de travail ne bouge pas (~315-320 Mo dans les trois cas). La **mémoire privée prend
+environ 140 Mo avec Impeller**, et seulement avec lui : la 3.50.1 en Skia reste à ±12 Mo de la
+3.44.4. C'est de la mémoire réservée par le moteur, pas résidente. L'ADR-0166 visait la RAM : ce
+coût est à connaître avant de publier.
+
+### La vidéo sous Impeller (Windows)
+
+| Cas | Résultat |
+|---|---|
+| D3D11 (« Nouveau »), H.264 1080p | image, commandes par-dessus, `render=d3d11`, `hwdec=d3d11va` |
+| Bascule D3D11 → ANGLE en pleine lecture (`ONYX_FORCE_D3D11_FALLBACK=true`, Automatique) | `render path: angle (fallback)`, puis `hwdec=d3d11va-copy · rendu=angle · 29 rendus, 0 ratés`, image revenue |
+| Même essai, réglage « Nouveau » | pas de bascule, en Skia comme en Impeller (le réglage explicite tient le chemin) |
+| Plein écran aller-retour, image dans l'image aller-retour (sur ANGLE) | image juste, lecture reprise |
+| Dolby Vision 5 (Paradise S2E5, 4K HEVC, fenêtre gpu-next sous l'app, ADR-0061) | image à travers la surface transparente, sous-titres et commandes par-dessus |
+
+### Plantages au lancement : une régression de la 3.50 sous Windows, pas d'Impeller
+
+Deux lancements de la build Impeller ont planté avant la première image, en `0xc0000005`. Les
+deux vidages (`%LOCALAPPDATA%\CrashDumps\app.exe.71128.dmp`, `app.exe.74960.dmp`) montrent la même
+chose : un fil du **pilote AMD D3D11** (`amdxx64.dll`) saute à une adresse invalide juste après la
+création des surfaces D3D11. Pour mesurer, j'ai fait 20 lancements de 10 s par build, sans rien
+toucher (l'app est seulement ouverte sur l'accueil) :
+
+| Build | Bureau à distance, 23 nov. | Bureau à distance, pilote 29003 | Console, 24 nov., pilote 29003 |
+|---|---|---|---|
+| 3.44.4 Skia (la build de la ligne de base) | **0 / 20** | — | **0 / 20** |
+| 3.50.1 Skia (`--enable-impeller=false`) | **2 / 20** | **1 / 20** | **6 / 20** |
+| 3.50.1 Impeller | **2 / 20** | **2 / 20** | **2 / 20** |
+
+Les deux dernières colonnes viennent de la build faite avec `C:\src\flutter` monté en 3.50.1, la
+même révision que la copie à part. Pendant les essais, le pilote est passé de la version que
+l'app journalisait (`32.0.21045.5002`) à `32.0.21045.29003` (17/11/2026, selon Windows). Le
+24 novembre, j'ai refait les essais devant la machine, et non plus en bureau à distance.
+
+La 3.50 plante donc au lancement **une fois sur dix à une fois sur trois** sur cette machine (RX
+6800 XT), **avec Skia comme avec Impeller**, en bureau à distance comme à la console. La 3.44.4, elle,
+ne plante jamais dans les mêmes conditions. Ni le pilote à jour ni la console ne changent rien.
+Les vidages des 18–20 novembre (en 3.44) sont d'autres plantages, dans `flutter_windows.dll` sous
+libmpv, en pleine lecture.
+
+#### La cause : ANGLE ne protège plus le contexte D3D11 (flutter/flutter#196618)
+
+C'est un bogue connu de Flutter 3.50 sous Windows, classé P0 :
+[flutter/flutter#196618](https://github.com/flutter/flutter/issues/196618). Pour la 3.50, Flutter
+a monté ANGLE (de `84027aca9b` en 3.47.8 à `a8d74ca3e5`). Le nouvel ANGLE remplace son verrou
+global par un verrou par display (commit ANGLE `d778c8969d`). Flutter compile ANGLE de telle sorte
+que ce verrou-là ne fait rien : `eglSwapBuffers` n'exclut plus les appels GL. Le fil raster qui
+présente une image et le fil IO qui envoie une image décodée au GPU passent alors **en même temps**
+dans le contexte immédiat D3D11 du même appareil. Le pilote finit par appeler un pointeur libéré.
+Le moteur de rendu n'y change rien, d'où Skia autant qu'Impeller. Les cas rapportés touchent AMD
+(`amdxx64.dll`, comme ici) et NVIDIA (`nvwgf2umx.dll`).
+
+Nos vidages concordent : le fil fautif appartient au pilote AMD, et il est rattaché au premier
+appareil D3D11 du processus, celui de Flutter. Le plantage survient 3 à 7 s après le lancement,
+quand l'accueil décode ses affiches. libmpv n'y est pour rien : dans un des vidages, il n'est même
+pas encore démarré. **Aucune bibliothèque n'est en cause** : aucun plugin natif Windows n'a changé
+de version avec la montée (`app_links`, `connectivity_plus`, `flutter_secure_storage_windows`,
+`media_kit_libs_windows_video`, `screen_brightness_windows`, `screen_retriever_windows`,
+`window_manager` et notre `media_kit_video` sont identiques). L'ANGLE de Flutter est lié dans
+`flutter_windows.dll`. Le `libEGL.dll` livré à côté de l'app est celui de libmpv (media_kit), une
+autre copie d'ANGLE, qui n'a pas changé.
+
+Côté Flutter, la mitigation est
+[flutter/flutter#196897](https://github.com/flutter/flutter/pull/196897), fusionnée le 19
+novembre : elle active la protection multithread D3D11 (`ID3D10Multithread`) sur l'appareil
+d'ANGLE. Elle n'est pas dans la 3.50.1. Elle est prévue pour la 3.50.2
+([#196991](https://github.com/flutter/flutter/pull/196991), approuvée, pas encore fusionnée au
+24 novembre). Le vrai correctif doit venir d'ANGLE
+([#197238](https://github.com/flutter/flutter/issues/197238), sans date).
+
+#### Notre correctif : la même protection, posée par le runner
+
+Le runner (`windows/runner/angle_multithread_protection.cpp`) fait ce que fera la 3.50.2. Comme
+l'ANGLE de Flutter n'expose ni EGL ni son appareil, il résout `D3D11CreateDevice` par
+`GetProcAddress`. Avant la création du `FlutterViewController`, le runner détourne cet import-là
+de `flutter_windows.dll`, et seulement pour `D3D11CreateDevice`. Chaque appareil créé par Flutter
+reçoit `SetMultithreadProtected(TRUE)` avant sa première image. La protection marche aussi en
+release, et la retombée WARP est couverte. Quand la 3.50.2 arrivera, le double appel restera sans
+effet. Les appareils de libmpv (ANGLE de media_kit, rendu D3D11 de la phase 2) ne passent pas par
+ce détour. En profile, le runner écrit `protection multithread D3D11 active` sur la sortie
+standard.
+
+Mesure le même jour, même pilote, même build profile, à la console :
+
+| Build | Sans protection | Avec protection |
+|---|---|---|
+| 3.50.1 Skia | 6 / 20 | **0 / 40** |
+| 3.50.1 Impeller | 2 / 20 (et 1 / 1 juste avant le correctif) | **0 / 40** |
+
+La protection était active sur les 80 lancements protégés, avec un seul appareil D3D11 par
+lancement.
+
+La lecture marche avec la protection (Impeller, à la console) : Dracula en AV1 4K, en
+`hwdec=d3d11va` et `render=d3d11`. La suite de tests donne 2848 réussis, 11 ignorés et un échec,
+`onyx_player_apple_sources_test`, qui échouait déjà en 3.44.
+
+Une première version passait par le `libEGL.dll` voisin pour retrouver le display de Flutter. Elle
+tombait sur l'ANGLE de libmpv, d'où le détour de `GetProcAddress`.
+
+#### Pour que ça ne revienne pas
+
+- `test/windows_angle_protection_guard_test.dart` vérifie trois choses : que le runner pose la
+  protection avant de créer le moteur, qu'il vise bien `flutter_windows.dll` et
+  `D3D11CreateDevice`, et que le script de lancements cherche la ligne du runner. Il **échoue à
+  chaque montée de Flutter** (plancher de `pubspec.yaml` différent de `_stressedFlutter`). Il faut
+  alors repasser le test de lancements, puis noter le résultat ici.
+- `tool/windows_launch_stress.ps1` lance l'app 40 fois (10 s chacune) et compte les arrêts et les
+  lancements sans protection. Il liste les vidages produits et rend 1 au moindre échec. À passer
+  sur une vraie machine avec GPU, en profile, avec et sans `-Skia`. La CI ne le peut pas (pas de
+  GPU, et le pilote compte).
+- Le détour pourra partir quand le moteur posera lui-même la protection (3.50.2) **et** que le
+  test de lancements restera à zéro sans lui. Il faudra le vérifier, pas le supposer.
+
+### Sans GPU utilisable
+
+`egl/manager.cc` essaie ANGLE sur D3D11, puis D3D11 niveau 9_3, puis **D3D11 WARP**, le rendu
+logiciel de Direct3D. Une machine virtuelle ou un bureau à distance sans GPU retombe donc sur WARP,
+et Impeller y tourne sur le processeur, lentement. Si même WARP échoue, Impeller n'a pas de repli
+logiciel (`flutter_windows_engine.cc`, test du moteur `RunWithoutANGLEOnImpellerFailsToStart`) :
+`FlutterDesktopViewControllerCreate` rend nul, `FlutterWindow::OnCreate` échoue et l'app **se ferme
+aussitôt, sans fenêtre ni message**. Skia, lui, retombait sur le compositeur logiciel. Ce cas n'a pas
+pu être provoqué ici : il faudrait une machine sans D3D11, et forcer WARP passe par un réglage
+système.
+
+**`set_impeller_switch(Disabled)` n'a eu aucun effet** dans deux builds profile 3.50.1 : le journal
+annonce encore Impeller. Pourtant les sources le transmettent, et le test du moteur
+`RunSkiaWithoutANGLEUsesSoftware` le couvre. La variable d'environnement, elle, repasse bien en
+Skia. La cause n'est pas trouvée. Un repli dans le runner (recréer le contrôleur en Skia quand
+Impeller échoue) ne peut donc pas s'appuyer sur ce levier pour l'instant.
+
+### Android, analyse, tests
+
+- `flutter test` en 3.50.1 : 2844 réussis (dont le guard de Material), 11 ignorés, 1 échec, le même qu'en 3.44
+  (`onyx_player_apple_sources_test` : fins de ligne CRLF du Swift généré dans une copie Windows).
+- `flutter build apk --debug` : construit. Depuis le vrai chemin du worktree : sous un lecteur
+  `subst`, la compilation Kotlin incrémentale échoue, parce que le projet et le cache pub ne sont
+  pas sur la même racine.
+- `flutter build windows --profile` : construit, sans avertissement de shader.
+- `flutter analyze` : aucun problème, une fois l'`ignore` posé sur les imports dépréciés (voir
+  « Dette connue »).
+
+## Conséquences
+
+- **À vérifier sur Mac** (rien ne se compile pour Apple ici) :
+  - `flutter build macos --debug` puis lancement sur un Mac Apple Silicon avec écran P3. Le
+    journal doit annoncer Impeller, et les couleurs de l'interface (accents, dégradés, affiches)
+    doivent rester celles de la 3.44.
+  - `onyx_player_apple` en HDR10 et en DV, puis `onyx_mpv_macos` en DV5 : couleurs, sous-titres et
+    commandes par-dessus la vue native (vues natives sur une surface Impeller).
+  - Le repli media_kit sur Mac : une texture BGRA 8 bits sur une surface 10 bits.
+  - Les flous (en-têtes de verre, ADR-0144/0157) et le shader `scroll_edge_blur.frag`, qui ne
+    servait que sous Impeller et sert désormais aussi sur Mac.
+  - `FLTEnableMergedPlatformUIThread=false` (Info.plist) : la 3.50 l'accepte encore, mais annonce
+    qu'il deviendra non pris en charge.
+  - iOS : `flutter build ios --debug --no-codesign`. Rien ne change pour le moteur (Impeller depuis
+    longtemps).
+  - tvOS : `scripts/build-tvos-ipa.sh` avec flutter-tvos `v3.50.1-tvos.1.12.2`, puis le parcours
+    D-pad.
+- **À vérifier sur appareil Android** : lecture (`onyx_player_android`, media3), téléchargements
+  en arrière-plan, Android TV. Impeller y était déjà le moteur ; seul l'outillage Gradle change.
+- **À vérifier en CI** : `ci.yml` (analyse + tests en 3.50.1), le job `build-tvos` de
+  `release.yml`/`tvos.yml` avec le nouveau flutter-tvos, les builds Android/Windows/macOS/iOS de
+  `release.yml` sans publier, et l'image serveur (`server.yml` construit le web en 3.50.1).
+- **Le web** (`server.yml`, skwasm, ADR-0152) change de Flutter sans avoir été vérifié ici.
+- Sous Windows, sans D3D11 du tout (pas même WARP), l'app se ferme au lancement au lieu de
+  retomber en logiciel. Le cas est rare (WARP fait partie de Windows), mais il est muet : rien ne
+  le signale à l'utilisateur.
+- Les plantages au lancement de la 3.50 sont compris (flutter/flutter#196618) et corrigés par la
+  protection du runner (0 sur 80 lancements). Le runner détourne un import de
+  `flutter_windows.dll` : ce code dépend du moteur, et le test de garde impose de le revérifier
+  à chaque montée.
+- `tool/frame_timeline.dart` reste dans le dépôt pour refaire la mesure à l'identique à la
+  prochaine montée.

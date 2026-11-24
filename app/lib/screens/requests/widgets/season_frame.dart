@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../theme/app_motion.dart';
 
 /// Le cadre de verre du panneau, et la lumière posée sur son bord haut, sous

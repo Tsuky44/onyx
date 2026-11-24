@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../theme/app_colors.dart';
 
 /// Barre de progression posée sur une affiche : une gélule fine, en retrait des

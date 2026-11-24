@@ -1,10 +1,12 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/desktop_window.dart';
 import 'package:onyx/theme/app_colors.dart';
+import 'package:onyx/utils/on_screen.dart';
 import 'package:onyx/utils/window_controls.dart';
+import 'package:onyx/widgets/global/background_motion_gate.dart';
 import 'package:onyx/widgets/global/glass_chrome.dart';
 import 'package:onyx/widgets/global/window_caption_buttons.dart';
 
@@ -121,6 +123,31 @@ void main() {
         enabled: true,
         child: WindowCaptionHost(child: SizedBox.shrink()),
       ));
+      await tester.pump();
+      expect(windowCaptionHosted.value, isTrue);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    });
+
+    testWidgets(
+        'et la perte du focus de la fenêtre ne la ramène pas, '
+        'même si elle coupe les animations', (tester) async {
+      addTearDown(() => AppForeground.debugSetFocused(true));
+      await tester.pumpWidget(const BackgroundMotionGate(
+        desktop: true,
+        child: WindowCaptionHost(child: SizedBox.shrink()),
+      ));
+      await tester.pump();
+      expect(windowCaptionHosted.value, isTrue);
+
+      AppForeground.debugSetFocused(false);
+      await tester.pump();
+      await tester.pump();
+      expect(windowCaptionHosted.value, isTrue);
+
+      AppForeground.debugSetFocused(true);
+      await tester.pump();
       await tester.pump();
       expect(windowCaptionHosted.value, isTrue);
 

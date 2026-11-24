@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -10,9 +10,12 @@ import '../../services/download_manager.dart';
 import '../../services/server_reachability.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/legacy_material_bridge.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import 'shared_link_screen.dart';
+import '../../l10n/app_language.dart';
+import '../../l10n/material_localizations.dart';
 import '../../l10n/tr.dart';
 
 /// Le code du lien de partage que cette page ouvre, ou nul si elle n'en ouvre
@@ -80,6 +83,10 @@ class SharedLinkApp extends StatelessWidget {
       child: MaterialApp(
         title: tr('Onyx'),
         debugShowCheckedModeBanner: false,
+        // Les textes de Material dans la langue de l'app (ADR-0168).
+        locale: AppMaterialLocalizations.localeOf(AppLanguage.current),
+        supportedLocales: AppMaterialLocalizations.supportedLocales,
+        localizationsDelegates: AppMaterialLocalizations.delegates,
         theme: AppTheme.dark,
         color: AppColors.background,
         // La page porte le nom de la route que le navigateur a donnée — le
@@ -89,6 +96,10 @@ class SharedLinkApp extends StatelessWidget {
             WidgetsBinding.instance.platformDispatcher.defaultRouteName,
         onGenerateInitialRoutes: (name) => [_page(name)],
         onGenerateRoute: (settings) => _page(settings.name),
+        // Les dépendances encore sur l'ancien Material voient le thème de
+        // l'app (ADR-0168).
+        builder: (context, child) =>
+            LegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
       ),
     );
   }
