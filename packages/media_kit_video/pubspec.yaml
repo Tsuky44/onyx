@@ -12,11 +12,15 @@ topics:
 
 environment:
   sdk: ">=2.17.0 <4.0.0"
-  flutter: ">=3.7.0"
+  # Onyx : 3.47, le plancher de material_ui (ADR-0168).
+  flutter: ">=3.47.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  # Onyx : Material hors du SDK depuis Flutter 3.47 (ADR-0168). Le SubtitleView
+  # pose un Material qui doit lire le thème de l'app, celui de material_ui.
+  material_ui: ^1.11.1
 
   media_kit: ^1.2.3
 

@@ -10,6 +10,7 @@ import '../../services/download_manager.dart';
 import '../../services/server_reachability.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/legacy_material_bridge.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/app_platform.dart';
 import 'shared_link_screen.dart';
@@ -89,6 +90,10 @@ class SharedLinkApp extends StatelessWidget {
             WidgetsBinding.instance.platformDispatcher.defaultRouteName,
         onGenerateInitialRoutes: (name) => [_page(name)],
         onGenerateRoute: (settings) => _page(settings.name),
+        // Les dépendances encore sur l'ancien Material voient le thème de
+        // l'app (ADR-0168).
+        builder: (context, child) =>
+            LegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
       ),
     );
   }

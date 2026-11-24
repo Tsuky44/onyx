@@ -70,6 +70,7 @@ import 'screens/player/player_engine.dart';
 import 'screens/shell/main_shell.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
+import 'theme/legacy_material_bridge.dart';
 import 'theme/lite_mode.dart';
 import 'desktop_window.dart';
 import 'widgets/global/lite_mode_suggestion.dart';
@@ -593,7 +594,10 @@ class OnyxApp extends StatelessWidget {
                             TvBackIntent: TvBackAction(),
                           },
                     builder: (context, child) {
-                      final content = BackgroundMotionGate(
+                      // Les dépendances encore sur l'ancien Material voient le
+                      // thème de l'app (ADR-0168).
+                      final content = LegacyMaterialBridge(
+                          child: BackgroundMotionGate(
                         child: Listener(
                           behavior: HitTestBehavior.translucent,
                           onPointerDown: _handleMouseBackButton,
@@ -612,7 +616,7 @@ class OnyxApp extends StatelessWidget {
                             ],
                           ),
                         ),
-                      );
+                      ));
                       if (dpad) {
                         return TvNavRoot.belowApp(
                           profileKey: _navProfileKey(context),
