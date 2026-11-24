@@ -68,6 +68,54 @@ void main() {
     );
   });
 
+  test('une session HLS du serveur va droit à AVPlayer', () {
+    // Sans `nativeRemoteHLS`, le moteur tente de démultiplexer la playlist
+    // comme un fichier, échoue, la relit et télécharge la tête du premier
+    // segment avant de la confier à AVPlayer : des allers-retours et un
+    // segment payés à chaque changement de qualité, pour une vérification
+    // (HEVC en MPEG-TS) que nos segments fMP4 ne déclenchent jamais. Seul
+    // Xcode compile ce fichier : ce test tient la règle.
+    final player = File('$_darwin/AetherPlayer.swift').readAsStringSync();
+    expect(player, contains('options.nativeRemoteHLS = !isRawFile'));
+  });
+
+  test('le natif dit quand la première image est à l’écran', () {
+    // Le cache du lecteur se lève sur le verrou du moteur, pas sur l'horloge
+    // qui avance : la couche vidéo tient une image avant que la réserve ne
+    // laisse partir la lecture. Il faut l'état dans l'instantané, et un
+    // instantané quand il change.
+    final player = File('$_darwin/AetherPlayer.swift').readAsStringSync();
+    expect(player,
+        contains('firstFrameShown: engine.hasFirstFrameReadyForDisplay'));
+    expect(player,
+        contains(r'Self.signal(engine.$hasFirstFrameReadyForDisplay)'));
+  });
+
+  test('le démarrage part plus tôt sur une réserve qui grossit vite', () {
+    // Deux seuils, et la règle qui choisit entre eux : 2 s de réserve, ou
+    // 1 s quand elle se remplit au moins deux fois plus vite qu'elle ne se
+    // lit. Le second sans le premier ferait caler une ligne juste.
+    final fastStart = File('$_darwin/FastStart.swift').readAsStringSync();
+    expect(fastStart, contains('static let minimumBufferAhead: Double = 2.0'));
+    expect(fastStart,
+        contains('static let minimumGrowingBufferAhead: Double = 1.0'));
+    expect(fastStart, contains('static let minimumFillRate: Double = 2.0'));
+    expect(fastStart,
+        contains('guard Self.isEnough(ahead: ahead, fillRate: fillRate)'));
+  });
+
+  test('l’appareil dit s’il décode le HEVC en matériel', () {
+    // La même question qu'AetherEngine pose avant de choisir sa route : sans
+    // elle, une Apple TV HD ouvre en Direct Play ce qu'elle décode en
+    // logiciel.
+    final host = File('$_darwin/PlayerHost.swift').readAsStringSync();
+    expect(
+        host,
+        contains(
+            'hardwareHevc: VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC)'));
+    expect(host, contains('import VideoToolbox'));
+  });
+
   test('un chargement repris par le moteur rend la main au play() de Dart', () {
     // Une piste audio choisie pendant l'ouverture fait reconstruire la
     // session par le moteur (ADR-0093) : `load` lève alors
@@ -94,6 +142,53 @@ void main() {
     expect(superseded, contains('self.deliverWantedTransport()'),
         reason: 'Le play() demandé pendant le chargement n’est plus porté '
             'au moteur : la session reste en pause.');
+  });
+
+  test('une session démontée en arrière-plan est reconstruite avant de lire',
+      () {
+    // Sur l'Apple TV, tout passage en arrière-plan (économiseur d'écran
+    // derrière une pause, bouton TV, veille) fait démonter au moteur son
+    // pipeline vidéo et le laisse en `.paused` : il attend de l'hôte qu'il le
+    // reconstruise (`needsForegroundVideoRestore`). Personne ne le faisait.
+    // play() partait sur un lecteur sans item : l'état passait à `.playing`,
+    // la phase restait `.loading`, et le film restait bloqué en pause quoi
+    // qu'on presse. Seul Xcode compile ce fichier : ce test tient la règle.
+    final player = File('$_darwin/AetherPlayer.swift').readAsStringSync();
+    String? body(String signature) => RegExp(
+          '${RegExp.escape(signature)} \\{(.*?)\\n  \\}\\n',
+          dotAll: true,
+        ).firstMatch(player)?.group(1);
+
+    final restore =
+        body('private func restoreAfterBackground(at positionMs: Int64? = nil)');
+    expect(restore, isNotNull,
+        reason: 'Plus personne ne reconstruit la session démontée.');
+    expect(restore, contains('engine.needsForegroundVideoRestore'),
+        reason: 'La reconstruction ne vaut que pour une session démontée.');
+    expect(restore, contains('!isInBackground'),
+        reason: 'Reconstruire en arrière-plan fait traverser la veille de '
+            'l’Apple TV à un décodeur : c’est ce que le démontage évite.');
+    expect(restore, contains('try await self.engine.reloadAtCurrentPosition()'));
+    expect(restore, contains('self.deliverWantedTransport()'),
+        reason: 'La session doit revenir dans l’état demandé, pas dans '
+            'celui de son premier montage.');
+
+    for (final command in ['func play()', 'func seek(toMs positionMs: Int64)']) {
+      expect(body(command), contains('restoreAfterBackground('),
+          reason: '`$command` part sur une session démontée : rien ne lit.');
+    }
+    // Le moteur remet son horloge à zéro pendant la reconstruction : une
+    // reconstruction qui échoue rouvrait sinon le film à la seconde zéro.
+    expect(restore, contains('restoringAtMs = positionMs ??'));
+    expect(player, contains('if let held = self.restoringAtMs'),
+        reason: 'La position rapportée retombe à zéro pendant la '
+            'reconstruction.');
+    final play = body('func play()')!;
+    expect(
+      play.indexOf('restoreAfterBackground()'),
+      lessThan(play.indexOf('engine.play()')),
+      reason: 'play() doit attendre la reconstruction, pas la devancer.',
+    );
   });
 
   test('le fichier brut est servi en segments progressifs (ADR-0093)', () {

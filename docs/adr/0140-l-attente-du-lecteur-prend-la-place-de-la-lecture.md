@@ -1,7 +1,9 @@
 # ADR-0140 — L'attente du lecteur prend la place de lecture/pause, et un bouton sans piste disparaît
 
 - **Statut :** accepté. Demandé par l'utilisateur sur des captures d'iPhone (2026-11-18) ; rendu
-  vérifié sur des images du chrome en 844 × 390, **pas encore vu sur un iPhone**.
+  vérifié sur des images du chrome en 844 × 390, **pas encore vu sur un iPhone**. Le point 3
+  (anneau immobile en mode léger) est contredit par
+  l'[ADR du 2026-11-23](2026-11-23-fytroz-l-attente-du-lecteur-vit-et-s-annule.md).
 - **Date :** 2026-11-18
 - **Portée :** `screens/player/widgets/onyx/onyx_loading_ring.dart` (nouveau),
   `widgets/player_status_panels.dart` (`PlayerLoadingSpinner`), `onyx_handheld_chrome.dart`,

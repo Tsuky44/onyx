@@ -384,6 +384,13 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
   /// Le chemin vidéo du moteur (`loopback`, `software`, `remoteBypass`,
   /// `none`…). Sur `software`, il n'y a pas d'`AVPlayer`.
   var videoRoute: String? = nil
+  /// La première image de ce média est à l'écran, lecture lancée ou non.
+  ///
+  /// Le verrou du moteur (`hasFirstFrameReadyForDisplay`), remis à faux à
+  /// chaque ouverture. L'app s'en sert pour lever son cache à l'image même,
+  /// sans attendre que l'horloge ait avancé : la couche vidéo tient une image
+  /// avant que la réserve ne laisse partir la lecture.
+  var firstFrameShown: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -404,6 +411,7 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
     let errorKind: OnyxApplePlayerErrorKind? = nilOrValue(pigeonVar_list[13])
     let errorMessage: String? = nilOrValue(pigeonVar_list[14])
     let videoRoute: String? = nilOrValue(pigeonVar_list[15])
+    let firstFrameShown = pigeonVar_list[16] as! Bool
 
     return OnyxApplePlayerStatus(
       playerId: playerId,
@@ -421,7 +429,8 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
       videoFormat: videoFormat,
       errorKind: errorKind,
       errorMessage: errorMessage,
-      videoRoute: videoRoute
+      videoRoute: videoRoute,
+      firstFrameShown: firstFrameShown
     )
   }
   func toList() -> [Any?] {
@@ -442,13 +451,14 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
       errorKind,
       errorMessage,
       videoRoute,
+      firstFrameShown,
     ]
   }
   static func == (lhs: OnyxApplePlayerStatus, rhs: OnyxApplePlayerStatus) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return MessagesPigeonInternal.deepEquals(lhs.playerId, rhs.playerId) && MessagesPigeonInternal.deepEquals(lhs.state, rhs.state) && MessagesPigeonInternal.deepEquals(lhs.isPlaying, rhs.isPlaying) && MessagesPigeonInternal.deepEquals(lhs.positionMs, rhs.positionMs) && MessagesPigeonInternal.deepEquals(lhs.durationMs, rhs.durationMs) && MessagesPigeonInternal.deepEquals(lhs.bufferedPositionMs, rhs.bufferedPositionMs) && MessagesPigeonInternal.deepEquals(lhs.videoSize, rhs.videoSize) && MessagesPigeonInternal.deepEquals(lhs.pixelAspectRatio, rhs.pixelAspectRatio) && MessagesPigeonInternal.deepEquals(lhs.audioTracks, rhs.audioTracks) && MessagesPigeonInternal.deepEquals(lhs.subtitleTracks, rhs.subtitleTracks) && MessagesPigeonInternal.deepEquals(lhs.selectedAudioTrackId, rhs.selectedAudioTrackId) && MessagesPigeonInternal.deepEquals(lhs.selectedSubtitleTrackId, rhs.selectedSubtitleTrackId) && MessagesPigeonInternal.deepEquals(lhs.videoFormat, rhs.videoFormat) && MessagesPigeonInternal.deepEquals(lhs.errorKind, rhs.errorKind) && MessagesPigeonInternal.deepEquals(lhs.errorMessage, rhs.errorMessage) && MessagesPigeonInternal.deepEquals(lhs.videoRoute, rhs.videoRoute)
+    return MessagesPigeonInternal.deepEquals(lhs.playerId, rhs.playerId) && MessagesPigeonInternal.deepEquals(lhs.state, rhs.state) && MessagesPigeonInternal.deepEquals(lhs.isPlaying, rhs.isPlaying) && MessagesPigeonInternal.deepEquals(lhs.positionMs, rhs.positionMs) && MessagesPigeonInternal.deepEquals(lhs.durationMs, rhs.durationMs) && MessagesPigeonInternal.deepEquals(lhs.bufferedPositionMs, rhs.bufferedPositionMs) && MessagesPigeonInternal.deepEquals(lhs.videoSize, rhs.videoSize) && MessagesPigeonInternal.deepEquals(lhs.pixelAspectRatio, rhs.pixelAspectRatio) && MessagesPigeonInternal.deepEquals(lhs.audioTracks, rhs.audioTracks) && MessagesPigeonInternal.deepEquals(lhs.subtitleTracks, rhs.subtitleTracks) && MessagesPigeonInternal.deepEquals(lhs.selectedAudioTrackId, rhs.selectedAudioTrackId) && MessagesPigeonInternal.deepEquals(lhs.selectedSubtitleTrackId, rhs.selectedSubtitleTrackId) && MessagesPigeonInternal.deepEquals(lhs.videoFormat, rhs.videoFormat) && MessagesPigeonInternal.deepEquals(lhs.errorKind, rhs.errorKind) && MessagesPigeonInternal.deepEquals(lhs.errorMessage, rhs.errorMessage) && MessagesPigeonInternal.deepEquals(lhs.videoRoute, rhs.videoRoute) && MessagesPigeonInternal.deepEquals(lhs.firstFrameShown, rhs.firstFrameShown)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -469,10 +479,53 @@ struct OnyxApplePlayerStatus: Hashable, CustomStringConvertible {
     MessagesPigeonInternal.deepHash(value: errorKind, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: errorMessage, hasher: &hasher)
     MessagesPigeonInternal.deepHash(value: videoRoute, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: firstFrameShown, hasher: &hasher)
   }
 
   public var description: String {
-    return "OnyxApplePlayerStatus(playerId: \(String(describing: playerId)), state: \(String(describing: state)), isPlaying: \(String(describing: isPlaying)), positionMs: \(String(describing: positionMs)), durationMs: \(String(describing: durationMs)), bufferedPositionMs: \(String(describing: bufferedPositionMs)), videoSize: \(String(describing: videoSize)), pixelAspectRatio: \(String(describing: pixelAspectRatio)), audioTracks: \(String(describing: audioTracks)), subtitleTracks: \(String(describing: subtitleTracks)), selectedAudioTrackId: \(String(describing: selectedAudioTrackId)), selectedSubtitleTrackId: \(String(describing: selectedSubtitleTrackId)), videoFormat: \(String(describing: videoFormat)), errorKind: \(String(describing: errorKind)), errorMessage: \(String(describing: errorMessage)), videoRoute: \(String(describing: videoRoute)))"
+    return "OnyxApplePlayerStatus(playerId: \(String(describing: playerId)), state: \(String(describing: state)), isPlaying: \(String(describing: isPlaying)), positionMs: \(String(describing: positionMs)), durationMs: \(String(describing: durationMs)), bufferedPositionMs: \(String(describing: bufferedPositionMs)), videoSize: \(String(describing: videoSize)), pixelAspectRatio: \(String(describing: pixelAspectRatio)), audioTracks: \(String(describing: audioTracks)), subtitleTracks: \(String(describing: subtitleTracks)), selectedAudioTrackId: \(String(describing: selectedAudioTrackId)), selectedSubtitleTrackId: \(String(describing: selectedSubtitleTrackId)), videoFormat: \(String(describing: videoFormat)), errorKind: \(String(describing: errorKind)), errorMessage: \(String(describing: errorMessage)), videoRoute: \(String(describing: videoRoute)), firstFrameShown: \(String(describing: firstFrameShown)))"
+  }
+}
+
+/// Ce que la puce de cet appareil décode en matériel, pour décider avant
+/// d'ouvrir un fichier s'il vaut mieux le demander transcodé au serveur.
+///
+/// Une Apple TV HD (puce A8) n'a pas de décodeur HEVC : AetherEngine y décode
+/// en logiciel, ce qu'une puce de 2014 ne tient pas en temps réel.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct OnyxAppleDeviceCapabilities: Hashable, CustomStringConvertible {
+  /// `VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC)`.
+  var hardwareHevc: Bool
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> OnyxAppleDeviceCapabilities? {
+    let hardwareHevc = pigeonVar_list[0] as! Bool
+
+    return OnyxAppleDeviceCapabilities(
+      hardwareHevc: hardwareHevc
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      hardwareHevc
+    ]
+  }
+  static func == (lhs: OnyxAppleDeviceCapabilities, rhs: OnyxAppleDeviceCapabilities) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.hardwareHevc, rhs.hardwareHevc)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("OnyxAppleDeviceCapabilities")
+    MessagesPigeonInternal.deepHash(value: hardwareHevc, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "OnyxAppleDeviceCapabilities(hardwareHevc: \(String(describing: hardwareHevc)))"
   }
 }
 
@@ -762,12 +815,14 @@ private class MessagesPigeonCodecReader: FlutterStandardReader {
     case 134:
       return OnyxApplePlayerStatus.fromList(self.readValue() as! [Any?])
     case 135:
-      return OnyxAppleSubtitleBitmap.fromList(self.readValue() as! [Any?])
+      return OnyxAppleDeviceCapabilities.fromList(self.readValue() as! [Any?])
     case 136:
-      return OnyxAppleSubtitleFrame.fromList(self.readValue() as! [Any?])
+      return OnyxAppleSubtitleBitmap.fromList(self.readValue() as! [Any?])
     case 137:
-      return OnyxApplePlaybackStats.fromList(self.readValue() as! [Any?])
+      return OnyxAppleSubtitleFrame.fromList(self.readValue() as! [Any?])
     case 138:
+      return OnyxApplePlaybackStats.fromList(self.readValue() as! [Any?])
+    case 139:
       return OnyxApplePictureInPicture.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -795,17 +850,20 @@ private class MessagesPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? OnyxApplePlayerStatus {
       super.writeByte(134)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleSubtitleBitmap {
+    } else if let value = value as? OnyxAppleDeviceCapabilities {
       super.writeByte(135)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxAppleSubtitleFrame {
+    } else if let value = value as? OnyxAppleSubtitleBitmap {
       super.writeByte(136)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxApplePlaybackStats {
+    } else if let value = value as? OnyxAppleSubtitleFrame {
       super.writeByte(137)
       super.writeValue(value.toList())
-    } else if let value = value as? OnyxApplePictureInPicture {
+    } else if let value = value as? OnyxApplePlaybackStats {
       super.writeByte(138)
+      super.writeValue(value.toList())
+    } else if let value = value as? OnyxApplePictureInPicture {
+      super.writeByte(139)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -868,6 +926,8 @@ protocol OnyxApplePlayerApi {
   /// Si l'appareil sait faire l'image dans l'image (iPhone et iPad ; ni Mac, ni
   /// Apple TV, où le lecteur n'en a pas l'usage).
   func supportsPictureInPicture() throws -> Bool
+  /// Ce que la puce décode en matériel. Ne dépend d'aucun lecteur.
+  func deviceCapabilities() throws -> OnyxAppleDeviceCapabilities
   /// Arme ou désarme la fenêtre pour ce lecteur. Armée, le système l'ouvre de
   /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne
   /// laisse pas l'app la demander après coup, comme Android.
@@ -1163,6 +1223,20 @@ class OnyxApplePlayerApiSetup {
       }
     } else {
       supportsPictureInPictureChannel.setMessageHandler(nil)
+    }
+    /// Ce que la puce décode en matériel. Ne dépend d'aucun lecteur.
+    let deviceCapabilitiesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.deviceCapabilities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      deviceCapabilitiesChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.deviceCapabilities()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      deviceCapabilitiesChannel.setMessageHandler(nil)
     }
     /// Arme ou désarme la fenêtre pour ce lecteur. Armée, le système l'ouvre de
     /// lui-même quand l'utilisateur quitte l'app en cours de film : iOS ne

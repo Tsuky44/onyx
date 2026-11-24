@@ -12,14 +12,18 @@ import '../playback/audio_language_gap.dart';
 import '../playback/audio_track_pairing.dart';
 import '../playback/auto_quality.dart';
 import '../playback/carried_subtitle.dart';
+import '../playback/direct_play_video_gate.dart';
 import '../playback/embedded_subtitle_pairing.dart';
 import '../playback/hls_retain_window.dart';
 import '../playback/live_subtitles.dart';
 import '../playback/playback_engine.dart';
+import '../playback/playback_intent.dart';
 import '../playback/playback_session.dart';
 import '../playback/playback_stats.dart';
+import '../playback/resume_settle.dart';
 import '../playback/series_track_memory.dart';
 import '../playback/startup_timeline.dart';
+import '../playback/playback_rescue.dart';
 import '../playback/stream_cut_recovery.dart';
 import 'playback_reporter.dart';
 import 'use_auto_quality.dart';
@@ -42,12 +46,15 @@ import '../player_playback_preferences.dart';
 part 'player_controller_auto.dart';
 part 'player_controller_cut.dart';
 part 'player_controller_diagnostics.dart';
+part 'player_controller_direct_play_gate.dart';
 part 'player_controller_dolby_vision.dart';
 part 'player_controller_hls.dart';
 part 'player_controller_language.dart';
+part 'player_controller_rescue.dart';
 part 'player_controller_startup.dart';
 part 'player_controller_subtitle_offer.dart';
 part 'player_controller_tracks.dart';
+part 'player_controller_transport.dart';
 
 /// Orchestrates playback, quality/audio/subtitle switching and the Direct Play
 /// ↔ HLS transitions.
@@ -80,7 +87,14 @@ class PlayerController {
   late final PlaybackSession session;
 
   bool isInitialized = false;
+
+  /// Ce que le moteur rapporte : vrai seulement quand l'image défile. Sert à
+  /// mesurer (première image, qualité Auto), jamais à savoir ce qu'on a
+  /// demandé : pour cela, [wantsPlay].
   bool isPlaying = false;
+
+  /// La dernière demande de lecture ou de pause. Voir [PlaybackIntent].
+  final PlaybackIntent _intent;
   Duration position = Duration.zero;
   Duration duration = Duration.zero;
   bool isDraggingSlider = false;
@@ -108,6 +122,13 @@ class PlayerController {
   /// démarrage : une panne connue à la seconde deux n'a aucune raison d'être
   /// annoncée à la seconde vingt-cinq.
   PlaybackFailure? startupFailure;
+
+  /// La lecture s'est figée après sa première image et rien ne l'a relancée
+  /// ([PlaybackRescue]) : l'écran propose de réessayer, avec [rescueFailure]
+  /// quand le moteur a nommé la panne.
+  bool rescueExhausted = false;
+  PlaybackFailure? get rescueFailure => _rescueFailure;
+  PlaybackFailure? _rescueFailure;
 
   /// The decoder has read this file's dimensions — it knows what it is about to
   /// draw, but has not necessarily drawn it yet.
@@ -139,7 +160,9 @@ class PlayerController {
       // Le tampon qui se remplit au démarrage n'est pas une ligne qui cale.
       _noteDisturbance();
       _mark('shown');
-      _printStartup();
+      // Un moteur qui annonce sa première image la montre avant que
+      // l'horloge tourne : la ligne attend alors `playing` pour se clore.
+      if (_startup.hasPlayed) _printStartup();
       _startTimelinePreviews();
       _onFirstFrame?.call();
       unawaited(_onPictureLive());
@@ -520,7 +543,9 @@ class PlayerController {
   StreamSubscription? _bufferingSubscription;
   StreamSubscription? _reapplySubscription;
   StreamSubscription? _failureSubscription;
+  StreamSubscription? _firstFrameSubscription;
   StreamCutRecovery? _cuts;
+  PlaybackRescue? _rescue;
   bool _disposed = false;
 
   /// Aspect ratio of the current video (width / height).
@@ -550,6 +575,7 @@ class PlayerController {
   void _notePlaying() {
     final millis = _startup.notePlaying();
     if (millis != null) _stats.noteStartup(millis);
+    if (hasFirstFrame) _printStartup();
   }
 
   /// Prints the start-up line, once. An unfinished one is printed too — on the
@@ -559,8 +585,12 @@ class PlayerController {
     if (line != null) debugPrint(line);
   }
 
-  PlayerController() {
-    session = createPlaybackSession();
+  /// [session] : le moteur, pour un test qui n'en a pas de vrai.
+  /// [wantsPlay] : faux pour un lecteur ouvert en pause (séance partagée,
+  /// relais derrière une pause).
+  PlayerController({PlaybackSession? session, bool wantsPlay = true})
+      : _intent = PlaybackIntent(wantsPlay: wantsPlay) {
+    this.session = session ?? createPlaybackSession();
   }
 
   /// Signature of the external subtitle currently attached in HLS mode. The poll
@@ -607,18 +637,6 @@ class PlayerController {
     _stats.noteBuffering(buffering);
     _onBufferingChanged?.call();
     if (buffering) unawaited(_auto.noteStall());
-  }
-
-  void togglePlayPause() {
-    final next = !isPlaying;
-    _setPlaying(next);
-    if (next) {
-      // Une reprise regarnit le tampon : ce n'est pas la ligne qui cale.
-      _noteDisturbance();
-      session.play();
-    } else {
-      session.pause();
-    }
   }
 
   void startHeartbeat({required int mediaId, required ApiClient apiClient}) =>
@@ -706,6 +724,7 @@ class PlayerController {
     _disposeTimelinePreviews();
     unawaited(_releasePlaybackAccess());
     _disposed = true;
+    _rescue?.dispose();
     _deferredSubtitleExtractTimer?.cancel();
     _deferredSubtitleExtractTimer = null;
     _stopSubtitleWatch();
@@ -719,6 +738,7 @@ class PlayerController {
     _bufferingSubscription?.cancel();
     _reapplySubscription?.cancel();
     _failureSubscription?.cancel();
+    _firstFrameSubscription?.cancel();
     _positionSubscription = null;
     _durationSubscription = null;
     _completedSubscription = null;
@@ -742,6 +762,7 @@ class PlayerController {
     // scroll in the app judder instead.
     unawaited(DisplayFrameRate.release());
     _disposed = true;
+    _rescue?.dispose();
     _deferredSubtitleExtractTimer?.cancel();
     _deferredSubtitleExtractTimer = null;
     _stopSubtitleWatch();
@@ -758,6 +779,7 @@ class PlayerController {
     _bufferingSubscription?.cancel();
     _reapplySubscription?.cancel();
     _failureSubscription?.cancel();
+    _firstFrameSubscription?.cancel();
     // Leaving the player screen must not leave hls.js segment loaders running
     // against a <video> that is about to disappear.
     WebPlayback.clearSubtitles();

@@ -181,7 +181,8 @@ class TvRegion extends StatelessWidget {
   /// au bord fait d'abord défiler ce qui défile entre le focus et elle, et
   /// autour du `PageView` ce serait lui, de 80 % de page. Sans [onEdge] (une
   /// seule page), gauche et droite sortent de la zone. Avec l'ancien
-  /// système, voir `TvSlideEdges`.
+  /// système, voir `TvSlideEdges`, qui en fait aussi l'entrée de sa page tant
+  /// qu'elle est à l'écran : Bas depuis la barre arrive sur « Reprendre ».
   const TvRegion.slide({super.key, required this.child, this.onEdge})
       : kind = TvRegionKind.slide,
         entersAtStart = false,
@@ -400,10 +401,7 @@ class TvRegion extends StatelessWidget {
       case TvRegionKind.panes:
         return TvFocusPanes(child: child);
       case TvRegionKind.slide:
-        final onEdge = this.onEdge;
-        return onEdge == null
-            ? child
-            : TvSlideEdges(onEdge: onEdge, child: child);
+        return TvSlideEdges(onEdge: onEdge, child: child);
       case TvRegionKind.controls:
         return TvFocusRow(preferredFocus: preferredFocus, child: child);
       case TvRegionKind.controlRows:

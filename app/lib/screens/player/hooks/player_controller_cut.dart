@@ -76,10 +76,11 @@ extension PlayerControllerCut on PlayerController {
     }
 
     _openedAtSeconds = seconds;
+    // Un serveur revenu pendant une pause ne relance pas le film tout seul.
     await session.open(
       _directPlaySource(api, media.id),
       start: Duration(seconds: seconds),
-      play: true,
+      play: wantsPlay,
     );
     if (_disposed) return true;
     position = Duration(seconds: seconds);

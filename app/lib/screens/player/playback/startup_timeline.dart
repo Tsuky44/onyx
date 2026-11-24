@@ -20,6 +20,9 @@ class StartupTimeline {
 
   bool get isRunning => _started && !_closed;
 
+  /// `playing` est marqué : l'horloge a tourné au moins une fois.
+  bool get hasPlayed => _playingMillis != null;
+
   void start() {
     if (_started) return;
     _started = true;

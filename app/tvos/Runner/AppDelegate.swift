@@ -6,13 +6,18 @@ import UIKit
 ///
 /// Généré par `flutter-tvos create`, puis complété de ce que l'hôte iOS fait
 /// déjà : la session audio d'un lecteur vidéo, et le canal `onyx/device` que
-/// `TvMode`, `ClientIdentity` et la session AVPlayer interrogent. S'y ajoute
-/// l'écran de recherche du système (`SystemSearch.swift`, ADR-0129).
+/// `TvMode`, `ClientIdentity` et la session AVPlayer interrogent. S'y ajoutent
+/// l'écran de recherche du système (`SystemSearch.swift`, ADR-0129) et les
+/// sons de navigation (`NavigationSound.swift`).
 @main
 class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   /// L'écran de recherche du système (ADR-0129), que Dart commande par le
   /// canal `onyx/tv_search`. Gardé ici : il vit autant que le moteur.
   private var systemSearch: SystemSearchChannel?
+
+  /// Les sons de navigation de tvOS, que Dart demande par le canal
+  /// `onyx/tv_navigation_sound`. Gardé ici, comme la recherche.
+  private var navigationSound: NavigationSoundChannel?
 
   override func application(
     _ application: UIApplication,
@@ -31,6 +36,9 @@ class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
     }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "OnyxSystemSearch") {
       systemSearch = SystemSearchChannel(messenger: registrar.messenger())
+    }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "OnyxNavigationSound") {
+      navigationSound = NavigationSoundChannel(messenger: registrar.messenger())
     }
   }
 

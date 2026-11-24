@@ -59,6 +59,19 @@ abstract final class AppMotion {
   /// [move], donc absent sous « réduire les animations » et en mode léger.
   static const Duration sweep = Duration(milliseconds: 900);
 
+  /// Un tour de l'anneau d'attente du lecteur (`OnyxLoadingRing`). Hors de la
+  /// plage 180–280 ms parce que ce n'est pas une transition : il tourne tant
+  /// qu'on attend. Ne passe ni par [move] ni par [reduced] : une attente
+  /// immobile se lit comme un plantage. En mode léger l'anneau garde son tour
+  /// et perd son flou ; sous « réduire les animations » il respire
+  /// ([waitBreath]) au lieu de tourner.
+  static const Duration waitTurn = Duration(milliseconds: 900);
+
+  /// Une demi-respiration de l'anneau d'attente sous « réduire les
+  /// animations » : son opacité descend puis remonte, sans rien déplacer. La
+  /// cadence de la pastille « en cours » d'une demande ([ambient] / 2).
+  static const Duration waitBreath = Duration(milliseconds: 1300);
+
   /// L'ouverture d'une page entière par-dessus celle qu'on regarde — la vue
   /// de recherche qui s'ouvre à la frappe (`SearchResultsRoute`). Hors de la
   /// plage 180–280 ms : à [emphasis], tout l'écran changeait en moins de

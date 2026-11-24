@@ -4,6 +4,10 @@ import Combine
 import CoreGraphics
 import Foundation
 
+#if os(iOS) || os(tvOS)
+  import UIKit
+#endif
+
 /// Un lecteur : une instance d'AetherEngine, et ce qu'il faut pour la
 /// raconter à Dart.
 ///
@@ -38,6 +42,11 @@ final class AetherPlayer {
   /// en pause puis appelle play() tout de suite ; le moteur ignore un play
   /// arrivé avant la fin de `load`, et la lecture restait en pause.
   private var wantsPlay = false
+  /// Où reprend la session en cours de reconstruction. Le moteur remet son
+  /// horloge à zéro le temps de reconstruire : rapportée telle quelle, la
+  /// barre de lecture retombait au début, et une reconstruction qui échoue
+  /// faisait rouvrir le film à la seconde zéro.
+  private var restoringAtMs: Int64?
   private let fastStart = FastStart()
 
   private var statusScheduled = false
@@ -105,6 +114,15 @@ final class AetherPlayer {
     // Le HLS de transcodage du serveur n'est pas concerné : AVPlayer parle
     // directement au serveur. Voir ADR-0092.
     options.progressiveSegmentDelivery = isRawFile
+    // Une session HLS du serveur va droit à AVPlayer. Sans ceci, le moteur
+    // tente d'abord de la démultiplexer comme un fichier, échoue (FFmpeg ne
+    // lit pas une playlist ici), relit la playlist et télécharge la tête du
+    // premier segment pour vérifier qu'il n'est pas du HEVC en MPEG-TS, puis
+    // seulement la confie à AVPlayer, qui redemande le tout. Le serveur
+    // n'envoie à ce client que du fMP4 : la vérification ne trouve jamais
+    // rien, et chaque changement de qualité payait ces allers-retours, plus
+    // l'attente d'un segment que le transcodage n'a pas encore écrit.
+    options.nativeRemoteHLS = !isRawFile
     let loadOptions = options
     let start: Double? = startMs > 0 ? Double(startMs) / 1000 : nil
     loadTask = Task { [weak self] in
@@ -145,6 +163,9 @@ final class AetherPlayer {
 
   func play() {
     wantsPlay = true
+    // Une session démontée en arrière-plan n'a plus rien à lire : elle se
+    // reconstruit d'abord, et le play est porté à la fin.
+    restoreAfterBackground()
     if loadTask == nil { engine.play() }
   }
 
@@ -161,9 +182,68 @@ final class AetherPlayer {
     if wantsPlay { engine.play() } else { engine.pause() }
   }
 
+  /// Reconstruit la session que le moteur a démontée quand l'app est passée
+  /// en arrière-plan.
+  ///
+  /// Sur l'Apple TV, tout passage en arrière-plan (l'économiseur d'écran
+  /// derrière une pause, le bouton TV, la veille) fait libérer au moteur son
+  /// item AVPlayer et sa boucle locale, et le laisse en `.paused` : il attend
+  /// de l'hôte qu'il le reconstruise au retour (`needsForegroundVideoRestore`).
+  /// Personne ne le faisait. `engine.play()` passait alors l'état à `.playing`
+  /// sur un lecteur sans item : la phase restait `.loading`, rien ne démarrait,
+  /// et chaque appui alternait entre un sablier et une pause sans jamais
+  /// relancer le film. Sur iPhone, même panne après plus de 15 s d'une pause
+  /// en arrière-plan.
+  ///
+  /// Le dernier play/pause demandé est retenu pendant la reconstruction, comme
+  /// pendant une ouverture, puis porté au moteur : la session revient dans
+  /// l'état voulu, pas dans celui de son premier montage.
+  ///
+  /// Jamais tant que l'app est encore en arrière-plan (une séance partagée y
+  /// envoie des play et des recherches) : le moteur démonte justement pour
+  /// qu'aucun décodeur ne traverse la mise en veille de l'Apple TV.
+  private func restoreAfterBackground(at positionMs: Int64? = nil) {
+    guard !released, loadTask == nil, engine.needsForegroundVideoRestore, !isInBackground
+    else { return }
+    restoringAtMs = positionMs ?? StatusMapping.milliseconds(engine.clock.currentTime)
+    loadTask = Task { [weak self] in
+      guard let self else { return }
+      defer { self.restoringAtMs = nil }
+      do {
+        try await self.engine.reloadAtCurrentPosition()
+        guard !Task.isCancelled else { return }
+        self.loadTask = nil
+        self.deliverWantedTransport()
+      } catch is CancellationError {
+        // Comme à l'ouverture : notre tâche annulée laisse la suite à ce qui
+        // l'a remplacée ; une reprise par le moteur reçoit la demande.
+        guard !Task.isCancelled else { return }
+        self.loadTask = nil
+        self.deliverWantedTransport()
+      } catch {
+        guard !Task.isCancelled else { return }
+        self.loadTask = nil
+        self.loadFailure = error.localizedDescription
+        self.scheduleStatus()
+      }
+    }
+    scheduleStatus()
+  }
+
+  private var isInBackground: Bool {
+    #if os(iOS) || os(tvOS)
+      return UIApplication.shared.applicationState == .background
+    #else
+      return false
+    #endif
+  }
+
   func seek(toMs positionMs: Int64) {
     let seconds = Double(max(positionMs, 0)) / 1000
     Task { await engine.seek(to: seconds) }
+    // Sur une session démontée, le moteur ne fait que noter la cible : c'est
+    // la reconstruction qui y mène, dans un ordre ou dans l'autre.
+    restoreAfterBackground(at: max(positionMs, 0))
   }
 
   func setPictureInPictureArmed(_ armed: Bool) {
@@ -273,7 +353,8 @@ final class AetherPlayer {
       videoFormat: StatusMapping.videoFormat(engine.videoFormat),
       errorKind: errorKind,
       errorMessage: errorMessage,
-      videoRoute: engine.videoRoute.rawValue)
+      videoRoute: engine.videoRoute.rawValue,
+      firstFrameShown: engine.hasFirstFrameReadyForDisplay)
   }
 
   func stats() -> OnyxApplePlaybackStats {
@@ -315,6 +396,7 @@ final class AetherPlayer {
       Self.signal(engine.$sourceVideoHeight),
       Self.signal(engine.$videoFormat),
       Self.signal(engine.$videoRoute),
+      Self.signal(engine.$hasFirstFrameReadyForDisplay),
       Self.signal(engine.clock.$currentTime.throttle(for: .milliseconds(250), scheduler: tick, latest: true)),
       Self.signal(engine.clock.$bufferedPosition.throttle(for: .milliseconds(250), scheduler: tick, latest: true)),
     ]
@@ -344,7 +426,9 @@ final class AetherPlayer {
         guard let self else { return }
         self.statusScheduled = false
         guard !self.released else { return }
-        self.onStatus(self.snapshot())
+        var status = self.snapshot()
+        if let held = self.restoringAtMs { status.positionMs = held }
+        self.onStatus(status)
       }
     }
   }

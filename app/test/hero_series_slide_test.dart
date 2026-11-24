@@ -6,9 +6,16 @@ import 'package:onyx/models/models.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/services/hero_series_preview.dart';
 import 'package:onyx/services/media_details_cache.dart';
+import 'package:onyx/theme/app_colors.dart';
+import 'package:onyx/theme/app_icons.dart';
+import 'package:onyx/theme/app_theme.dart';
+import 'package:onyx/theme/lite_mode.dart';
+import 'package:onyx/tv/tv_mode.dart';
 import 'package:onyx/utils/hero_slides.dart';
+import 'package:onyx/widgets/global/hero/hero_actions.dart';
 import 'package:onyx/widgets/global/hero/hero_living_backdrop.dart';
 import 'package:onyx/widgets/global/hero/hero_next_episode_card.dart';
+import 'package:onyx/widgets/global/hero/hero_page_dashes.dart';
 import 'package:onyx/widgets/global/hero_banner.dart';
 import 'package:onyx/widgets/global/hero_carousel.dart';
 import 'package:onyx/widgets/global/media_logo_display.dart';
@@ -308,6 +315,160 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(controller().page, 1);
     await _unmount(tester);
+  });
+
+  group('sur un téléviseur', () {
+    late bool previousTv;
+    setUp(() {
+      previousTv = TvMode.enabled.value;
+      TvMode.enabled.value = true;
+    });
+    tearDown(() => TvMode.enabled.value = previousTv);
+
+    Media film(int id) => Media(
+          id: id,
+          type: MediaType.movie,
+          title: 'Film $id',
+          duration: 6000,
+          createdAt: DateTime(2026),
+        );
+
+    Future<void> pumpCarousel(WidgetTester tester, {bool lite = false}) async {
+      tester.view.physicalSize = const Size(1280, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(Provider<ApiClient>.value(
+        value: _inProgress(),
+        child: TvScope(
+          isTv: true,
+          child: LiteScope(
+            isLite: lite,
+            child: MaterialApp(
+              theme: AppTheme.dark,
+              home: Scaffold(
+                body: HeroCarousel(
+                  slides: [
+                    for (final media in [film(7), film(8)])
+                      HeroSlide(media: media, title: media.title),
+                  ],
+                  onPlay: (_) {},
+                  onInfo: (_) {},
+                  autofocusPlay: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+    }
+
+    /// Le titre de la diapositive qui tient le focus.
+    String? focusedSlide() => FocusManager.instance.primaryFocus?.context
+        ?.findAncestorWidgetOfExactType<HeroBanner>()
+        ?.media
+        .title;
+
+    double fill(WidgetTester tester) => tester
+        .widget<HeroPageDashes>(find.byType(HeroPageDashes))
+        .progress
+        .value;
+
+    // Vu sur une Apple TV : le focus, posé d'entrée sur « Reprendre »,
+    // retenait le bandeau comme le survol d'une souris, et il ne défilait
+    // jamais.
+    testWidgets('le bandeau défile sous la télécommande, qui suit son bouton',
+        (tester) async {
+      await pumpCarousel(tester);
+      expect(focusedSlide(), 'Film 7');
+
+      await tester.pump(const Duration(seconds: 7));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      await tester.pump();
+      expect(
+          tester.widget<PageView>(find.byType(PageView)).controller!.page, 1);
+      expect(focusedSlide(), 'Film 8',
+          reason: 'le focus ne retombe pas sur l’en-tête');
+      await _unmount(tester);
+    });
+
+    testWidgets('le trait de la diapositive se remplit, comme au bureau',
+        (tester) async {
+      await pumpCarousel(tester);
+      await tester.pump(const Duration(milliseconds: 3500));
+      expect(fill(tester), closeTo(0.5, 0.05));
+      await _unmount(tester);
+    });
+
+    testWidgets('en mode léger, les traits restent immobiles', (tester) async {
+      await pumpCarousel(tester, lite: true);
+      await tester.pump(const Duration(milliseconds: 3500));
+      expect(fill(tester), 1);
+      await _unmount(tester);
+    });
+
+    // Vu sur une Apple TV : « S15 E1 », teint du noir de la page, ne se
+    // lisait pas sur le verre du bouton au repos (ADR-0112).
+    testWidgets('le numéro d’épisode prend l’encre du bouton, au repos comme '
+        'sous le focus', (tester) async {
+      final node = FocusNode();
+      addTearDown(node.dispose);
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.dark,
+        home: Scaffold(
+          body: Column(
+            children: [
+              HeroPlayButton(
+                label: 'Reprendre',
+                episodeCode: 'S15 E1',
+                onPressed: () {},
+                isTv: true,
+              ),
+              Focus(focusNode: node, child: const SizedBox(height: 10)),
+            ],
+          ),
+        ),
+      ));
+      Color codeColor() {
+        final rich = tester.widget<RichText>(find.descendant(
+          of: find.byType(HeroPlayButton),
+          matching: find.byWidgetPredicate((widget) =>
+              widget is RichText &&
+              widget.text.toPlainText() == 'Reprendre S15 E1'),
+        ));
+        Color? color;
+        rich.text.visitChildren((span) {
+          if (span is TextSpan && span.text == 'S15 E1') {
+            color = span.style?.color;
+            return false;
+          }
+          return true;
+        });
+        return color!;
+      }
+
+      node.requestFocus();
+      await tester.pumpAndSettle();
+      expect(
+        codeColor(),
+        AppColors.textPrimary.withValues(
+            alpha: AppColors.textPrimary.a * HeroPlayButton.codeOpacity),
+        reason: 'clair sur le verre du bouton au repos',
+      );
+
+      Focus.of(tester.element(find.byIcon(AppIcons.play))).requestFocus();
+      await tester.pumpAndSettle();
+      expect(
+        codeColor(),
+        AppColors.background.withValues(
+            alpha: AppColors.background.a * HeroPlayButton.codeOpacity),
+        reason: 'sombre sur le blanc du bouton focalisé',
+      );
+    });
   });
 
   testWidgets('le logo n’ombre pas sa boîte', (tester) async {

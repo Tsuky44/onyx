@@ -37,10 +37,18 @@ Le niveau est verrouillé par la branche choisie dans le formulaire : depuis `ma
 seuls `prod` et `major` sont acceptés ; depuis `beta` ou une branche personnelle, seul
 `test` l'est. Le workflow échoue tout de suite avec un message clair sinon.
 
-La version est calculée à partir du dernier tag `vX.Y.Z` (tri sémantique), et
-le tag est créé par la GitHub Release sur le commit construit : plus besoin de
-retenir le dernier numéro ni de pousser un tag à la main. Le champ **version**
-permet de forcer un numéro précis ; il est refusé si le tag existe déjà.
+La version est calculée à partir de la plus haute version déjà sortie (tri
+sémantique), et le tag est créé par la GitHub Release sur le commit construit :
+plus besoin de retenir le dernier numéro ni de pousser un tag à la main. Le
+champ **version** permet de forcer un numéro précis ; il est refusé si le tag
+existe déjà.
+
+« Déjà sortie » compte deux sortes de tags (`scripts/ci/resolve-version.sh`) :
+`vX.Y.Z`, une publication globale, et `build/<plateforme>/X.Y.Z`, une plateforme
+publiée seule depuis (l'Apple TV, voir plus bas). Dernier tag `v1.2.0` et Apple
+TV sortie seule en `1.2.1` : la publication suivante est la `1.2.2`, et toutes
+les plateformes s'y alignent. Sans plateforme sortie seule, rien ne change : la
+version part du dernier tag.
 
 Depuis un terminal, avec la CLI GitHub :
 
@@ -84,8 +92,14 @@ Un tag poussé (`git push origin v1.0.1`) n'a pas de cases : il reconstruit tout
 
 `.github/workflows/tvos.yml` construit l'app Apple TV et l'envoie sur TestFlight, rien
 d'autre : ni image Docker, ni tag de version, ni Release. Les serveurs ne se mettent pas
-à jour. La version reste celle du dernier tag `vX.Y.Z` ; le numéro de build est
-l'horodatage UTC du lancement.
+à jour. Le numéro de build est l'horodatage UTC du lancement.
+
+La version se calcule seule : la première fois après une publication globale, une
+version au-dessus de son tag (`v1.2.0` → `1.2.1`) ; ensuite la même, tant qu'aucune
+publication globale n'est passée. Jamais celle du dernier tag : App Store Connect ferme
+une version dès qu'elle est approuvée et refuse alors tout nouveau build. Une fois
+l'envoi réussi, le workflow note la version par un tag `build/tvos/X.Y.Z`, que
+`release.yml` lit pour partir au-dessus.
 
 ```bash
 gh workflow run tvos.yml --ref ma-branche          # fichier présent sur la branche par défaut

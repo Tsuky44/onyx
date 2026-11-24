@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
 import '../../models/models.dart';
 import '../../theme/app_motion.dart';
+import '../../theme/lite_mode.dart';
 import '../../tv/nav/tv_region.dart';
 import '../../tv/tv_mode.dart';
 import '../../utils/hero_slides.dart';
@@ -64,10 +65,18 @@ class _HeroCarouselState extends State<HeroCarousel>
   int _currentIndex = 0;
   bool _hovered = false;
 
-  /// The remote is on the banner. Auto-advance stops for the same reason it
-  /// stops under the mouse — and for a harder one: the slide it would turn to
-  /// rebuilds the page the focused button lives on, and the focus goes with it.
+  /// Le focus est dans le bandeau. Au clavier, il suspend le défilement comme
+  /// le survol d'une souris ; à la télécommande, non ([_heldByFocus]).
   bool _focused = false;
+
+  /// Le focus retient le bandeau, hors téléviseur seulement.
+  ///
+  /// La télécommande a toujours le focus quelque part, et d'abord ici, sur
+  /// « Reprendre » : retenu par lui, le bandeau d'un téléviseur ne défilait
+  /// jamais, sous des traits figés, quand celui du bureau tourne seul. Le
+  /// bouton de la diapositive qui arrive reprend le focus de celle qui part
+  /// (voir [_advance]).
+  bool get _heldByFocus => _focused && !TvScope.of(context);
 
   @override
   void initState() {
@@ -116,7 +125,7 @@ class _HeroCarouselState extends State<HeroCarousel>
   bool get _advances =>
       widget.slides.length > 1 &&
       !_hovered &&
-      !_focused &&
+      !_heldByFocus &&
       !_touched &&
       isOnScreen &&
       // « Réduire les animations » : un fond plein écran qui défile seul
@@ -161,10 +170,10 @@ class _HeroCarouselState extends State<HeroCarousel>
       ..reset()
       ..start();
     _autoTimer = Timer(dwell - elapsed, _advance);
-    // Le téléviseur garde ses traits immobiles : une animation de plus en
-    // continu sous chaque bandeau, pour une petite box, n'en valait pas le
-    // coût.
-    if (TvScope.of(context)) {
+    // Un téléviseur en mode léger garde ses traits immobiles : une animation
+    // de plus en continu sous chaque bandeau, pour une petite box, n'en
+    // valait pas le coût. Les autres remplissent leur trait comme le bureau.
+    if (TvScope.of(context) && LiteScope.of(context)) {
       _fill.value = 1;
     } else {
       _fill.duration = dwell;
@@ -176,6 +185,9 @@ class _HeroCarouselState extends State<HeroCarousel>
     _autoTimer = null;
     if (!mounted || !_advances) return;
     final next = (_currentIndex + 1) % widget.slides.length;
+    // Sous la télécommande, le bouton de la diapositive qui arrive prend le
+    // focus de celle qui part : sinon il retombait sur l'en-tête.
+    _refocusAfterPaging = _focused;
     _pageController.animateToPage(
       next,
       duration: const Duration(milliseconds: 900),
@@ -201,6 +213,9 @@ class _HeroCarouselState extends State<HeroCarousel>
     _scheduleAutoAdvance();
     if (!_refocusAfterPaging) return;
     _refocusAfterPaging = false;
+    // Partie dans une rangée pendant que la page tournait, la télécommande y
+    // reste.
+    if (!_focused) return;
     // L'ancienne page vient de sortir du parcours (voir [build]) et son bouton
     // a perdu le focus : il passe au premier bouton de la nouvelle, au même
     // endroit de l'écran.

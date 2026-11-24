@@ -349,6 +349,10 @@ class MpvPlaybackSession implements PlaybackSession {
     );
   }
 
+  /// mpv ne dit pas quand sa première image est peinte : le contrôleur le déduit.
+  @override
+  Stream<void> get firstFrames => const Stream<void>.empty();
+
   /// Muet, délibérément.
   ///
   /// libmpv rapporte bien ses pannes, mais media_kit les publie sur un flux
@@ -362,12 +366,9 @@ class MpvPlaybackSession implements PlaybackSession {
 
   // --- Réglages propres à mpv --------------------------------------------
 
-  /// Pose une option mpv, sans laisser un refus emporter les suivantes.
-  ///
-  /// Ce bloc était une seule chaîne d'`await` : une option que mpv ne
-  /// reconnaissait pas levait, et toutes celles d'après étaient silencieusement
-  /// sautées — le décodeur matériel ou la reconnexion pouvaient manquer sans
-  /// que rien ne le dise.
+  /// Pose une option mpv, sans laisser un refus emporter les suivantes : avant,
+  /// une option inconnue levait et sautait en silence toutes celles d'après (le
+  /// décodeur matériel ou la reconnexion pouvaient manquer sans rien dire).
   Future<void> _set(dynamic platform, String name, String value) async {
     try {
       await platform.setProperty(name, value);

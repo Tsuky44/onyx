@@ -363,6 +363,11 @@ class ExoPlaybackSession implements PlaybackSession {
   @override
   Stream<PlaybackVideoParams> get videoParamChanges => _videoParams.stream;
 
+  /// Pas de signal de première image ici : le contrôleur le déduit des
+  /// dimensions et de l'horloge.
+  @override
+  Stream<void> get firstFrames => const Stream<void>.empty();
+
   @override
   Stream<PlaybackFailure> get failures => _failures.stream;
 

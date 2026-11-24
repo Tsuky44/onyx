@@ -38,6 +38,16 @@ void main() {
   }
 
   /// Le premier élément focalisable de l'écran, dans l'ordre de lecture.
+  /// Laisse finir les transitions en cours (une page du bandeau tourne en
+  /// moins d'une seconde) sans attendre le repos : sur un téléviseur, le
+  /// trait du bandeau se remplit en continu, et `pumpAndSettle` n'en verrait
+  /// jamais la fin.
+  Future<void> settle(WidgetTester tester) async {
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
   Future<void> focusFirst(WidgetTester tester) async {
     final nodes = FocusManager.instance.rootScope.traversalDescendants
         .where((node) => node is! FocusScopeNode)
@@ -48,7 +58,7 @@ void main() {
         return byTop != 0 ? byTop : a.rect.left.compareTo(b.rect.left);
       });
     nodes.first.requestFocus();
-    await tester.pumpAndSettle();
+    await settle(tester);
   }
 
   Future<void> press(
@@ -59,7 +69,7 @@ void main() {
       LogicalKeyboardKey.arrowLeft => TraversalDirection.left,
       _ => TraversalDirection.right,
     });
-    await tester.pumpAndSettle();
+    await settle(tester);
   }
 
   /// L'épisode qui tient le focus, par son numéro, et si c'est la ligne elle-
@@ -241,7 +251,7 @@ void main() {
 
         // Une diapositive toutes les sept secondes, une seconde de trajet.
         await tester.pump(const Duration(seconds: 8));
-        await tester.pumpAndSettle();
+        await settle(tester);
 
         final controller =
             tester.widget<PageView>(find.byType(PageView)).controller!;

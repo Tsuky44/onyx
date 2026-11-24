@@ -305,6 +305,7 @@ class OnyxApplePlayerStatus {
     this.errorKind,
     this.errorMessage,
     this.videoRoute,
+    required this.firstFrameShown,
   });
 
   int playerId;
@@ -349,6 +350,14 @@ class OnyxApplePlayerStatus {
   /// `none`…). Sur `software`, il n'y a pas d'`AVPlayer`.
   String? videoRoute;
 
+  /// La première image de ce média est à l'écran, lecture lancée ou non.
+  ///
+  /// Le verrou du moteur (`hasFirstFrameReadyForDisplay`), remis à faux à
+  /// chaque ouverture. L'app s'en sert pour lever son cache à l'image même,
+  /// sans attendre que l'horloge ait avancé : la couche vidéo tient une image
+  /// avant que la réserve ne laisse partir la lecture.
+  bool firstFrameShown;
+
   List<Object?> _toList() {
     return <Object?>[
       playerId,
@@ -367,6 +376,7 @@ class OnyxApplePlayerStatus {
       errorKind,
       errorMessage,
       videoRoute,
+      firstFrameShown,
     ];
   }
 
@@ -392,6 +402,7 @@ class OnyxApplePlayerStatus {
       errorKind: result[13] as OnyxApplePlayerErrorKind?,
       errorMessage: result[14] as String?,
       videoRoute: result[15] as String?,
+      firstFrameShown: result[16]! as bool,
     );
   }
 
@@ -404,7 +415,7 @@ class OnyxApplePlayerStatus {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(playerId, other.playerId) && _deepEquals(state, other.state) && _deepEquals(isPlaying, other.isPlaying) && _deepEquals(positionMs, other.positionMs) && _deepEquals(durationMs, other.durationMs) && _deepEquals(bufferedPositionMs, other.bufferedPositionMs) && _deepEquals(videoSize, other.videoSize) && _deepEquals(pixelAspectRatio, other.pixelAspectRatio) && _deepEquals(audioTracks, other.audioTracks) && _deepEquals(subtitleTracks, other.subtitleTracks) && _deepEquals(selectedAudioTrackId, other.selectedAudioTrackId) && _deepEquals(selectedSubtitleTrackId, other.selectedSubtitleTrackId) && _deepEquals(videoFormat, other.videoFormat) && _deepEquals(errorKind, other.errorKind) && _deepEquals(errorMessage, other.errorMessage) && _deepEquals(videoRoute, other.videoRoute);
+    return _deepEquals(playerId, other.playerId) && _deepEquals(state, other.state) && _deepEquals(isPlaying, other.isPlaying) && _deepEquals(positionMs, other.positionMs) && _deepEquals(durationMs, other.durationMs) && _deepEquals(bufferedPositionMs, other.bufferedPositionMs) && _deepEquals(videoSize, other.videoSize) && _deepEquals(pixelAspectRatio, other.pixelAspectRatio) && _deepEquals(audioTracks, other.audioTracks) && _deepEquals(subtitleTracks, other.subtitleTracks) && _deepEquals(selectedAudioTrackId, other.selectedAudioTrackId) && _deepEquals(selectedSubtitleTrackId, other.selectedSubtitleTrackId) && _deepEquals(videoFormat, other.videoFormat) && _deepEquals(errorKind, other.errorKind) && _deepEquals(errorMessage, other.errorMessage) && _deepEquals(videoRoute, other.videoRoute) && _deepEquals(firstFrameShown, other.firstFrameShown);
   }
 
   @override
@@ -413,7 +424,58 @@ class OnyxApplePlayerStatus {
 
   @override
   String toString() {
-    return 'OnyxApplePlayerStatus(playerId: $playerId, state: $state, isPlaying: $isPlaying, positionMs: $positionMs, durationMs: $durationMs, bufferedPositionMs: $bufferedPositionMs, videoSize: $videoSize, pixelAspectRatio: $pixelAspectRatio, audioTracks: $audioTracks, subtitleTracks: $subtitleTracks, selectedAudioTrackId: $selectedAudioTrackId, selectedSubtitleTrackId: $selectedSubtitleTrackId, videoFormat: $videoFormat, errorKind: $errorKind, errorMessage: $errorMessage, videoRoute: $videoRoute)';
+    return 'OnyxApplePlayerStatus(playerId: $playerId, state: $state, isPlaying: $isPlaying, positionMs: $positionMs, durationMs: $durationMs, bufferedPositionMs: $bufferedPositionMs, videoSize: $videoSize, pixelAspectRatio: $pixelAspectRatio, audioTracks: $audioTracks, subtitleTracks: $subtitleTracks, selectedAudioTrackId: $selectedAudioTrackId, selectedSubtitleTrackId: $selectedSubtitleTrackId, videoFormat: $videoFormat, errorKind: $errorKind, errorMessage: $errorMessage, videoRoute: $videoRoute, firstFrameShown: $firstFrameShown)';
+  }
+}
+
+/// Ce que la puce de cet appareil décode en matériel, pour décider avant
+/// d'ouvrir un fichier s'il vaut mieux le demander transcodé au serveur.
+///
+/// Une Apple TV HD (puce A8) n'a pas de décodeur HEVC : AetherEngine y décode
+/// en logiciel, ce qu'une puce de 2014 ne tient pas en temps réel.
+class OnyxAppleDeviceCapabilities {
+  OnyxAppleDeviceCapabilities({
+    required this.hardwareHevc,
+  });
+
+  /// `VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC)`.
+  bool hardwareHevc;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      hardwareHevc,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static OnyxAppleDeviceCapabilities decode(Object result) {
+    result as List<Object?>;
+    return OnyxAppleDeviceCapabilities(
+      hardwareHevc: result[0]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! OnyxAppleDeviceCapabilities || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(hardwareHevc, other.hardwareHevc);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'OnyxAppleDeviceCapabilities(hardwareHevc: $hardwareHevc)';
   }
 }
 
@@ -737,17 +799,20 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is OnyxApplePlayerStatus) {
       buffer.putUint8(134);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleSubtitleBitmap) {
+    }    else if (value is OnyxAppleDeviceCapabilities) {
       buffer.putUint8(135);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxAppleSubtitleFrame) {
+    }    else if (value is OnyxAppleSubtitleBitmap) {
       buffer.putUint8(136);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxApplePlaybackStats) {
+    }    else if (value is OnyxAppleSubtitleFrame) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    }    else if (value is OnyxApplePictureInPicture) {
+    }    else if (value is OnyxApplePlaybackStats) {
       buffer.putUint8(138);
+      writeValue(buffer, value.encode());
+    }    else if (value is OnyxApplePictureInPicture) {
+      buffer.putUint8(139);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -773,12 +838,14 @@ class _PigeonCodec extends StandardMessageCodec {
       case 134:
         return OnyxApplePlayerStatus.decode(readValue(buffer)!);
       case 135:
-        return OnyxAppleSubtitleBitmap.decode(readValue(buffer)!);
+        return OnyxAppleDeviceCapabilities.decode(readValue(buffer)!);
       case 136:
-        return OnyxAppleSubtitleFrame.decode(readValue(buffer)!);
+        return OnyxAppleSubtitleBitmap.decode(readValue(buffer)!);
       case 137:
-        return OnyxApplePlaybackStats.decode(readValue(buffer)!);
+        return OnyxAppleSubtitleFrame.decode(readValue(buffer)!);
       case 138:
+        return OnyxApplePlaybackStats.decode(readValue(buffer)!);
+      case 139:
         return OnyxApplePictureInPicture.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -1129,6 +1196,26 @@ class OnyxApplePlayerApi {
     )
     ;
     return pigeonVar_replyValue! as bool;
+  }
+
+  /// Ce que la puce décode en matériel. Ne dépend d'aucun lecteur.
+  Future<OnyxAppleDeviceCapabilities> deviceCapabilities() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.onyx_player_apple.OnyxApplePlayerApi.deviceCapabilities$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as OnyxAppleDeviceCapabilities;
   }
 
   /// Arme ou désarme la fenêtre pour ce lecteur. Armée, le système l'ouvre de

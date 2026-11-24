@@ -37,6 +37,11 @@ extension PlayerControllerStartup on PlayerController {
     // L'échec est relu à l'`await` plus bas ; sans ceci, une sortie anticipée
     // (moteur qui échoue, écran fermé) le laisserait remonter sans preneur.
     accessFuture?.ignore();
+    // La liste des pistes part avec le ticket au lieu d'attendre l'ouverture :
+    // elle revient d'ordinaire avec lui, et c'est elle qui dit si la puce
+    // décode l'image de ce fichier (voir [PlayerControllerDirectPlayGate]).
+    final tracksFuture = _loadTracks(apiClient, media.id);
+    tracksFuture.ignore();
     // Un moteur repris au vestiaire peut encore décharger le film précédent.
     // Ouvrir par-dessus est ce qui laissait une lecture derrière un indicateur
     // qui ne s'arrêtait jamais.
@@ -112,6 +117,7 @@ extension PlayerControllerStartup on PlayerController {
     });
 
     _cuts = _newCutRecovery();
+    _rescue = _newRescue();
     _completedSubscription = session.completions.listen((_) {
       if (_disposed) return;
       // Un serveur qui s'arrête fait annoncer au moteur la fin du fichier :
@@ -133,6 +139,16 @@ extension PlayerControllerStartup on PlayerController {
       _mark('decoder');
       videoAspectRatio = aspect;
       _videoParamsReady = true;
+      _maybeMarkFirstFrame();
+    });
+
+    // Le moteur qui sait que sa première image est à l'écran le dit : le
+    // cache se lève à l'image même, sans attendre que l'horloge ait avancé.
+    _firstFrameSubscription = session.firstFrames.listen((_) {
+      if (_disposed) return;
+      _mark('picture');
+      _videoParamsReady = true;
+      _clockRunning = true;
       _maybeMarkFirstFrame();
     });
 
@@ -221,6 +237,7 @@ extension PlayerControllerStartup on PlayerController {
     // silent — picture, no sound, no message. Rather than open the file and back
     // out of it a moment later, the web waits for the track list and starts
     // straight in HLS, at the source's own resolution.
+    var serverStart = false;
     if (!_hlsOnly) {
       // Which audio track to load with. The episode being carried over from
       // knows best; otherwise it is the user's standing preference, which lives
@@ -265,21 +282,18 @@ extension PlayerControllerStartup on PlayerController {
       _mark('resume');
       if (startAt > 0) _startup.note('reprise à ${startAt}s');
 
-      try {
-        await session.open(
-          streamUrl,
-          start: startAt > 0 ? Duration(seconds: startAt) : null,
-          play: false,
-        );
-        if (startAt >= 0) {
-          _openedAtSeconds = startAt;
-          if (startAt > 0) position = Duration(seconds: startAt);
-        }
-      } catch (e) {
-        ClientLog.error(
-            "Player: failed to open stream: ${redactPlaybackDiagnostic(e)}");
+      // Une image que la puce ne décoderait qu'en logiciel ne s'ouvre pas :
+      // la liste des pistes, juste en dessous, demande la session au serveur
+      // à cette seconde-là.
+      serverStart = await _mustStartOnServer(tracksFuture);
+      if (_disposed) return;
+      if (serverStart) {
+        _directPlayRuledOut = true;
+        position = Duration(seconds: startAt > 0 ? startAt : 0);
+        _mark('gated');
+      } else {
+        await _openDirect(streamUrl, startAt);
       }
-      _mark('opened');
     }
 
     if (_disposed) return;
@@ -287,6 +301,8 @@ extension PlayerControllerStartup on PlayerController {
       apiClient: apiClient,
       mediaId: media.id,
       inheritedPreferences: inheritedPreferences,
+      pendingTracks: tracksFuture,
+      nothingOpen: serverStart,
     ));
 
     if (inheritedPreferences == null || inheritedPreferences.subtitlesOff) {
@@ -312,6 +328,62 @@ extension PlayerControllerStartup on PlayerController {
   String _directPlaySource(ApiClient apiClient, int mediaId) =>
       _localFilePath ??
       apiClient.getStreamUrl(mediaId, access: _playbackAccess);
+
+  /// Ouvre le fichier lui-même à [startAt] ; négatif : point de reprise pas
+  /// encore connu, l'ouverture se fait au début et `startPlayback` cherchera.
+  Future<void> _openDirect(String url, int startAt, {bool play = false}) async {
+    try {
+      await session.open(
+        url,
+        start: startAt > 0 ? Duration(seconds: startAt) : null,
+        play: play,
+      );
+      if (startAt >= 0) {
+        _openedAtSeconds = startAt;
+        if (startAt > 0) position = Duration(seconds: startAt);
+      }
+    } catch (e) {
+      ClientLog.error(
+          "Player: failed to open stream: ${redactPlaybackDiagnostic(e)}");
+    }
+    _mark('opened');
+  }
+
+  /// La lecture commence par une session que le contrôleur demande lui-même
+  /// au serveur, au point de reprise et lecture lancée : il n'y a ni `play` ni
+  /// saut à lui appliquer de l'extérieur.
+  bool get _startsOnServer =>
+      !_hlsOnly && _directPlayRuledOut && _openedAtSeconds < 0;
+
+  /// La seconde d'où cette lecture part, ou -1 quand le fichier est ouvert
+  /// sans point de reprise connu.
+  int get startPointSeconds =>
+      _startsOnServer ? position.inSeconds : _openedAtSeconds;
+
+  /// La réponse du serveur sur le point de reprise, arrivée après le départ
+  /// (voir [settledResumePoint]) : elle déplace encore la lecture tant que
+  /// personne n'a choisi sa place.
+  Future<void> correctLateResume(int serverSeconds,
+      {required int startedAt}) async {
+    if (_disposed) return;
+    if (!resumeNeedsLateCorrection(
+      startedAt: startedAt,
+      serverSeconds: serverSeconds,
+      positionSeconds: position.inSeconds,
+    )) {
+      return;
+    }
+    debugPrint('Player: reprise confirmée après le départ, '
+        'saut de ${startedAt}s à ${serverSeconds}s');
+    final opening = _hlsQualityInFlight;
+    if (_hlsSwapInFlight && opening != null) {
+      // La session s'ouvre encore : la demande prend la file, où la dernière
+      // gagne, et sera servie dès l'ouverture finie.
+      _pendingHlsOpen = (quality: opening, startSeconds: serverSeconds);
+      return;
+    }
+    await seekToAbsoluteSeconds(serverSeconds);
+  }
 
 
   Future<void> _waitUntilSeekable() async {
@@ -342,7 +414,7 @@ extension PlayerControllerStartup on PlayerController {
 
   /// How far the server's resume point may sit from the one the stream was
   /// opened at before it is worth a seek.
-  static const _resumeToleranceSeconds = 5;
+  static const _resumeToleranceSeconds = resumeToleranceSeconds;
 
   /// Starts playback, optionally resuming at an absolute position in the media.
   Future<void> startPlayback({
@@ -359,6 +431,11 @@ extension PlayerControllerStartup on PlayerController {
       // arrives after this runs), _startWebTranscode is what applies the offset,
       // and it opens with play:true.
       await session.play();
+    } else if (_startsOnServer) {
+      // La session du serveur s'ouvre au point de reprise, lecture lancée.
+      // Un `play` avant elle ne porterait sur rien, et le saut de la branche
+      // d'en dessous viserait la seconde absolue dans une session qui compte
+      // depuis son propre début.
     } else if (currentQuality == null &&
         _openedAtSeconds >= 0 &&
         (resumeAtSeconds - _openedAtSeconds).abs() <= _resumeToleranceSeconds) {

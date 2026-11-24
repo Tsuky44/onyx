@@ -9,6 +9,28 @@ import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
 import 'onyx/onyx_loading_ring.dart';
 import 'player_question_window.dart';
+import 'player_tv_scale.dart';
+
+/// Le lecteur attend-il quelque chose : la première image, un changement de
+/// qualité, un tampon vide ? Une seule réponse pour l'anneau d'attente
+/// ([PlayerLoadingSpinner]) et pour le bouton lecture qui lui cède la place.
+///
+/// Une première image n'est pas un film qui joue : le moteur peut l'annoncer
+/// avant que la lecture ne parte, et charger encore. Passé la première image,
+/// c'est donc le moteur seul qui dit l'attente ([isBuffering]), que le
+/// démarrage soit fini ou non.
+///
+/// Un démarrage qui a dépassé son délai ([startupStalled]) n'attend plus : il
+/// a son panneau ([StalledStartup]), et un anneau n'a rien à faire dessus.
+bool playerAwaitsPicture({
+  required bool hasFirstFrame,
+  required bool startupStalled,
+  required bool isSwitchingQuality,
+  required bool isBuffering,
+}) {
+  if (!hasFirstFrame) return !startupStalled;
+  return isSwitchingQuality || isBuffering;
+}
 
 /// L'attente du lecteur : démarrage, recherche, changement de qualité.
 ///
@@ -21,30 +43,71 @@ import 'player_question_window.dart';
 /// as a seek took to load. Loading is exactly when the user is most likely to
 /// want to pause, seek again or go back, so the spinner has to be purely
 /// decorative.
-class PlayerLoadingSpinner extends StatelessWidget {
-  const PlayerLoadingSpinner({super.key, this.centreAt = 0.5, this.scale = 1});
+///
+/// Sur un téléviseur ([isTv]), la couche se pose elle-même à l'échelle du
+/// lecteur ([PlayerTvScale.layer]), comme tout ce qui est dessiné sur l'image.
+///
+/// Toujours posé par l'écran, qui dit seulement s'il attend ([visible]) :
+/// l'anneau reste le temps de s'effacer, et garde son tour d'une attente à la
+/// suivante.
+class PlayerLoadingSpinner extends StatefulWidget {
+  const PlayerLoadingSpinner({
+    super.key,
+    this.visible = true,
+    this.isTv = false,
+    this.centreAt = 0.5,
+  });
+
+  /// Le lecteur attend son image. Faux, l'anneau s'efface en fondu puis se
+  /// démonte : sans attente, aucune animation ne tourne.
+  final bool visible;
+
+  final bool isTv;
 
   /// Où tombe son milieu, en fraction de la hauteur.
   final double centreAt;
 
-  /// Le facteur de taille : celui du lecteur sur un téléviseur
-  /// (`PlayerTvScale.factorFor`), 1 ailleurs.
-  final double scale;
+  @override
+  State<PlayerLoadingSpinner> createState() => _PlayerLoadingSpinnerState();
+}
+
+class _PlayerLoadingSpinnerState extends State<PlayerLoadingSpinner> {
+  /// L'anneau est dans l'arbre : pendant l'attente, et le temps de son fondu
+  /// de sortie.
+  late bool _mounted = widget.visible;
+
+  @override
+  void didUpdateWidget(covariant PlayerLoadingSpinner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.visible) _mounted = true;
+  }
+
+  void _onGone() {
+    if (!mounted || widget.visible) return;
+    setState(() => _mounted = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final size = OnyxLoadingRing.defaultSize * scale;
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: LayoutBuilder(
-          builder: (context, constraints) => Stack(
-            children: [
-              Positioned(
-                left: (constraints.maxWidth - size) / 2,
-                top: constraints.maxHeight * centreAt - size / 2,
-                child: OnyxLoadingRing(size: size),
-              ),
-            ],
+    if (!_mounted) return const SizedBox.shrink();
+    const size = OnyxLoadingRing.defaultSize;
+    return PlayerTvScale.layer(
+      isTv: widget.isTv,
+      child: Positioned.fill(
+        child: IgnorePointer(
+          child: LayoutBuilder(
+            builder: (context, constraints) => Stack(
+              children: [
+                Positioned(
+                  left: (constraints.maxWidth - size) / 2,
+                  top: constraints.maxHeight * widget.centreAt - size / 2,
+                  child: OnyxLoadingRing(
+                    present: widget.visible,
+                    onGone: _onGone,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

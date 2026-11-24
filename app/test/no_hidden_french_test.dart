@@ -50,6 +50,10 @@ const _allowed = <String, String>{
       'mots-clés de recherche des réglages, jamais affichés',
   'invite code lien compte':
       'mots-clés de recherche des réglages, jamais affichés',
+  'Lecture sur un autre appareil':
+      'libellé de débogage d’un FocusNode (RemotePlaybackBanner), jamais affiché',
+  r'- /chemin/vers/vos/films:$mount/Films:ro':
+      'ligne d’exemple d’un volume Docker : un chemin type à remplacer, pas un texte',
 };
 
 final _accent = RegExp('[àâäçéèêëîïôöûùüÿœæÀÂÇÉÈÊËÎÏÔÛÙÜŒ]');

@@ -23,7 +23,6 @@ class PlayerWatchParty extends ChangeNotifier {
     required this.mediaId,
     required this.isGone,
     required this.playbackRate,
-    required this.setWantsPlayback,
     required this.openMedia,
   });
 
@@ -39,7 +38,6 @@ class PlayerWatchParty extends ChangeNotifier {
 
   /// La vitesse choisie par la personne devant l'écran.
   final double Function() playbackRate;
-  final void Function(bool wanted) setWantsPlayback;
 
   /// La séance est passée à un autre média : le lecteur l'ouvre.
   final void Function(HomeMediaItem media,
@@ -120,7 +118,7 @@ class PlayerWatchParty extends ChangeNotifier {
       accountId: accountKey(),
       mediaId: mediaId(),
       position: controller.position,
-      playing: controller.isPlaying,
+      playing: controller.wantsPlay,
     );
   }
 
@@ -209,17 +207,18 @@ class _WatchPartyBinding implements WatchPartyPlayer {
         (settles != null && DateTime.now().isBefore(settles));
   }
 
+  /// Ce qu'on a demandé, pas ce que le moteur rapporte : un appareil qui
+  /// remplit son tampon n'a pas mis la séance en pause.
   @override
-  bool get isPlaying => _controller.isPlaying;
+  bool get isPlaying => _controller.wantsPlay;
 
   @override
   Duration get position => _controller.position;
 
   @override
   Future<void> applyPlaying(bool playing) async {
-    if (_controller.isPlaying == playing) return;
-    _link.setWantsPlayback(playing);
-    _controller.togglePlayPause();
+    if (_controller.wantsPlay == playing) return;
+    playing ? _controller.play() : _controller.pause();
     _link._notify();
   }
 

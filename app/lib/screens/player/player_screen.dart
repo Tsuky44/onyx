@@ -42,6 +42,7 @@ import 'hooks/use_gesture_hints.dart';
 import 'hooks/use_landscape_side.dart';
 import 'hooks/use_playback_handoff.dart';
 import 'hooks/use_player_controller.dart';
+import 'hooks/use_player_exit.dart';
 import 'hooks/use_episode_navigation.dart';
 import 'hooks/use_player_media_keys.dart';
 import 'hooks/use_player_popup.dart';
@@ -79,6 +80,7 @@ import 'widgets/tabs/player_watch_party_tab.dart';
 import 'widgets/watch_party_overlay.dart';
 import 'widgets/player_invite_overlay.dart';
 import 'playback/live_subtitles.dart';
+import 'playback/resume_settle.dart';
 import 'playback/relay_trigger.dart';
 import 'playback/remote_seek.dart';
 import 'playback/skip_segments.dart';
@@ -180,6 +182,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _isLeaving = false;
   bool _progressFlushed = false;
 
+  /// La sortie de cet écran, une seule fois. Voir [PlayerExit].
+  late final PlayerExit _exit = _createExit();
+
   /// Le lecteur a été quitté pendant le générique de fin, pour l'épisode
   /// suivant ou pour de bon : l'épisode compte comme vu, même sous le seuil.
   /// Voir [countsAsWatched].
@@ -190,7 +195,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
   /// Quand le relais peut seulement s'envisager. Voir [RelayTrigger].
   final RelayTrigger _relayTrigger = RelayTrigger();
   bool _findingRelay = false;
-  bool _wantsPlayback = true;
+
+  /// La dernière demande de lecture ou de pause, retenue par le contrôleur et
+  /// jamais relue du moteur. Voir [PlaybackIntent].
+  bool get _wantsPlayback => _playerController.wantsPlay;
   String? _sourceAccountId;
   int _resumePosition = 0;
 
@@ -366,7 +374,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
     PlayerPresence.enter();
     TvTouchpad.addMoveListener(_handleTouchpadMove);
     _showControls = !widget.autoAdvance;
-    _wantsPlayback = !widget.startPaused;
     _chosenDisplayMode = widget.initialDisplayMode;
     if (_ownsDeviceOrientation) {
       _landscapeLock = PlayerLandscapeLock(
@@ -390,7 +397,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     SleepTimer.instance.retain();
     StillWatching.instance.retain();
     SleepTimer.instance.addListener(_applySleepTimer);
-    _playerController = PlayerController();
+    _playerController = PlayerController(wantsPlay: !widget.startPaused);
     _party = PlayerWatchParty(
       controller: _playerController,
       api: () => _apiClient,
@@ -400,7 +407,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
       mediaId: () => _info.media.id,
       isGone: () => _isLeaving || _isDisposing || !mounted,
       playbackRate: () => _playbackRate,
-      setWantsPlayback: (wanted) => _wantsPlayback = wanted,
       openMedia: (media, {required resumeAtSeconds, required startPaused}) =>
           _navigateToEpisode(
         media,
@@ -428,10 +434,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       inParty: () => _party.party != null,
       isLeaving: () => _isLeaving || !mounted,
       pause: _pauseByChoice,
-      resume: () {
-        _wantsPlayback = true;
-        if (!_playerController.isPlaying) _playerController.togglePlayPause();
-      },
+      resume: _playerController.play,
       leave: () => unawaited(_leavePlayer()),
     )..addListener(_rebuild);
     _episodesPanel = EpisodesPanelController(
@@ -453,7 +456,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       onPlayPause: _togglePlayPause,
       onRewind: () => _seekRelative(-10),
       onFastForward: _handleMediaFastForward,
-      isPlaying: () => _playerController.isPlaying,
+      isPlaying: () => _playerController.wantsPlay,
     );
     _init().catchError((Object error) {
       debugPrint(
@@ -503,7 +506,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _episodesPanel.dispose();
     _remoteSeek.dispose();
     if (!_progressFlushed && _apiClient != null) {
-      unawaited(_syncProgressOnExit(popAfter: false));
+      unawaited(_syncProgressOnExit());
     }
     if (AppPlatform.isWindows) {
       if (!_isEpisodeTransition) {
@@ -657,23 +660,24 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     PlayerTvScale.layer(isTv: isTv, child: _buildChrome(isTv)),
                     if (_buildPauseInfo(isTv) case final pauseInfo?) pauseInfo,
                     ..._buildOverChrome(isTv),
-                    // Start-up spinner. IgnorePointer like the one below: loading is
-                    // exactly when the user may want to go back, so the cover must
-                    // never eat taps meant for the chrome.
-                    //
-                    // Past the deadline it stops being a spinner and starts being a
-                    // question, which does take input — there is a button on it.
-                    if (!_playerController.hasFirstFrame)
-                      if (_startupStalled)
-                        Positioned.fill(
-                          child: StalledStartup(
-                            failure: _playerController.startupFailure,
-                            onRetry: _retryPlayback,
-                            onBack: _leavePlayer,
-                          ),
-                        )
-                      else
-                        _buildLoadingRing(isTv),
+                    // Past the start-up deadline the wait stops being a spinner
+                    // and starts being a question, which does take input — there
+                    // is a button on it. The spinner itself is posed once, below.
+                    // La même question pour une lecture figée après sa
+                    // première image que rien n'a relancée (`PlaybackRescue`),
+                    // au lieu d'un anneau sans fin puis d'un écran noir.
+                    if (_playerController.hasFirstFrame
+                        ? _playerController.rescueExhausted
+                        : _startupStalled)
+                      Positioned.fill(
+                        child: StalledStartup(
+                          failure: _playerController.hasFirstFrame
+                              ? _playerController.rescueFailure
+                              : _playerController.startupFailure,
+                          onRetry: _retryPlayback,
+                          onBack: _leavePlayer,
+                        ),
+                      ),
                     // Les fenêtres de question sont à l'échelle du lecteur, comme
                     // le chrome : voir [PlayerTvScale].
                     if (_handoff.handedOffTo != null)
@@ -688,9 +692,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           ),
                         ),
                       ),
-                    if (_playerController.isSwitchingQuality ||
-                        (_playerController.isBuffering && _isInitialized))
-                      _buildLoadingRing(isTv),
+                    // Une seule fois : posé aussi pour le tampon, l'anneau était
+                    // là deux fois au démarrage, deux têtes décalées. Toujours
+                    // posé : c'est lui qui s'efface quand l'attente cesse
+                    // (`_awaitingPicture`, dans `_buildLoadingRing`).
+                    _buildLoadingRing(isTv),
                     if (_stillWatchingAsked)
                       PlayerTvScale.layer(
                         isTv: isTv,
@@ -717,7 +723,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   if (_inDesktopPip)
                     Positioned.fill(
                       child: DesktopPipOverlay(
-                        playing: _playerController.isPlaying,
+                        playing: _playerController.wantsPlay,
                         onTogglePlayback: _togglePlayPause,
                         onSeek: _seekRelative,
                         onRestore: () =>

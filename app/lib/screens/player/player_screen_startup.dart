@@ -131,9 +131,14 @@ extension _PlayerStartup on _PlayerScreenState {
     }
 
     if (mounted) _update(() {});
-    final resumeAt = await resumePositionFuture;
+    // Un flux déjà ouvert à la seconde connue ne reste pas en pause derrière
+    // un serveur qui tarde à la confirmer (voir [settledResumePoint]).
+    final resumeAt = await settledResumePoint(resumePositionFuture,
+        openedAt: _playerController.startPointSeconds);
     if (!mounted || _isLeaving) return;
     await _startPlayback(resumeAtSeconds: resumeAt);
+    unawaited(resumePositionFuture.then((server) =>
+        _playerController.correctLateResume(server, startedAt: resumeAt)));
   }
 
   Future<void> _loadMediaLogo() async {

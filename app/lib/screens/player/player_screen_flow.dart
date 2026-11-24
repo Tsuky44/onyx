@@ -95,17 +95,17 @@ extension _PlayerFlow on _PlayerScreenState {
     final party = _party.party;
     if (party != null) {
       unawaited(party.sendSeek(Duration(seconds: target),
-          playing: _playerController.isPlaying));
+          playing: _playerController.wantsPlay));
     }
     await _playerController.seekToAbsoluteSeconds(target);
   }
 
   /// La lecture s'arrête parce qu'on l'a décidé (minuterie, autre appareil,
   /// question sans réponse) : rien ne doit la relancer derrière.
-  void _pauseByChoice() {
-    _wantsPlayback = false;
-    if (_playerController.isPlaying) _playerController.togglePlayPause();
-  }
+  ///
+  /// Demandé même quand le moteur ne lit pas : en plein chargement ou en
+  /// pleine recherche, il aurait repris seul derrière la question posée.
+  void _pauseByChoice() => _playerController.pause();
 
   void _togglePlayPause() {
     // En pause parce que la lecture est passée ailleurs : relancer ici, c'est
@@ -122,12 +122,11 @@ extension _PlayerFlow on _PlayerScreenState {
       return;
     }
     StillWatching.instance.noteActivity();
-    _wantsPlayback = !_playerController.isPlaying;
     _playerController.togglePlayPause();
     final party = _party.party;
     if (party != null) {
       unawaited(party.sendPlaying(
-          _playerController.isPlaying, _playerController.position));
+          _playerController.wantsPlay, _playerController.position));
     }
     _hideControlsWithDelay();
     _notePlaybackChoiceForPauseInfo();
@@ -264,8 +263,7 @@ extension _PlayerFlow on _PlayerScreenState {
 
   void _resumeAfterLaunchQuestion() {
     _episodeNav?.closeLaunchLanguageCard();
-    _wantsPlayback = true;
-    if (!_playerController.isPlaying) _playerController.togglePlayPause();
+    _playerController.play();
     _keyboardFocusNode.requestFocus();
     _hideControlsWithDelay();
   }
@@ -397,7 +395,7 @@ extension _PlayerFlow on _PlayerScreenState {
       _episodeNavListener = null;
     }
 
-    unawaited(_syncProgressOnExit(popAfter: false));
+    unawaited(_syncProgressOnExit());
 
     // L'ancien moteur s'arrête avant que le suivant ne s'ouvre, pas à la
     // destruction de cet écran. Sur iOS, mpv désactive la session audio de
@@ -448,11 +446,10 @@ extension _PlayerFlow on _PlayerScreenState {
     );
   }
 
-  Future<void> _syncProgressOnExit({required bool popAfter}) async {
-    if (_progressFlushed) {
-      if (popAfter && mounted) Navigator.of(context).pop();
-      return;
-    }
+  /// La dernière position, envoyée une fois. Ne dépile rien : la sortie est
+  /// l'affaire de [PlayerExit], qui décide de l'attendre ou non.
+  Future<void> _syncProgressOnExit() async {
+    if (_progressFlushed) return;
     _progressFlushed = true;
     _controlsTimer?.cancel();
 
@@ -504,27 +501,44 @@ extension _PlayerFlow on _PlayerScreenState {
     // serveur : sans ce rafraîchissement, l'épisode qu'on vient de finir n'y
     // compterait qu'au prochain démarrage.
     unawaited(libraryProvider?.refreshCatalogSilently() ?? Future.value());
-
-    if (popAfter && mounted) Navigator.of(context).pop();
   }
 
-  Future<void> _leavePlayer() {
-    // Tout de suite, pas à la destruction de l'écran : celle-ci n'arrive qu'une
-    // fois l'animation de sortie terminée, et jusque-là le film continuerait de
-    // s'entendre par-dessus l'écran qu'on rejoint.
-    //
-    // `stop` plutôt que `pause` : c'est là que le décodeur matériel est rendu,
-    // et c'est la partie chère du démontage. La payer maintenant la fait tomber
-    // pendant l'animation, au lieu de figer l'écran d'arrivée. La position et
-    // la durée envoyées au serveur sont celles que le contrôleur a en mémoire,
-    // pas celles du moteur — l'arrêter d'abord ne les perd pas.
-    unawaited(_playerController.session.stop());
-    _safeSetState(() => _isLeaving = true);
-    // Quitter le lecteur, c'est quitter la séance : les autres continuent.
-    _party.leaveWithPlayer();
-    // Dans un navigateur, le plein écran appartient au film : hors du lecteur,
-    // plus aucun bouton ne permettrait d'en sortir.
-    if (AppPlatform.isWeb) unawaited(_exitFullscreenIfActive());
-    return _syncProgressOnExit(popAfter: true);
-  }
+  Future<void> _leavePlayer() => _exit.leave();
+
+  /// La sortie de cet écran, dans l'ordre que tient [PlayerExit].
+  PlayerExit _createExit() => PlayerExit(
+        isWaiting: () => playerExitCannotWait(
+          startupDone: _isInitialized,
+          hasFirstFrame: _playerController.hasFirstFrame,
+          awaitingPicture: _awaitingPicture,
+        ),
+        cancelPending: _playerController.cancelStreams,
+        // Tout de suite, pas à la destruction de l'écran : celle-ci n'arrive
+        // qu'une fois l'animation de sortie terminée, et jusque-là le film
+        // continuerait de s'entendre par-dessus l'écran qu'on rejoint.
+        //
+        // `stop` plutôt que `pause` : c'est là que le décodeur matériel est
+        // rendu, et c'est la partie chère du démontage. La payer maintenant
+        // la fait tomber pendant l'animation, au lieu de figer l'écran
+        // d'arrivée. La position et la durée envoyées au serveur sont celles
+        // que le contrôleur a en mémoire, pas celles du moteur : l'arrêter
+        // d'abord ne les perd pas.
+        stopEngine: () => _playerController.session.stop(),
+        onLeaving: () {
+          // Le délai de démarrage n'a plus rien à annoncer : sans cela son
+          // panneau pouvait tomber au milieu du fondu de sortie.
+          _startupWatchdog?.cancel();
+          _safeSetState(() => _isLeaving = true);
+          // Quitter le lecteur, c'est quitter la séance : les autres
+          // continuent.
+          _party.leaveWithPlayer();
+          // Dans un navigateur, le plein écran appartient au film : hors du
+          // lecteur, plus aucun bouton ne permettrait d'en sortir.
+          if (AppPlatform.isWeb) unawaited(_exitFullscreenIfActive());
+        },
+        syncProgress: _syncProgressOnExit,
+        pop: () {
+          if (mounted) Navigator.of(context).pop();
+        },
+      );
 }

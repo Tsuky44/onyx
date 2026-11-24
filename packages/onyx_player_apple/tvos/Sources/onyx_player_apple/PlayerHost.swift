@@ -1,5 +1,7 @@
 import AVFoundation
+import CoreMedia
 import Foundation
+import VideoToolbox
 
 /// Les lecteurs vivants, et le contrat Pigeon qui les pilote.
 ///
@@ -120,5 +122,14 @@ final class PlayerHost: NSObject, OnyxApplePlayerApi {
 
   func setPictureInPictureArmed(playerId: Int64, armed: Bool) throws {
     try onMain { try require(playerId).setPictureInPictureArmed(armed) }
+  }
+
+  /// La même question que pose AetherEngine avant de choisir sa route
+  /// (`VTCapabilityProbe`), posée une fois pour l'appareil et non par
+  /// fichier : l'app s'en sert pour ne pas ouvrir en Direct Play ce que la
+  /// puce décoderait en logiciel.
+  func deviceCapabilities() throws -> OnyxAppleDeviceCapabilities {
+    OnyxAppleDeviceCapabilities(
+      hardwareHevc: VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC))
   }
 }

@@ -218,7 +218,9 @@ extension PlayerControllerHls on PlayerController {
       if (quiet) {
         _quietSwapUntil = DateTime.now().add(_quietSwapWindow);
       }
-      await session.open(preload?.masterUrl ?? hls.masterUrl, play: true);
+      // Dans l'état demandé, pas en lecture d'office : une bascule derrière
+      // une pause (menu Qualité, recherche hors de la session) reste en pause.
+      await session.open(preload?.masterUrl ?? hls.masterUrl, play: wantsPlay);
       if (_disposed) return;
       // Le relais de la session précédente n'a plus de lecteur.
       _hlsPreload?.close();
@@ -349,7 +351,7 @@ extension PlayerControllerHls on PlayerController {
     await session.open(
       streamUrl,
       start: savedSeconds > 0 ? resumeAt : null,
-      play: true,
+      play: wantsPlay,
     );
     if (savedSeconds > 0) {
       position = resumeAt;
@@ -455,6 +457,7 @@ extension PlayerControllerHls on PlayerController {
     final target = absoluteSeconds < 0 ? 0 : absoluteSeconds;
     _noteDisturbance();
     _stats.noteSeek();
+    _rescue?.noteSeek(target);
 
     if (currentQuality == null) {
       await session.seek(Duration(seconds: target));
@@ -491,6 +494,7 @@ extension PlayerControllerHls on PlayerController {
     if (target.isNegative) target = Duration.zero;
     _noteDisturbance();
     _stats.noteSeek();
+    _rescue?.noteSeek(target.inSeconds);
     if (currentQuality == null) {
       position = target;
       _onPositionChanged?.call();
