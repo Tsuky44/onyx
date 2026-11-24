@@ -60,3 +60,12 @@ gagne une étape — envelopper le texte dans `tr()` et ajouter son entrée.
   Ses textes propres (copier/coller, infobulle du bouton retour, page des licences, sélecteur de
   date) passent en français ou en anglais avec `AppLanguage`, ceux des dépendances restées sur
   l'ancien Material compris (`l10n/material_localizations.dart`, `LegacyMaterialBridge`).
+- Trois gardes-fous tiennent le système :
+  - `test/l10n_coverage_test.dart` : chaque littéral passé à `tr()` a son entrée dans `kEnglish`.
+  - `test/l10n_tables_test.dart` : les tables lues par `tr(variable)` (filtres de demandes, droits,
+    raccourcis du lecteur, statuts, langues et pays, libellés d'énumérations, tris, unités) ont
+    chacune leur entrée. Une nouvelle table de ce genre s'ajoute à ce fichier ; elle est exposée en
+    `@visibleForTesting` si elle était privée.
+  - `test/no_hidden_french_test.dart` : dans `screens/`, `widgets/` et `tv/`, un littéral qui
+    ressemble à du français sans être une clé de `kEnglish` fait échouer le test, sauf journaux,
+    traces et diagnostics. Les exceptions sont une liste blanche commentée dans le test.

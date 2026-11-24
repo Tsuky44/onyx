@@ -44,5 +44,5 @@ String permissionsSummary(Permissions p) {
       .toList();
   if (granted.isEmpty) return tr('Aucun droit');
   if (granted.length <= 2) return granted.join(' · ');
-  return '${granted.length} droits';
+  return trPlural(granted.length, '{0} droit', '{0} droits');
 }

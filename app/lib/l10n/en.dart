@@ -4207,4 +4207,26 @@ const Map<String, String> kEnglish = <String, String>{
       'Without a key, no posters or metadata: the catalog will only show file names.',
   'Avancé : saisir le chemin à la main':
       'Advanced: type the path by hand',
+  '{0} droit':
+      '{0} permission',
+  '{0} droits':
+      '{0} permissions',
+  '←  ·  J':
+      '←  ·  J',
+  '→  ·  L':
+      '→  ·  L',
+  '↑  ↓':
+      '↑  ↓',
+  'M':
+      'M',
+  'F':
+      'F',
+  'N':
+      'N',
+  '0 – 9':
+      '0 – 9',
+  '?':
+      '?',
+  'à':
+      'to',
 };

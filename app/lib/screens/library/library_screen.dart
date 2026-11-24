@@ -30,6 +30,10 @@ const Map<_SortOption, String> _sortLabels = {
   _SortOption.progress: 'En cours',
 };
 
+/// Les libellés de tri, lus par `tr()` à l'affichage.
+@visibleForTesting
+Iterable<String> get librarySortLabels => _sortLabels.values;
+
 /// L'icône d'une bibliothèque, d'après ce qu'elle contient. [selected] rend la
 /// variante pleine, celle d'un onglet actif.
 IconData libraryIcon(LibraryKind kind, {bool selected = false}) =>

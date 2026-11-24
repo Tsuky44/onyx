@@ -219,7 +219,7 @@ class _AccountPageState extends State<AccountPage> {
                     title: media.label,
                     subtitle: [
                       if (media.secondary.isNotEmpty) media.secondary,
-                      '${media.plays} lecture${media.plays > 1 ? 's' : ''}',
+                      trPlural(media.plays, '{0} lecture', '{0} lectures'),
                     ].join(' · '),
                     trailing: Text(
                       formatWatchTime(media.watchedSeconds),
