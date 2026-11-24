@@ -197,19 +197,29 @@ chose : un fil du **pilote AMD D3D11** (`amdxx64.dll`) saute à une adresse inva
 création des surfaces D3D11. Pour mesurer, j'ai fait 20 lancements de 10 s par build, sans rien
 toucher (l'app est seulement ouverte sur l'accueil) :
 
-| Build | Plantages au lancement |
-|---|---|
-| 3.44.4 Skia (la build de la ligne de base) | **0 / 20** |
-| 3.50.1 Skia (même build que la suivante, `--enable-impeller=false`) | **2 / 20** |
-| 3.50.1 Impeller | **2 / 20** |
+| Build | Bureau à distance, 23 nov. | Bureau à distance, pilote 29003 | Console, 24 nov., pilote 29003 |
+|---|---|---|---|
+| 3.44.4 Skia (la build de la ligne de base) | **0 / 20** | — | **0 / 20** |
+| 3.50.1 Skia (`--enable-impeller=false`) | **2 / 20** | **1 / 20** | **6 / 20** |
+| 3.50.1 Impeller | **2 / 20** | **2 / 20** | **2 / 20** |
 
-La 3.50 plante donc environ une fois sur dix au lancement sur cette machine (RX 6800 XT, pilote
-32.0.21045.5002), **avec Skia comme avec Impeller**. Le moteur de rendu n'y est pour rien ; c'est
-ce que la 3.50 a changé dans la mise en place d'ANGLE sous Windows. Elle crée d'abord un contexte
+Les deux dernières colonnes viennent de la build faite avec `C:\src\flutter` monté en 3.50.1, la
+même révision que la copie à part. Pendant les essais, le pilote est passé de la version que
+l'app journalisait (`32.0.21045.5002`) à `32.0.21045.29003` (17/11/2026, selon Windows). Le
+24 novembre, j'ai refait les essais devant la machine, et non plus en bureau à distance.
+
+La 3.50 plante donc au lancement **une fois sur dix à une fois sur trois** sur cette machine (RX
+6800 XT), **avec Skia comme avec Impeller**, en bureau à distance comme à la console. La 3.44.4, elle,
+ne plante jamais dans les mêmes conditions. Ni le pilote à jour ni la console ne changent rien.
+Le moteur de rendu n'y est pour rien. Le suspect est ce
+que la 3.50 a changé dans la mise en place d'ANGLE sous Windows : elle crée d'abord un contexte
 OpenGL ES 3, avec repli ES2 (`egl/manager.cc`), et aucun réglage ne permet de revenir en arrière.
+C'est une hypothèse, pas encore une preuve.
 Les vidages des 18–20 novembre (en 3.44) sont d'autres plantages, dans `flutter_windows.dll` sous
-libmpv, en pleine lecture. **Cela bloque une version de test** : à trancher avec Tsuky. Les pistes :
-un autre pilote AMD, une 3.47.x, ou un ticket Flutter avec les vidages.
+libmpv, en pleine lecture. **Cela bloque une version de test** : à trancher avec Tsuky.
+`C:\src\flutter` est monté en 3.50.1 à sa demande, et la copie à part est supprimée. Le pilote à
+jour n'y change rien. Prochaines étapes : refaire les mêmes 20 lancements en 3.47.9 (dernière 3.47)
+pour savoir quelle version l'a introduit, puis ouvrir un ticket Flutter avec les vidages.
 
 ### Sans GPU utilisable
 

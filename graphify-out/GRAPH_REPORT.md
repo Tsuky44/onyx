@@ -1,7 +1,7 @@
-# Graph Report - flutter-3-50-85638b  (2026-11-23)
+# Graph Report - flutter-3-50-85638b  (2026-11-24)
 
 ## Corpus Check
-- 2311 files · ~5,087,417 words
+- 2311 files · ~5,087,578 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 179 file(s) not represented in the graph (top: (none) 44, .csv 24, .xml 20)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `19c1c6ee`
+- Built from commit: `3b956d41`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
