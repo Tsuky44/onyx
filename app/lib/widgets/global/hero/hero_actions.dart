@@ -28,25 +28,38 @@ class HeroPlayButton extends StatelessWidget {
   final bool autofocus;
   final bool isTv;
 
+  /// Ce que le numéro d'épisode garde de l'encre du bouton.
+  static const double codeOpacity = 0.55;
+
   @override
   Widget build(BuildContext context) {
     final code = episodeCode;
     final text = code == null
         ? Text(label)
-        : Text.rich(
-            TextSpan(children: [
-              TextSpan(text: label),
-              const TextSpan(text: ' '),
-              TextSpan(
-                text: code,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.background.withValues(alpha: 0.55),
-                ),
-              ),
-            ]),
-            // Lu d'un seul tenant : « Reprendre S2 E4 ».
-            semanticsLabel: '$label $code',
+        // L'encre du numéro vient de celle du bouton, éclaircie. Fixée au
+        // noir de la page, elle ne se lisait que sur le bouton blanc : sur un
+        // téléviseur, où le bouton au repos est en verre et son texte blanc
+        // (ADR-0112), « S15 E1 » était du noir sur du gris.
+        : Builder(
+            builder: (context) {
+              final ink = DefaultTextStyle.of(context).style.color ??
+                  AppColors.background;
+              return Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: label),
+                  const TextSpan(text: ' '),
+                  TextSpan(
+                    text: code,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: ink.withValues(alpha: ink.a * codeOpacity),
+                    ),
+                  ),
+                ]),
+                // Lu d'un seul tenant : « Reprendre S2 E4 ».
+                semanticsLabel: '$label $code',
+              );
+            },
           );
     return ElevatedButton.icon(
       onPressed: onPressed,

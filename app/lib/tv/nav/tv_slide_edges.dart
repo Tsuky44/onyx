@@ -1,24 +1,67 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-/// `TvRegion.slide` avec l'ancien système : gauche et droite au bord de la
-/// page affichée appellent [onEdge] quand aucun de ses éléments ne suit sur
-/// la ligne.
-///
-/// C'est le `Focus(onKeyEvent:)` du bandeau de l'accueil d'avant la refonte
-/// (`HeroCarousel`), déplacé ici à l'identique : sans lui, la télécommande ne
-/// voyait que la diapositive affichée, droite depuis « Plus d'infos » sautait
-/// n'importe où à droite de l'écran (la recherche de l'en-tête), et les autres
-/// titres ne s'atteignaient qu'en attendant que le carrousel tourne. Sous
-/// dpad, c'est le bord `stop` d'une `DpadRegion` qui fait ce travail.
-/// Disparaît avec le drapeau `ONYX_TV_NAV`.
-class TvSlideEdges extends StatelessWidget {
-  const TvSlideEdges({super.key, required this.onEdge, required this.child});
+import '../tv_focus_memory.dart';
 
-  final ValueChanged<TraversalDirection> onEdge;
+/// `TvRegion.slide` avec l'ancien système.
+///
+/// Deux promesses :
+///
+/// - **gauche et droite au bord de la page affichée appellent [onEdge]** quand
+///   aucun de ses éléments ne suit sur la ligne. C'est le `Focus(onKeyEvent:)`
+///   du bandeau de l'accueil d'avant la refonte (`HeroCarousel`), déplacé ici
+///   à l'identique : sans lui, la télécommande ne voyait que la diapositive
+///   affichée, droite depuis « Plus d'infos » sautait n'importe où à droite de
+///   l'écran (la recherche de l'en-tête), et les autres titres ne
+///   s'atteignaient qu'en attendant que le carrousel tourne. Sous dpad, c'est
+///   le bord `stop` d'une `DpadRegion` qui fait ce travail ;
+/// - **la diapositive est l'entrée de sa page tant qu'elle est à l'écran**
+///   (`TvFocusMemoryState.addLead`) : Bas depuis la barre arrive sur son
+///   premier bouton, « Reprendre », et non sur la carte d'une rangée où l'on
+///   était passé avant.
+///
+/// Disparaît avec le drapeau `ONYX_TV_NAV`.
+class TvSlideEdges extends StatefulWidget {
+  const TvSlideEdges({super.key, this.onEdge, required this.child});
+
+  /// Nul pour un carrousel d'une seule page : gauche et droite sortent.
+  final ValueChanged<TraversalDirection>? onEdge;
   final Widget child;
 
+  @override
+  State<TvSlideEdges> createState() => _TvSlideEdgesState();
+}
+
+class _TvSlideEdgesState extends State<TvSlideEdges> {
+  final FocusNode _node = FocusNode(
+    debugLabel: 'tv-slide',
+    canRequestFocus: false,
+    skipTraversal: true,
+  );
+
+  TvFocusMemoryState? _memory;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final memory = TvFocusMemory.maybeOf(context);
+    if (identical(memory, _memory)) return;
+    _memory?.removeLead(_node);
+    _memory = memory;
+    memory?.addLead(_node);
+  }
+
+  @override
+  void dispose() {
+    _memory?.removeLead(_node);
+    _memory = null;
+    _node.dispose();
+    super.dispose();
+  }
+
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    final onEdge = widget.onEdge;
+    if (onEdge == null) return KeyEventResult.ignored;
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
@@ -48,9 +91,10 @@ class TvSlideEdges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Focus(
+        focusNode: _node,
         canRequestFocus: false,
         skipTraversal: true,
         onKeyEvent: _handleKey,
-        child: child,
+        child: widget.child,
       );
 }
