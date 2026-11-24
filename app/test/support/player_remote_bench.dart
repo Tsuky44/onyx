@@ -11,6 +11,8 @@ import 'package:onyx/screens/player/widgets/onyx/onyx_controls_layer.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_settings_menu.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_tabs.dart';
 import 'package:onyx/screens/player/widgets/player_popups.dart';
+import 'package:onyx/screens/player/widgets/player_status_panels.dart';
+import 'package:onyx/screens/player/widgets/player_wait_cancel.dart';
 import 'package:onyx/tv/nav/onyx_dpad.dart' show TvNavScope;
 import 'package:onyx/tv/nav/tv_back.dart';
 
@@ -25,13 +27,16 @@ import 'package:onyx/tv/nav/tv_back.dart';
 /// focus (le lecteur, ou une commande dans son sous-arbre), le chrome levé
 /// avec une commande entourée (ADR-0008), la pile du Retour (menu, volet des
 /// onglets, chrome, lecteur) et le retour du focus à la fermeture d'un menu. Les widgets, eux,
-/// sont les vrais. Une divergence entre ce banc et le lecteur se corrige des
+/// sont les vrais. Avec [PlayerRemoteBench.waiting], le banc attend sa
+/// première image : l'anneau et « Annuler » sont posés comme le lecteur les
+/// pose, et « Annuler » n'y compte pas pour une commande du chrome. Une divergence entre ce banc et le lecteur se corrige des
 /// deux côtés ; l'écran entier se vérifie au simulateur (ADR-0110, phase 7).
 class PlayerRemoteBench extends StatefulWidget {
   const PlayerRemoteBench({
     super.key,
     this.skipIntro = false,
     this.series = true,
+    this.waiting = false,
     required this.actions,
   });
 
@@ -40,6 +45,10 @@ class PlayerRemoteBench extends StatefulWidget {
 
   /// Un épisode : précédent, suivant et l'onglet des épisodes.
   final bool series;
+
+  /// Le lancement attend sa première image : l'anneau, et sous lui l'offre
+  /// d'annuler (`_buildLoadingRing` du lecteur).
+  final bool waiting;
 
   /// Ce que `routePlayerKey` a décidé, touche par touche.
   final List<PlayerKeyAction> actions;
@@ -52,6 +61,19 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
   final FocusNode player = FocusNode(debugLabel: 'player');
   final FocusNode playPause = FocusNode(debugLabel: 'player-play-pause');
   final FocusNode progress = FocusNode(debugLabel: 'player-progress');
+
+  /// `_waitCancelFocusNode` du lecteur : « Annuler », sous l'anneau.
+  final FocusNode waitCancel = FocusNode(debugLabel: 'player-wait-cancel');
+
+  /// `!hasFirstFrame` du lecteur.
+  late bool _waiting = widget.waiting;
+
+  /// `onFirstFrame` du lecteur : l'attente s'efface, et le chrome monte sans
+  /// que personne l'ait demandé (`_showControlsTransient(byUser: false)`).
+  void firstFrame() {
+    setState(() => _waiting = false);
+    _showChrome();
+  }
 
   bool chromeVisible = false;
   bool _towardScrubber = false;
@@ -71,8 +93,10 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
     onDismissed: _handlePopupDismissed,
   );
 
-  /// `_remoteBrowsingControls` du lecteur.
-  bool get browsingControls => player.hasFocus && !player.hasPrimaryFocus;
+  /// `_remoteBrowsingControls` du lecteur : « Annuler » n'est pas la barre de
+  /// commandes.
+  bool get browsingControls =>
+      player.hasFocus && !player.hasPrimaryFocus && !waitCancel.hasFocus;
 
   bool _disposing = false;
 
@@ -83,6 +107,7 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
     player.dispose();
     playPause.dispose();
     progress.dispose();
+    waitCancel.dispose();
     super.dispose();
   }
 
@@ -260,7 +285,7 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
         },
         child: Scaffold(
           backgroundColor: Colors.black,
-          body: OnyxControlsLayer(
+          body: _withWait(OnyxControlsLayer(
             visible: chromeVisible,
             isTv: true,
             isPlaying: true,
@@ -296,9 +321,34 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
             onSkipIntro: widget.skipIntro ? () {} : null,
             playPauseFocusNode: playPause,
             progressFocusNode: progress,
-          ),
+          )),
         ),
       ),
+    );
+  }
+
+  /// La pile du lecteur quand il attend sa première image : le chrome, puis
+  /// l'anneau et son offre d'annuler, posés comme `_buildLoadingRing` les
+  /// pose.
+  Widget _withWait(Widget chrome) {
+    // La même pile avant et après la première image : le chrome garde sa
+    // place, et son état avec elle.
+    if (!widget.waiting) return chrome;
+    if (!_waiting) return Stack(fit: StackFit.expand, children: [chrome]);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        chrome,
+        PlayerLoadingSpinner(
+          isTv: true,
+          // `_buildWaitCancel` du lecteur.
+          cancel: PlayerWaitCancel(
+            onCancel: _leave,
+            focusNode: waitCancel,
+            parkedOn: player,
+          ),
+        ),
+      ],
     );
   }
 }

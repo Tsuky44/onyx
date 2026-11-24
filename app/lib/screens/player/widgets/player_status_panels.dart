@@ -9,6 +9,28 @@ import '../../../theme/app_type.dart';
 import '../../../l10n/tr.dart';
 import 'onyx/onyx_loading_ring.dart';
 import 'player_question_window.dart';
+import 'player_tv_scale.dart';
+
+/// Le lecteur attend-il quelque chose : la première image, un changement de
+/// qualité, un tampon vide ? Une seule réponse pour l'anneau d'attente
+/// ([PlayerLoadingSpinner]) et pour le bouton lecture qui lui cède la place.
+///
+/// Une première image n'est pas un film qui joue : le moteur peut l'annoncer
+/// avant que la lecture ne parte, et charger encore. Passé la première image,
+/// c'est donc le moteur seul qui dit l'attente ([isBuffering]), que le
+/// démarrage soit fini ou non.
+///
+/// Un démarrage qui a dépassé son délai ([startupStalled]) n'attend plus : il
+/// a son panneau ([StalledStartup]), et un anneau n'a rien à faire dessus.
+bool playerAwaitsPicture({
+  required bool hasFirstFrame,
+  required bool startupStalled,
+  required bool isSwitchingQuality,
+  required bool isBuffering,
+}) {
+  if (!hasFirstFrame) return !startupStalled;
+  return isSwitchingQuality || isBuffering;
+}
 
 /// L'attente du lecteur : démarrage, recherche, changement de qualité.
 ///
@@ -21,31 +43,57 @@ import 'player_question_window.dart';
 /// as a seek took to load. Loading is exactly when the user is most likely to
 /// want to pause, seek again or go back, so the spinner has to be purely
 /// decorative.
+///
+/// Sur un téléviseur ([isTv]), la couche se pose elle-même à l'échelle du
+/// lecteur ([PlayerTvScale.layer]), comme tout ce qui est dessiné sur l'image :
+/// l'anneau et ce qui est dessous se mettent en page ensemble.
 class PlayerLoadingSpinner extends StatelessWidget {
-  const PlayerLoadingSpinner({super.key, this.centreAt = 0.5, this.scale = 1});
+  const PlayerLoadingSpinner({
+    super.key,
+    this.isTv = false,
+    this.centreAt = 0.5,
+    this.cancel,
+  });
+
+  final bool isTv;
 
   /// Où tombe son milieu, en fraction de la hauteur.
   final double centreAt;
 
-  /// Le facteur de taille : celui du lecteur sur un téléviseur
-  /// (`PlayerTvScale.factorFor`), 1 ailleurs.
-  final double scale;
+  /// Ce qui se pose sous l'anneau : l'offre d'annuler un lancement qui tarde
+  /// (`PlayerWaitCancel`). Seule partie de la couche qui prend un toucher.
+  final Widget? cancel;
+
+  /// L'écart entre l'anneau et ce qui est posé dessous.
+  static const double cancelGap = 22;
 
   @override
   Widget build(BuildContext context) {
-    final size = OnyxLoadingRing.defaultSize * scale;
-    return Positioned.fill(
-      child: IgnorePointer(
+    const size = OnyxLoadingRing.defaultSize;
+    final cancel = this.cancel;
+    return PlayerTvScale.layer(
+      isTv: isTv,
+      child: Positioned.fill(
         child: LayoutBuilder(
-          builder: (context, constraints) => Stack(
-            children: [
-              Positioned(
-                left: (constraints.maxWidth - size) / 2,
-                top: constraints.maxHeight * centreAt - size / 2,
-                child: OnyxLoadingRing(size: size),
-              ),
-            ],
-          ),
+          builder: (context, constraints) {
+            final top = constraints.maxHeight * centreAt - size / 2;
+            return Stack(
+              children: [
+                Positioned(
+                  left: (constraints.maxWidth - size) / 2,
+                  top: top,
+                  child: const IgnorePointer(child: OnyxLoadingRing()),
+                ),
+                if (cancel != null)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: top + size + cancelGap,
+                    child: Center(child: cancel),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );

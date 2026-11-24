@@ -1,15 +1,20 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_chrome_theme.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_controls_layer.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_loading_ring.dart';
 import 'package:onyx/screens/player/widgets/onyx/onyx_progress_bar.dart';
 import 'package:onyx/screens/player/widgets/player_status_panels.dart';
+import 'package:onyx/theme/app_motion.dart';
+import 'package:onyx/theme/lite_mode.dart';
+import 'package:onyx/tv/tv_mode.dart';
 
 /// Trois retouches vues sur un iPhone (ADR-0140) : la vignette de la barre
 /// qui restait après le lever du doigt, le bouton des sous-titres sans piste,
-/// l'anneau d'attente posé sous lecture/pause au lieu de sa place.
+/// l'anneau d'attente posé sous lecture/pause au lieu de sa place. Et ce que
+/// l'Apple TV y a ajouté : un anneau qui ne s'arrête jamais.
 void main() {
   Future<void> pumpBar(WidgetTester tester) async {
     await tester.pumpWidget(
@@ -176,48 +181,209 @@ void main() {
       expect(ring.dy, closeTo(390 * OnyxChromeTheme.handheldCentreAt, 0.5));
     });
 
-    testWidgets('ne tourne pas sous « réduire les animations »',
+    testWidgets('sur un téléviseur, il se pose à l’échelle du lecteur',
         (tester) async {
+      // Une Apple TV annonce 1920 points : mis en page sur 1280, l'anneau y
+      // est une fois et demie plus grand.
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1920, 1080);
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(
-        const MediaQuery(
-          data: MediaQueryData(disableAnimations: true),
-          child: Directionality(
-            textDirection: TextDirection.ltr,
-            child: Center(child: OnyxLoadingRing()),
+        const MaterialApp(
+          home: Scaffold(
+            body: Stack(children: [PlayerLoadingSpinner(isTv: true)]),
           ),
         ),
       );
-      final painter = tester
-          .widget<CustomPaint>(find.descendant(
-            of: find.byType(OnyxLoadingRing),
-            matching: find.byType(CustomPaint),
-          ))
-          .painter! as OnyxLoadingRingPainter;
-      await tester.pump(const Duration(milliseconds: 300));
-      final later = tester
-          .widget<CustomPaint>(find.descendant(
-            of: find.byType(OnyxLoadingRing),
-            matching: find.byType(CustomPaint),
-          ))
-          .painter! as OnyxLoadingRingPainter;
-      expect(later.turn, painter.turn);
+
+      final ring = tester.getRect(find.byType(OnyxLoadingRing));
+      expect(ring.center, const Offset(960, 540));
+      expect(ring.width, closeTo(OnyxLoadingRing.defaultSize * 1.5, 0.01));
     });
 
-    testWidgets('tourne ailleurs', (tester) async {
-      await tester.pumpWidget(const Directionality(
-        textDirection: TextDirection.ltr,
-        child: Center(child: OnyxLoadingRing()),
-      ));
-      double turn() => (tester
-              .widget<CustomPaint>(find.descendant(
-                of: find.byType(OnyxLoadingRing),
-                matching: find.byType(CustomPaint),
-              ))
-              .painter! as OnyxLoadingRingPainter)
-          .turn;
-      final first = turn();
+  });
+
+  group('ce que le lecteur attend', () {
+    bool awaits({
+      bool hasFirstFrame = true,
+      bool startupStalled = false,
+      bool isSwitchingQuality = false,
+      bool isBuffering = false,
+    }) =>
+        playerAwaitsPicture(
+          hasFirstFrame: hasFirstFrame,
+          startupStalled: startupStalled,
+          isSwitchingQuality: isSwitchingQuality,
+          isBuffering: isBuffering,
+        );
+
+    test('sa première image, puis ce que le moteur charge encore', () {
+      expect(awaits(hasFirstFrame: false), isTrue);
+      expect(awaits(), isFalse, reason: 'un film qui joue n’attend rien');
+      expect(awaits(isSwitchingQuality: true), isTrue);
+      expect(awaits(isBuffering: true), isTrue);
+    });
+
+    test('une première image n’est pas un film qui joue', () {
+      // Le moteur d'Apple annonce sa première image avant que la lecture ne
+      // parte : tant qu'il charge, l'anneau reste, sans attendre la fin du
+      // démarrage.
+      expect(awaits(hasFirstFrame: true, isBuffering: true), isTrue);
+    });
+
+    test('pas d’anneau sur le panneau d’un démarrage au délai dépassé', () {
+      expect(
+        awaits(hasFirstFrame: false, startupStalled: true, isBuffering: true),
+        isFalse,
+        reason: 'le moteur se dit encore « en tampon » sous le panneau',
+      );
+    });
+  });
+
+  // L'anneau ne s'arrête jamais (ADR du 2026-11-23, qui contredit le point 3
+  // de l'ADR-0140) : immobile, il se lisait comme un plantage sur une Apple TV
+  // HD, que son matériel met d'office en mode léger.
+  group('l’anneau d’attente vit', () {
+    final drawing = find.descendant(
+      of: find.byType(OnyxLoadingRing),
+      matching: find.byType(CustomPaint),
+    );
+
+    OnyxLoadingRingPainter painterOf(WidgetTester tester) =>
+        tester.widget<CustomPaint>(drawing).painter! as OnyxLoadingRingPainter;
+
+    Future<void> pumpRing(
+      WidgetTester tester, {
+      bool lite = false,
+      bool tv = false,
+      bool reducedMotion = false,
+    }) =>
+        tester.pumpWidget(
+          MediaQuery(
+            data: MediaQueryData(disableAnimations: reducedMotion),
+            child: TvScope(
+              isTv: tv,
+              child: LiteScope(
+                isLite: lite,
+                child: const Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Center(child: OnyxLoadingRing()),
+                ),
+              ),
+            ),
+          ),
+        );
+
+    /// Refuse ce qu'une puce A8 ne tient pas à chaque image : un flou, un
+    /// calque hors écran. Faux : `paints` dit lui-même quel appel a déplu.
+    bool cheap(Symbol method, List<dynamic> arguments) {
+      if (method == #saveLayer) return false;
+      return !arguments.any((a) => a is Paint && a.maskFilter != null);
+    }
+
+    testWidgets('il tourne', (tester) async {
+      await pumpRing(tester);
+      final first = painterOf(tester).turn;
       await tester.pump(const Duration(milliseconds: 300));
-      expect(turn(), isNot(first));
+      expect(painterOf(tester).turn, isNot(first));
+    });
+
+    testWidgets(
+        'sur un téléviseur en mode léger (une Apple TV HD), il tourne '
+        'encore, sans flou', (tester) async {
+      // La chaîne qui le figeait : le matériel décide du mode léger, et le
+      // mode léger arrêtait l'anneau.
+      final lite = LiteMode.isModestHardware(
+        isAndroid: false,
+        isIOS: false,
+        isTvOS: true,
+        isWebOS: false,
+        totalMemoryMb: 1990,
+        isLowRamDevice: false,
+        model: 'AppleTV5,3',
+      );
+      expect(lite, isTrue);
+
+      await pumpRing(tester, lite: lite, tv: true);
+      final first = painterOf(tester).turn;
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(painterOf(tester).turn, isNot(first));
+      expect(painterOf(tester).soft, isFalse);
+      expect(tester.renderObject(drawing), paints..everything(cheap));
+    });
+
+    testWidgets('hors mode léger, son ombre est floue mais sans calque',
+        (tester) async {
+      await pumpRing(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(painterOf(tester).soft, isTrue);
+      expect(
+        tester.renderObject(drawing),
+        paints..everything((method, arguments) => method != #saveLayer),
+      );
+      expect(
+        tester.renderObject(drawing),
+        paints
+          ..something((method, arguments) =>
+              arguments.any((a) => a is Paint && a.maskFilter != null)),
+      );
+    });
+
+    testWidgets(
+        'sous « réduire les animations », il respire au lieu de tourner',
+        (tester) async {
+      for (final lite in [false, true]) {
+        await pumpRing(tester, reducedMotion: true, lite: lite);
+        // Son arrivée passée, il ne reste que la respiration.
+        await tester.pump(AppMotion.standard);
+        final first = painterOf(tester).opacity;
+        await tester.pump(const Duration(milliseconds: 500));
+        final later = painterOf(tester).opacity;
+
+        expect(painterOf(tester).turn, 0, reason: 'il ne tourne pas');
+        expect(later, isNot(first), reason: 'il n’est pas immobile');
+        expect(later, greaterThanOrEqualTo(OnyxLoadingRingPainter.breathFloor),
+            reason: 'il ne disparaît pas');
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    });
+
+    testWidgets('il arrive en fondu, par l’alpha de ses traits',
+        (tester) async {
+      await pumpRing(tester);
+      expect(painterOf(tester).opacity, 0);
+      expect(tester.renderObject(drawing), paintsNothing);
+
+      await tester.pump(AppMotion.standard);
+      await tester.pump();
+      expect(painterOf(tester).opacity, 1);
+      expect(find.byType(Opacity), findsNothing);
+      expect(find.byType(FadeTransition), findsNothing);
+    });
+
+    testWidgets('chaque image ne repeint que lui, sans rien reconstruire',
+        (tester) async {
+      await pumpRing(tester, lite: true, tv: true);
+      final painter = painterOf(tester);
+      final layer = tester.renderObject<RenderRepaintBoundary>(
+        find.descendant(
+          of: find.byType(OnyxLoadingRing),
+          matching: find.byType(RepaintBoundary),
+        ),
+      );
+      layer.debugResetMetrics();
+      for (var frame = 0; frame < 5; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+
+      expect(painterOf(tester), same(painter),
+          reason: 'le dessin écoute l’animation : aucune reconstruction');
+      expect(layer.debugAsymmetricPaintCount, 5,
+          reason: 'il se repeint à chaque image, dans son propre calque');
+      expect(layer.debugSymmetricPaintCount, 0,
+          reason: 'sans faire repeindre ce qui l’entoure');
     });
   });
 }

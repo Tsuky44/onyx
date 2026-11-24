@@ -577,19 +577,22 @@ extension _PlayerChrome on _PlayerScreenState {
   /// Le lecteur attend quelque chose : la première image, un changement de
   /// qualité, ou le tampon après une recherche. Une seule réponse pour
   /// l'anneau d'attente et pour le bouton lecture qui lui cède la place.
-  bool get _awaitingPicture =>
-      (!_playerController.hasFirstFrame && !_startupStalled) ||
-      _playerController.isSwitchingQuality ||
-      (_playerController.isBuffering && _isInitialized);
+  bool get _awaitingPicture => playerAwaitsPicture(
+        hasFirstFrame: _playerController.hasFirstFrame,
+        startupStalled: _startupStalled,
+        isSwitchingQuality: _playerController.isSwitchingQuality,
+        isBuffering: _playerController.isBuffering,
+      );
 
   /// L'anneau d'attente, là où est lecture/pause sur un écran tenu en main,
-  /// au milieu ailleurs (ADR-0140).
+  /// au milieu ailleurs (ADR-0140), et sous lui l'offre d'annuler un
+  /// lancement ([_buildWaitCancel]). La clé garde leur état quand une autre
+  /// couche se pose avant eux dans la pile.
   Widget _buildLoadingRing(bool isTv) => PlayerLoadingSpinner(
+        key: const ValueKey('player-wait'),
+        isTv: isTv,
         centreAt: _handheld ? OnyxChromeTheme.handheldCentreAt : 0.5,
-        scale: PlayerTvScale.factorFor(
-          MediaQuery.sizeOf(context).width,
-          isTv: isTv,
-        ),
+        cancel: _buildWaitCancel(isTv),
       );
 
   Widget _buildChrome(bool isTv) {

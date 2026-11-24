@@ -20,7 +20,29 @@ extension _PlayerRemote on _PlayerScreenState {
       // different state, and treating it as "browsing the controls" is what
       // used to wedge the chrome on screen forever.
       _keyboardFocusNode.hasFocus &&
-      !_keyboardFocusNode.hasPrimaryFocus;
+      !_keyboardFocusNode.hasPrimaryFocus &&
+      // « Annuler », sous l'anneau d'un lancement, n'est pas la barre de
+      // commandes : c'est le visage de la télécommande garée. Retour y quitte
+      // le lecteur au lieu de « ranger la barre », les flèches y font ce
+      // qu'elles font lecteur garé, et le compte à rebours du chrome ne lui
+      // reprend pas le focus.
+      !_waitCancelFocusNode.hasFocus;
+
+  /// « Annuler », sous l'anneau ([PlayerWaitCancel]) : sur un téléviseur, dont
+  /// le chrome n'a pas de flèche de retour (ADR-0124), et tant que rien n'est
+  /// à l'image. Une première image retire l'offre même si la lecture n'est
+  /// pas encore partie : le film est là, et OK y redevient la commande de
+  /// lecture. Pas sous une question posée par-dessus (la lecture reprise sur
+  /// un autre appareil), qui a ses propres réponses.
+  Widget? _buildWaitCancel(bool isTv) {
+    if (!isTv || _playerController.hasFirstFrame) return null;
+    if (_handoff.handedOffTo != null) return null;
+    return PlayerWaitCancel(
+      onCancel: _leavePlayer,
+      focusNode: _waitCancelFocusNode,
+      parkedOn: _keyboardFocusNode,
+    );
+  }
 
   /// Keeps the player holding the focus whenever nothing else legitimately is.
   ///
