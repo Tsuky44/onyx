@@ -17,6 +17,7 @@ import '../playback/embedded_subtitle_pairing.dart';
 import '../playback/hls_retain_window.dart';
 import '../playback/live_subtitles.dart';
 import '../playback/playback_engine.dart';
+import '../playback/playback_intent.dart';
 import '../playback/playback_session.dart';
 import '../playback/playback_stats.dart';
 import '../playback/resume_settle.dart';
@@ -51,6 +52,7 @@ part 'player_controller_language.dart';
 part 'player_controller_startup.dart';
 part 'player_controller_subtitle_offer.dart';
 part 'player_controller_tracks.dart';
+part 'player_controller_transport.dart';
 
 /// Orchestrates playback, quality/audio/subtitle switching and the Direct Play
 /// ↔ HLS transitions.
@@ -83,7 +85,14 @@ class PlayerController {
   late final PlaybackSession session;
 
   bool isInitialized = false;
+
+  /// Ce que le moteur rapporte : vrai seulement quand l'image défile. Sert à
+  /// mesurer (première image, qualité Auto), jamais à savoir ce qu'on a
+  /// demandé : pour cela, [wantsPlay].
   bool isPlaying = false;
+
+  /// La dernière demande de lecture ou de pause. Voir [PlaybackIntent].
+  final PlaybackIntent _intent;
   Duration position = Duration.zero;
   Duration duration = Duration.zero;
   bool isDraggingSlider = false;
@@ -566,8 +575,12 @@ class PlayerController {
     if (line != null) debugPrint(line);
   }
 
-  PlayerController() {
-    session = createPlaybackSession();
+  /// [session] : le moteur, pour un test qui n'en a pas de vrai.
+  /// [wantsPlay] : faux pour un lecteur ouvert en pause (séance partagée,
+  /// relais derrière une pause).
+  PlayerController({PlaybackSession? session, bool wantsPlay = true})
+      : _intent = PlaybackIntent(wantsPlay: wantsPlay) {
+    this.session = session ?? createPlaybackSession();
   }
 
   /// Signature of the external subtitle currently attached in HLS mode. The poll
@@ -614,18 +627,6 @@ class PlayerController {
     _stats.noteBuffering(buffering);
     _onBufferingChanged?.call();
     if (buffering) unawaited(_auto.noteStall());
-  }
-
-  void togglePlayPause() {
-    final next = !isPlaying;
-    _setPlaying(next);
-    if (next) {
-      // Une reprise regarnit le tampon : ce n'est pas la ligne qui cale.
-      _noteDisturbance();
-      session.play();
-    } else {
-      session.pause();
-    }
   }
 
   void startHeartbeat({required int mediaId, required ApiClient apiClient}) =>

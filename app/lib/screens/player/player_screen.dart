@@ -191,7 +191,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
   /// Quand le relais peut seulement s'envisager. Voir [RelayTrigger].
   final RelayTrigger _relayTrigger = RelayTrigger();
   bool _findingRelay = false;
-  bool _wantsPlayback = true;
+
+  /// La dernière demande de lecture ou de pause, retenue par le contrôleur et
+  /// jamais relue du moteur. Voir [PlaybackIntent].
+  bool get _wantsPlayback => _playerController.wantsPlay;
   String? _sourceAccountId;
   int _resumePosition = 0;
 
@@ -367,7 +370,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
     PlayerPresence.enter();
     TvTouchpad.addMoveListener(_handleTouchpadMove);
     _showControls = !widget.autoAdvance;
-    _wantsPlayback = !widget.startPaused;
     _chosenDisplayMode = widget.initialDisplayMode;
     if (_ownsDeviceOrientation) {
       _landscapeLock = PlayerLandscapeLock(
@@ -391,7 +393,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     SleepTimer.instance.retain();
     StillWatching.instance.retain();
     SleepTimer.instance.addListener(_applySleepTimer);
-    _playerController = PlayerController();
+    _playerController = PlayerController(wantsPlay: !widget.startPaused);
     _party = PlayerWatchParty(
       controller: _playerController,
       api: () => _apiClient,
@@ -401,7 +403,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
       mediaId: () => _info.media.id,
       isGone: () => _isLeaving || _isDisposing || !mounted,
       playbackRate: () => _playbackRate,
-      setWantsPlayback: (wanted) => _wantsPlayback = wanted,
       openMedia: (media, {required resumeAtSeconds, required startPaused}) =>
           _navigateToEpisode(
         media,
@@ -429,10 +430,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       inParty: () => _party.party != null,
       isLeaving: () => _isLeaving || !mounted,
       pause: _pauseByChoice,
-      resume: () {
-        _wantsPlayback = true;
-        if (!_playerController.isPlaying) _playerController.togglePlayPause();
-      },
+      resume: _playerController.play,
       leave: () => unawaited(_leavePlayer()),
     )..addListener(_rebuild);
     _episodesPanel = EpisodesPanelController(
@@ -454,7 +452,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       onPlayPause: _togglePlayPause,
       onRewind: () => _seekRelative(-10),
       onFastForward: _handleMediaFastForward,
-      isPlaying: () => _playerController.isPlaying,
+      isPlaying: () => _playerController.wantsPlay,
     );
     _init().catchError((Object error) {
       debugPrint(
@@ -718,7 +716,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   if (_inDesktopPip)
                     Positioned.fill(
                       child: DesktopPipOverlay(
-                        playing: _playerController.isPlaying,
+                        playing: _playerController.wantsPlay,
                         onTogglePlayback: _togglePlayPause,
                         onSeek: _seekRelative,
                         onRestore: () =>

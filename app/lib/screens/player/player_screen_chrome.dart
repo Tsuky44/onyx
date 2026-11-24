@@ -58,9 +58,8 @@ extension _PlayerChrome on _PlayerScreenState {
   /// navigating from under it would be a route change nobody is there to see.
   /// What matters is that a film with nowhere left to play stops playing.
   void _handlePictureInPictureClosed() {
-    if (!mounted || !_playerController.isPlaying) return;
-    _wantsPlayback = false;
-    unawaited(_playerController.session.pause());
+    if (!mounted || !_playerController.wantsPlay) return;
+    _playerController.pause();
   }
 
   void _scheduleSubtitlePaddingSync() {
@@ -114,7 +113,7 @@ extension _PlayerChrome on _PlayerScreenState {
     if (!_isInitialized || _isDisposing) return;
 
     final positionSeconds = _playerController.position.inSeconds;
-    final playing = _playerController.isPlaying;
+    final playing = _playerController.wantsPlay;
     if (!force &&
         _lastMediaSessionPlaying == playing &&
         _lastMediaSessionSyncPos >= 0 &&
@@ -232,7 +231,7 @@ extension _PlayerChrome on _PlayerScreenState {
       if (_isDisposing) return;
       if (!mounted) return;
       if (!chromeMayAutoHide(
-        isPlaying: _playerController.isPlaying,
+        isPlaying: _playerController.wantsPlay,
         isDraggingSlider: _playerController.isDraggingSlider,
         // Un volet d'onglets ouvert tient le chrome comme un menu : on y lit
         // un résumé, un code de séance, des mesures.
@@ -367,8 +366,8 @@ extension _PlayerChrome on _PlayerScreenState {
   bool get _shouldHideCursor =>
       !_showControls &&
       !_pageOverImage &&
-      _playerController.isPlaying &&
-      // Never during start-up. `isPlaying` goes true when play() is issued,
+      _playerController.wantsPlay &&
+      // Never during start-up. `wantsPlay` is true as soon as play() is issued,
       // which on a slow open is seconds before there is any picture — hiding
       // the pointer over a black screen looks like the app froze.
       _playerController.hasFirstFrame &&
@@ -598,7 +597,7 @@ extension _PlayerChrome on _PlayerScreenState {
     return OnyxControlsLayer(
       visible: _controlsVisible,
       timelineAnchorKey: _timelineAnchorKey,
-      isPlaying: _playerController.isPlaying,
+      isPlaying: _playerController.wantsPlay,
       isLoading: _awaitingPicture,
       position: _displayedPosition,
       duration: _playerController.duration,

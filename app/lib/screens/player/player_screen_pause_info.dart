@@ -11,7 +11,7 @@ extension _PlayerPauseInfo on _PlayerScreenState {
   /// autre chemin (séance « Regarder ensemble », autre appareil) le retire
   /// sans attendre que le compte à rebours le sache.
   bool get _pauseInfoShown =>
-      _pauseInfo.visible && !_playerController.isPlaying;
+      _pauseInfo.visible && !_playerController.wantsPlay;
 
   /// Quelqu'un est là : une souris qui bouge, un doigt, une touche. Les
   /// comptes à rebours qui guettent une salle vide s'arrêtent tous ici.
@@ -36,7 +36,7 @@ extension _PlayerPauseInfo on _PlayerScreenState {
     if (!mounted || _isDisposing || _isLeaving || !_isInitialized) {
       return false;
     }
-    if (_playerController.isPlaying || _playerController.isDraggingSlider) {
+    if (_playerController.wantsPlay || _playerController.isDraggingSlider) {
       return false;
     }
     // Ce qui tient déjà l'écran garde la main : un menu, le volet des
@@ -68,7 +68,7 @@ extension _PlayerPauseInfo on _PlayerScreenState {
   /// Monté tant que le film est en pause hors d'un téléphone, pour que
   /// l'écran entre en fondu ; invisible, il ne dessine rien.
   Widget? _buildPauseInfo(bool isTv) {
-    if (_handheld || _playerController.isPlaying || !_isInitialized) {
+    if (_handheld || _playerController.wantsPlay || !_isInitialized) {
       return null;
     }
     final detailsId = _info.logoDetailsId;

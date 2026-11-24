@@ -144,6 +144,53 @@ void main() {
             'au moteur : la session reste en pause.');
   });
 
+  test('une session démontée en arrière-plan est reconstruite avant de lire',
+      () {
+    // Sur l'Apple TV, tout passage en arrière-plan (économiseur d'écran
+    // derrière une pause, bouton TV, veille) fait démonter au moteur son
+    // pipeline vidéo et le laisse en `.paused` : il attend de l'hôte qu'il le
+    // reconstruise (`needsForegroundVideoRestore`). Personne ne le faisait.
+    // play() partait sur un lecteur sans item : l'état passait à `.playing`,
+    // la phase restait `.loading`, et le film restait bloqué en pause quoi
+    // qu'on presse. Seul Xcode compile ce fichier : ce test tient la règle.
+    final player = File('$_darwin/AetherPlayer.swift').readAsStringSync();
+    String? body(String signature) => RegExp(
+          '${RegExp.escape(signature)} \\{(.*?)\\n  \\}\\n',
+          dotAll: true,
+        ).firstMatch(player)?.group(1);
+
+    final restore =
+        body('private func restoreAfterBackground(at positionMs: Int64? = nil)');
+    expect(restore, isNotNull,
+        reason: 'Plus personne ne reconstruit la session démontée.');
+    expect(restore, contains('engine.needsForegroundVideoRestore'),
+        reason: 'La reconstruction ne vaut que pour une session démontée.');
+    expect(restore, contains('!isInBackground'),
+        reason: 'Reconstruire en arrière-plan fait traverser la veille de '
+            'l’Apple TV à un décodeur : c’est ce que le démontage évite.');
+    expect(restore, contains('try await self.engine.reloadAtCurrentPosition()'));
+    expect(restore, contains('self.deliverWantedTransport()'),
+        reason: 'La session doit revenir dans l’état demandé, pas dans '
+            'celui de son premier montage.');
+
+    for (final command in ['func play()', 'func seek(toMs positionMs: Int64)']) {
+      expect(body(command), contains('restoreAfterBackground('),
+          reason: '`$command` part sur une session démontée : rien ne lit.');
+    }
+    // Le moteur remet son horloge à zéro pendant la reconstruction : une
+    // reconstruction qui échoue rouvrait sinon le film à la seconde zéro.
+    expect(restore, contains('restoringAtMs = positionMs ??'));
+    expect(player, contains('if let held = self.restoringAtMs'),
+        reason: 'La position rapportée retombe à zéro pendant la '
+            'reconstruction.');
+    final play = body('func play()')!;
+    expect(
+      play.indexOf('restoreAfterBackground()'),
+      lessThan(play.indexOf('engine.play()')),
+      reason: 'play() doit attendre la reconstruction, pas la devancer.',
+    );
+  });
+
   test('le fichier brut est servi en segments progressifs (ADR-0093)', () {
     // Sans ce réglage, le premier segment d'un remux 4K attend sa coupe
     // entière (~1,1 s mesuré). Il ne vaut que pour le fichier brut : le HLS

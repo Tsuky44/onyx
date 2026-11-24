@@ -95,17 +95,17 @@ extension _PlayerFlow on _PlayerScreenState {
     final party = _party.party;
     if (party != null) {
       unawaited(party.sendSeek(Duration(seconds: target),
-          playing: _playerController.isPlaying));
+          playing: _playerController.wantsPlay));
     }
     await _playerController.seekToAbsoluteSeconds(target);
   }
 
   /// La lecture s'arrête parce qu'on l'a décidé (minuterie, autre appareil,
   /// question sans réponse) : rien ne doit la relancer derrière.
-  void _pauseByChoice() {
-    _wantsPlayback = false;
-    if (_playerController.isPlaying) _playerController.togglePlayPause();
-  }
+  ///
+  /// Demandé même quand le moteur ne lit pas : en plein chargement ou en
+  /// pleine recherche, il aurait repris seul derrière la question posée.
+  void _pauseByChoice() => _playerController.pause();
 
   void _togglePlayPause() {
     // En pause parce que la lecture est passée ailleurs : relancer ici, c'est
@@ -122,12 +122,11 @@ extension _PlayerFlow on _PlayerScreenState {
       return;
     }
     StillWatching.instance.noteActivity();
-    _wantsPlayback = !_playerController.isPlaying;
     _playerController.togglePlayPause();
     final party = _party.party;
     if (party != null) {
       unawaited(party.sendPlaying(
-          _playerController.isPlaying, _playerController.position));
+          _playerController.wantsPlay, _playerController.position));
     }
     _hideControlsWithDelay();
     _notePlaybackChoiceForPauseInfo();
@@ -264,8 +263,7 @@ extension _PlayerFlow on _PlayerScreenState {
 
   void _resumeAfterLaunchQuestion() {
     _episodeNav?.closeLaunchLanguageCard();
-    _wantsPlayback = true;
-    if (!_playerController.isPlaying) _playerController.togglePlayPause();
+    _playerController.play();
     _keyboardFocusNode.requestFocus();
     _hideControlsWithDelay();
   }
