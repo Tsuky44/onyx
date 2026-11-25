@@ -1,7 +1,7 @@
 # Graph Report - onyx  (2026-11-25)
 
 ## Corpus Check
-- 2377 files · ~2,081,376 words
+- 2377 files · ~2,081,499 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 167 file(s) not represented in the graph (top: (none) 33, .csv 24, .xml 20)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `136eb254`
+- Built from commit: `fd388d7b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -955,12 +955,12 @@
 10. `_` - 58 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `Narrative mapping` --references--> `section`  [INFERRED]
+  .agents/skills/impeccable/reference/document.md → server/indexer/scan_report.go
 - `Décision` --references--> `MainActivity`  [INFERRED]
   docs/adr/0103-image-dans-image-sur-iphone-et-ipad.md → app/android/app/src/main/kotlin/com/tsuky/onyx/MainActivity.kt
 - `Lot D : natif (§ 2.4)` --references--> `DownloadKeepAliveService`  [INFERRED]
   docs/traduction-anglais.md → packages/onyx_background_downloads/android/src/main/kotlin/com/projectplayer/onyx_background_downloads/DownloadKeepAliveService.kt
-- `Conséquences` --references--> `TestLibraryFoldersSuggestWhatIsMountedAndFree()`  [INFERRED]
-  docs/adr/0155-un-seul-compose-regle-par-env-et-des-bibliotheques-preremplies.md → server/handlers/libraries_test.go
 - `Règles Transverses Fondamentales` --references--> `sqlPlaceholders()`  [INFERRED]
   AGENTS.md → server/handlers/media_scan.go
 - `Lot C : messages du serveur (§ 2.3)` --references--> `writeMediaHubError()`  [INFERRED]
@@ -4251,7 +4251,7 @@ Cohesion: 0.10
 Nodes (19): ADR-0089 — MediaHub, compagnon de demandes d'Onyx par son API v1, Conséquences, Contexte, Décision, myRequestsResponse, Availability, Lot, Removal (+11 more)
 
 ## Knowledge Gaps
-- **14924 isolated node(s):** `useDesktopCaptionBar`, `useHiddenNativeTitleBar`, `macOSWindowControlsTopInset`, `tvShellHeaderTopGap`, `tvShellHeaderBottomGap` (+14919 more)
+- **14924 isolated node(s):** `_anchorKey`, `authProvider`, `_avatarOrInitial`, `build`, `_buildPlain` (+14919 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 21565 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **262 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -4259,13 +4259,13 @@ Nodes (19): ADR-0089 — MediaHub, compagnon de demandes d'Onyx par son API v1, 
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Lot C : messages du serveur (§ 2.3)` connect `modern-screenshot.umd.js` to `net/http.ResponseWriter`?**
-  _High betweenness centrality (0.212) - this node is a cross-community bridge._
-- **What connects `useDesktopCaptionBar`, `useHiddenNativeTitleBar`, `macOSWindowControlsTopInset` to the rest of the system?**
+  _High betweenness centrality (0.227) - this node is a cross-community bridge._
+- **What connects `_anchorKey`, `authProvider`, `_avatarOrInitial` to the rest of the system?**
   _14924 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `../../tv/tv_mode.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.032242063492063495 - nodes in this community are weakly interconnected._
 - **Why does `writeMediaHubError()` connect `net/http.ResponseWriter` to `main`, `go_pkg_strings`, `testing.T`, `modern-screenshot.umd.js`?**
-  _High betweenness centrality (0.212) - this node is a cross-community bridge._
+  _High betweenness centrality (0.227) - this node is a cross-community bridge._
 - **Should `search_catalog_fakes.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.02271062271062271 - nodes in this community are weakly interconnected._
 - **Should `package:provider/provider.dart` be split into smaller, more focused modules?**

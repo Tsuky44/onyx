@@ -15246,9 +15246,9 @@
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters.go": {
-    "mtime": 1795596548.6791859,
-    "seen": 1795596840.2147017,
-    "ast_hash": "dfb0673e026a70af6369f4964a572313",
+    "mtime": 1795598423.6916811,
+    "seen": 1795598474.8023095,
+    "ast_hash": "c5d0e3eb08c39d35bd6b4392a4b80bbd",
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters_test.go": {
@@ -15258,9 +15258,9 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-fytroz-la-chaine-vaapi-ne-ramene-plus-le-4k-en-memoire.md": {
-    "mtime": 1795596769.367194,
-    "seen": 1795596840.2151928,
-    "ast_hash": "b6f74729d35217b5f9b53106ee6b74b0",
+    "mtime": 1795598458.5054843,
+    "seen": 1795598474.8028865,
+    "ast_hash": "3f62e88b53ee8d556c2d377ea19e60d2",
     "semantic_hash": ""
   }
 }
