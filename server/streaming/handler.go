@@ -455,10 +455,10 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 
 	// "accepted", not "ready": the first segment is still being encoded, and the
 	// client's request for the variant playlist is what waits for it.
-	log.Printf("HLS: session %s media %d quality=%s container=%s video=%s%s (%.1f Mbps) start=%ds audio=%d renditions=%v burnsub=%d accepted in %v",
+	log.Printf("HLS: session %s media %d quality=%s container=%s video=%s%s (%.1f Mbps) start=%ds audio=%d renditions=%v burnsub=%d accepted in %v [%s]",
 		sessionID, mediaID, quality, caps.Container, videoMode, reasonSuffix(videoPlan),
 		float64(bitrate)/1e6, startSeconds, audioIndex, audioMap, burnSubtitle,
-		time.Since(startedAt))
+		time.Since(startedAt), describePipeline(options, vulkanOnGPU()))
 }
 
 // handleServeFile serves one playlist or segment of a session.

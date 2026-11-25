@@ -77,18 +77,34 @@ func (m *SessionManager) LiveCountExcept(ticket [32]byte) int {
 var supersedeGrace = 30 * time.Second
 
 // Supersede marque comme remplacées les sessions ouvertes avec ce ticket,
-// sauf keepID, et les détruit au bout de supersedeGrace si le client ne l'a
-// pas fait avant.
+// sauf keepID, les gèle aussitôt (TranscodeSession.Freeze), et les détruit au
+// bout de supersedeGrace si le client ne l'a pas fait avant.
+//
+// Gelées, elles restent servies pendant la grâce : leurs segments déjà écrits
+// sont lisibles, et l'image que le client montre encore pendant l'ouverture de
+// la nouvelle ne se coupe pas. Elles ne prennent plus de processeur, que la
+// nouvelle session réclame. Une session en attente (standby) n'est jamais
+// remplacée avant Claim : elle n'est donc jamais gelée par ici.
 func (m *SessionManager) Supersede(ticket [32]byte, keepID string) {
 	m.mu.Lock()
 	var ids []string
+	var toFreeze []*TranscodeSession
 	for id, s := range m.sessions {
 		if id != keepID && s.TicketHash == ticket && !s.superseded {
 			s.superseded = true
 			ids = append(ids, id)
+			// Une attente que ce nouveau départ emporte, et que le lecteur
+			// pourrait encore prendre dans la grâce, ne se gèle pas : Claim ne
+			// la dégèlerait pas.
+			if !s.standby {
+				toFreeze = append(toFreeze, s)
+			}
 		}
 	}
 	m.mu.Unlock()
+	for _, s := range toFreeze {
+		s.Freeze()
+	}
 	for _, id := range ids {
 		id := id
 		time.AfterFunc(supersedeGrace, func() { m.DestroySession(id) })

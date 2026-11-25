@@ -55,14 +55,6 @@ func encoderPresetFor(preset qualityPreset) string {
 	return x264Preset
 }
 
-// maxEncoderThreads caps libx264 threads per session.
-//
-// The target host is a dual-socket Xeon: letting one session spread across both
-// sockets costs more in cross-NUMA memory traffic than it gains in throughput,
-// and starves any concurrent session. 16 threads saturate a single socket's
-// worth of frame-threading while leaving room for a second stream.
-const maxEncoderThreads = 16
-
 // TranscodeOptions describes everything needed to build an HLS FFmpeg command.
 type TranscodeOptions struct {
 	InputPath    string
@@ -233,13 +225,13 @@ func BuildFFmpegArgs(opt TranscodeOptions) []string {
 	// Et quand l'image reste sur le circuit (hardware_filters.go), le décodage
 	// est nommé et rend des images du périphérique : `auto` les ramènerait en
 	// mémoire, en 4K, avant le premier filtre.
-	switch {
-	case sessionToneMapper(opt).Vulkan:
+	switch decodeMode(opt) {
+	case decodeVulkan:
 		args = append(args, vulkanInitArgs()...)
-	case opt.usesHardwareFilters():
-		args = append(args, hardwareDecodeArgs(opt.encoder())...)
-	default:
+	case decodeAuto:
 		args = append(args, "-hwaccel", "auto")
+	default:
+		args = append(args, hardwareDecodeArgs(opt.encoder())...)
 	}
 
 	// Single keyframe-accurate input seek; on the input (before -i) so the HLS

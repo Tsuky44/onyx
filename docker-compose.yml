@@ -11,3 +11,8 @@ services:
     volumes:
       - ./data:/app/data   # la base et le cache
       - ./media:/media:ro  # vos médias : remplacez ./media par votre dossier
+    # Carte graphique intégrée (iGPU Intel ou AMD) : décommentez les deux lignes
+    # pour que le serveur voie le circuit vidéo. Sans elles, il transcode sur le
+    # processeur seul, même sur une machine qui a un GPU.
+    # devices:
+    #   - /dev/dri:/dev/dri

@@ -75,7 +75,7 @@ var softwareEncoder = VideoEncoder{
 			"-b:v", "0",
 			"-maxrate", preset.VideoBitrate,
 			"-bufsize", doubleBitrate(preset.VideoBitrate),
-			"-threads", strconv.Itoa(maxEncoderThreads),
+			"-threads", strconv.Itoa(encoderThreads()),
 		}
 	},
 }

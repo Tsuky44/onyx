@@ -93,9 +93,17 @@ type TranscodeSession struct {
 	cmd    *exec.Cmd
 	stderr lockedBuffer
 
-	mu                   sync.Mutex
-	active               bool
-	paused               bool
+	mu     sync.Mutex
+	active bool
+	paused bool
+	// frozen est posé par Freeze : la session est arrêtée (SIGSTOP) pour de bon,
+	// et le bridage ne la relance plus jamais. Il implique paused.
+	frozen bool
+	// cpuUsed est le temps processeur que FFmpeg a consommé, connu à sa sortie
+	// seulement. Voir CPUCost.
+	cpuUsed time.Duration
+	// exited dit que cpuUsed est fixé : FFmpeg est sorti et a été attendu.
+	exited               bool
 	lastAccess           time.Time
 	lastRequestedSegment int
 	producedSegments     int
@@ -175,8 +183,10 @@ func (s *TranscodeSession) Start() error {
 // watch reaps the process so it never becomes a zombie and records its exit.
 func (s *TranscodeSession) watch() {
 	err := s.cmd.Wait()
+	cpu := processCPUTime(s.cmd.ProcessState)
 	s.mu.Lock()
 	s.active = false
+	s.cpuUsed, s.exited = cpu, true
 	s.mu.Unlock()
 	// Morte seule (personne ne l'a arrêtée), en erreur, sans avoir rien écrit.
 	if !s.diedBeforeFirstSegment(err) {
@@ -248,27 +258,65 @@ func (s *TranscodeSession) throttle() {
 			produced := s.countVideoSegments()
 			s.purgeBehind()
 
-			s.mu.Lock()
-			bufferAhead := (produced - 1) - s.lastRequestedSegment
-			paused := s.paused
-			s.mu.Unlock()
-
-			if bufferAhead >= segmentsAhead && !paused {
-				s.signal(syscall.SIGSTOP)
-				s.mu.Lock()
-				s.paused = true
-				if s.burstSpeed == 0 {
-					s.burstSpeed = s.speedLocked(produced, time.Now())
-				}
-				s.mu.Unlock()
-			} else if bufferAhead < segmentsAhead && paused {
-				s.signal(syscall.SIGCONT)
-				s.mu.Lock()
-				s.paused = false
-				s.mu.Unlock()
-			}
+			s.throttleStep(produced)
 		}
 	}
+}
+
+// throttleStep décide d'arrêter ou de relancer FFmpeg selon l'avance qu'il a
+// prise. Le signal part sous s.mu, comme celui de Freeze : sinon un bridage qui
+// a lu « pas gelé » relancerait, une fois le gel posé, la session qu'on vient
+// d'arrêter.
+func (s *TranscodeSession) throttleStep(produced int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.frozen {
+		return
+	}
+	bufferAhead := (produced - 1) - s.lastRequestedSegment
+	switch {
+	case bufferAhead >= segmentsAhead && !s.paused:
+		s.signal(syscall.SIGSTOP)
+		s.paused = true
+		if s.burstSpeed == 0 {
+			s.burstSpeed = s.speedLocked(produced, time.Now())
+		}
+	case bufferAhead < segmentsAhead && s.paused:
+		s.signal(syscall.SIGCONT)
+		s.paused = false
+	}
+}
+
+// Freeze arrête FFmpeg pour de bon (SIGSTOP) : une session remplacée n'a plus
+// de lecteur à servir, seulement des segments déjà écrits que le client peut
+// encore demander pendant la grâce de Supersede. Sans le gel, elle encodait
+// pendant ces trente secondes à côté de celle qui la remplace — sur une machine
+// juste assez rapide pour une session, c'est ce qui faisait saccader la nouvelle.
+//
+// Contrairement à l'arrêt du bridage, le gel survit à l'avance qui retombe :
+// throttleStep ne relance jamais une session gelée. Kill la relance quand même
+// avant SIGTERM, qu'un processus arrêté ignore.
+func (s *TranscodeSession) Freeze() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.frozen || !s.active {
+		return
+	}
+	s.frozen = true
+	if !s.paused {
+		s.signal(syscall.SIGSTOP)
+		s.paused = true
+		if s.burstSpeed == 0 {
+			s.burstSpeed = s.speedLocked(s.producedSegments, time.Now())
+		}
+	}
+}
+
+// Frozen dit que la session a été gelée par Freeze.
+func (s *TranscodeSession) Frozen() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.frozen
 }
 
 // countVideoSegments returns how many .ts segments of the video rendition have
@@ -345,20 +393,23 @@ func (s *TranscodeSession) segmentExt() string {
 }
 
 func (s *TranscodeSession) signal(sig syscall.Signal) {
-	if s.cmd.Process != nil {
+	// Pas de commande : une session que les tests posent dans le gestionnaire
+	// sans lancer FFmpeg.
+	if s.cmd != nil && s.cmd.Process != nil {
 		_ = s.cmd.Process.Signal(sig)
 	}
 }
 
 // Kill terminates FFmpeg (continuing it first if paused) and removes temp files.
 func (s *TranscodeSession) Kill() {
-	if health := s.Health(time.Now()); health.Speed > 0 && s.producedSegments >= 10 {
+	if health := s.Health(time.Now()); health.Speed > 0 && s.countVideoSegments() >= reportMinSegments {
 		// Sous 1, c'est le serveur qui faisait attendre le lecteur, pas la ligne.
 		log.Printf("Session %s: %s encodé à %.1f× la vitesse de lecture", s.ID, s.Quality, health.Speed)
 	}
 	s.mu.Lock()
 	if !s.active {
 		s.mu.Unlock()
+		s.logCPUCost()
 		s.cleanup()
 		return
 	}
@@ -391,6 +442,9 @@ func (s *TranscodeSession) Kill() {
 	s.active = false
 	s.mu.Unlock()
 
+	// Après l'attente de FFmpeg, qui seule donne son temps processeur, et avant
+	// le nettoyage, qui emporte les segments que le coût rapporte.
+	s.logCPUCost()
 	s.cleanup()
 }
 

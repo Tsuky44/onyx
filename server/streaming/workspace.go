@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 )
@@ -61,7 +60,8 @@ func resetWorkspace(root string) {
 //
 // Rien ne les bornait : chaque /start lançait un FFmpeg de plus, et assez de
 // lecteurs ouverts — ou un client qui en ouvre en boucle — mettaient la machine
-// à genoux pour tout le monde. La moitié des cœurs, au moins quatre : une
+// à genoux pour tout le monde. La moitié des cœurs disponibles (cores.go : le
+// quota d'un `--cpus` Docker compte), au moins quatre : une
 // session d'encodage en occupe plusieurs à elle seule, une recopie presque
 // rien. MAX_TRANSCODES le change ; 0 retire la limite.
 func maxTranscodes() int {
@@ -71,11 +71,7 @@ func maxTranscodes() int {
 		}
 		log.Printf("HLS: invalid MAX_TRANSCODES %q, using the default", raw)
 	}
-	n := runtime.NumCPU() / 2
-	if n < 4 {
-		n = 4
-	}
-	return n
+	return defaultMaxTranscodes()
 }
 
 // minFreeBytes est l'espace qu'il doit rester libre sur l'espace de travail
