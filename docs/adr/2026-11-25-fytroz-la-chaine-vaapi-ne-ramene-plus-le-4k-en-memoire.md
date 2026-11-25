@@ -66,6 +66,10 @@ place de zscale (plus lent, les conversions de swscale coûtent plus que zscale)
    session, dans les deux variantes. Un échec garde les filtres logiciels et le journal dit
    pourquoi. Une troisième commande, sans la tête, dit seulement si le circuit décode le HEVC
    10 bits : elle ne décide de rien, elle renseigne.
+   La source porte ses marques sur les images (`setparams`) et dans le flux (x265), pas par
+   `-color_trc` sur la sortie : le FFmpeg du runner de la CI ignore cette option, et zscale refuse
+   une image sans transfert connu. La première version de l'essai aurait donc refusé la variante
+   HDR sur un circuit qui marche.
 6. **Une session qui meurt avec cette chaîne avant son premier segment la retire** pour tout le
    serveur (`noteHardwareSessionDied`), avec l'erreur de FFmpeg au journal.
 7. **`HARDWARE_FILTERS=off`** revient à la chaîne logicielle sans attendre une image du serveur.

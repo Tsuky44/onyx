@@ -207,14 +207,20 @@ const hardwareProbeQuality = "360p"
 
 // hardwareProbeSampleArgs écrit la source d'essai : six images de 720p en
 // HEVC Main 10, marquées BT.2020 PQ comme un film HDR10.
+//
+// Les marques sont posées deux fois, sur les images (`setparams`) et dans le
+// flux par x265 lui-même, et pas par `-color_trc` sur la sortie : le FFmpeg
+// du runner de la CI ignore cette option et écrivait une source sans
+// transfert. Or zscale refuse une image dont il ne connaît pas le transfert,
+// donc l'essai de la variante HDR aurait échoué sur un circuit qui marche.
 func hardwareProbeSampleArgs(path string) []string {
 	return []string{
 		"-hide_banner", "-loglevel", "error", "-y",
-		"-f", "lavfi", "-i", "testsrc2=size=1280x720:rate=24",
+		"-f", "lavfi", "-i", "testsrc2=size=1280x720:rate=24," +
+			"setparams=color_primaries=bt2020:color_trc=smpte2084:colorspace=bt2020nc",
 		"-frames:v", "6",
 		"-c:v", "libx265", "-preset", "ultrafast", "-pix_fmt", "yuv420p10le",
-		"-x265-params", "log-level=error",
-		"-color_primaries", "bt2020", "-color_trc", "smpte2084", "-colorspace", "bt2020nc",
+		"-x265-params", "log-level=error:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc",
 		path,
 	}
 }
