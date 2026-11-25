@@ -146,7 +146,7 @@ func previewArgs(filePath string, second int, tonemap ToneMapper, keyframeOnly b
 	args := []string{"-hide_banner", "-loglevel", "error", "-nostdin",
 		"-threads", strconv.Itoa(threads)}
 	if tonemap.Vulkan {
-		args = append(args, "-init_hw_device", "vulkan")
+		args = append(args, vulkanInitArgs()...)
 	}
 	if keyframeOnly {
 		args = append(args, "-skip_frame", "nokey")

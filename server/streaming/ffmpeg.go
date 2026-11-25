@@ -235,7 +235,7 @@ func BuildFFmpegArgs(opt TranscodeOptions) []string {
 	// mémoire, en 4K, avant le premier filtre.
 	switch {
 	case sessionToneMapper(opt).Vulkan:
-		args = append(args, "-init_hw_device", "vulkan")
+		args = append(args, vulkanInitArgs()...)
 	case opt.usesHardwareFilters():
 		args = append(args, hardwareDecodeArgs(opt.encoder())...)
 	default:

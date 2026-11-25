@@ -46,9 +46,15 @@ RUN apk --no-cache add ca-certificates tzdata ffmpeg su-exec mesa-vulkan-swrast
 # intel-media-driver sert les Intel depuis la 5e génération, libva-intel-driver
 # ceux d'avant, mesa-va-gallium les AMD. Les deux premiers n'existent que pour
 # x86_64. ~47 Mo, chargés seulement par un FFmpeg qui ouvre le périphérique.
+#
+# mesa-vulkan-intel : le Vulkan du même circuit, pour que le tone mapping d'un
+# Dolby Vision profil 5 (libplacebo) tourne sur lui plutôt que sur le Vulkan
+# logiciel, qui tient tous les cœurs sans atteindre le temps réel sur un 4K
+# (voir streaming/vulkan_device.go). Sans /dev/dri, il ne trouve aucun
+# périphérique et le serveur garde le rendu logiciel.
 RUN apk --no-cache add mesa-va-gallium \
     && if [ "$(apk --print-arch)" = "x86_64" ]; then \
-         apk --no-cache add intel-media-driver libva-intel-driver; \
+         apk --no-cache add intel-media-driver libva-intel-driver mesa-vulkan-intel; \
        fi
 
 WORKDIR /app

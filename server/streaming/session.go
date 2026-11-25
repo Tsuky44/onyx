@@ -80,6 +80,9 @@ type TranscodeSession struct {
 	// vidéo (hardware_filters.go) : si FFmpeg meurt avant le premier segment,
 	// c'est cette chaîne qui est retirée.
 	hardwareFilters bool
+	// vulkanGPU dit que le tone mapping de cette session passe par libplacebo
+	// sur un vrai circuit (vulkan_device.go), avec la même conséquence.
+	vulkanGPU bool
 	// standby est posé, sous le même verrou, pour une session que le lecteur
 	// prépare sans encore la lire : elle ne remplace rien tant que son premier
 	// segment n'a pas été demandé. Voir SessionManager.Claim et ADR-0056.
@@ -176,8 +179,14 @@ func (s *TranscodeSession) watch() {
 	s.active = false
 	s.mu.Unlock()
 	// Morte seule (personne ne l'a arrêtée), en erreur, sans avoir rien écrit.
-	if s.diedBeforeFirstSegment(err) && s.hardwareFilters {
+	if !s.diedBeforeFirstSegment(err) {
+		return
+	}
+	if s.hardwareFilters {
 		noteHardwareSessionDied(s.ID, s.stderr.String())
+	}
+	if s.vulkanGPU {
+		noteVulkanSessionDied(s.ID, s.stderr.String())
 	}
 }
 

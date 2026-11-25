@@ -1,11 +1,8 @@
 package streaming
 
 import (
-	"context"
 	"log"
-	"os/exec"
 	"sync"
-	"time"
 )
 
 // ToneMapper est la chaîne de filtres qui ramène une source HDR en SDR, et ce
@@ -78,24 +75,19 @@ func setLibplaceboForTest(usable bool) {
 //
 // La liste des filtres ne suffit pas : le filtre est compilé dans le FFmpeg
 // d'Alpine, mais il lui faut un périphérique Vulkan à l'exécution, et une image
-// sans pilote n'en a aucun. La seule réponse fiable est de filtrer une image.
-// Demandé une fois par processus : c'est un fork et une seconde.
+// sans pilote n'en a aucun. La seule réponse fiable est de filtrer une image,
+// et c'est aussi là que le périphérique est choisi (vulkan_device.go).
+// Demandé une fois par processus : ce sont quelques forks et une seconde.
 func libplaceboUsable() bool {
 	libplaceboOnce.Do(func() {
 		if !ffmpegHasFilter("libplacebo") {
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		err := exec.CommandContext(ctx, "ffmpeg",
-			"-hide_banner", "-loglevel", "quiet", "-nostdin",
-			"-init_hw_device", "vulkan",
-			"-f", "lavfi", "-i", "color=c=black:s=64x64",
-			"-frames:v", "1",
-			"-vf", "libplacebo=format=yuv420p",
-			"-f", "null", "-",
-		).Run()
-		libplaceboOK = err == nil
+		libplaceboOK = resolveVulkanDevice()
 	})
 	return libplaceboOK
 }
+
+// ResolveToneMapping choisit dès le démarrage le périphérique de libplacebo,
+// pour que son verdict soit au journal avant la première lecture.
+func ResolveToneMapping() { libplaceboUsable() }

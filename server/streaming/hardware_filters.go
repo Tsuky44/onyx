@@ -17,11 +17,12 @@ import (
 //
 // Avec h264_vaapi seul, le circuit n'encodait que la fin : `-hwaccel auto`
 // ramenait chaque image décodée en mémoire, en 4K, puis la mise à l'échelle et
-// le tone mapping tournaient sur les cœurs avant le renvoi à l'encodeur. Sur
-// le premier serveur Intel où ce chemin a tourné (i7-10700K, source 4K HEVC
-// HDR10 à 19 Mbit/s vers 1080p), le journal a dit « encodé à 0.7× la vitesse
-// de lecture » à tous les barreaux, tous les threads occupés : un encodeur
-// sous 1,0× ne rattrape jamais le lecteur.
+// le tone mapping tournaient sur les cœurs avant le renvoi à l'encodeur.
+//
+// Ce chemin n'a pas de mesure sur un vrai circuit. Celle qui l'a fait écrire
+// (0,7× sur un i7-10700K) venait d'un Dolby Vision profil 5, qui ne passe pas
+// par ici mais par libplacebo : voir vulkan_device.go. Reste le raisonnement :
+// 24 Mo par image 4K à ramener puis à réduire, pour rien.
 //
 // Ici le décodage rend des images du périphérique et la mise à l'échelle s'y
 // fait (`scale_vaapi`). Une source SDR ne redescend plus du tout ; une source

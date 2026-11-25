@@ -1,10 +1,8 @@
 # La chaîne VAAPI ne ramène plus le 4K en mémoire
 
-- **Statut :** accepté, **écrit sans le matériel**. Les commandes sont testées en Go, la source
-  d'essai et la moitié logicielle de la chaîne ont tourné sous FFmpeg 6.1 ; **aucune image n'est
-  passée par `scale_vaapi` ni par `hwdownload` sur un vrai circuit**. La cause du 0,7× mesuré
-  n'est **pas établie** (voir « Ce qui reste inconnu »). L'essai du démarrage dira dans le journal
-  si la chaîne tient sur un serveur donné.
+- **Statut :** accepté, **écrit sans le matériel**, puis vu actif sur un i7-10700K le 2026-11-25 :
+  `vaapi decodes HEVC 10-bit` et `hardware filters on (vaapi)` au journal. **Son gain n'est pas
+  mesuré** : la mesure qui l'a motivé était mal attribuée (voir « Ce qui était faux »).
 - **Date :** 2026-11-25
 - **Portée :** `server/streaming/hardware_filters.go` (nouveau), `ffmpeg.go` (`BuildFFmpegArgs`,
   `videoFilterChain`, `TranscodeOptions.HardwareFilters`), `encoder.go` (`VideoEncoder.surface`),
@@ -89,21 +87,20 @@ gardé en HEVC, et une source HDR déjà à la taille du barreau.
 - **Brider la cadence de FFmpeg (`-readrate`).** Le travail par seconde de film reste le même ;
   cela ne sauve pas une session sous 1,0×.
 
-## Ce qui reste inconnu
+## Ce qui était faux
 
-Le 0,7× n'est pas expliqué. La même chaîne logicielle tient 1,1× sur 4 cœurs de location ; un
-i7-10700K devrait en faire plusieurs fois plus, même sans son circuit. Deux lectures possibles, qui
-se cumulent :
+Le 0,7× du contexte ne venait pas de cette chaîne. La liste des processus pendant la lecture l'a
+montré : l'épisode est un Dolby Vision profil 5, et sa session passait par `-init_hw_device vulkan`,
+libplacebo sur le Vulkan logiciel et libx264, sans jamais toucher à VAAPI. Une fois cette chaîne
+déployée, la même lecture a donné 0,6× : rien n'avait changé pour ce fichier. Le remède est dans
+[libplacebo prend le périphérique Vulkan le plus rapide](2026-11-25-fytroz-libplacebo-prend-le-peripherique-vulkan-le-plus-rapide.md).
 
-- **Le décodage matériel ne s'engage pas** et `-hwaccel auto` retombe en logiciel sans le dire
-  (le journal de FFmpeg est en `error`). La ligne `vaapi decodes HEVC 10-bit` ou son contraire, au
-  prochain démarrage, tranche.
-- **Le processeur est bridé par sa température.** 99 °C en charge, 87 °C avec quatre threads
-  occupés, et des aperçus extraits en 0,34 à 1,12 s pièce quand ce code a été conçu pour 0,17 s :
-  la machine rend une fraction de sa puissance. Aucun changement du serveur ne corrige cela.
+Ce qui a induit en erreur : l'écran de statistiques d'un autre fichier, étiqueté `hdr10`, et la
+raison journalisée de la session (« client does not decode hevc, tone mapped »), qui ne dit pas
+quel tone mapping est pris. Sur la même machine, le tone mapping zscale seul tient 3,58× en 1080p.
 
-FFmpeg 8.1.3, celui de l'image, n'a pas pu être exécuté ici : une régression de sa chaîne
-logicielle n'est pas exclue.
+Cette chaîne reste : le circuit décode et met à l'échelle, ce qui évite de ramener 24 Mo par image
+4K en mémoire. Mais aucun chiffre ne dit encore ce qu'elle rapporte sur une source HDR10.
 
 ## Conséquences
 

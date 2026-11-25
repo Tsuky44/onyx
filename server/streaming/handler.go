@@ -359,6 +359,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		RetainSegments: retain / segmentDuration,
 		// Une image recopiée n'a pas de chaîne : usesHardwareFilters le sait.
 		hardwareFilters: options.usesHardwareFilters(),
+		vulkanGPU:       sessionToneMapper(options).Vulkan && vulkanOnGPU(),
 		ctx:             ctx,
 		cancel:          cancel,
 		cmd:             cmd,

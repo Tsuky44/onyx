@@ -515,6 +515,9 @@ func main() {
 	// Même raison pour l'essai de la chaîne matérielle : il lance FFmpeg, et
 	// son verdict doit être au journal avant la première lecture.
 	streaming.HardwareFiltersUsable()
+	// Et pour le périphérique Vulkan du tone mapping Dolby Vision : choisi au
+	// premier film, il faisait attendre ce spectateur-là.
+	streaming.ResolveToneMapping()
 	hlsHandler := streaming.NewHandler(db, handlers.PlaybackTickets)
 	handlers.ActiveTranscodes = hlsHandler.ActiveSessions
 	router.POST("/api/v1/stream/*path", hlsHandler.Dispatch)
