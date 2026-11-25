@@ -264,7 +264,12 @@ extension _PlayerRemote on _PlayerScreenState {
           _leaveControlBar();
           break;
         }
-        unawaited(_exitFullscreenIfActive());
+        switch (playerBackKeyEnd(isTv: TvMode.isTv)) {
+          case PlayerBackKeyEnd.leave:
+            unawaited(_leavePlayer());
+          case PlayerBackKeyEnd.exitFullscreen:
+            unawaited(_exitFullscreenIfActive());
+        }
     }
     return KeyEventResult.handled;
   }

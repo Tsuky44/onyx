@@ -6,8 +6,9 @@ import '../tv_mode.dart';
 /// D'où vient un Retour.
 enum TvBackOrigin {
   /// Le système : Menu ou ‹ de la Siri Remote, Retour d'Android TV. Le moteur
-  /// l'envoie en `popRoute`, pas en touche, et dpad ne le voit donc jamais
-  /// (constat C1).
+  /// l'envoie en `popRoute` (constat C1). Depuis flutter-tvos 1.12, l'Apple TV
+  /// envoie aussi Menu en touche, avant : une touche lue n'est alors suivie
+  /// d'aucun `popRoute` (voir `playerBackKeyEnd`).
   popRoute,
 
   /// Une touche : Échap d'un clavier, B d'une manette, Retour d'un téléviseur

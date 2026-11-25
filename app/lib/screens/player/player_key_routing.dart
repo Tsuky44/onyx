@@ -62,6 +62,29 @@ final class PlayerKeyBack extends PlayerKeyAction {
   const PlayerKeyBack();
 }
 
+/// Ce que fait la touche Retour du lecteur une fois tout refermé (menu,
+/// panneau, barre de contrôle).
+enum PlayerBackKeyEnd {
+  /// Quitter le lecteur, comme le Retour du système.
+  leave,
+
+  /// Sortir du plein écran : sur un ordinateur, Échap ne quitte pas le film.
+  exitFullscreen,
+}
+
+/// Le dernier pas de la touche Retour du lecteur.
+///
+/// Sur un téléviseur, la touche Retour est le Retour de la télécommande : elle
+/// quitte le lecteur, exactement comme le `popRoute` du système. Le lecteur
+/// sortait seulement du plein écran, ce qui ne fait rien sur un téléviseur :
+/// tant que l'Apple TV envoyait Menu en `popRoute` seul, personne ne le
+/// voyait. Depuis flutter-tvos 1.12 (Flutter 3.50), Menu arrive aussi en
+/// touche ; le lecteur l'avalait, la marquait comme lue ([TvBack.claimKey]),
+/// et le `popRoute` qui suivait éventuellement était absorbé comme la seconde
+/// moitié du même appui. Retour ne quittait plus le lecteur.
+PlayerBackKeyEnd playerBackKeyEnd({required bool isTv}) =>
+    isTv ? PlayerBackKeyEnd.leave : PlayerBackKeyEnd.exitFullscreen;
+
 const double _volumeStep = 5.0;
 
 /// Ce que [event] demande au lecteur.

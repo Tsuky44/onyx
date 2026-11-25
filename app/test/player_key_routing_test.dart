@@ -151,6 +151,17 @@ void main() {
         isA<PlayerKeyBack>());
   });
 
+  // Régression de la 1.2.1 sur Apple TV : Menu arrive aussi en touche depuis
+  // flutter-tvos 1.12, et le dernier Retour ne faisait que sortir du plein
+  // écran. Voir [playerBackKeyEnd].
+  test('sur un téléviseur, le dernier Retour quitte le lecteur', () {
+    expect(playerBackKeyEnd(isTv: true), PlayerBackKeyEnd.leave);
+  });
+
+  test('sur un ordinateur, Échap sort du plein écran sans quitter le film', () {
+    expect(playerBackKeyEnd(isTv: false), PlayerBackKeyEnd.exitFullscreen);
+  });
+
   test('une touche inconnue continue son chemin', () {
     expect(route(_down(LogicalKeyboardKey.f9)), isA<PlayerKeyIgnored>());
   });

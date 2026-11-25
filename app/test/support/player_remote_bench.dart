@@ -163,7 +163,9 @@ class PlayerRemoteBenchState extends State<PlayerRemoteBench> {
           _leaveControlBar();
           break;
         }
-        _leave();
+        // La règle du vrai lecteur, pas une copie : c'est leur écart qui a
+        // laissé l'Apple TV sans Retour dans le lecteur.
+        if (playerBackKeyEnd(isTv: true) == PlayerBackKeyEnd.leave) _leave();
       case PlayerKeyConsumed():
       case PlayerKeySkipIntro():
       case PlayerKeyTogglePlayback():
