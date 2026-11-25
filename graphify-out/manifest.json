@@ -8280,9 +8280,9 @@
     "semantic_hash": ""
   },
   "server/main.go": {
-    "mtime": 1795611176.4802191,
-    "seen": 1795612845.0580044,
-    "ast_hash": "31eb209e03d4ed30a600b817ad158e52",
+    "mtime": 1795613943.205483,
+    "seen": 1795614545.143413,
+    "ast_hash": "3758da1b3b685ecefcd667fd32e09605",
     "semantic_hash": ""
   },
   "server/mediahub/availability.go": {
@@ -8604,9 +8604,9 @@
     "semantic_hash": ""
   },
   "server/streaming/encoder.go": {
-    "mtime": 1795612255.8968606,
-    "seen": 1795612845.059009,
-    "ast_hash": "2b7d8d53f2323219ee65d68c2f6c614f",
+    "mtime": 1795613786.1896281,
+    "seen": 1795614545.143413,
+    "ast_hash": "afb382a0d2b426321c63f5394e89e97b",
     "semantic_hash": ""
   },
   "server/streaming/encoder_test.go": {
@@ -8616,9 +8616,9 @@
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg.go": {
-    "mtime": 1795612255.7057207,
-    "seen": 1795612845.059009,
-    "ast_hash": "95aa43528bf572292b5b0199e2ebf2fe",
+    "mtime": 1795613776.483829,
+    "seen": 1795614545.143413,
+    "ast_hash": "f8597d56a94ed93d2710dca8e4902ec3",
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg_test.go": {
@@ -8628,9 +8628,9 @@
     "semantic_hash": ""
   },
   "server/streaming/handler.go": {
-    "mtime": 1795612276.6077926,
-    "seen": 1795612845.059009,
-    "ast_hash": "7cd6c78bbcdc951d0a39c52ae13d6331",
+    "mtime": 1795613943.204479,
+    "seen": 1795614545.143413,
+    "ast_hash": "713612db0b01e185d7e8fb7cc0607cc6",
     "semantic_hash": ""
   },
   "server/streaming/handler_files_test.go": {
@@ -8802,9 +8802,9 @@
     "semantic_hash": ""
   },
   "server/streaming/tonemap_dovi.go": {
-    "mtime": 1795611176.4987414,
-    "seen": 1795612845.059009,
-    "ast_hash": "eb206b47222fa02bcbf60af958212ece",
+    "mtime": 1795613817.6527734,
+    "seen": 1795614545.143913,
+    "ast_hash": "ea576271fc85404040fdb5e40ec4cac2",
     "semantic_hash": ""
   },
   "server/streaming/tonemap_dovi_test.go": {
@@ -10806,9 +10806,9 @@
     "semantic_hash": ""
   },
   "server/README.md": {
-    "mtime": 1795612548.6026747,
-    "seen": 1795612845.0595136,
-    "ast_hash": "f512dcb2772dc1c7c67faac192a8e639",
+    "mtime": 1795614394.1988006,
+    "seen": 1795614545.144413,
+    "ast_hash": "05d8666d635e678b1468f88880861fd8",
     "semantic_hash": ""
   },
   "app/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
@@ -11952,9 +11952,9 @@
     "semantic_hash": ""
   },
   "server/streaming/encoder_hevc.go": {
-    "mtime": 1794820428.707608,
-    "seen": 1795611164.59517,
-    "ast_hash": "9b2cc09a2c55128113906719ad47ad9a",
+    "mtime": 1795613817.650772,
+    "seen": 1795614545.143413,
+    "ast_hash": "29f8d8c3a111e82b1906cc3616d11740",
     "semantic_hash": ""
   },
   "server/streaming/hevc_target_test.go": {
@@ -15240,9 +15240,9 @@
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters.go": {
-    "mtime": 1795611176.489719,
-    "seen": 1795612845.059009,
-    "ast_hash": "fc744646256e983b914c04133b0d5993",
+    "mtime": 1795613817.6517718,
+    "seen": 1795614545.143413,
+    "ast_hash": "5137ce8559eb54c58cc6a2fc5b71effc",
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters_test.go": {
@@ -15258,9 +15258,9 @@
     "semantic_hash": ""
   },
   "server/streaming/vulkan_device.go": {
-    "mtime": 1795611176.5002463,
-    "seen": 1795612845.059009,
-    "ast_hash": "f859422933fe91cbe88907c552a81ff8",
+    "mtime": 1795613817.651275,
+    "seen": 1795614545.143913,
+    "ast_hash": "5829276348502d8446600f3e687bd8ea",
     "semantic_hash": ""
   },
   "server/streaming/vulkan_device_test.go": {
@@ -15348,9 +15348,9 @@
     "semantic_hash": ""
   },
   "docs/transcodage-adaptatif.md": {
-    "mtime": 1795612564.8151066,
-    "seen": 1795612845.0595136,
-    "ast_hash": "6d816f1e93b8425e869b93c9668e0ac4",
+    "mtime": 1795614460.0837226,
+    "seen": 1795614545.144413,
+    "ast_hash": "06fad2911103d1a742b41ed867d6e716",
     "semantic_hash": ""
   },
   "server/streaming/capacity/bench/bench_test.go": {
@@ -15366,9 +15366,9 @@
     "semantic_hash": ""
   },
   "server/streaming/capacity/bench/measure.go": {
-    "mtime": 1795612493.5727549,
-    "seen": 1795612845.059009,
-    "ast_hash": "560b61ae96408a818a66600671dbc509",
+    "mtime": 1795613515.5920131,
+    "seen": 1795614545.143413,
+    "ast_hash": "af9eb993a7230a86253004cf03a42ebb",
     "semantic_hash": ""
   },
   "server/streaming/capacity/bench/sources.go": {
@@ -15378,15 +15378,15 @@
     "semantic_hash": ""
   },
   "server/streaming/cores.go": {
-    "mtime": 1795612246.2919915,
-    "seen": 1795612845.059009,
-    "ast_hash": "dc4ba4bb8622a298172804acdde24964",
+    "mtime": 1795613793.357988,
+    "seen": 1795614545.143413,
+    "ast_hash": "73bfc64f1b2e694cfc5a44d0df565bd1",
     "semantic_hash": ""
   },
   "server/streaming/cores_test.go": {
-    "mtime": 1795612415.187171,
-    "seen": 1795612845.059009,
-    "ast_hash": "92108ccc45ca5908e1a89b511905a8dd",
+    "mtime": 1795613786.1906285,
+    "seen": 1795614545.143413,
+    "ast_hash": "8d35bf2f9ea628aa6ab52e84e65d561d",
     "semantic_hash": ""
   },
   "server/streaming/cpu_cost.go": {
@@ -15408,9 +15408,9 @@
     "semantic_hash": ""
   },
   "server/streaming/pipeline_log.go": {
-    "mtime": 1795612276.195001,
-    "seen": 1795612845.059009,
-    "ast_hash": "bea3e8cdaa9e696285020db5df528630",
+    "mtime": 1795613786.190128,
+    "seen": 1795614545.143413,
+    "ast_hash": "41b9f5a1b586ad8f9a516f3fd675e618",
     "semantic_hash": ""
   },
   "server/streaming/pipeline_log_test.go": {
@@ -15423,6 +15423,126 @@
     "mtime": 1795612571.2721639,
     "seen": 1795612845.0595136,
     "ast_hash": "3b4a7ab7dd5180db423182c534fcfd2c",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/bench/priority_other.go": {
+    "mtime": 1795613515.6729994,
+    "seen": 1795614545.143413,
+    "ast_hash": "433d210c976f9621eaef0a3db62f9abc",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/bench/priority_unix.go": {
+    "mtime": 1795613515.638072,
+    "seen": 1795614545.143413,
+    "ast_hash": "e0f480641983ff542b6ee6f96f4035c2",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/cost.go": {
+    "mtime": 1795614000.8955681,
+    "seen": 1795614545.143413,
+    "ast_hash": "da20375cd4781c5dbe8d2eb8d61ef163",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/inventory.go": {
+    "mtime": 1795614000.8960657,
+    "seen": 1795614545.143413,
+    "ast_hash": "29ac88f955fd915de6bba89ad042017b",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/inventory_test.go": {
+    "mtime": 1795614210.0630288,
+    "seen": 1795614545.143413,
+    "ast_hash": "f055096cdffddd49ee5030cec3d6d605",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/measure.go": {
+    "mtime": 1795613590.8394248,
+    "seen": 1795614545.143413,
+    "ast_hash": "cd1acecdc0509e321ac536ff00f7cd09",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/measure_test.go": {
+    "mtime": 1795614315.8931172,
+    "seen": 1795614545.143413,
+    "ast_hash": "0424c6537d5cdf8140ce862bb62e90c5",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/planner.go": {
+    "mtime": 1795613798.5862694,
+    "seen": 1795614545.143413,
+    "ast_hash": "a0c3867725bbddcd6d9fff5f9170efe5",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/planner_test.go": {
+    "mtime": 1795614329.7252162,
+    "seen": 1795614545.143413,
+    "ast_hash": "ae53295882e8eac37b4a8f285efdb708",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/profile.go": {
+    "mtime": 1795613480.2495425,
+    "seen": 1795614545.143413,
+    "ast_hash": "ed827ff75cae7a35995d60647dc744cf",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/profile_test.go": {
+    "mtime": 1795614210.3284771,
+    "seen": 1795614545.143413,
+    "ast_hash": "b01a4bbd93b5bff0bca93ed0866901a9",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/profiler.go": {
+    "mtime": 1795613725.4900162,
+    "seen": 1795614545.143413,
+    "ast_hash": "c9151d8b3b1d36d63c184cf9ebc1dfd5",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/registry.go": {
+    "mtime": 1795614000.32297,
+    "seen": 1795614545.143413,
+    "ast_hash": "cfcbd772f71e6fd555a303955405dbc7",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity_candidates.go": {
+    "mtime": 1795613943.203476,
+    "seen": 1795614545.143413,
+    "ast_hash": "9fd2c6d1ac02bfeb5b381367237fb148",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity_profile.go": {
+    "mtime": 1795614366.102054,
+    "seen": 1795614545.143413,
+    "ast_hash": "a7dc821dfe5ca1548c3a2df7b7c814a5",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity_profile_test.go": {
+    "mtime": 1795614366.1461196,
+    "seen": 1795614545.143413,
+    "ast_hash": "06655449a23edf0ef3dade75c548feb6",
+    "semantic_hash": ""
+  },
+  "server/streaming/handler_pipeline.go": {
+    "mtime": 1795613929.9598444,
+    "seen": 1795614545.143413,
+    "ast_hash": "df3564c8000d8e59753bc14737f75bda",
+    "semantic_hash": ""
+  },
+  "server/streaming/pipeline_nonregression_test.go": {
+    "mtime": 1795614315.9121473,
+    "seen": 1795614545.143413,
+    "ast_hash": "b707f12ba3ff71d856204e8fdd160b78",
+    "semantic_hash": ""
+  },
+  "server/streaming/pipeline_render.go": {
+    "mtime": 1795613776.4833293,
+    "seen": 1795614545.143413,
+    "ast_hash": "44c6cf709c760d134e0006b536083f6e",
+    "semantic_hash": ""
+  },
+  "docs/adr/2026-11-25-tsuky-profil-materiel-et-planificateur.md": {
+    "mtime": 1795614438.4808924,
+    "seen": 1795614545.144413,
+    "ast_hash": "3ccde56c11533747c754b9d81466a0ef",
     "semantic_hash": ""
   }
 }
