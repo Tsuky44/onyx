@@ -512,6 +512,9 @@ func main() {
 	// that second belongs to boot, not to the first viewer to press play. It
 	// also puts the answer in the log before anything has been served.
 	streaming.SelectedVideoEncoder()
+	// Même raison pour l'essai de la chaîne matérielle : il lance FFmpeg, et
+	// son verdict doit être au journal avant la première lecture.
+	streaming.HardwareFiltersUsable()
 	hlsHandler := streaming.NewHandler(db, handlers.PlaybackTickets)
 	handlers.ActiveTranscodes = hlsHandler.ActiveSessions
 	router.POST("/api/v1/stream/*path", hlsHandler.Dispatch)

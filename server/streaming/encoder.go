@@ -49,6 +49,11 @@ type VideoEncoder struct {
 	// uploadFilter termine la chaîne de filtres en envoyant l'image au
 	// périphérique, pour un encodeur qui ne prend pas d'images logicielles.
 	uploadFilter string
+	// surface nomme les images du périphérique (`vaapi`) quand le même circuit
+	// sait aussi décoder et mettre à l'échelle : l'image peut alors y rester
+	// de bout en bout. Vide : les filtres sont logiciels. Voir
+	// hardware_filters.go.
+	surface string
 	// rateControl builds the flags that set quality and bitrate, which is where
 	// the encoders differ most: libx264 targets a quality and caps the result,
 	// while the hardware encoders take a bitrate and hold it.
@@ -141,6 +146,7 @@ var hardwareEncoders = []VideoEncoder{
 		Hardware:     true,
 		deviceArgs:   []string{"-vaapi_device", vaapiDevice()},
 		uploadFilter: "format=nv12,hwupload",
+		surface:      "vaapi",
 		rateControl: func(preset qualityPreset) []string {
 			return []string{
 				// Nommé : laissé à lui-même, FFmpeg lit un débit égal à son

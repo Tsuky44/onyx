@@ -1,8 +1,10 @@
 # ADR-0023 — L'encodeur matériel est proposé, pas supposé
 
 - **Statut :** accepté. La sélection, les quatre encodeurs et le repli sont en place ; le défaut ne
-  change pas. VAAPI ajouté le 2026-10-13 (voir « VAAPI ») : **ses commandes sont testées, mais
-  aucune session n'a tourné sur un vrai circuit Intel ou AMD.**
+  change pas. VAAPI ajouté le 2026-10-13 (voir « VAAPI ») : ses commandes sont testées. Première
+  session sur un vrai circuit Intel le 2026-11-24 (i7-10700K) : `h264_vaapi` est retenu et encode,
+  mais la session tient 0,7× le temps réel. Le §3 ne vaut plus pour VAAPI, voir
+  [la chaîne VAAPI ne ramène plus le 4K en mémoire](2026-11-25-fytroz-la-chaine-vaapi-ne-ramene-plus-le-4k-en-memoire.md).
 - **Date :** 2026-09-16
 - **Portée :** le choix de l'encodeur H.264 des sessions HLS (`server/streaming/encoder.go`) et la
   construction de la commande FFmpeg. Le décodage, le graphe de filtres (redimensionnement, tone

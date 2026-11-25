@@ -76,6 +76,10 @@ type TranscodeSession struct {
 	// superseded est posé, sous le verrou du gestionnaire, quand une session
 	// plus récente sur le même ticket la remplace. Voir SessionManager.Supersede.
 	superseded bool
+	// hardwareFilters dit que l'image de cette session reste sur le circuit
+	// vidéo (hardware_filters.go) : si FFmpeg meurt avant le premier segment,
+	// c'est cette chaîne qui est retirée.
+	hardwareFilters bool
 	// standby est posé, sous le même verrou, pour une session que le lecteur
 	// prépare sans encore la lire : elle ne remplace rien tant que son premier
 	// segment n'a pas été demandé. Voir SessionManager.Claim et ADR-0056.
@@ -167,10 +171,20 @@ func (s *TranscodeSession) Start() error {
 
 // watch reaps the process so it never becomes a zombie and records its exit.
 func (s *TranscodeSession) watch() {
-	_ = s.cmd.Wait()
+	err := s.cmd.Wait()
 	s.mu.Lock()
 	s.active = false
 	s.mu.Unlock()
+	// Morte seule (personne ne l'a arrêtée), en erreur, sans avoir rien écrit.
+	if s.diedBeforeFirstSegment(err) && s.hardwareFilters {
+		noteHardwareSessionDied(s.ID, s.stderr.String())
+	}
+}
+
+// diedBeforeFirstSegment dit que FFmpeg a échoué de lui-même sans produire un
+// seul segment : la commande ne tient pas sur cet hôte, ou pas sur ce fichier.
+func (s *TranscodeSession) diedBeforeFirstSegment(waitErr error) bool {
+	return waitErr != nil && s.ctx.Err() == nil && s.countVideoSegments() == 0
 }
 
 // IsActive reports whether the FFmpeg process is still running.

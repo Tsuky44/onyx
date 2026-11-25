@@ -298,10 +298,11 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 	bitrate := h.sourceBitrate(mediaID)
 	videoPlan := PlanVideo(probe, quality, burnSubtitle >= 0, bitrate, caps.CopyCeiling(copyBitrateCeiling()), caps)
 
-	args := BuildFFmpegArgs(TranscodeOptions{
+	options := TranscodeOptions{
 		InputPath:              inputPath,
 		Quality:                quality,
 		Encoder:                SelectedVideoEncoder(),
+		HardwareFilters:        HardwareFiltersUsable(),
 		HEVCEncoder:            hevcEncoder,
 		StartSeconds:           startSeconds,
 		TmpDir:                 tmpDir,
@@ -314,7 +315,8 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		AudioBudgetBps:         AudioBudget(quality, videoPlan),
 		Caps:                   caps,
 		LiveSubtitles:          subtitleTracks,
-	})
+	}
+	args := BuildFFmpegArgs(options)
 
 	// Copying the picture means the file's own bitrate goes out on the wire, so
 	// that — not the preset's ceiling, which no encoder is enforcing here — is
@@ -355,9 +357,11 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		SegmentExt:     caps.Container.SegmentExt(),
 		Variants:       1 + len(audioMap),
 		RetainSegments: retain / segmentDuration,
-		ctx:            ctx,
-		cancel:         cancel,
-		cmd:            cmd,
+		// Une image recopiée n'a pas de chaîne : usesHardwareFilters le sait.
+		hardwareFilters: options.usesHardwareFilters(),
+		ctx:             ctx,
+		cancel:          cancel,
+		cmd:             cmd,
 	}
 	// Une session préparée : le lecteur lit encore autre chose, et ne passera
 	// à celle-ci qu'à la seconde où elle commence (ADR-0056).

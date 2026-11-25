@@ -116,6 +116,11 @@ type TranscodeOptions struct {
 	// client that declared nothing, which is treated as the browser this server
 	// was originally written for — see LegacyCapabilities.
 	Caps Capabilities
+	// HardwareFilters laisse l'image sur le circuit vidéo pour le décodage et
+	// la mise à l'échelle, quand l'encodeur en a un et que l'essai du démarrage
+	// l'a vu fonctionner (HardwareFiltersUsable). Faux : la chaîne logicielle
+	// de toujours.
+	HardwareFilters bool
 	// LiveSubtitles liste les pistes texte (0:s:N) que la session écrit en
 	// WebVTT à côté des segments, produites par LiveSubtitleTracks. Vide : pas
 	// de sous-titres écrits, la commande reste celle d'avant l'ADR-0031.
@@ -224,9 +229,16 @@ func BuildFFmpegArgs(opt TranscodeOptions) []string {
 	// un périphérique Vulkan, et `auto` tente d'abord de décoder avec lui. Sur
 	// le Vulkan logiciel d'un hôte sans GPU, c'est un échec journalisé et près
 	// d'une seconde perdue avant le premier segment (ADR-0060).
-	if sessionToneMapper(opt).Vulkan {
+	//
+	// Et quand l'image reste sur le circuit (hardware_filters.go), le décodage
+	// est nommé et rend des images du périphérique : `auto` les ramènerait en
+	// mémoire, en 4K, avant le premier filtre.
+	switch {
+	case sessionToneMapper(opt).Vulkan:
 		args = append(args, "-init_hw_device", "vulkan")
-	} else {
+	case opt.usesHardwareFilters():
+		args = append(args, hardwareDecodeArgs(opt.encoder())...)
+	default:
 		args = append(args, "-hwaccel", "auto")
 	}
 
@@ -516,6 +528,9 @@ func audioLanguage(probe *ProbeResult, typedIndex int) string {
 func videoFilterChain(opt TranscodeOptions, preset qualityPreset) string {
 	if opt.Video.Copy {
 		return "" // copied frames are never filtered, by definition
+	}
+	if opt.usesHardwareFilters() {
+		return hardwareFilterChain(opt, preset)
 	}
 	var parts []string
 	// Le désentrelacement passe avant la mise à l'échelle, qui mélangerait les
