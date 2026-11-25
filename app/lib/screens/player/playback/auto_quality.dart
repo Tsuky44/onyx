@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/models.dart';
-import '../web_quality.dart';
+import 'auto_source.dart';
 
 /// Si une lecture démarre en qualité automatique sur cet appareil.
 ///
@@ -413,7 +413,7 @@ class AutoLadder {
   /// Sans le barreau natif quand le Direct Play est permis : recopié, il pèse
   /// ce que pèse le fichier, et n'est donc ni une descente ni une étape.
   List<QualityTier> get _rungs {
-    final native = qualityForSourceHeight(sourceHeight);
+    final native = nativeTierKey(sourceHeight);
     return [
       ...tiers.where((t) =>
           t.bitrateBps > 0 &&
@@ -472,7 +472,7 @@ class AutoLadder {
       if (currentKey != null) return null;
       // Un fichier dont le serveur n'annonce pas le débit : il pèse presque
       // toujours au moins ce que pèse le barreau de sa résolution.
-      final native = qualityForSourceHeight(sourceHeight);
+      final native = nativeTierKey(sourceHeight);
       final nativeTier =
           tiers.where((t) => t.key == native && t.bitrateBps > 0);
       sending = nativeTier.isNotEmpty

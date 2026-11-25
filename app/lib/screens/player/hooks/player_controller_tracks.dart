@@ -400,12 +400,12 @@ extension PlayerControllerTracks on PlayerController {
     //
     // La liste de pistes n'est pas attendue : elle se charge en parallèle de
     // l'ouverture, et un conteneur refusé l'est souvent avant qu'elle arrive.
-    // Sans hauteur, `qualityForSourceHeight` rend le palier 1080p, que tous les
+    // Sans hauteur, `nativeTierKey` rend le palier 1080p, que tous les
     // serveurs offrent — se tromper de palier laisse une lecture, l'attendre
     // n'en laisse aucune.
     if (failure.kind == PlaybackFailureKind.unsupported &&
         currentQuality == null) {
-      final quality = qualityForSourceHeight(mediaTracks?.video?.height ?? 0);
+      final quality = nativeTierKey(mediaTracks?.video?.height ?? 0);
       debugPrint('Player: Direct Play refusé ($failure) — repli HLS $quality');
       _directPlayRuledOut = true;
       _autoCeilingKey = quality;

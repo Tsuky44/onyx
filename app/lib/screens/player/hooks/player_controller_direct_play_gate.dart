@@ -92,7 +92,7 @@ extension PlayerControllerDirectPlayGate on PlayerController {
   /// ré-encodée : seul l'audio coûte alors quelque chose au serveur.
   Future<void> _transcodeForUndecodableAudio() async {
     final track = mediaTracks!.audio[_selectedAudioIndex];
-    final quality = qualityForSourceHeight(mediaTracks!.video?.height ?? 0);
+    final quality = nativeTierKey(mediaTracks!.video?.height ?? 0);
     debugPrint("Player: ${track.codec} illisible en Direct Play "
         "(${PlaybackCapabilitiesResolver.current.label}) — HLS $quality");
     // L'Auto ne ramènera pas la lecture sur une piste muette.

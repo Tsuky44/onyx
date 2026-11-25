@@ -29,7 +29,7 @@ import 'playback_reporter.dart';
 import 'use_auto_quality.dart';
 import '../playback/timeline_previews.dart';
 import '../playback_profile.dart';
-import '../web_quality.dart';
+import '../playback/auto_source.dart';
 import '../../../services/api_client.dart';
 import '../../../services/client_log.dart';
 import '../../../services/playback_access.dart';

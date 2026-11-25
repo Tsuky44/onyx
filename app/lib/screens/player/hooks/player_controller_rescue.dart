@@ -47,7 +47,7 @@ extension PlayerControllerRescue on PlayerController {
         // Déjà transcodé, ou un fichier local que le serveur n'a pas : rien
         // d'autre à ouvrir.
         if (currentQuality != null || _localFilePath != null) return false;
-        final quality = qualityForSourceHeight(mediaTracks?.video?.height ?? 0);
+        final quality = nativeTierKey(mediaTracks?.video?.height ?? 0);
         ClientLog.error('Player: lecture figée à ${seconds}s — repli HLS '
             '$quality');
         _directPlayRuledOut = true;

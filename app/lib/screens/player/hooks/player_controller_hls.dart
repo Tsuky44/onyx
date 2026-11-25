@@ -32,11 +32,19 @@ extension PlayerControllerHls on PlayerController {
 
     final height = tracks.video?.height ?? 0;
     final surface = _surfacePixelHeight();
-    final quality = webQualityFor(
-      sourceHeight: height,
-      viewportHeight: surface,
-      sourceCodec: tracks.video?.codec ?? '',
-    );
+    // Le navigateur n'ouvre pas le fichier : recopie s'il la décode, sinon
+    // transcodage plafonné à la surface. Voir [chooseAutoSource].
+    final quality = chooseAutoSource(
+          AutoSourceFile.of(tracks, audioIndex: _selectedAudioIndex),
+          AutoSourceDevice(
+            capabilities: PlaybackCapabilitiesResolver.current,
+            opensFiles: false,
+            screenHeight: surface,
+          ),
+          const AutoLine.unmeasured(),
+          AutoSourceServer.legacy,
+        ).quality ??
+        nativeTierKey(height);
     // The resume point has to be part of the session rather than a seek applied
     // to it afterwards: the server transcodes from `?start=N` onwards, and the
     // rest of the film does not exist yet to seek into.
@@ -65,7 +73,7 @@ extension PlayerControllerHls on PlayerController {
   /// on a 2× display really does have 2880 rows to fill, and asking for 720p
   /// there would be visibly soft.
   ///
-  /// 0 on anything unexpected, which [webQualityFor] reads as "apply no ceiling".
+  /// 0 on anything unexpected, which the surface cap reads as "apply no ceiling".
   int _surfacePixelHeight() {
     try {
       final views = WidgetsBinding.instance.platformDispatcher.views;

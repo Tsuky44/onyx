@@ -36,7 +36,7 @@ extension PlayerControllerDolbyVision on PlayerController {
   /// en 4K.
   Future<void> _transcodeForDolbyVision() async {
     final height = mediaTracks?.video?.height ?? 0;
-    final quality = qualityForSourceHeight(height > 1080 ? 1080 : height);
+    final quality = nativeTierKey(height > 1080 ? 1080 : height);
     debugPrint('Player: Dolby Vision profil 5 illisible en Direct Play '
         '(${PlaybackCapabilitiesResolver.current.label}) — HLS $quality');
     // L'Auto ne ramènera pas la lecture sur une image rose et verte.
