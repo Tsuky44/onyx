@@ -97,6 +97,14 @@ Ce qui manque à ces trois mécanismes :
 
 ### Les mesures
 
+**Le banc existe** (phase 0) : `server/streaming/capacity/bench/`. Il génère les trois sources de 1080p (H.264 SDR, HEVC 10 bits, HEVC 10 bits HDR10) et chiffre chaque étape par soustraction d'une ligne de base, en cœur-secondes par mégapixel·image. Pour le lancer sur une machine, sans rien installer de plus que FFmpeg :
+
+```bash
+cd server && ONYX_BENCH=1 go test ./streaming/capacity/bench -run TestReport -v -timeout 30m
+```
+
+Le tableau sort dans le journal de `-v`. Aucun chiffre du banc n'est encore reporté ici : les tableaux ci-dessous restent ceux de fytroz, la prod et l'i7 n'ont pas été passés au banc.
+
 **Machine sans GPU, 4 cœurs, FFmpeg 6.1** : 20 s de 4K HEVC 10 bits PQ vers 1080p, en cœur-secondes par seconde de film (*mesuré*, fytroz).
 
 | Étape | Coût |
