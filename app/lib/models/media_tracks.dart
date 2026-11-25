@@ -340,12 +340,25 @@ class QualityTier {
   /// Vidéo plus audio : ce que la ligne doit réellement porter.
   final int bitrateBps;
 
+  /// Ce que le serveur prévoit de tenir à ce barreau, sous la charge du
+  /// moment : [fitOk] (au moins 1,5× la lecture), [fitLimit] (de 1 à 1,5×) ou
+  /// [fitTooHeavy] (sous 1×, peut saccader). Un barreau [fitTooHeavy] reste
+  /// choisissable : le menu le marque, il ne le retire pas. Null d'un serveur
+  /// qui ne le sait pas (plus ancien, ou profil matériel pas encore prêt) : le
+  /// menu reste alors celui d'avant.
+  final String? fit;
+
+  static const fitOk = 'ok';
+  static const fitLimit = 'limite';
+  static const fitTooHeavy = 'trop_lourd';
+
   const QualityTier({
     required this.key,
     required this.label,
     required this.height,
     required this.bitrateBps,
     this.width = 0,
+    this.fit,
   });
 
   /// « 1080p » — la moitié gauche du libellé serveur.
@@ -381,7 +394,17 @@ class QualityTier {
       width: json['width'] as int? ?? 0,
       height: json['height'] as int? ?? 0,
       bitrateBps: json['bitrate_bps'] as int? ?? 0,
+      fit: _knownFit(json['fit']),
     );
+  }
+
+  /// Une tenue inconnue de cette version vaut une tenue absente : le menu ne
+  /// promet rien sur un mot qu'il ne comprend pas.
+  static String? _knownFit(Object? value) {
+    return switch (value) {
+      fitOk || fitLimit || fitTooHeavy => value as String,
+      _ => null,
+    };
   }
 }
 

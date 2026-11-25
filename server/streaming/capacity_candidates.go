@@ -1,17 +1,14 @@
 package streaming
 
 import (
-	"log"
 	"sort"
 	"strings"
-	"sync"
 
-	"project-player/server/safego"
 	"project-player/server/streaming/capacity"
 )
 
-// Ce que streaming dit au profil de ses encodeurs, et ce qu'il en reprend
-// quand une session meurt.
+// Ce que streaming dit au profil de ses encodeurs. Ce qu'il en reprend quand
+// une session meurt est dans recipe_retire.go.
 
 // describeCapacity dit au profileur, d'après les verdicts des essais, quels
 // encodeurs sont candidats et quoi mesurer. Le banc reçoit les filtres et les
@@ -104,56 +101,4 @@ func candidateOf(enc VideoEncoder) capacity.EncoderCandidate {
 		Name: enc.Name, Codec: codec, Hardware: enc.Hardware,
 		Surface: enc.surface, Upload: enc.uploadFilter != "",
 	}
-}
-
-// retireHardwareFiltersInProfile retire la chaîne sur le circuit du profil :
-// une session est morte avec elle avant son premier segment.
-func retireHardwareFiltersInProfile(stderr string) {
-	changed := false
-	for _, r := range capacityTrials.Results() {
-		if strings.HasPrefix(r.Name, capacity.TrialFiltersPrefix) && r.Usable() {
-			changed = capacityTrials.Retire(r.Name, stderr) || changed
-		}
-	}
-	if changed {
-		publishTrials()
-	}
-}
-
-// noteVulkanFallbackInProfile ramène libplacebo du profil sur le rendu
-// logiciel spec, comme noteVulkanSessionDied l'a fait pour les sessions.
-func noteVulkanFallbackInProfile(spec, stderr string) {
-	if capacityTrials.Update(capacity.TrialVulkan, func(r *capacity.TrialResult) {
-		r.Choice, r.GPU, r.Fallback = spec, false, ""
-		r.Retired = ""
-		r.Note = "retour au rendu logiciel après une session morte sur le circuit : " + strings.TrimSpace(stderr)
-	}) {
-		publishTrials()
-	}
-}
-
-// savingProfile sérialise les écritures du cache.
-var savingProfile sync.Mutex
-
-// publishTrials publie le profil avec les verdicts du registre, et l'écrit.
-// Sans profil encore prêt, la mesure en cours reprendra les verdicts du
-// registre.
-func publishTrials() {
-	profile := capacityProfile()
-	if profile == nil {
-		return
-	}
-	next := profile.WithTrials(capacityTrials.Results())
-	currentProfile.Store(next)
-	profiler := activeProfiler.Load()
-	if profiler == nil {
-		return
-	}
-	go safego.Run("capacity-save", func() {
-		savingProfile.Lock()
-		defer savingProfile.Unlock()
-		if err := capacity.SaveProfile(profiler.Path, next); err != nil {
-			log.Printf("Streaming: retrait non écrit dans le profil matériel : %v", err)
-		}
-	})
 }

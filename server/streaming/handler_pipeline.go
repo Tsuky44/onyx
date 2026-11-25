@@ -31,9 +31,11 @@ func planPipeline(options TranscodeOptions, profile *capacity.Profile, load capa
 func jobFor(o TranscodeOptions) capacity.Job {
 	tier := presetFor(o.Quality)
 	job := capacity.Job{
-		Target:  capacity.Target{Width: tier.W, Height: tier.H, Preset: encoderPresetFor(tier)},
-		ToneMap: o.Video.Tonemap,
-		KeepHDR: o.Video.HEVC,
+		Target: capacity.Target{Width: tier.W, Height: tier.H, Preset: encoderPresetFor(tier)},
+		// Ce fichier a fait ramer une session : ses coûts comptent plus.
+		Slowdown: o.slowdown,
+		ToneMap:  o.Video.Tonemap,
+		KeepHDR:  o.Video.HEVC,
 		// Ce qui travaille sur des images logicielles avant la mise à
 		// l'échelle garde la chaîne logicielle (usesHardwareFilters).
 		SoftwareOnly: o.Video.Deinterlace || (o.BurnSubtitle && o.BurnSubtitleTypedIndex >= 0),

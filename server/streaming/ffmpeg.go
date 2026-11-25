@@ -124,6 +124,10 @@ type TranscodeOptions struct {
 	// recopiée. Le rendu n'y lit que ce qui n'a pas d'autre champ : le preset
 	// et les threads de libx264 (encodeTarget).
 	Pipeline *capacity.Pipeline
+	// slowdown est ce que ce fichier coûte de plus que prévu, appris d'une
+	// session trop lente (lighter_recipes.go) ; 0 : rien. Le planificateur en
+	// multiplie ses coûts.
+	slowdown float64
 	// LiveSubtitles liste les pistes texte (0:s:N) que la session écrit en
 	// WebVTT à côté des segments, produites par LiveSubtitleTracks. Vide : pas
 	// de sous-titres écrits, la commande reste celle d'avant l'ADR-0031.

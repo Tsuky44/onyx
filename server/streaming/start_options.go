@@ -1,5 +1,7 @@
 package streaming
 
+import "project-player/server/streaming/capacity"
+
 // Les options d'une session, pour un barreau donné.
 //
 // Extrait de handleStart (handler.go, près de la limite de 800 lignes,
@@ -18,6 +20,9 @@ type startInputs struct {
 	startSeconds int
 	audioMap     []int
 	subtitles    []int
+	// lighter est ce que ce fichier doit prendre de plus léger après une
+	// session trop lente (lighter_recipes.go).
+	lighter lighterRecipe
 }
 
 // optionsFor rend les options de la session au barreau quality, avant toute
@@ -41,7 +46,14 @@ func (in startInputs) optionsFor(quality string) TranscodeOptions {
 		AudioBudgetBps:         AudioBudget(quality, videoPlan),
 		Caps:                   in.caps,
 		LiveSubtitles:          in.subtitles,
+		slowdown:               in.lighter.slowdown,
 	}
+}
+
+// tryRung planifie le barreau quality sous la charge load, avec ce que ce
+// fichier doit à une session lente.
+func (in startInputs) tryRung(quality string, profile *capacity.Profile, load capacity.Load) rungOption {
+	return planRung(in.optionsFor(quality), profile, load, len(in.audioMap))
 }
 
 // sourceHeight est la hauteur de l'image source, 0 si la sonde ne la connaît

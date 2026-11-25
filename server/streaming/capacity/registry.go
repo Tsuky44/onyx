@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Le registre unique des essais.
@@ -79,6 +80,21 @@ type TrialResult struct {
 	// Retired est la raison du retrait (l'erreur de FFmpeg d'une session
 	// morte avant son premier segment), vide tant que la recette tient.
 	Retired string `json:"retired,omitempty"`
+	// Withdrawals gardent chaque recette retirée de cet essai, avec sa
+	// raison : la chaîne VAAPI (qui rend l'essai inutilisable, Retired), ou le
+	// circuit de libplacebo (qui revient au rendu logiciel, l'essai reste
+	// bon). C'est ce que la page d'administration montrera (phase 7).
+	Withdrawals []Withdrawal `json:"withdrawals,omitempty"`
+}
+
+// Withdrawal est une recette retirée parce qu'une session est morte avec elle
+// avant son premier segment.
+type Withdrawal struct {
+	// Recipe nomme ce qui a été retiré (`filters/vaapi`, `vulkan:1`).
+	Recipe string `json:"recipe"`
+	// Reason est la ligne d'erreur de FFmpeg.
+	Reason string    `json:"reason"`
+	At     time.Time `json:"at"`
 }
 
 // Usable dit que la recette marche et n'a pas été retirée.
@@ -181,19 +197,37 @@ func (r *Registry) Update(name string, change func(*TrialResult)) bool {
 }
 
 // Retire retire une recette, avec la raison ; faux si elle l'était déjà.
+// L'essai devient inutilisable (Usable).
 func (r *Registry) Retire(name, reason string) bool {
-	retired := false
-	r.Update(name, func(result *TrialResult) {
+	return r.Withdraw(name, name, reason, time.Now(), func(result *TrialResult, line string) bool {
 		if result.Retired != "" {
+			return false
+		}
+		result.Retired = line
+		return true
+	})
+}
+
+// Withdraw est le seul chemin d'un retrait : change applique ce qui reste de
+// l'essai une fois la recette retirée (rien pour une chaîne, le rendu
+// logiciel pour Vulkan) et dit faux si c'était déjà fait. La raison, réduite
+// à la ligne d'erreur de FFmpeg, est gardée dans Withdrawals. Faux si l'essai
+// n'a pas de verdict ou si change n'a rien changé.
+func (r *Registry) Withdraw(name, recipe, reason string, at time.Time, change func(result *TrialResult, line string) bool) bool {
+	line := errorLine(reason)
+	if line == "" {
+		line = "session morte avant son premier segment"
+	}
+	withdrawn := false
+	r.Update(name, func(result *TrialResult) {
+		if !change(result, line) {
 			return
 		}
-		result.Retired = errorLine(reason)
-		if result.Retired == "" {
-			result.Retired = "session morte avant son premier segment"
-		}
-		retired = true
+		result.Withdrawals = append(append([]Withdrawal(nil), result.Withdrawals...),
+			Withdrawal{Recipe: recipe, Reason: line, At: at.UTC()})
+		withdrawn = true
 	})
-	return retired
+	return withdrawn
 }
 
 func logTrial(result TrialResult) {

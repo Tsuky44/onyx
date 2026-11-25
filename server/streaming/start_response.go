@@ -2,6 +2,7 @@ package streaming
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -63,6 +64,64 @@ type StartResponse struct {
 	// (`standby=1`). Absent d'un serveur qui ne connaît pas l'attente : la
 	// session en cours y est déjà condamnée, et le client ne peut plus renoncer.
 	Standby bool `json:"standby,omitempty"`
+}
+
+// startReply est ce que /start sait d'une session admise, pour la décrire.
+type startReply struct {
+	session      *TranscodeSession
+	decision     admission
+	video        VideoPlan
+	caps         Capabilities
+	audioMap     []int
+	burnSubtitle int
+	subtitles    []int
+	retain       int
+	standby      bool
+}
+
+// response est le corps de /start. Les URL portent le ticket de la requête :
+// le lecteur les ouvre telles quelles.
+func (rep startReply) response(r *http.Request) StartResponse {
+	s := rep.session
+	sessionURL := fmt.Sprintf("%s/api/v1/stream/%d/%s", BaseURL(r), s.MediaID, s.ID)
+	ticketQuery := "?ticket=" + r.URL.Query().Get("ticket")
+	subtitles := make([]liveSubtitle, 0, len(rep.subtitles))
+	for _, typedIndex := range rep.subtitles {
+		subtitles = append(subtitles, liveSubtitle{
+			TypedIndex: typedIndex,
+			URL:        sessionURL + "/" + LiveSubtitleFileName(typedIndex) + ticketQuery,
+		})
+	}
+	// Le barreau demandé n'est renvoyé que s'il n'a pas été servi.
+	requestedQuality := ""
+	if rep.decision.requested != s.Quality {
+		requestedQuality = rep.decision.requested
+	}
+	videoMode := "encode"
+	if rep.video.Copy {
+		videoMode = "copy"
+	}
+	duration := 0.0
+	if s.Probe != nil {
+		duration = s.Probe.Duration
+	}
+	return StartResponse{
+		SessionID:        s.ID,
+		MasterURL:        sessionURL + "/master.m3u8" + ticketQuery,
+		Duration:         duration,
+		StartOffset:      s.StartOffset,
+		Quality:          s.Quality,
+		RequestedQuality: requestedQuality,
+		CapacityWarning:  rep.decision.warning,
+		AudioMap:         rep.audioMap,
+		BurnedSubtitle:   rep.burnSubtitle,
+		VideoMode:        videoMode,
+		VideoReason:      rep.video.Reason,
+		Container:        string(rep.caps.Container),
+		RetainSeconds:    rep.retain,
+		Subtitles:        subtitles,
+		Standby:          rep.standby,
+	}
 }
 
 // liveSubtitle is one text track a session writes, as /start announces it.

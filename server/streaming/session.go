@@ -84,6 +84,19 @@ type TranscodeSession struct {
 	// vulkanGPU dit que le tone mapping de cette session passe par libplacebo
 	// sur un vrai circuit (vulkan_device.go), avec la même conséquence.
 	vulkanGPU bool
+	// hardwareEncoder est l'encodeur du circuit que la mesure a choisi pour
+	// cette session, vide sinon : lui aussi est retiré si elle meurt avant
+	// son premier segment (recipe_retire.go).
+	hardwareEncoder string
+	// plan est la recette prévue, nil pour une recopie ou sans profil, et
+	// extraCost ce que la session coûte en plus de l'image (l'audio). La
+	// session les rapporte au profil avec ce qu'elle a vraiment tenu
+	// (session_feedback.go).
+	plan      *capacity.Pipeline
+	extraCost capacity.Cost
+	// ladder est ce que /health sait pour suggérer un barreau
+	// (suggest_quality.go) ; nil pour une session posée par un test.
+	ladder *ladderContext
 	// standby est posé, sous le même verrou, pour une session que le lecteur
 	// prépare sans encore la lire : elle ne remplace rien tant que son premier
 	// segment n'a pas été demandé. Voir SessionManager.Claim et ADR-0056.
@@ -121,6 +134,17 @@ type TranscodeSession struct {
 	// budget est celui où la réservation est posée, nil tant qu'elle ne l'est
 	// pas. Voir session_budget.go.
 	budget *capacity.Budget
+	// pace suit la vitesse de la session qui tourne (session_pace.go) ;
+	// pausedAt et pausedProduced datent la première pause du bridage.
+	pace           paceWatch
+	pausedAt       time.Time
+	pausedProduced int
+	// speedReported dit que la vitesse a été rapportée au profil, et
+	// speedRatio ce qu'elle a dit (session_feedback.go).
+	speedReported bool
+	speedRatio    float64
+	// suggestion est l'état de suggested_quality (suggest_quality.go).
+	suggestion suggestionState
 }
 
 // SessionHealth est ce qu'une session dit de son encodeur.
@@ -134,6 +158,13 @@ type SessionHealth struct {
 	// qu'il a depuis le début s'il ne l'a jamais prise. Sous 1, aucune ligne
 	// ne rendra la lecture fluide.
 	Speed float64 `json:"speed"`
+	// SuggestedQuality est le barreau que le serveur conseille d'ouvrir :
+	// plus bas quand la session ne suit plus la lecture, plus haut quand la
+	// marge est revenue, ou le barreau en cours quand une recette plus légère
+	// y tient. Le client décide : l'Auto peut y aller, un choix manuel n'en
+	// fait qu'un message. Absent quand il n'y a rien à suggérer, et d'un
+	// serveur sans profil matériel prêt (suggest_quality.go).
+	SuggestedQuality string `json:"suggested_quality,omitempty"`
 }
 
 // Health mesure l'avance et la vitesse de l'encodeur à l'instant now.
@@ -201,11 +232,8 @@ func (s *TranscodeSession) watch() {
 	if !s.diedBeforeFirstSegment(err) {
 		return
 	}
-	if s.hardwareFilters {
-		noteHardwareSessionDied(s.ID, s.stderr.String())
-	}
-	if s.vulkanGPU {
-		noteVulkanSessionDied(s.ID, s.stderr.String())
+	if kind, encoder := s.recipeAtFault(); kind != recipeNone {
+		retireRecipe(kind, encoder, s.ID, s.stderr.String())
 	}
 }
 
@@ -268,6 +296,7 @@ func (s *TranscodeSession) throttle() {
 			s.purgeBehind()
 
 			s.throttleStep(produced)
+			s.afterTick(time.Now(), produced)
 		}
 	}
 }
@@ -289,6 +318,7 @@ func (s *TranscodeSession) throttleStep(produced int) {
 		s.paused = true
 		if s.burstSpeed == 0 {
 			s.burstSpeed = s.speedLocked(produced, time.Now())
+			s.pausedAt, s.pausedProduced = time.Now(), produced
 		}
 	case bufferAhead < segmentsAhead && s.paused:
 		s.signal(syscall.SIGCONT)
@@ -422,6 +452,7 @@ func (s *TranscodeSession) Kill() {
 	if !s.active {
 		s.mu.Unlock()
 		s.logCPUCost()
+		s.reportEnd()
 		s.cleanup()
 		return
 	}
@@ -457,6 +488,7 @@ func (s *TranscodeSession) Kill() {
 	// Après l'attente de FFmpeg, qui seule donne son temps processeur, et avant
 	// le nettoyage, qui emporte les segments que le coût rapporte.
 	s.logCPUCost()
+	s.reportEnd()
 	s.cleanup()
 }
 

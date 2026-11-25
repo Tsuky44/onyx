@@ -249,11 +249,13 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		inputPath: inputPath, probe: probe, burnSubtitle: burnSubtitle, bitrate: bitrate,
 		caps: caps, hevcEncoder: hevcEncoder, startSeconds: startSeconds,
 		audioMap: audioMap, subtitles: subtitleTracks,
+		// Une session de ce fichier a ramé : la suivante est plus légère.
+		lighter: lighterRecipeFor(mediaID),
 	}
 	sessionID := uuid.New().String()
 	decision := h.manager.admitAndReserve(sessionID, ticketHash, func(load capacity.Load) admission {
 		return admit(quality, isTruthy(r.URL.Query().Get("auto")), rungsBelow(quality, sourceHeight(probe)),
-			func(q string) rungOption { return planRung(inputs.optionsFor(q), profile, load, len(audioMap)) })
+			func(q string) rungOption { return inputs.tryRung(q, profile, load) })
 	})
 	if decision.refused != "" {
 		log.Printf("HLS start: media %d refused: %s", mediaID, decision.refused)
@@ -318,14 +320,11 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		SegmentExt:     caps.Container.SegmentExt(),
 		Variants:       1 + len(audioMap),
 		RetainSegments: retain / segmentDuration,
-		reservation:    decision.served.cost,
-		// Une image recopiée n'a pas de chaîne : usesHardwareFilters le sait.
-		hardwareFilters: options.usesHardwareFilters(),
-		vulkanGPU:       sessionToneMapper(options).Vulkan && vulkanOnGPU(),
-		ctx:             ctx,
-		cancel:          cancel,
-		cmd:             cmd,
+		ctx:            ctx,
+		cancel:         cancel,
+		cmd:            cmd,
 	}
+	session.prepare(decision, inputs, h.manager.currentFor(ticketHash))
 	// Une session préparée : le lecteur lit encore autre chose, et ne passera
 	// à celle-ci qu'à la seconde où elle commence (ADR-0056).
 	standby := isTruthy(r.URL.Query().Get("standby"))
@@ -386,39 +385,10 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		videoMode = "copy"
 	}
 
-	baseURL := BaseURL(r)
-	sessionURL := fmt.Sprintf("%s/api/v1/stream/%d/%s", baseURL, mediaID, sessionID)
-	ticketQuery := "?ticket=" + r.URL.Query().Get("ticket")
-	subtitles := make([]liveSubtitle, 0, len(subtitleTracks))
-	for _, typedIndex := range subtitleTracks {
-		subtitles = append(subtitles, liveSubtitle{
-			TypedIndex: typedIndex,
-			URL:        sessionURL + "/" + LiveSubtitleFileName(typedIndex) + ticketQuery,
-		})
-	}
-	// Le barreau demandé n'est renvoyé que s'il n'a pas été servi.
-	requestedQuality := ""
-	if decision.requested != quality {
-		requestedQuality = decision.requested
-	}
-	resp := StartResponse{
-		SessionID:        sessionID,
-		MasterURL:        sessionURL + "/master.m3u8" + ticketQuery,
-		Duration:         probe.Duration,
-		StartOffset:      startSeconds,
-		Quality:          quality,
-		RequestedQuality: requestedQuality,
-		CapacityWarning:  decision.warning,
-		AudioMap:         audioMap,
-		BurnedSubtitle:   burnSubtitle,
-		VideoMode:        videoMode,
-		VideoReason:      videoPlan.Reason,
-		Container:        string(caps.Container),
-		RetainSeconds:    retain,
-		Subtitles:        subtitles,
-		Standby:          standby,
-	}
-
+	resp := startReply{
+		session: session, decision: decision, video: videoPlan, caps: caps, audioMap: audioMap,
+		burnSubtitle: burnSubtitle, subtitles: subtitleTracks, retain: retain, standby: standby,
+	}.response(r)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "private, no-store")
 	_ = json.NewEncoder(w).Encode(resp)

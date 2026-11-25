@@ -107,6 +107,17 @@ func GetEpisodeChapters(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	json.NewEncoder(w).Encode(chaptersResponse{Chapters: chapters})
 }
 
+// QualityLadder rend le menu Qualité d'un fichier, chaque barreau avec sa
+// tenue prévue. Branché par main sur le gestionnaire du streaming, qui connaît
+// la charge du moment ; sans lui (tests, outils), l'échelle seule, sans tenue.
+var QualityLadder = func(_ int, _ string, probe *streaming.ProbeResult, _ streaming.Capabilities) []streaming.QualityTier {
+	height := 0
+	if probe != nil && probe.Video != nil {
+		height = probe.Video.Height
+	}
+	return streaming.QualityLadderFor(height)
+}
+
 // GetMediaTracks returns the audio and subtitle tracks of a media file as
 // detected by ffprobe. This lets the client display consistent track names
 // in both direct play and transcoding modes.
@@ -167,10 +178,9 @@ func GetMediaTracks(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	// the quality menu is built from, and it is fetched before playback starts —
 	// the menu has to be right the first time it is opened, not after a session
 	// exists. It is per-media so the rungs above the source can be left out.
-	sourceHeight := 0
-	if probe.Video != nil {
-		sourceHeight = probe.Video.Height
-	}
+	// Chaque barreau y porte sa tenue prévue sur ce serveur (phase 4 du
+	// transcodage adaptatif), avec les capacités que le client déclare comme
+	// à /start : un barreau qu'il recopierait est `ok`.
 
 	// Jamais attendue ici : la mesure décode des images. Un fichier pas
 	// encore regardé l'est en arrière-plan, pour la lecture suivante.
@@ -183,7 +193,7 @@ func GetMediaTracks(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		Video:            probe.Video,
 		Audio:            probe.Audio,
 		Subtitles:        subs,
-		Qualities:        streaming.QualityLadderFor(sourceHeight),
+		Qualities:        QualityLadder(mediaID, filePath, probe, streaming.ParseCapabilities(r.URL.Query())),
 		SourceBitrateBps: sourceBitrateBps(mediaID),
 		ActiveArea:       activeArea,
 	})

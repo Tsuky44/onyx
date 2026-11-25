@@ -1,6 +1,6 @@
 # Transcodage calé sur le serveur — plan
 
-- **Statut :** plan, version 2, décisions prises le 2026-11-25 (§0). Implémentation du côté serveur lancée, phase par phase : lot rapide, phases 0, 1, 2 et 3 faites sur `tsuky` (ADR [profil matériel et planificateur](adr/2026-11-25-tsuky-profil-materiel-et-planificateur.md), ADR [budget et admission](adr/2026-11-25-tsuky-budget-et-admission.md)).
+- **Statut :** plan, version 2, décisions prises le 2026-11-25 (§0). Implémentation du côté serveur lancée, phase par phase : lot rapide, phases 0 à 3, et le côté serveur des phases 4 et 5, faits sur `tsuky` (ADR [profil matériel et planificateur](adr/2026-11-25-tsuky-profil-materiel-et-planificateur.md), ADR [budget et admission](adr/2026-11-25-tsuky-budget-et-admission.md), ADR [tenue des barreaux et rétroaction](adr/2026-11-25-tsuky-tenue-des-barreaux-et-retroaction.md)). Le côté client des phases 4 et 5 reste à faire (« Reste à faire », après la phase 5).
 - **Date :** 2026-11-25
 - **Base :** `beta` à `2d8d4d77`, qui contient le travail de fytroz du 2026-11-25. Le plan part de ce code, pas de l'état d'avant.
 - **Prolonge :** ADR-0022 (échelle de débits), ADR-0056 et ADR-0065 (qualité automatique), ADR-0060 (Dolby Vision 5), et les trois ADR de fytroz :
@@ -379,6 +379,11 @@ Les tests de fytroz (`hardware_filters_test.go`, `vulkan_device_test.go`) resten
 
 ### Phase 4 — Tenue des barreaux et nouvel Auto
 
+**Statut :** côté serveur fait sur `tsuky` le 2026-11-25, sans vraie machine (ADR [tenue des barreaux et rétroaction](adr/2026-11-25-tsuky-tenue-des-barreaux-et-retroaction.md)). Chaque barreau de `/tracks` porte `fit` (`ok`, `limite`, `trop_lourd`), calculé comme l'admission le ferait, avec les capacités que le client déclare (mêmes paramètres que `/start`). Modèle Dart `QualityTier.fit`, contrat `media_tracks.json`. Écarts :
+- **pas de capacité dans `/api/ping`** : l'absence de `fit` dit déjà « rien à dire », pour un serveur plus ancien comme pour un profil pas prêt ;
+- la charge comptée est celle de toutes les sessions, celles du spectateur comprises (`/tracks` n'a pas de ticket) ;
+- le menu, `chooseAutoSource` et l'ADR côté client restent à faire (voir « Reste à faire » après la phase 5).
+
 - **Tenue prévue.** `QualityLadderFor(sourceHeight)` garde toute l'échelle. Il reçoit aussi le profil et la source, et donne à chaque barreau une tenue prévue : `ok`, `limite` ou `trop_lourd`. Deux exemples de `trop_lourd` :
   - la 4K en encodage sur un 4 cœurs sans GPU ;
   - un DV5 en 1080p sur lavapipe.
@@ -395,6 +400,13 @@ Les tests de fytroz (`hardware_filters_test.go`, `vulkan_device_test.go`) resten
 
 ### Phase 5 — Rétroaction en continu
 
+**Statut :** côté serveur fait sur `tsuky` le 2026-11-25, sans vraie machine (même ADR que la phase 4). Écarts et précisions :
+- la correction est par classe de recette **sans le preset** (décodage, hauteur produite, tone mapping, encodeur, filtres logiciels) : une correction par preset laissait le planificateur fuir vers un preset jamais observé. Rapport borné à [0,5 ; 2,5], moyenne α = 0,25, facteur borné à [0,5 ; 3] ; un seul facteur pour la vitesse et la réservation, le plus prudent des deux signaux ;
+- « preset d'abord, puis barreau » passe par un seul facteur par fichier (vitesse prévue sur vitesse vue, 20 minutes, borné à 4), que le planificateur applique : sa règle prend un preset plus rapide s'il tient, sinon l'admission fait descendre l'Auto ;
+- `suggested_quality` peut valoir le barreau en cours : une recette plus légère y tient, rouvrir le même barreau suffit (vaut aussi en manuel) ;
+- le retrait unifié retire aussi un encodeur du circuit choisi par la mesure ; un encodeur forcé ne l'est jamais. Raisons dans `TrialResult.Withdrawals` (`Profile.Withdrawn()`) ;
+- `/health` a maintenant un contrat (`contract/hls_health.json`) et un modèle Dart (`HlsSessionHealth`), sans UI.
+
 - **Correction du profil.** Chaque session rapporte sa vitesse réelle et son temps CPU au profil. Une correction lissée par classe de recette remplace l'estimation du banc. Deux raisons : les vrais fichiers sont plus durs que les sources synthétiques, et une machine qui chauffe ralentit (l'i7 à 99 °C).
 - **Session sous 1×** pendant plus de 20 s, hors démarrage : la recette suivante pour ce fichier est plus légère (preset d'abord, puis barreau), et `/health` gagne un `suggested_quality`.
   - Aujourd'hui, le client voit `encoderBehind` mais ne fait rien, par choix, parce que ce n'est pas la ligne (`player_controller_auto.dart`).
@@ -403,6 +415,21 @@ Les tests de fytroz (`hardware_filters_test.go`, `vulkan_device_test.go`) resten
 
   Ça étend l'ADR-0056 et demande une ADR courte.
 - **Retrait des recettes qui échouent.** `noteHardwareSessionDied` et `noteVulkanSessionDied` deviennent un seul « retirer la recette du profil », valable pour toute recette dont les sessions meurent avant leur premier segment. Le profil garde la raison (l'erreur de FFmpeg), pour que l'administration la montre.
+
+### Reste à faire (côté client, pour finir les phases 4 et 5)
+
+Le serveur donne les faits ; rien côté app ne s'en sert encore. Sans ces points, les phases 4 et 5 ne changent rien pour le spectateur :
+
+1. **Menu Qualité** : un barreau `QualityTier.fitTooHeavy` reste choisissable, avec une mention discrète « peut saccader sur ce serveur » / « may stutter on this server » (FR/EN). Un barreau sans `fit` s'affiche comme aujourd'hui. Afficher aussi `HlsSession.capacityWarning` (`too_heavy`, `degraded`).
+2. **`chooseAutoSource`** (§4) : la fonction pure unique, avec ses tests en table et le guard test qui interdit de choisir une source ailleurs. Elle ouvre au plus haut barreau `ok` qui tient sur la ligne, et envoie :
+   - `auto=1` quand l'Auto choisit ;
+   - `remux=1` quand la ligne porte le fichier recopié ;
+   - `encode=hevc` quand l'appareil affiche le HDR et que le serveur tient le HEVC.
+
+   `/tracks` doit recevoir les mêmes capacités que `/start` pour que `fit` dise la recopie. Une ADR côté client prolonge l'ADR-0056 et l'ADR Apple TV de fytroz.
+3. **Lecture de `suggested_quality`** (`HlsSessionHealth.suggestedQuality`) : en Auto, passer au barreau suggéré par une session préparée, sans accuser la ligne (y compris quand il vaut le barreau en cours : rouvrir) ; en manuel, un message seulement (FR/EN). L'Auto ne monte jamais au-dessus de ce que la ligne porte.
+
+**Question ouverte pour Tsuky** (relevée en phase 2, inchangée) : le critère 4 (moins de 0,2 cœur par session sur un iGPU) contredit la règle « la meilleure image quand il y a de la marge ». Au repos, un i7 garde x264 `veryfast` et plusieurs cœurs par session ; le circuit ne gagne que faute de marge. Épargner le processeur même au repos, au prix de l'image, ou lire le critère 4 « sous charge » ?
 
 ### Phase 6 — Les chemins GPU qui manquent
 

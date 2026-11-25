@@ -14,6 +14,7 @@ import (
 	"project-player/server/mediahub"
 	"project-player/server/models"
 	"project-player/server/streaming"
+	"project-player/server/streaming/capacity"
 )
 
 // Le contrat entre le serveur et l'app.
@@ -43,7 +44,12 @@ var contractValues = map[string]string{
 	"kind":           "shows",
 	// /start : l'app connaît ces deux avertissements (streaming/admission.go).
 	"capacity_warning": streaming.CapacityDegraded,
-	"video_mode":       "encode",
+	// /tracks : la tenue d'un barreau est l'un des trois verdicts du
+	// planificateur (streaming/ladder_fit.go).
+	"fit": string(capacity.VerdictLimit),
+	// /health : la suggestion est une clé de barreau.
+	"suggested_quality": "1080p",
+	"video_mode":        "encode",
 }
 
 var contractTime = time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
@@ -197,6 +203,7 @@ func TestAPIContract(t *testing.T) {
 		"watch_party_invites":  filled[watchPartyInvitesResponse](),
 		"watch_party_invitees": filled[watchPartyInviteesResponse](),
 		"hls_start":            filled[streaming.StartResponse](),
+		"hls_health":           filled[streaming.SessionHealth](),
 	}
 
 	update := os.Getenv("ONYX_UPDATE_CONTRACT") != ""

@@ -142,6 +142,32 @@ void main() {
         reason: 'la qualité automatique choisit ses barreaux contre ce débit');
     expect(tracks.activeArea, isNotNull,
         reason: 'les modes d\'affichage zooment sur la zone utile (ADR-0067)');
+    expect(tracks.qualities.single.fit, QualityTier.fitLimit,
+        reason: 'chaque barreau porte sa tenue prévue sur ce serveur');
+
+    // Un serveur sans tenue (plus ancien, ou profil pas prêt) : pas de fit,
+    // et une tenue inconnue de cette version ne vaut rien.
+    final legacy = QualityTier.fromJson(
+        {'key': '1080p', 'label': '1080p', 'height': 1080});
+    expect(legacy.fit, isNull);
+    final unknown = QualityTier.fromJson(
+        {'key': '1080p', 'label': '1080p', 'height': 1080, 'fit': 'peut-etre'});
+    expect(unknown.fit, isNull);
+  });
+
+  test('santé d’une session HLS : avance, vitesse et suggestion', () {
+    final health = HlsSessionHealth.tryParse(_contract('hls_health'));
+    expect(health, isNotNull);
+    expect(health!.aheadSeconds, greaterThan(0));
+    expect(health.speed, greaterThan(0));
+    expect(health.suggestedQuality, isNotEmpty,
+        reason: 'le serveur suggère un barreau, l’Auto décide');
+
+    // Un serveur d'avant la suggestion : l'avance et la vitesse seules.
+    final legacy = HlsSessionHealth.tryParse({'ahead_seconds': 30, 'speed': 2});
+    expect(legacy!.suggestedQuality, isNull);
+    expect(HlsSessionHealth.tryParse({'speed': 2}), isNull);
+    expect(HlsSessionHealth.tryParse('<html>'), isNull);
   });
 
   test('ce que le serveur annonce de lui-même', () {

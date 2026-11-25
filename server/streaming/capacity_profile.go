@@ -140,7 +140,7 @@ func measureProfile(ctx context.Context, profiler *capacity.Profiler, inv capaci
 			vulkanChosen.Store(&choice)
 		}
 	}
-	currentProfile.Store(profile)
+	storeProfile(profile)
 	log.Printf("Streaming: profil matériel prêt en %.1f s (%d cœurs, %s, FFmpeg %s) : %s",
 		profile.MeasureSeconds, inv.Cores, orUnknown(inv.CPUModel), orUnknown(inv.FFmpeg.Version), encoderNames(profile))
 }
@@ -197,7 +197,7 @@ func applyProfile(profile *capacity.Profile) {
 		vulkanChosen.Store(c.vulkan)
 		log.Printf("Streaming: libplacebo renders on %s (gpu=%v), from the hardware profile", c.vulkan.Spec, c.vulkan.GPU)
 	}
-	currentProfile.Store(profile)
+	storeProfile(profile)
 }
 
 // vulkanChoiceOf relit le choix du périphérique Vulkan dans le profil.

@@ -52,7 +52,8 @@
       "label": "label-value",
       "width": 13,
       "height": 14,
-      "bitrate_bps": 15
+      "bitrate_bps": 15,
+      "fit": "limite"
     }
   ],
   "source_bitrate_bps": 16,

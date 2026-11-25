@@ -513,6 +513,9 @@ func main() {
 	// lecture, pas au premier spectateur), puis la mesure en arrière-plan.
 	hlsHandler.StartCapacity(filepath.Dir(absDbPath), buildinfo.Version)
 	handlers.ActiveTranscodes = hlsHandler.ActiveSessions
+	// Le menu Qualité de /tracks porte la tenue de chaque barreau, qui dépend
+	// du profil et de la charge que ce gestionnaire connaît.
+	handlers.QualityLadder = hlsHandler.QualityLadder
 	router.POST("/api/v1/stream/*path", hlsHandler.Dispatch)
 	router.GET("/api/v1/stream/*path", hlsHandler.Dispatch)
 	router.DELETE("/api/v1/stream/*path", hlsHandler.Dispatch)

@@ -113,6 +113,10 @@ type Profile struct {
 	Trials         []TrialResult      `json:"trials"`
 	Encoders       []EncoderCandidate `json:"encoders"`
 	Costs          []StageCost        `json:"costs"`
+	// Corrections sont apprises des sessions (correction.go), par classe de
+	// recette. Une remesure ou une autre empreinte repart d'un profil neuf, et
+	// donc de corrections vides : elles corrigent ce banc-là, pas un autre.
+	Corrections map[string]Correction `json:"corrections,omitempty"`
 }
 
 // Trial rend le verdict d'un essai.
@@ -123,6 +127,18 @@ func (p *Profile) Trial(name string) (TrialResult, bool) {
 		}
 	}
 	return TrialResult{}, false
+}
+
+// Withdrawn rend toutes les recettes retirées, essai par essai, dans l'ordre
+// des essais : la raison de chaque retrait, pour la page d'administration.
+func (p *Profile) Withdrawn() map[string][]Withdrawal {
+	out := map[string][]Withdrawal{}
+	for _, t := range p.Trials {
+		if len(t.Withdrawals) > 0 {
+			out[t.Name] = t.Withdrawals
+		}
+	}
+	return out
 }
 
 // WithTrials rend une copie du profil avec ces verdicts : le profil publié ne

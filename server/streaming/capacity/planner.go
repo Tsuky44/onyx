@@ -116,6 +116,9 @@ type Job struct {
 	// désentrelacement travaillent sur des images logicielles, avant la mise
 	// à l'échelle.
 	SoftwareOnly bool
+	// Slowdown multiplie les coûts de ce fichier : une session l'a vu plus
+	// lent que prévu (streaming/lighter_recipes.go). 0 ou 1 : rien.
+	Slowdown float64
 }
 
 // Load est ce que les sessions en cours occupent déjà, par seconde : la somme
@@ -151,6 +154,13 @@ type Pipeline struct {
 	Estimated bool
 	// Considered est le nombre de recettes comparées.
 	Considered int
+	// Class est la classe de correction de la recette (correction.go), et
+	// Correction le facteur de la classe déjà appliqué à Cost. Slowdown est
+	// celui du fichier (Job.Slowdown), appliqué aussi. La session les
+	// rapporte avec sa vitesse réelle.
+	Class      string
+	Correction float64
+	Slowdown   float64
 }
 
 // String est la ligne de journal de la recette.
@@ -172,6 +182,12 @@ func (p Pipeline) String() string {
 	estimated := ""
 	if p.Estimated {
 		estimated = ", estimée"
+	}
+	if p.Correction > 0 && p.Correction != 1 {
+		estimated += fmt.Sprintf(", corrigée ×%.2f", p.Correction)
+	}
+	if p.Slowdown > 1 {
+		estimated += fmt.Sprintf(", fichier lent ×%.2f", p.Slowdown)
 	}
 	return fmt.Sprintf("décodage=%s, échelle=%s, tone mapping=%s, encodeur=%s, coût=%.2f cœur%s, vitesse prévue %.1f× (%s%s, %d recettes)",
 		p.Decode, scale, tm, enc, p.Cost.CPU, gpuCost(p.Cost), p.Speed, p.Verdict, estimated, p.Considered)
@@ -329,7 +345,12 @@ func enumerate(job Job, p *Profile, fallback bool) []recipe {
 			if !ok {
 				continue
 			}
-			pipe.Cost, pipe.Estimated = cost, estimated
+			// La rétroaction (phase 5) : ce que les sessions de cette classe ont
+			// vraiment coûté, rapporté au banc.
+			pipe.Class = recipeClass(pipe, heavy, outH, job.SoftwareOnly)
+			pipe.Correction = p.CorrectionFor(pipe.Class)
+			pipe.Slowdown = math.Max(job.Slowdown, 1)
+			pipe.Cost, pipe.Estimated = cost.Times(pipe.Correction*pipe.Slowdown).rounded(), estimated
 			out = append(out, recipe{Pipeline: pipe, rank: imageRank(c, preset)})
 		}
 	}

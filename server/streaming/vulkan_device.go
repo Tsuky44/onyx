@@ -270,21 +270,3 @@ func runLibplaceboProbe(args []string) (time.Duration, error) {
 	}
 	return time.Since(started), nil
 }
-
-// noteVulkanSessionDied ramène libplacebo sur le rendu logiciel : une session
-// vient de mourir sur le circuit avant son premier segment. L'essai du
-// démarrage n'a vu qu'une image de synthèse, pas la couche RPU d'un film.
-func noteVulkanSessionDied(sessionID, stderr string) {
-	choice := vulkanChosen.Load()
-	if choice == nil || !choice.GPU || choice.Fallback == "" {
-		return
-	}
-	software := vulkanChoice{Spec: choice.Fallback}
-	if vulkanChosen.CompareAndSwap(choice, &software) {
-		log.Printf("Streaming: session %s died with libplacebo on the GPU before its first segment, "+
-			"software Vulkan from now on: %s", sessionID, strings.TrimSpace(stderr))
-		// Le profil le garde : un démarrage avec le cache ne relance pas la
-		// course qui remettrait le circuit en tête.
-		noteVulkanFallbackInProfile(software.Spec, stderr)
-	}
-}

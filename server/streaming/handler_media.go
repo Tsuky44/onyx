@@ -83,7 +83,8 @@ func (h *Handler) persistProbe(mediaID int, filePath string, probe *ProbeResult)
 const defaultCopyBitrateCeiling = 12_000_000
 
 // handleHealth dit où en est l'encodeur d'une session, pour que le lecteur
-// sache qui accuser quand son tampon fond (ADR-0056). La demande ne compte pas
+// sache qui accuser quand son tampon fond (ADR-0056), et quel barreau le
+// serveur tiendrait mieux (suggest_quality.go). La demande ne compte pas
 // comme une lecture : elle ne garde pas la session en vie et ne la réclame pas.
 func (h *Handler) handleHealth(w http.ResponseWriter, sessionID string) {
 	session, ok := h.manager.GetSession(sessionID)
@@ -91,9 +92,12 @@ func (h *Handler) handleHealth(w http.ResponseWriter, sessionID string) {
 		http.Error(w, "session not found", http.StatusNotFound)
 		return
 	}
+	now := time.Now()
+	health := session.Health(now)
+	health.SuggestedQuality = h.suggestionFor(session, now)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "private, no-store")
-	_ = json.NewEncoder(w).Encode(session.Health(time.Now()))
+	_ = json.NewEncoder(w).Encode(health)
 }
 
 func copyBitrateCeiling() int64 {

@@ -299,11 +299,11 @@ mixin _PlaybackEndpoints {
   }
 
   /// L'avance, en secondes, que l'encodeur de la session [sessionId] a sur
-  /// ce que le lecteur lui a demandé, et sa vitesse rapportée à celle de la
-  /// lecture (0 tant qu'elle n'est pas mesurable). Null quand le serveur ne
-  /// sait pas répondre — une version d'avant l'ADR-0056, ou une session
-  /// disparue.
-  Future<({int aheadSeconds, double speed})?> hlsSessionHealth(
+  /// ce que le lecteur lui a demandé, sa vitesse rapportée à celle de la
+  /// lecture (0 tant qu'elle n'est pas mesurable), et le barreau que le
+  /// serveur suggère. Null quand le serveur ne sait pas répondre — une
+  /// version d'avant l'ADR-0056, ou une session disparue.
+  Future<HlsSessionHealth?> hlsSessionHealth(
     int mediaId,
     String sessionId, {
     PlaybackAccess? access,
@@ -319,14 +319,7 @@ mixin _PlaybackEndpoints {
           receiveTimeout: const Duration(seconds: 3),
         ),
       );
-      final data = response.data;
-      final ahead = data?['ahead_seconds'];
-      if (ahead is! num) return null;
-      final speed = data?['speed'];
-      return (
-        aheadSeconds: ahead.toInt(),
-        speed: speed is num ? speed.toDouble() : 0.0,
-      );
+      return HlsSessionHealth.tryParse(response.data);
     } catch (_) {
       // Pas de réponse : rien n'accuse l'encodeur, la ligne reste suspecte.
       return null;

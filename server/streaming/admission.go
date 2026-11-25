@@ -56,6 +56,9 @@ var copyCost = capacity.Cost{CPU: 0.05}
 // dixièmes de cœur » pour huit pistes TrueHD (§7 du plan).
 const audioRenditionCPU = 0.04
 
+// audioCost est ce que coûtent n pistes audio publiées.
+func audioCost(n int) capacity.Cost { return capacity.Cost{CPU: audioRenditionCPU * float64(n)} }
+
 // rungOption est un barreau essayé : ses options, ce que la session réservera,
 // et la vitesse que le planificateur prévoit sous la charge du moment.
 type rungOption struct {
@@ -166,7 +169,7 @@ func planRung(options TranscodeOptions, profile *capacity.Profile, load capacity
 	if profile == nil {
 		return rungOption{options: options, speed: math.Inf(1)}
 	}
-	audio := capacity.Cost{CPU: audioRenditionCPU * float64(audioCount)}
+	audio := audioCost(audioCount)
 	if options.Video.Copy {
 		cost := copyCost.Plus(audio)
 		return rungOption{options: options, cost: cost, speed: capacity.SpeedUnder(cost, profile, load)}

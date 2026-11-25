@@ -1,6 +1,10 @@
 package streaming
 
-import "sort"
+import (
+	"sort"
+
+	"project-player/server/streaming/capacity"
+)
 
 // The transcoding ladder.
 //
@@ -30,6 +34,11 @@ type QualityTier struct {
 	// BitrateBps is video plus audio: what the link actually has to carry, and
 	// the number the label states.
 	BitrateBps int `json:"bitrate_bps"`
+	// Fit est la tenue prévue du barreau sur ce serveur, sous la charge du
+	// moment : `ok`, `limite` ou `trop_lourd` (ladder_fit.go). Absente sans
+	// profil matériel prêt : le menu reste celui d'avant. Aucun barreau n'est
+	// retiré pour autant.
+	Fit capacity.Verdict `json:"fit,omitempty"`
 
 	preset qualityPreset
 }

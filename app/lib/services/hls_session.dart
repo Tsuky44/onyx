@@ -116,6 +116,49 @@ class HlsSession {
       value is String && value.isNotEmpty ? value : null;
 }
 
+/// Ce que le serveur dit de l'encodeur d'une session HLS (`/health`,
+/// ADR-0056) : ce qui distingue, vu du lecteur, une ligne trop lente d'un
+/// serveur trop lent.
+class HlsSessionHealth {
+  const HlsSessionHealth({
+    required this.aheadSeconds,
+    this.speed = 0,
+    this.suggestedQuality,
+  });
+
+  /// Ce que l'encodeur a produit au-delà du dernier segment demandé, en
+  /// secondes.
+  final int aheadSeconds;
+
+  /// Sa vitesse rapportée à celle de la lecture ; 0 tant qu'elle n'est pas
+  /// mesurable.
+  final double speed;
+
+  /// Le barreau que le serveur conseille d'ouvrir : plus bas quand la
+  /// session ne suit plus la lecture, plus haut quand la marge est revenue, ou
+  /// le barreau en cours quand une recette plus légère y tient. Une
+  /// suggestion : l'Auto décide, un choix manuel n'en fait qu'un message.
+  /// Null quand il n'y a rien à suggérer, ou d'un serveur qui ne sait pas le
+  /// dire.
+  final String? suggestedQuality;
+
+  /// Null quand la réponse ne dit pas l'avance : un serveur d'avant
+  /// l'ADR-0056, ou une réponse qui n'est pas la sienne.
+  static HlsSessionHealth? tryParse(Object? json) {
+    if (json is! Map) return null;
+    final ahead = json['ahead_seconds'];
+    if (ahead is! num) return null;
+    final speed = json['speed'];
+    final suggested = json['suggested_quality'];
+    return HlsSessionHealth(
+      aheadSeconds: ahead.toInt(),
+      speed: speed is num ? speed.toDouble() : 0.0,
+      suggestedQuality:
+          suggested is String && suggested.isNotEmpty ? suggested : null,
+    );
+  }
+}
+
 /// Une piste texte qu'une session HLS écrit en WebVTT, et l'adresse où elle
 /// grandit. L'adresse porte déjà le ticket de lecture.
 class LiveSubtitleSource {
