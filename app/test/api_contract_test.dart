@@ -12,6 +12,7 @@ import 'package:onyx/models/my_request.dart';
 import 'package:onyx/models/request_feed.dart';
 import 'package:onyx/models/request_release.dart';
 import 'package:onyx/services/api_types.dart';
+import 'package:onyx/services/hls_session.dart';
 
 /// Le contrat entre le serveur et l'app, vu de l'app.
 ///
@@ -164,6 +165,30 @@ void main() {
 
     expect(ServerCapabilities.tryParse('<html>'), isNull);
     expect(ServerCapabilities.tryParse({'status': 'down'}), isNull);
+  });
+
+  test('session HLS : le barreau servi, celui demandé, et l’avertissement', () {
+    final session = HlsSession.fromJson(_contract('hls_start'));
+    expect(session.sessionId, isNotEmpty);
+    expect(session.masterUrl, isNotEmpty);
+    expect(session.audioMap, hasLength(1));
+    expect(session.subtitles, hasLength(1));
+    expect(session.standby, isTrue);
+    expect(session.quality, isNotEmpty);
+    expect(session.requestedQuality, isNotEmpty,
+        reason: 'l’Auto descendu dit quel barreau il avait demandé');
+    expect(session.capacityWarning, HlsSession.capacityDegraded);
+    expect(
+        ServerCapabilities.tryParse(_contract('ping'))!
+            .supports(ServerCapabilities.transcodeCapacity),
+        isTrue,
+        reason: 'l’app sait ainsi que `auto=1` est compris');
+
+    // Un serveur d'avant le budget : ni avertissement ni barreau demandé.
+    final legacy = HlsSession.fromJson({'session_id': 's', 'master_url': 'm'});
+    expect(legacy.capacityWarning, isNull);
+    expect(legacy.requestedQuality, isNull);
+    expect(legacy.quality, isNull);
   });
 
   test('message de l’administrateur, et son absence', () {

@@ -27,6 +27,7 @@
     "mediahub_storage",
     "request_services",
     "watch_party_invites",
-    "setup_wizard"
+    "setup_wizard",
+    "transcode_capacity"
   ]
 }

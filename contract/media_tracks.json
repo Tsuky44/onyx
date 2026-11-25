@@ -28,6 +28,7 @@
       "title": "title-value",
       "channels": 10,
       "default": true,
+      "original": true,
       "profile": "profile-value",
       "channel_layout": "channel_layout-value",
       "sample_rate": 11,

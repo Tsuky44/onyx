@@ -1,8 +1,6 @@
 package streaming
 
 import (
-	"log"
-
 	"project-player/server/streaming/capacity"
 )
 
@@ -13,20 +11,20 @@ import (
 // chaque session qui réencode l'image ; sinon, les options gardent l'encodeur
 // et la chaîne choisis au démarrage, comme avant le profil.
 
-// planPipeline remplit les options avec la recette du planificateur. La
-// charge est nulle en phase 2 : le budget par ressource (phase 3) la passera,
-// avec le verdict pour décider d'accepter, de dégrader ou de prévenir.
-func planPipeline(options TranscodeOptions, mediaID int) TranscodeOptions {
-	profile := capacityProfile()
+// planPipeline remplit les options avec la recette du planificateur, sous la
+// charge load (les réservations des autres sessions, admission.go). ok est
+// faux quand rien n'est planifié : pas de profil, une recopie, ou aucun
+// encodeur du profil pour ce travail ; les options restent alors celles
+// d'avant le profil.
+func planPipeline(options TranscodeOptions, profile *capacity.Profile, load capacity.Load) (TranscodeOptions, bool) {
 	if profile == nil || options.Video.Copy {
-		return options
+		return options, false
 	}
-	pipe, ok := capacity.PlanPipeline(jobFor(options), profile, capacity.Load{})
+	pipe, ok := capacity.PlanPipeline(jobFor(options), profile, load)
 	if !ok {
-		return options
+		return options, false
 	}
-	log.Printf("HLS start: media %d: recette %s", mediaID, pipe)
-	return options.withPipeline(pipe)
+	return options.withPipeline(pipe), true
 }
 
 // jobFor décrit au planificateur ce que la session fait de l'image.

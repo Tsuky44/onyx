@@ -4,6 +4,7 @@ import (
 	"log"
 	"project-player/server/playbackauth"
 	"project-player/server/safego"
+	"project-player/server/streaming/capacity"
 	"sync"
 	"time"
 )
@@ -13,6 +14,13 @@ type SessionManager struct {
 	mu       sync.RWMutex
 	sessions map[string]*TranscodeSession
 	tickets  *playbackauth.Store
+	// budget tient le coût réservé par chaque session vivante (phase 3 du
+	// plan docs/transcodage-adaptatif.md). Nil dans les tests qui posent un
+	// gestionnaire à la main : rien n'y est alors réservé.
+	budget *capacity.Budget
+	// admitMu fait de l'admission et de la réservation un seul pas
+	// (admitAndReserve).
+	admitMu sync.Mutex
 }
 
 // NewSessionManager creates a new SessionManager and starts the background reaper.
@@ -20,6 +28,7 @@ func NewSessionManager(tickets *playbackauth.Store) *SessionManager {
 	m := &SessionManager{
 		sessions: make(map[string]*TranscodeSession),
 		tickets:  tickets,
+		budget:   capacity.NewBudget(),
 	}
 	go safego.Forever("m.reaper", m.reaper)
 	return m
@@ -30,6 +39,9 @@ func (m *SessionManager) CreateSession(session *TranscodeSession) {
 	m.mu.Lock()
 	m.sessions[session.ID] = session
 	m.mu.Unlock()
+	// Une session en attente (standby) réserve comme les autres : son FFmpeg
+	// encode déjà pendant que le lecteur lit encore l'ancienne.
+	session.reserveIn(m.budget)
 	log.Printf("SessionManager: created session %s for media %d quality %s", session.ID, session.MediaID, session.Quality)
 }
 
@@ -104,6 +116,9 @@ func (m *SessionManager) Supersede(ticket [32]byte, keepID string) {
 	m.mu.Unlock()
 	for _, s := range toFreeze {
 		s.Freeze()
+		// Freeze rend la réservation d'un FFmpeg qui tourne ; celle d'une
+		// session dont le processus n'a pas démarré se rend ici.
+		m.budget.Release(s.ID)
 	}
 	for _, id := range ids {
 		id := id

@@ -87,6 +87,12 @@ const (
 	// POST /api/setup/complete existent : l'assistant du premier lancement
 	// (ADR-0164).
 	CapabilitySetupWizard = "setup_wizard"
+	// /api/v1/stream/:id/start comprend auto=1 : en Auto, le serveur peut
+	// descendre le barreau que sa machine ne tient pas, et la réponse dit le
+	// barreau servi, celui demandé et capacity_warning. Sans auto=1, le
+	// barreau demandé est toujours servi (budget et admission, phase 3 de
+	// docs/transcodage-adaptatif.md).
+	CapabilityTranscodeCapacity = "transcode_capacity"
 )
 
 type pingResponse struct {
@@ -130,6 +136,7 @@ func pingPayload() pingResponse {
 			CapabilityRequestServices,
 			CapabilityWatchPartyInvites,
 			CapabilitySetupWizard,
+			CapabilityTranscodeCapacity,
 		},
 	}
 }

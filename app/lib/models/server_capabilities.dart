@@ -69,6 +69,12 @@ class ServerCapabilities {
   /// invitations (ADR-0148).
   static const watchPartyInvites = 'watch_party_invites';
 
+  /// `/start` comprend `auto=1` : en Auto, le serveur peut servir un barreau
+  /// plus bas que celui demandé, s'il ne tient pas l'autre, et le dit
+  /// ([HlsSession.capacityWarning]). Sans `auto=1`, le barreau demandé est
+  /// toujours servi.
+  static const transcodeCapacity = 'transcode_capacity';
+
   bool supports(String capability) => capabilities.contains(capability);
 
   /// Null quand la réponse n'est pas celle d'un serveur Onyx qui va bien.

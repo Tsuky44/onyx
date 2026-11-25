@@ -56,7 +56,8 @@ func resetWorkspace(root string) {
 	}
 }
 
-// maxTranscodes est le nombre de sessions qui peuvent tourner en même temps.
+// maxTranscodes est le nombre de sessions qui peuvent tourner en même temps,
+// tant que le profil matériel n'est pas prêt.
 //
 // Rien ne les bornait : chaque /start lançait un FFmpeg de plus, et assez de
 // lecteurs ouverts — ou un client qui en ouvre en boucle — mettaient la machine
@@ -64,14 +65,37 @@ func resetWorkspace(root string) {
 // quota d'un `--cpus` Docker compte), au moins quatre : une
 // session d'encodage en occupe plusieurs à elle seule, une recopie presque
 // rien. MAX_TRANSCODES le change ; 0 retire la limite.
+//
+// Une fois le profil prêt, c'est le budget par ressource qui admet les
+// sessions (admission.go) ; ce plafond ne s'applique plus que s'il est forcé
+// (sessionCap).
 func maxTranscodes() int {
+	if n, forced := forcedMaxTranscodes(); forced {
+		return n
+	}
+	return defaultMaxTranscodes()
+}
+
+// forcedMaxTranscodes rend MAX_TRANSCODES quand l'opérateur l'a posé, et
+// valide.
+func forcedMaxTranscodes() (int, bool) {
 	if raw := strings.TrimSpace(os.Getenv("MAX_TRANSCODES")); raw != "" {
 		if n, err := strconv.Atoi(raw); err == nil && n >= 0 {
-			return n
+			return n, true
 		}
 		log.Printf("HLS: invalid MAX_TRANSCODES %q, using the default", raw)
 	}
-	return defaultMaxTranscodes()
+	return 0, false
+}
+
+// sessionCap est le plafond de sessions à appliquer à /start : celui d'avant
+// le profil tant qu'il n'est pas prêt, seulement le forçage ensuite. 0 : aucun.
+func sessionCap(profileReady bool) int {
+	if profileReady {
+		n, _ := forcedMaxTranscodes()
+		return n
+	}
+	return maxTranscodes()
 }
 
 // minFreeBytes est l'espace qu'il doit rester libre sur l'espace de travail

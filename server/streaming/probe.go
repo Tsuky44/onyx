@@ -206,6 +206,11 @@ type AudioStreamInfo struct {
 	Title      string `json:"title"`
 	Channels   int    `json:"channels"`
 	Default    bool   `json:"default"`
+	// Original est la disposition « original » de ffprobe : la version
+	// originale, quand le fichier la marque. Sur une petite machine, c'est
+	// elle qui est publiée à côté de la piste choisie (audio_renditions.go).
+	// Absent des sondes enregistrées avant elle, qui retombent sur Default.
+	Original bool `json:"original,omitempty"`
 	// Profile is what separates the formats that share a codec name. Atmos is
 	// not a codec: it is an object bed carried inside E-AC-3 (as JOC) or inside
 	// TrueHD, and ffprobe reports it here and nowhere else. Same for DTS, where
@@ -316,8 +321,9 @@ type ffprobeStream struct {
 	RFrameRate       string `json:"r_frame_rate"`
 	FieldOrder       string `json:"field_order"`
 	Disposition      struct {
-		Default int `json:"default"`
-		Forced  int `json:"forced"`
+		Default  int `json:"default"`
+		Forced   int `json:"forced"`
+		Original int `json:"original"`
 	} `json:"disposition"`
 	Tags struct {
 		Language string `json:"language"`
@@ -384,6 +390,7 @@ func ProbeTracks(inputPath string) (*ProbeResult, error) {
 				Title:         s.Tags.Title,
 				Channels:      s.Channels,
 				Default:       s.Disposition.Default == 1,
+				Original:      s.Disposition.Original == 1,
 				Profile:       s.Profile,
 				ChannelLayout: s.ChannelLayout,
 				SampleRate:    atoiOrZero(s.SampleRate),

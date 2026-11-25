@@ -1,6 +1,6 @@
 # Transcodage calé sur le serveur — plan
 
-- **Statut :** plan, version 2, décisions prises le 2026-11-25 (§0). Implémentation du côté serveur lancée, phase par phase : lot rapide, phases 0, 1 et 2 faites sur `tsuky` (ADR [profil matériel et planificateur](adr/2026-11-25-tsuky-profil-materiel-et-planificateur.md)).
+- **Statut :** plan, version 2, décisions prises le 2026-11-25 (§0). Implémentation du côté serveur lancée, phase par phase : lot rapide, phases 0, 1, 2 et 3 faites sur `tsuky` (ADR [profil matériel et planificateur](adr/2026-11-25-tsuky-profil-materiel-et-planificateur.md), ADR [budget et admission](adr/2026-11-25-tsuky-budget-et-admission.md)).
 - **Date :** 2026-11-25
 - **Base :** `beta` à `2d8d4d77`, qui contient le travail de fytroz du 2026-11-25. Le plan part de ce code, pas de l'état d'avant.
 - **Prolonge :** ADR-0022 (échelle de débits), ADR-0056 et ADR-0065 (qualité automatique), ADR-0060 (Dolby Vision 5), et les trois ADR de fytroz :
@@ -352,6 +352,14 @@ Les tests de fytroz (`hardware_filters_test.go`, `vulkan_device_test.go`) resten
 - sur l'i7 avec `VIDEO_ENCODER=h264_vaapi`, elle reste celle de fytroz.
 
 ### Phase 3 — Admission et budget
+
+**Statut :** faite sur `tsuky` le 2026-11-25, sans vraie machine (ADR [budget et admission](adr/2026-11-25-tsuky-budget-et-admission.md)). Écarts à ce qui suit :
+- le client dit `auto=1` quand l'Auto choisit, au lieu de `manual=1` en manuel (§0.5). Sans paramètre, le barreau demandé est servi tel quel, avec `capacity_warning: "too_heavy"` ; en Auto, `capacity_warning: "degraded"` et `requested_quality`. Capacité `transcode_capacity` dans `/api/ping` ;
+- le seuil d'admission est 1,3× (critère 1), sous le 1,5× que vise le planificateur pour choisir sa recette ; la limite dure (503 `server_busy`) est « aucun barreau ne suit la lecture » (moins de 1×) ;
+- aucune UI : le lecteur n'affiche pas encore l'avertissement (phase 4) ;
+- **disque : reporté.** Le budget de l'espace de travail par débit n'est pas fait ; la garde `HLS_MIN_FREE_MB` reste seule ;
+- « petite machine » pour l'audio : 4 cœurs ou moins, sans circuit utilisable ;
+- accès des phases 4 et 5 : `SessionManager.Budget()`, `Budget.Margin`, `Budget.Load`, `capacity.SpeedUnder`.
 
 - **Budget par ressource.** `MAX_TRANSCODES`, qui compte des sessions, laisse la place à un budget :
   - une session réserve son coût prévu ;

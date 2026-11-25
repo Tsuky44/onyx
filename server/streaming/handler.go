@@ -14,6 +14,7 @@ import (
 	"project-player/server/clientip"
 	"project-player/server/devline"
 	"project-player/server/playbackauth"
+	"project-player/server/streaming/capacity"
 	"strconv"
 	"strings"
 	"time"
@@ -80,13 +81,15 @@ type Handler struct {
 func NewHandler(db *sql.DB, tickets *playbackauth.Store) *Handler {
 	workspace := hlsWorkspace()
 	resetWorkspace(workspace)
-	return &Handler{
+	h := &Handler{
 		manager:   NewSessionManager(tickets),
 		db:        db,
 		tickets:   tickets,
 		previews:  newPreviewGenerator(previewRoot(), tickets),
 		workspace: workspace,
 	}
+	h.previews.mayRun = func() bool { return previewsMayRun(capacityProfile(), h.manager.Budget()) }
+	return h
 }
 
 // Close arrête toutes les sessions et les aperçus en cours, à l'arrêt du
@@ -163,55 +166,6 @@ func (h *Handler) Dispatch(w http.ResponseWriter, r *http.Request, _ httprouter.
 	}
 }
 
-// startResponse is the JSON body returned when a session is created. The client
-// opens MasterURL directly with media_kit (mpv resolves child playlists/segments
-// relative to it; the server propagates its ticket into every playlist).
-type startResponse struct {
-	SessionID   string  `json:"session_id"`
-	MasterURL   string  `json:"master_url"`
-	Duration    float64 `json:"duration"`
-	StartOffset int     `json:"start_offset"`
-	Quality     string  `json:"quality"`
-	// AudioMap lists the source audio tracks published as renditions, in the
-	// order the player will enumerate them. Position k in the player's audio
-	// track list is source track AudioMap[k], which is how the client switches
-	// language without asking for a new session.
-	AudioMap []int `json:"audio_map"`
-	// BurnedSubtitle echoes the bitmap subtitle stream rendered into the video,
-	// or -1. The client compares it with what it asked for to know whether the
-	// request was honoured.
-	BurnedSubtitle int `json:"burned_subtitle"`
-	// VideoMode is "copy" when the picture is being repackaged untouched and
-	// "encode" when it is being re-encoded. VideoReason names why a copy was
-	// refused, and is empty on the copy path.
-	//
-	// Both are for the viewer as much as for the log: "Direct Stream" and "why
-	// is my CPU at 400%" are the same question, and answering it needs the
-	// server's own reason rather than a guess reconstructed on the client.
-	VideoMode   string `json:"video_mode"`
-	VideoReason string `json:"video_reason,omitempty"`
-	// Container is the segment format the session actually publishes.
-	Container string `json:"container"`
-	// RetainSeconds est ce que la session garde derrière le dernier segment
-	// demandé, quand le client a dit savoir rouvrir une session pour reculer
-	// plus loin (purge=1). Absent : tout est gardé.
-	RetainSeconds int `json:"retain_seconds,omitempty"`
-	// Subtitles are the text tracks this session writes as WebVTT, each with
-	// the URL it grows at. Absent from a server that predates ADR-0031, which
-	// the client takes as "fetch them the old way".
-	Subtitles []liveSubtitle `json:"subtitles"`
-	// Standby confirme que la session attend son lecteur sans rien remplacer
-	// (`standby=1`). Absent d'un serveur qui ne connaît pas l'attente : la
-	// session en cours y est déjà condamnée, et le client ne peut plus renoncer.
-	Standby bool `json:"standby,omitempty"`
-}
-
-// liveSubtitle is one text track a session writes, as /start announces it.
-type liveSubtitle struct {
-	TypedIndex int    `json:"typed_index"`
-	URL        string `json:"url"`
-}
-
 func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID int) {
 	startedAt := time.Now()
 
@@ -258,10 +212,10 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 	}
 
 	ticketHash := playbackauth.Digest(r.URL.Query().Get("ticket"))
-	if limit := maxTranscodes(); limit > 0 && h.manager.LiveCountExcept(ticketHash) >= limit {
+	profile := capacityProfile()
+	if limit := sessionCap(profile != nil); limit > 0 && h.manager.LiveCountExcept(ticketHash) >= limit {
 		log.Printf("HLS start: media %d refused, %d session(s) already running", mediaID, limit)
-		w.Header().Set("Retry-After", "15")
-		http.Error(w, "too many transcoding sessions", http.StatusServiceUnavailable)
+		writeServerBusy(w, 15, fmt.Sprintf("%d sessions de transcodage déjà en cours (MAX_TRANSCODES)", limit))
 		return
 	}
 	if floor := minFreeBytes(); floor > 0 {
@@ -273,14 +227,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		}
 	}
 
-	tmpDir, err := os.MkdirTemp(h.workspace, "hls-*")
-	if err != nil {
-		log.Printf("HLS start: mkdtemp: %v", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-
-	audioMap := SelectAudioRenditions(probe, audioIndex)
+	audioMap := selectAudioRenditions(probe, audioIndex, audioRenditionLimit(profile))
 	subtitleTracks := LiveSubtitleTracks(probe)
 
 	// Only a real bitmap stream may be burned in. A bogus index would make FFmpeg
@@ -294,29 +241,43 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 
 	// Repackage the picture rather than re-encode it whenever that is safe: the
 	// browser only ever needed a different container and a different audio codec,
-	// not different frames.
+	// not different frames (PlanVideo, in startInputs.optionsFor). Then admit the
+	// session against what the others have reserved, without this ticket's own
+	// sessions, which this one replaces (admission.go).
 	bitrate := h.sourceBitrate(mediaID)
-	videoPlan := PlanVideo(probe, quality, burnSubtitle >= 0, bitrate, caps.CopyCeiling(copyBitrateCeiling()), caps)
-
-	options := TranscodeOptions{
-		InputPath:              inputPath,
-		Quality:                quality,
-		Encoder:                SelectedVideoEncoder(),
-		HardwareFilters:        HardwareFiltersUsable(),
-		HEVCEncoder:            hevcEncoder,
-		StartSeconds:           startSeconds,
-		TmpDir:                 tmpDir,
-		Probe:                  probe,
-		SegmentDuration:        segmentDuration,
-		AudioTypedIndexes:      audioMap,
-		BurnSubtitle:           burnSubtitle >= 0,
-		BurnSubtitleTypedIndex: burnSubtitle,
-		Video:                  videoPlan,
-		AudioBudgetBps:         AudioBudget(quality, videoPlan),
-		Caps:                   caps,
-		LiveSubtitles:          subtitleTracks,
+	inputs := startInputs{
+		inputPath: inputPath, probe: probe, burnSubtitle: burnSubtitle, bitrate: bitrate,
+		caps: caps, hevcEncoder: hevcEncoder, startSeconds: startSeconds,
+		audioMap: audioMap, subtitles: subtitleTracks,
 	}
-	options = planPipeline(options, mediaID)
+	sessionID := uuid.New().String()
+	decision := h.manager.admitAndReserve(sessionID, ticketHash, func(load capacity.Load) admission {
+		return admit(quality, isTruthy(r.URL.Query().Get("auto")), rungsBelow(quality, sourceHeight(probe)),
+			func(q string) rungOption { return planRung(inputs.optionsFor(q), profile, load, len(audioMap)) })
+	})
+	if decision.refused != "" {
+		log.Printf("HLS start: media %d refused: %s", mediaID, decision.refused)
+		writeServerBusy(w, 15, decision.refused)
+		return
+	}
+	options := decision.served.options
+	quality, videoPlan := options.Quality, options.Video
+	if options.Pipeline != nil {
+		log.Printf("HLS start: media %d: recette %s", mediaID, *options.Pipeline)
+	}
+	if decision.warning != "" {
+		log.Printf("HLS start: media %d: %s demandé, %s servi (%s, %.2f× prévu)",
+			mediaID, decision.requested, quality, decision.warning, finiteSpeed(decision.served.speed))
+	}
+
+	tmpDir, err := os.MkdirTemp(h.workspace, "hls-*")
+	if err != nil {
+		h.manager.Budget().Release(sessionID)
+		log.Printf("HLS start: mkdtemp: %v", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	options.TmpDir = tmpDir
 	args := BuildFFmpegArgs(options)
 
 	// Copying the picture means the file's own bitrate goes out on the wire, so
@@ -344,7 +305,6 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		retain = retainSeconds()
 	}
 
-	sessionID := uuid.New().String()
 	session := &TranscodeSession{
 		TicketHash:     ticketHash,
 		ID:             sessionID,
@@ -358,6 +318,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		SegmentExt:     caps.Container.SegmentExt(),
 		Variants:       1 + len(audioMap),
 		RetainSegments: retain / segmentDuration,
+		reservation:    decision.served.cost,
 		// Une image recopiée n'a pas de chaîne : usesHardwareFilters le sait.
 		hardwareFilters: options.usesHardwareFilters(),
 		vulkanGPU:       sessionToneMapper(options).Vulkan && vulkanOnGPU(),
@@ -372,6 +333,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 	cmd.Stderr = &session.stderr
 
 	if err := session.Start(); err != nil {
+		h.manager.Budget().Release(sessionID)
 		cancel()
 		os.RemoveAll(tmpDir)
 		log.Printf("HLS start: ffmpeg start failed: %v", err)
@@ -434,20 +396,27 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 			URL:        sessionURL + "/" + LiveSubtitleFileName(typedIndex) + ticketQuery,
 		})
 	}
-	resp := startResponse{
-		SessionID:      sessionID,
-		MasterURL:      sessionURL + "/master.m3u8" + ticketQuery,
-		Duration:       probe.Duration,
-		StartOffset:    startSeconds,
-		Quality:        quality,
-		AudioMap:       audioMap,
-		BurnedSubtitle: burnSubtitle,
-		VideoMode:      videoMode,
-		VideoReason:    videoPlan.Reason,
-		Container:      string(caps.Container),
-		RetainSeconds:  retain,
-		Subtitles:      subtitles,
-		Standby:        standby,
+	// Le barreau demandé n'est renvoyé que s'il n'a pas été servi.
+	requestedQuality := ""
+	if decision.requested != quality {
+		requestedQuality = decision.requested
+	}
+	resp := StartResponse{
+		SessionID:        sessionID,
+		MasterURL:        sessionURL + "/master.m3u8" + ticketQuery,
+		Duration:         probe.Duration,
+		StartOffset:      startSeconds,
+		Quality:          quality,
+		RequestedQuality: requestedQuality,
+		CapacityWarning:  decision.warning,
+		AudioMap:         audioMap,
+		BurnedSubtitle:   burnSubtitle,
+		VideoMode:        videoMode,
+		VideoReason:      videoPlan.Reason,
+		Container:        string(caps.Container),
+		RetainSeconds:    retain,
+		Subtitles:        subtitles,
+		Standby:          standby,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

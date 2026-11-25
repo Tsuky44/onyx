@@ -156,48 +156,6 @@ func copiesHEVCIntoFMP4(o TranscodeOptions) bool {
 // NoBurnedSubtitle is the wire value meaning "no subtitle is burned in".
 const NoBurnedSubtitle = -1
 
-// maxAudioRenditions caps how many audio tracks a session publishes.
-//
-// Each rendition is a cheap stereo AAC encode (~1% of a core once the JIT
-// throttle settles), but every one of them also writes segments for the whole
-// film, so an unbounded count would fill the session's temp dir on a remux
-// carrying a dozen dub tracks.
-const maxAudioRenditions = 8
-
-// SelectAudioRenditions picks which source audio tracks a session will carry,
-// in source order, always including the one the client asked for.
-func SelectAudioRenditions(probe *ProbeResult, requested int) []int {
-	if probe == nil || len(probe.Audio) == 0 {
-		return nil
-	}
-	total := len(probe.Audio)
-	if requested < 0 || requested >= total {
-		requested = 0
-	}
-
-	if total <= maxAudioRenditions {
-		out := make([]int, total)
-		for i := range out {
-			out[i] = i
-		}
-		return out
-	}
-
-	// Over the cap: keep source order, but guarantee the requested track is in.
-	keep := make(map[int]bool, maxAudioRenditions)
-	keep[requested] = true
-	for i := 0; i < total && len(keep) < maxAudioRenditions; i++ {
-		keep[i] = true
-	}
-	out := make([]int, 0, len(keep))
-	for i := 0; i < total; i++ {
-		if keep[i] {
-			out = append(out, i)
-		}
-	}
-	return out
-}
-
 // BuildFFmpegArgs constructs the FFmpeg command-line for an HLS transcode.
 //
 // What one session produces, in one read of the source:

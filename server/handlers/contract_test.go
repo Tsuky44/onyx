@@ -13,6 +13,7 @@ import (
 	"project-player/server/libraries"
 	"project-player/server/mediahub"
 	"project-player/server/models"
+	"project-player/server/streaming"
 )
 
 // Le contrat entre le serveur et l'app.
@@ -40,6 +41,9 @@ var contractValues = map[string]string{
 	"request_status": "unknown",
 	"status":         "Returning Series",
 	"kind":           "shows",
+	// /start : l'app connaît ces deux avertissements (streaming/admission.go).
+	"capacity_warning": streaming.CapacityDegraded,
+	"video_mode":       "encode",
 }
 
 var contractTime = time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
@@ -192,6 +196,7 @@ func TestAPIContract(t *testing.T) {
 		"mediahub_sso":         filled[mediahub.SSOTicket](),
 		"watch_party_invites":  filled[watchPartyInvitesResponse](),
 		"watch_party_invitees": filled[watchPartyInviteesResponse](),
+		"hls_start":            filled[streaming.StartResponse](),
 	}
 
 	update := os.Getenv("ONYX_UPDATE_CONTRACT") != ""

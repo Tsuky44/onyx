@@ -118,8 +118,8 @@ type Job struct {
 	SoftwareOnly bool
 }
 
-// Load est ce que les sessions en cours occupent déjà, par seconde. Zéro en
-// phase 2 : le budget par ressource est la phase 3, qui la remplira.
+// Load est ce que les sessions en cours occupent déjà, par seconde : la somme
+// de leurs réservations (Budget.Load).
 type Load struct {
 	Used Cost
 }
@@ -211,7 +211,7 @@ func PlanPipeline(job Job, profile *Profile, load Load) (Pipeline, bool) {
 	if len(recipes) == 0 {
 		return Pipeline{}, false
 	}
-	capacity := Cost{CPU: float64(max(profile.Inventory.Cores, 1)), Decode: 1, Encode: 1, Compute: 1}
+	capacity := CapacityOf(profile)
 	for i := range recipes {
 		recipes[i].Speed, recipes[i].headroom = predict(recipes[i].Cost, capacity, load.Used)
 	}

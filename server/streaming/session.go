@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"project-player/server/safego"
+	"project-player/server/streaming/capacity"
 )
 
 var (
@@ -87,6 +88,9 @@ type TranscodeSession struct {
 	// prépare sans encore la lire : elle ne remplace rien tant que son premier
 	// segment n'a pas été demandé. Voir SessionManager.Claim et ADR-0056.
 	standby bool
+	// reservation est le coût prévu de la session sur chaque ressource, posé
+	// par /start ; le gestionnaire le réserve dans son budget (CreateSession).
+	reservation capacity.Cost
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -114,6 +118,9 @@ type TranscodeSession struct {
 	// et le temps écoulé ne mesure plus rien. Voir Health.
 	startedAt  time.Time
 	burstSpeed float64
+	// budget est celui où la réservation est posée, nil tant qu'elle ne l'est
+	// pas. Voir session_budget.go.
+	budget *capacity.Budget
 }
 
 // SessionHealth est ce qu'une session dit de son encodeur.
@@ -187,6 +194,8 @@ func (s *TranscodeSession) watch() {
 	s.mu.Lock()
 	s.active = false
 	s.cpuUsed, s.exited = cpu, true
+	// FFmpeg est sorti (film encodé jusqu'au bout, ou mort) : il ne coûte plus.
+	s.releaseBudgetLocked()
 	s.mu.Unlock()
 	// Morte seule (personne ne l'a arrêtée), en erreur, sans avoir rien écrit.
 	if !s.diedBeforeFirstSegment(err) {
@@ -303,6 +312,8 @@ func (s *TranscodeSession) Freeze() {
 		return
 	}
 	s.frozen = true
+	// Gelée, elle ne prend plus rien : sa part revient aux autres sessions.
+	s.releaseBudgetLocked()
 	if !s.paused {
 		s.signal(syscall.SIGSTOP)
 		s.paused = true
@@ -407,6 +418,7 @@ func (s *TranscodeSession) Kill() {
 		log.Printf("Session %s: %s encodé à %.1f× la vitesse de lecture", s.ID, s.Quality, health.Speed)
 	}
 	s.mu.Lock()
+	s.releaseBudgetLocked()
 	if !s.active {
 		s.mu.Unlock()
 		s.logCPUCost()

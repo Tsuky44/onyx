@@ -201,6 +201,9 @@ type previewGenerator struct {
 	tickets *playbackauth.Store
 	// run executes one extraction; replaced in tests.
 	run func(ctx context.Context, args []string, background bool) ([]byte, error)
+	// mayRun dit si le budget des sessions laisse tourner la passe de fond
+	// (previews_budget.go). Nil : toujours.
+	mayRun func() bool
 
 	mu       sync.Mutex
 	sets     map[int]*previewSet
@@ -499,6 +502,9 @@ func (g *previewGenerator) runWarm(ctx context.Context, set *previewSet, ticket 
 		}
 		if fileExists(set.path(index)) {
 			continue
+		}
+		if !g.waitForBudget(ctx, set, ticket) {
+			return
 		}
 		if _, err := g.ensure(ctx, set, index, true); err != nil {
 			failures++

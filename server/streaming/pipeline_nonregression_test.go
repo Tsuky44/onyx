@@ -62,7 +62,7 @@ func sameArgs(t *testing.T, name string, before TranscodeOptions, profile *capac
 	t.Helper()
 	want := BuildFFmpegArgs(before)
 	setProfileForTest(t, profile)
-	planned := planPipeline(before, 0)
+	planned, _ := planPipeline(before, profile, capacity.Load{})
 	got := BuildFFmpegArgs(planned)
 	currentProfile.Store(nil)
 	if !reflect.DeepEqual(got, want) {

@@ -48,6 +48,24 @@ class HlsSession {
   /// l'ancienne. Voir ADR-0056.
   final bool standby;
 
+  /// Le barreau que le serveur sert. Null d'un serveur qui ne le renvoyait pas
+  /// encore lu ici : c'est alors celui demandé.
+  final String? quality;
+
+  /// Le barreau demandé, seulement quand le serveur en a servi un autre :
+  /// l'Auto (`auto=1`) demandait plus que ce que la machine tient.
+  final String? requestedQuality;
+
+  /// Ce que le serveur prévoit de sa machine pour cette session :
+  /// [capacityDegraded] (l'Auto a été descendu, voir [requestedQuality]) ou
+  /// [capacityTooHeavy] (servi tel quel, peut saccader). Null quand le
+  /// serveur tient le barreau, ou d'un serveur sans budget
+  /// (`ServerCapabilities.transcodeCapacity`).
+  final String? capacityWarning;
+
+  static const capacityDegraded = 'degraded';
+  static const capacityTooHeavy = 'too_heavy';
+
   HlsSession({
     required this.sessionId,
     required this.masterUrl,
@@ -60,6 +78,9 @@ class HlsSession {
     this.subtitles,
     this.retainSeconds,
     this.standby = false,
+    this.quality,
+    this.requestedQuality,
+    this.capacityWarning,
   });
 
   /// True when the picture is reaching the viewer untouched.
@@ -80,6 +101,9 @@ class HlsSession {
       videoReason: json['video_reason'] as String? ?? '',
       retainSeconds: (json['retain_seconds'] as num?)?.toInt(),
       standby: json['standby'] as bool? ?? false,
+      quality: _nonEmpty(json['quality']),
+      requestedQuality: _nonEmpty(json['requested_quality']),
+      capacityWarning: _nonEmpty(json['capacity_warning']),
       subtitles: (json['subtitles'] as List?)
           ?.whereType<Map<String, dynamic>>()
           .map(LiveSubtitleSource.fromJson)
@@ -87,6 +111,9 @@ class HlsSession {
           .toList(),
     );
   }
+
+  static String? _nonEmpty(Object? value) =>
+      value is String && value.isNotEmpty ? value : null;
 }
 
 /// Une piste texte qu'une session HLS écrit en WebVTT, et l'adresse où elle
