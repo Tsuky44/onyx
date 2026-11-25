@@ -1614,9 +1614,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_key_routing.dart": {
-    "mtime": 1795559678.6697783,
-    "seen": 1795596840.2126136,
-    "ast_hash": "4f2ede2553ce5736421c4368f2161a40",
+    "mtime": 1795621701.1688094,
+    "seen": 1795622200.8968105,
+    "ast_hash": "ccc283fa8a9f42a2046a993fe65f0f07",
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_media_info.dart": {
@@ -1650,9 +1650,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_remote.dart": {
-    "mtime": 1795559678.6697783,
-    "seen": 1795596840.212623,
-    "ast_hash": "3ec341e7695fd2f3dbee0e26a1f95ef1",
+    "mtime": 1795621701.1694045,
+    "seen": 1795622200.8968256,
+    "ast_hash": "c90ca18da3f88d3e6d9d29540e03f27b",
     "semantic_hash": ""
   },
   "app/lib/screens/player/player_screen_startup.dart": {
@@ -4446,9 +4446,9 @@
     "semantic_hash": ""
   },
   "app/test/player_key_routing_test.dart": {
-    "mtime": 1795559678.6970334,
-    "seen": 1795596840.213684,
-    "ast_hash": "5ea1050d24ee2e62976e8be67a190038",
+    "mtime": 1795621701.1698701,
+    "seen": 1795622200.897957,
+    "ast_hash": "8312eb3babeada4840140309db2500d0",
     "semantic_hash": ""
   },
   "app/test/player_media_info_test.dart": {
@@ -8280,8 +8280,8 @@
     "semantic_hash": ""
   },
   "server/main.go": {
-    "mtime": 1795600568.3952398,
-    "seen": 1795600767.7082832,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.898915,
     "ast_hash": "6e826856742f0d4b686eee516534dc1f",
     "semantic_hash": ""
   },
@@ -8604,8 +8604,8 @@
     "semantic_hash": ""
   },
   "server/streaming/encoder.go": {
-    "mtime": 1795596480.2644022,
-    "seen": 1795596840.214692,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8989925,
     "ast_hash": "33f8f2402fc86a2f16d8297b5ccaeded",
     "semantic_hash": ""
   },
@@ -8616,8 +8616,8 @@
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg.go": {
-    "mtime": 1795600523.620968,
-    "seen": 1795600767.708339,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8990083,
     "ast_hash": "9ce61cf410577bc590d16ce237f9fb52",
     "semantic_hash": ""
   },
@@ -8628,8 +8628,8 @@
     "semantic_hash": ""
   },
   "server/streaming/handler.go": {
-    "mtime": 1795600523.622237,
-    "seen": 1795600767.7083404,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8990126,
     "ast_hash": "2805c4acec568c9b58da6f5992f3883b",
     "semantic_hash": ""
   },
@@ -8718,8 +8718,8 @@
     "semantic_hash": ""
   },
   "server/streaming/previews.go": {
-    "mtime": 1795600523.6213846,
-    "seen": 1795600767.7083564,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8990326,
     "ast_hash": "21140ad73c1ec274f17bbdb18868cc49",
     "semantic_hash": ""
   },
@@ -8790,8 +8790,8 @@
     "semantic_hash": ""
   },
   "server/streaming/session.go": {
-    "mtime": 1795600523.6218321,
-    "seen": 1795600767.7083669,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8990462,
     "ast_hash": "e8f9c0464ddffab8b40a1e5b1e254d8b",
     "semantic_hash": ""
   },
@@ -8802,8 +8802,8 @@
     "semantic_hash": ""
   },
   "server/streaming/tonemap_dovi.go": {
-    "mtime": 1795600568.3954964,
-    "seen": 1795600767.7083683,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8990479,
     "ast_hash": "4c91c1f10546b9eac227408f732f2529",
     "semantic_hash": ""
   },
@@ -10164,8 +10164,8 @@
     "semantic_hash": ""
   },
   "docs/adr/0023-encodeur-materiel-optionnel.md": {
-    "mtime": 1795596769.3819184,
-    "seen": 1795596840.2150288,
+    "mtime": 1795602654.9856472,
+    "seen": 1795622200.8994823,
     "ast_hash": "9ebbd132851507ea0d94bc25a6f746ec",
     "semantic_hash": ""
   },
@@ -10806,8 +10806,8 @@
     "semantic_hash": ""
   },
   "server/README.md": {
-    "mtime": 1795600726.5307145,
-    "seen": 1795600767.708936,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8997838,
     "ast_hash": "ed962ae9d8505de0ef43de755486a8fd",
     "semantic_hash": ""
   },
@@ -12060,9 +12060,9 @@
     "semantic_hash": ""
   },
   "app/lib/tv/nav/tv_back.dart": {
-    "mtime": 1795559678.6862595,
-    "seen": 1795596840.2131462,
-    "ast_hash": "569278c82ff5a346d66032f9195e40af",
+    "mtime": 1795621701.1700525,
+    "seen": 1795622200.8973448,
+    "ast_hash": "fe82774ca024981320c16647b56014ec",
     "semantic_hash": ""
   },
   "app/lib/tv/nav/tv_dpad_focusable.dart": {
@@ -12306,9 +12306,9 @@
     "semantic_hash": ""
   },
   "app/test/support/player_remote_bench.dart": {
-    "mtime": 1795559678.704133,
-    "seen": 1795596840.2138097,
-    "ast_hash": "f0f0618cde0a66c9a451348280fb670e",
+    "mtime": 1795621701.1696656,
+    "seen": 1795622200.8980856,
+    "ast_hash": "0154dd1bb2c44c07b8602c5a421e99ab",
     "semantic_hash": ""
   },
   "app/lib/tv/input/tv_field_key_handler.dart": {
@@ -15246,39 +15246,45 @@
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters.go": {
-    "mtime": 1795600622.8340228,
-    "seen": 1795600767.7083437,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8990173,
     "ast_hash": "07f928e05403cb9fade00a11ce5724c2",
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters_test.go": {
-    "mtime": 1795596672.1511903,
-    "seen": 1795596840.214703,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.899019,
     "ast_hash": "40564fbbd66407ef56a52d8d4d34f9b4",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-fytroz-la-chaine-vaapi-ne-ramene-plus-le-4k-en-memoire.md": {
-    "mtime": 1795600747.6362793,
-    "seen": 1795600767.708874,
+    "mtime": 1795602654.9856472,
+    "seen": 1795622200.8997068,
     "ast_hash": "8877e843944e71d779fc018a97ba3150",
     "semantic_hash": ""
   },
   "server/streaming/vulkan_device.go": {
-    "mtime": 1795600671.1226807,
-    "seen": 1795600767.7083707,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.89905,
     "ast_hash": "400fc251b903e752d87077bdb084f415",
     "semantic_hash": ""
   },
   "server/streaming/vulkan_device_test.go": {
-    "mtime": 1795600701.95505,
-    "seen": 1795600767.7083716,
+    "mtime": 1795602655.0416472,
+    "seen": 1795622200.8990512,
     "ast_hash": "cedf27095560d6c034fcd0a6f0fec2a8",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-fytroz-libplacebo-prend-le-peripherique-vulkan-le-plus-rapide.md": {
-    "mtime": 1795600726.3891625,
-    "seen": 1795600767.7088752,
-    "ast_hash": "aecb8c155bf7f5d251d8b64c087f4bde",
+    "mtime": 1795602654.9856472,
+    "seen": 1795622200.8997085,
+    "ast_hash": "5a3a482d5bb44aa5d193c39c483e3b99",
+    "semantic_hash": ""
+  },
+  "docs/adr/2026-11-25-fytroz-retour-du-lecteur-sur-apple-tv.md": {
+    "mtime": 1795622172.448555,
+    "seen": 1795622200.89971,
+    "ast_hash": "e59babc40c6f75efe9909fff5af29d37",
     "semantic_hash": ""
   }
 }
