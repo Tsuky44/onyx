@@ -506,19 +506,12 @@ func main() {
 
 	// 6. HLS sessions require the same ticket on start, playlists and segments.
 	// Dispatch parses the path manually to avoid httprouter wildcard conflicts.
-	//
-	// Resolve the encoder here rather than on the first session: picking one
-	// means running FFmpeg to see whether it actually encodes on this host, and
-	// that second belongs to boot, not to the first viewer to press play. It
-	// also puts the answer in the log before anything has been served.
-	streaming.SelectedVideoEncoder()
-	// Même raison pour l'essai de la chaîne matérielle : il lance FFmpeg, et
-	// son verdict doit être au journal avant la première lecture.
-	streaming.HardwareFiltersUsable()
-	// Et pour le périphérique Vulkan du tone mapping Dolby Vision : choisi au
-	// premier film, il faisait attendre ce spectateur-là.
-	streaming.ResolveToneMapping()
 	hlsHandler := streaming.NewHandler(db, handlers.PlaybackTickets)
+	// Le profil matériel, avant de servir : lu du cache sans rien relancer,
+	// ou, au premier démarrage, l'encodeur, la chaîne VAAPI et le périphérique
+	// Vulkan choisis comme avant (leur verdict au journal avant la première
+	// lecture, pas au premier spectateur), puis la mesure en arrière-plan.
+	hlsHandler.StartCapacity(filepath.Dir(absDbPath), buildinfo.Version)
 	handlers.ActiveTranscodes = hlsHandler.ActiveSessions
 	router.POST("/api/v1/stream/*path", hlsHandler.Dispatch)
 	router.GET("/api/v1/stream/*path", hlsHandler.Dispatch)

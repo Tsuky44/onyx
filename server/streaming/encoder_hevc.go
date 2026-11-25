@@ -27,7 +27,7 @@ var softwareHEVCEncoder = VideoEncoder{
 	Name:        "libx265",
 	Codec:       "hevc",
 	PixelFormat: "yuv420p10le",
-	rateControl: func(preset qualityPreset) []string {
+	rateControl: func(preset encodeTarget) []string {
 		return []string{
 			"-preset", "ultrafast",
 			// L'équivalent du CRF 23 de libx264 : le HEVC tient la même image
@@ -90,18 +90,29 @@ func SelectedHEVCEncoder() (VideoEncoder, bool) {
 func hevcEncoderFor(h264 VideoEncoder, works func(VideoEncoder) bool) (VideoEncoder, bool) {
 	candidate := softwareHEVCEncoder
 	if h264.Hardware {
-		sibling, ok := hevcSiblings[h264.Name]
+		sibling, ok := hevcSiblingOf(h264)
 		if !ok {
 			return VideoEncoder{}, false
 		}
-		sibling.deviceArgs = h264.deviceArgs
-		sibling.rateControl = h264.rateControl
 		candidate = sibling
 	}
 	if !works(candidate) {
 		return VideoEncoder{}, false
 	}
 	return candidate, true
+}
+
+// hevcSiblingOf est l'encodeur HEVC du même circuit que h264, avec son
+// périphérique et ses réglages de débit ; faux pour un circuit sans HEVC
+// connu.
+func hevcSiblingOf(h264 VideoEncoder) (VideoEncoder, bool) {
+	sibling, ok := hevcSiblings[h264.Name]
+	if !ok {
+		return VideoEncoder{}, false
+	}
+	sibling.deviceArgs = h264.deviceArgs
+	sibling.rateControl = h264.rateControl
+	return sibling, true
 }
 
 // hevcEncoder résout ce que les options ont demandé, libx265 par défaut.

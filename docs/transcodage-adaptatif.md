@@ -1,6 +1,6 @@
 # Transcodage calé sur le serveur — plan
 
-- **Statut :** plan, version 2, décisions prises le 2026-11-25 (§0). Implémentation du côté serveur lancée, phase par phase. Une ADR sera écrite à la phase 2 (`docs/adr/AAAA-MM-JJ-tsuky-profil-materiel-et-planificateur.md`).
+- **Statut :** plan, version 2, décisions prises le 2026-11-25 (§0). Implémentation du côté serveur lancée, phase par phase : lot rapide, phases 0, 1 et 2 faites sur `tsuky` (ADR [profil matériel et planificateur](adr/2026-11-25-tsuky-profil-materiel-et-planificateur.md)).
 - **Date :** 2026-11-25
 - **Base :** `beta` à `2d8d4d77`, qui contient le travail de fytroz du 2026-11-25. Le plan part de ce code, pas de l'état d'avant.
 - **Prolonge :** ADR-0022 (échelle de débits), ADR-0056 et ADR-0065 (qualité automatique), ADR-0060 (Dolby Vision 5), et les trois ADR de fytroz :
@@ -150,7 +150,7 @@ C'est le compromis que le planificateur doit arbitrer : le circuit coûte quator
 | Vulkan AMD (RADV) | personne pour l'essayer | phase 6 |
 | Couleurs du circuit comparées au logiciel | non faites (VAAPI et libplacebo) | phase 0 |
 | Le journal ne disait pas quel tone mapping tournait (deux jours perdus) | en partie corrigé (`libplacebo renders on …`) | critère 10, dans le lot rapide |
-| Défaut de `VIDEO_ENCODER` | ADR-0023 §1 maintenu | à décider ensemble avant la phase 2 |
+| Défaut de `VIDEO_ENCODER` | ADR-0023 §1 maintenu | tranché (§0.1) : la mesure décide, la variable force ; fait à la phase 2 |
 
 ## 3. Architecture
 

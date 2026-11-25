@@ -288,5 +288,8 @@ func noteHardwareSessionDied(sessionID, stderr string) {
 	if hardwareFiltersOff.CompareAndSwap(false, true) {
 		log.Printf("Streaming: session %s died with hardware filters before its first segment, "+
 			"software filters from now on: %s", sessionID, strings.TrimSpace(stderr))
+		// Retirée du profil aussi : le planificateur ne la propose plus, et un
+		// démarrage avec le cache ne la remet pas.
+		retireHardwareFiltersInProfile(stderr)
 	}
 }

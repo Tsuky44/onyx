@@ -1,6 +1,10 @@
 package streaming
 
-import "runtime"
+import (
+	"runtime"
+
+	"project-player/server/streaming/capacity"
+)
 
 // availableCores est le nombre de cœurs que ce processus peut réellement
 // utiliser. Le seul endroit du paquet qui le demande : les threads de
@@ -13,22 +17,14 @@ import "runtime"
 // permises, pour une machine qui en tient une.
 var availableCores = func() int { return runtime.GOMAXPROCS(0) }
 
-// maxEncoderThreads plafonne les threads de libx264 par session.
-//
-// L'hôte visé est un Xeon à deux sockets : étaler une session sur les deux
-// coûte plus en trafic mémoire entre nœuds NUMA que ça ne rapporte, et prive
-// les sessions voisines. Seize threads saturent le parallélisme par images
-// d'un socket et en laissent à une deuxième session. Sous ce plafond, la
-// machine n'a pas plus de cœurs que de threads utiles.
-const maxEncoderThreads = 16
-
-// encoderThreads est le nombre de threads d'une session libx264 : tous les
-// cœurs disponibles jusqu'au plafond, un au moins.
+// encoderThreads est le nombre de threads d'une session libx264 tant que le
+// planificateur n'a pas de recette : tous les cœurs disponibles jusqu'au
+// plafond, un au moins. La règle et le plafond (seize, un socket de Xeon) sont
+// ceux du planificateur, qui en donne autant à charge nulle :
+// capacity.ThreadsFor.
 func encoderThreads() int { return encoderThreadsFor(availableCores()) }
 
-func encoderThreadsFor(cores int) int {
-	return min(max(cores, 1), maxEncoderThreads)
-}
+func encoderThreadsFor(cores int) int { return capacity.ThreadsFor(cores) }
 
 // minDefaultTranscodes est le plancher du plafond de sessions par défaut : une
 // recopie ne coûte presque rien, et moins de quatre bloquerait une famille.

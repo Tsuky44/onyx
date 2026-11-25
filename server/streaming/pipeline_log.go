@@ -68,7 +68,7 @@ func describePipeline(opt TranscodeOptions, vulkanOnGPU bool) string {
 		enc := opt.encoder()
 		encoder = enc.Name
 		if enc.rateControl != nil {
-			flags := enc.rateControl(presetFor(opt.Quality))
+			flags := enc.rateControl(opt.encodeTarget(presetFor(opt.Quality)))
 			preset = flagValue(flags, "-preset", preset)
 			threads = flagValue(flags, "-threads", threads)
 		}

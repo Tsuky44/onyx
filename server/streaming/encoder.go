@@ -57,7 +57,7 @@ type VideoEncoder struct {
 	// rateControl builds the flags that set quality and bitrate, which is where
 	// the encoders differ most: libx264 targets a quality and caps the result,
 	// while the hardware encoders take a bitrate and hold it.
-	rateControl func(preset qualityPreset) []string
+	rateControl func(preset encodeTarget) []string
 }
 
 // softwareEncoder is the default and the fallback. Its flags are exactly the
@@ -65,9 +65,9 @@ type VideoEncoder struct {
 var softwareEncoder = VideoEncoder{
 	Name:        "libx264",
 	PixelFormat: "yuv420p",
-	rateControl: func(preset qualityPreset) []string {
+	rateControl: func(preset encodeTarget) []string {
 		return []string{
-			"-preset", encoderPresetFor(preset),
+			"-preset", preset.x264Preset,
 			// CRF is the quality target; maxrate/bufsize are the VBV ceiling
 			// that keeps a detailed scene from bursting past what the link
 			// carries.
@@ -75,7 +75,7 @@ var softwareEncoder = VideoEncoder{
 			"-b:v", "0",
 			"-maxrate", preset.VideoBitrate,
 			"-bufsize", doubleBitrate(preset.VideoBitrate),
-			"-threads", strconv.Itoa(encoderThreads()),
+			"-threads", strconv.Itoa(preset.threads),
 		}
 	},
 }
@@ -95,7 +95,7 @@ var hardwareEncoders = []VideoEncoder{
 		Name:        "h264_videotoolbox",
 		Hardware:    true,
 		PixelFormat: "yuv420p",
-		rateControl: func(preset qualityPreset) []string {
+		rateControl: func(preset encodeTarget) []string {
 			return []string{
 				// No CRF here: VideoToolbox takes a bitrate and holds it. The
 				// stream therefore sits at the tier's number rather than under
@@ -113,7 +113,7 @@ var hardwareEncoders = []VideoEncoder{
 		Name:        "h264_nvenc",
 		Hardware:    true,
 		PixelFormat: "yuv420p",
-		rateControl: func(preset qualityPreset) []string {
+		rateControl: func(preset encodeTarget) []string {
 			return []string{
 				"-rc", "vbr",
 				"-b:v", preset.VideoBitrate,
@@ -132,7 +132,7 @@ var hardwareEncoders = []VideoEncoder{
 		// Quick Sync works in NV12; handing it yuv420p makes FFmpeg insert a
 		// conversion on every frame.
 		PixelFormat: "nv12",
-		rateControl: func(preset qualityPreset) []string {
+		rateControl: func(preset encodeTarget) []string {
 			return []string{
 				"-b:v", preset.VideoBitrate,
 				"-maxrate", preset.VideoBitrate,
@@ -147,7 +147,7 @@ var hardwareEncoders = []VideoEncoder{
 		deviceArgs:   []string{"-vaapi_device", vaapiDevice()},
 		uploadFilter: "format=nv12,hwupload",
 		surface:      "vaapi",
-		rateControl: func(preset qualityPreset) []string {
+		rateControl: func(preset encodeTarget) []string {
 			return []string{
 				// Nommé : laissé à lui-même, FFmpeg lit un débit égal à son
 				// plafond comme une demande de débit constant.

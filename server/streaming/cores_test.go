@@ -51,7 +51,7 @@ func TestAvailableCores_DefaultsToGOMAXPROCS(t *testing.T) {
 
 func TestSoftwareEncoder_ThreadsFlagUsesTheAvailableCores(t *testing.T) {
 	setCoresForTest(t, 4)
-	args := softwareEncoder.rateControl(presetFor("1080p"))
+	args := softwareEncoder.rateControl(TranscodeOptions{}.encodeTarget(presetFor("1080p")))
 	if got := flagValue(args, "-threads", ""); got != "4" {
 		t.Errorf("-threads = %q sur 4 cœurs", got)
 	}

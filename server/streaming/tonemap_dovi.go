@@ -79,6 +79,12 @@ func setLibplaceboForTest(usable bool) {
 // et c'est aussi là que le périphérique est choisi (vulkan_device.go).
 // Demandé une fois par processus : ce sont quelques forks et une seconde.
 func libplaceboUsable() bool {
+	// Le profil prêt a le dernier mot : le planificateur a choisi la recette
+	// d'après lui, et le rendu doit faire la même chose.
+	if profile := capacityProfile(); profile != nil {
+		usable, _ := profile.Libplacebo()
+		return usable
+	}
 	libplaceboOnce.Do(func() {
 		if !ffmpegHasFilter("libplacebo") {
 			return

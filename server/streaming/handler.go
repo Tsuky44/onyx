@@ -230,7 +230,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 	// produire. Sinon le HDR est tone-mappé en H.264, comme avant (ADR-0106).
 	var hevcEncoder VideoEncoder
 	if caps.EncodeHEVC {
-		hevcEncoder, caps.EncodeHEVC = SelectedHEVCEncoder()
+		hevcEncoder, caps.EncodeHEVC = availableHEVCEncoder()
 	}
 
 	inputPath, err := h.getMediaFilePath(mediaID)
@@ -316,6 +316,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		Caps:                   caps,
 		LiveSubtitles:          subtitleTracks,
 	}
+	options = planPipeline(options, mediaID)
 	args := BuildFFmpegArgs(options)
 
 	// Copying the picture means the file's own bitrate goes out on the wire, so

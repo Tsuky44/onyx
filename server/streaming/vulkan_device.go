@@ -199,16 +199,22 @@ func chooseVulkanDevice(
 
 // resolveVulkanDevice liste les périphériques, choisit, et retient le choix.
 func resolveVulkanDevice() bool {
+	choice, ok := measureVulkanDevice()
+	if ok {
+		vulkanChosen.Store(&choice)
+	}
+	return ok
+}
+
+// measureVulkanDevice liste les périphériques et choisit, sans retenir : c'est
+// l'essai que le registre du profil matériel relance (capacity_profile.go).
+func measureVulkanDevice() (vulkanChoice, bool) {
 	forced := strings.TrimSpace(os.Getenv("VULKAN_DEVICE"))
 	var devices []vulkanDevice
 	if forced == "" {
 		devices = listVulkanDevices()
 	}
-	choice, ok := chooseVulkanDevice(devices, forced, libplaceboRunsOn, libplaceboRace)
-	if ok {
-		vulkanChosen.Store(&choice)
-	}
-	return ok
+	return chooseVulkanDevice(devices, forced, libplaceboRunsOn, libplaceboRace)
 }
 
 // listVulkanDevices demande à FFmpeg d'ouvrir un périphérique Vulkan en
@@ -277,5 +283,8 @@ func noteVulkanSessionDied(sessionID, stderr string) {
 	if vulkanChosen.CompareAndSwap(choice, &software) {
 		log.Printf("Streaming: session %s died with libplacebo on the GPU before its first segment, "+
 			"software Vulkan from now on: %s", sessionID, strings.TrimSpace(stderr))
+		// Le profil le garde : un démarrage avec le cache ne relance pas la
+		// course qui remettrait le circuit en tête.
+		noteVulkanFallbackInProfile(software.Spec, stderr)
 	}
 }

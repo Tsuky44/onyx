@@ -35,12 +35,30 @@ func Measure(args []string) (Result, error) {
 
 // MeasureContext est Measure, annulable.
 func MeasureContext(ctx context.Context, args []string) (Result, error) {
+	return measure(ctx, args, false)
+}
+
+// MeasureBackground est MeasureContext en priorité basse : le profil du
+// serveur mesure pendant que le serveur sert, et ne doit prendre que le
+// processeur que personne n'utilise. Le temps processeur compté ne change
+// pas ; seul le temps écoulé peut s'allonger si la machine est occupée.
+func MeasureBackground(ctx context.Context, args []string) (Result, error) {
+	return measure(ctx, args, true)
+}
+
+func measure(ctx context.Context, args []string, background bool) (Result, error) {
 	cmd := exec.CommandContext(ctx, FFmpeg, progressArgs(args)...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 
 	start := time.Now()
-	err := cmd.Run()
+	err := cmd.Start()
+	if err == nil {
+		if background {
+			lowerPriority(cmd.Process.Pid)
+		}
+		err = cmd.Wait()
+	}
 	elapsed := time.Since(start)
 	if err != nil {
 		return Result{}, fmt.Errorf("ffmpeg %s: %w: %s", strings.Join(args, " "), err, lastLine(stderr.String()))
