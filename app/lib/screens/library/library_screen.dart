@@ -10,29 +10,24 @@ import '../../theme/app_icons.dart';
 import '../../utils/responsive.dart';
 import '../../utils/search_match.dart';
 import '../../widgets/global/empty_state.dart';
+import '../../widgets/global/filter_panel/onyx_filter_dock.dart';
 import '../../widgets/global/media_card.dart';
 import '../../widgets/global/poster_grid_zoom_region.dart';
 import '../../widgets/global/skeleton.dart';
 import '../shell/shell_tabs.dart';
 import '../../tv/tv_mode.dart';
+import 'library_filters.dart';
 import 'widgets/catalog_header.dart';
 import 'widgets/catalog_sort_capsule.dart';
 import 'widgets/library_desktop_spotlight.dart';
+import 'widgets/library_filters_panel.dart';
 import 'widgets/spotlight_scale.dart';
 import 'widgets/library_tv_view.dart';
 import '../../widgets/global/sliver_scroll_end.dart';
 
-enum _SortOption { recent, title, progress }
-
-const Map<_SortOption, String> _sortLabels = {
-  _SortOption.recent: 'Récents',
-  _SortOption.title: 'A → Z',
-  _SortOption.progress: 'En cours',
-};
-
 /// Les libellés de tri, lus par `tr()` à l'affichage.
 @visibleForTesting
-Iterable<String> get librarySortLabels => _sortLabels.values;
+Iterable<String> get librarySortLabels => librarySortOptions.values;
 
 /// L'icône d'une bibliothèque, d'après ce qu'elle contient. [selected] rend la
 /// variante pleine, celle d'un onglet actif.
@@ -62,8 +57,16 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
-  _SortOption _sort = _SortOption.recent;
+  LibraryFilters _filters = LibraryFilters.defaults;
   bool _loadScheduled = false;
+
+  /// Le panneau des filtres, ouvert à droite de la grille sur grand écran.
+  /// Ouvert, il prend la place du volet du titre survolé.
+  bool _filtersOpen = false;
+
+  /// Garde la grille (et sa position de défilement) quand le volet du
+  /// titre survolé s'efface pour le panneau des filtres, puis revient.
+  final _gridKey = GlobalKey();
 
   /// Le titre que le volet du bureau présente : le dernier que le pointeur
   /// ou le clavier a désigné. Un `ValueNotifier` : survoler une affiche ne
@@ -105,21 +108,22 @@ class _LibraryScreenState extends State<LibraryScreen> {
             for (final item in lp.moviesOf(widget.library))
               (media: item.media, movie: item),
           ];
-    switch (_sort) {
-      case _SortOption.title:
-        entries.sort((a, b) =>
-            titleSortKey(a.media.title).compareTo(titleSortKey(b.media.title)));
-      case _SortOption.recent:
-        entries.sort((a, b) => b.media.createdAt.compareTo(a.media.createdAt));
-      case _SortOption.progress:
-        double progress(LibraryEntry entry) {
-          final movie = entry.movie;
-          if (movie == null) return 0;
-          return movie.isFinished ? -1.0 : movie.percentWatched;
-        }
-        entries.sort((a, b) => progress(b).compareTo(progress(a)));
+    return _filters.apply(entries, titleKey: titleSortKey);
+  }
+
+  /// Le bouton « Filtres » de l'en-tête : le panneau à droite sur grand
+  /// écran, une feuille du bas sur téléphone.
+  void _openFilters() {
+    if (!AppLayout.isCompact(context)) {
+      setState(() => _filtersOpen = true);
+      return;
     }
-    return entries;
+    LibraryFiltersPanel.show(
+      context,
+      filters: _filters,
+      isShows: _isShows,
+      onChanged: (f) => setState(() => _filters = f),
+    );
   }
 
   @override
@@ -136,9 +140,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final entries = _entries(lp);
     final count = entries.length;
     final sortOptions = {
-      for (final option in _sortLabels.entries)
+      for (final option in librarySortOptions.entries)
         // Une série n'a pas de position de lecture à elle.
-        if (!_isShows || option.key != _SortOption.progress)
+        if (!_isShows || option.key != LibrarySort.progress)
           option.key: option.value,
     };
 
@@ -156,12 +160,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ? null
               : tr('{0} titre{1}', [count, count > 1 ? 's' : '']),
           entries: loading ? const [] : entries,
-          order: _sort,
+          order: _filters.sort,
           embedded: widget.embedded,
-          sortControl: CatalogSortCapsule<_SortOption>(
+          sortControl: CatalogSortCapsule<LibrarySort>(
             sortOptions: sortOptions,
-            sort: _sort,
-            onSortChanged: (v) => setState(() => _sort = v),
+            sort: _filters.sort,
+            onSortChanged: (v) =>
+                setState(() => _filters = _filters.copyWith(sort: v)),
           ),
         ),
       );
@@ -177,23 +182,45 @@ class _LibraryScreenState extends State<LibraryScreen> {
           // Sur un grand écran du bureau, la fiche du titre survolé à gauche,
           // comme dans la recherche (ADR-0140).
           : LayoutBuilder(builder: (context, box) {
+              // Le panneau des filtres ouvert prend la place du volet : la
+              // grille passe à gauche, le panneau à droite.
+              final panelOpen = _filtersOpen && !compact && !TvMode.isTv;
               final spotlight = !compact &&
+                  !panelOpen &&
                   !loading &&
                   entries.isNotEmpty &&
                   LibraryDesktopSpotlight.fits(box.maxWidth);
-              final grid = _grid(
-                  context, lp, entries, loading, count, sortOptions,
-                  spotlight: spotlight,
-                  // À côté du volet, les affiches du mur d'un téléviseur
-                  // (ADR-0156).
-                  tileScale: spotlight
-                      ? SpotlightScale.tileScaleFor(box.maxWidth)
-                      : 1);
-              if (!spotlight) return grid;
-              return LibraryDesktopSpotlight(
-                entries: entries,
-                presented: _presented,
-                child: grid,
+              final grid = KeyedSubtree(
+                key: _gridKey,
+                child: _grid(context, lp, entries, loading, count, sortOptions,
+                    spotlight: spotlight,
+                    // À côté du volet, les affiches du mur d'un téléviseur
+                    // (ADR-0156).
+                    tileScale: spotlight
+                        ? SpotlightScale.tileScaleFor(box.maxWidth)
+                        : 1),
+              );
+              final page = spotlight
+                  ? LibraryDesktopSpotlight(
+                      entries: entries,
+                      presented: _presented,
+                      child: grid,
+                    )
+                  : grid;
+              if (compact || TvMode.isTv) return page;
+              void close() => setState(() => _filtersOpen = false);
+              return OnyxFilterDock(
+                top: shellTabTopInset(context, embedded: widget.embedded),
+                onDismiss: close,
+                page: page,
+                panel: panelOpen
+                    ? LibraryFiltersPanel(
+                        filters: _filters,
+                        isShows: _isShows,
+                        onChanged: (f) => setState(() => _filters = f),
+                        onClose: close,
+                      )
+                    : null,
               );
             }),
     );
@@ -205,7 +232,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     List<LibraryEntry> entries,
     bool loading,
     int count,
-    Map<_SortOption, String> sortOptions, {
+    Map<LibrarySort, String> sortOptions, {
     required bool spotlight,
     double tileScale = 1,
   }) {
@@ -234,15 +261,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
               // droite, sous le menu.
               child: ExcludeFocus(
                 excluding: loading,
-                child: CatalogHeader<_SortOption>(
+                child: CatalogHeader<LibrarySort>(
                   title: ShellTabs.label(library),
                   countLabel: loading
                       ? null
                       : tr('{0} titre{1}', [count, count > 1 ? 's' : '']),
                   sortOptions: sortOptions,
-                  sort: _sort,
-                  onSortChanged: (v) => setState(() => _sort = v),
+                  sort: _filters.sort,
+                  onSortChanged: (v) =>
+                      setState(() => _filters = _filters.copyWith(sort: v)),
                   compact: compact,
+                  // Le téléviseur garde le menu de tri : le panneau ne s'y
+                  // ouvre pas.
+                  onFilters: TvMode.isTv ? null : _openFilters,
+                  activeFilters: _filters.activeCount,
                 ),
               ),
             ),
@@ -252,6 +284,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
               padding: EdgeInsets.fromLTRB(
                   horizontalPadding, 24, horizontalPadding, 48),
               sliver: const PosterGridSkeleton(),
+            )
+          else if (entries.isEmpty && _filters.activeCount > 0)
+            SliverFillRemaining(
+              child: EmptyStateView(
+                icon: AppIcons.filters,
+                title: tr('Aucun titre ne correspond'),
+                message: tr('Aucun titre de cette bibliothèque ne passe '
+                    'ces filtres.'),
+                actionLabel: tr('Effacer les filtres'),
+                actionIcon: AppIcons.close,
+                onAction: () => setState(() => _filters = _filters.cleared()),
+              ),
             )
           else if (entries.isEmpty)
             SliverFillRemaining(

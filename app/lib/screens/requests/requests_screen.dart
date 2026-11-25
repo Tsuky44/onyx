@@ -13,6 +13,7 @@ import '../../utils/responsive.dart';
 import '../../utils/poster_url.dart';
 import '../../widgets/global/app_network_image.dart';
 import '../../widgets/global/empty_state.dart';
+import '../../widgets/global/filter_panel/onyx_filter_dock.dart';
 import '../../widgets/global/poster_grid_zoom_region.dart';
 import '../../widgets/global/poster_grid_display_menu.dart';
 import '../../widgets/global/staggered_entrance.dart';
@@ -21,6 +22,7 @@ import 'my_requests_screen.dart';
 import 'widgets/request_filter_bar.dart';
 import 'widgets/request_filters_bottom_sheet.dart';
 import 'widgets/request_filters_fab.dart';
+import 'widgets/request_filters_side_panel.dart';
 import 'widgets/request_filters_sheet.dart';
 import 'widgets/request_media_card.dart';
 import 'widgets/request_type_switch.dart';
@@ -51,6 +53,10 @@ class _RequestsScreenState extends State<RequestsScreen> {
   RequestCatalogFilters _draftFilters = RequestCatalogFilters.defaults;
   Timer? _searchDebounce;
   Timer? _filtersDebounce;
+
+  /// Le panneau latéral des filtres, ouvert par le bouton flottant sur
+  /// grand écran.
+  bool _filtersPanelOpen = false;
 
   /// Le serveur relaie les demandes du compte chez OnyxHub (ADR-0073).
   bool _hasMyRequests = false;
@@ -194,9 +200,14 @@ class _RequestsScreenState extends State<RequestsScreen> {
     );
   }
 
-  /// La feuille du bouton flottant (hors TV) : chaque changement passe par
-  /// le même [_onFiltersChanged] que les capsules.
-  void _openFiltersSheet() {
+  /// Le bouton flottant (hors TV) : la feuille du bas sur téléphone, le
+  /// panneau latéral ailleurs. Chaque changement passe par le même
+  /// [_onFiltersChanged] que les capsules.
+  void _openFilters() {
+    if (!AppLayout.isCompact(context)) {
+      setState(() => _filtersPanelOpen = true);
+      return;
+    }
     RequestFiltersBottomSheet.show(
       context,
       initial: _draftFilters,
@@ -350,14 +361,15 @@ class _RequestsScreenState extends State<RequestsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: TvMode.isTv
+      // Le panneau ouvert a sa propre croix : le bouton se retire au lieu de
+      // flotter par-dessus.
+      floatingActionButton: TvMode.isTv || (_filtersPanelOpen && !compact)
           ? null
           : RequestFiltersFab(
-              activeCount:
-                  RequestFiltersBottomSheet.activeCount(_draftFilters),
-              onPressed: _openFiltersSheet,
+              activeCount: RequestFiltersBottomSheet.activeCount(_draftFilters),
+              onPressed: _openFilters,
             ),
-      body: PosterGridZoomRegion(
+      body: _withFiltersPanel(PosterGridZoomRegion(
         child: CustomScrollView(
           scrollCacheExtent: AppLayout.imageCacheExtent(context),
           controller: _scrollController,
@@ -506,7 +518,27 @@ class _RequestsScreenState extends State<RequestsScreen> {
               ),
           ],
         ),
-      ),
+      )),
+    );
+  }
+
+  /// Le panneau latéral des filtres posé à droite de la page
+  /// ([OnyxFilterDock] décide s'il la resserre ou passe par-dessus).
+  Widget _withFiltersPanel(Widget page) {
+    if (TvMode.isTv || AppLayout.isCompact(context)) return page;
+    void close() => setState(() => _filtersPanelOpen = false);
+    return OnyxFilterDock(
+      top: shellTabTopInset(context, embedded: widget.embedded),
+      onDismiss: close,
+      page: page,
+      panel: _filtersPanelOpen
+          ? RequestFiltersSidePanel(
+              filters: _draftFilters,
+              mediaType: _draftType,
+              onChanged: _onFiltersChanged,
+              onClose: close,
+            )
+          : null,
     );
   }
 }

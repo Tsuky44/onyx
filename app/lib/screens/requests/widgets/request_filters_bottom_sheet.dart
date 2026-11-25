@@ -10,7 +10,7 @@ import '../../../theme/app_motion.dart';
 import '../../../theme/app_type.dart';
 import '../../../widgets/global/onyx_menu.dart';
 import 'request_filter_bar.dart';
-import 'request_filter_chip.dart';
+import '../../../widgets/global/filter_panel/onyx_filter_chip.dart';
 import 'request_filter_fields.dart';
 import 'request_filters_sheet_rows.dart';
 import 'request_provider_logo.dart';
@@ -19,7 +19,8 @@ import 'request_provider_logo.dart';
 enum _Page { sort, genres, period, language, streaming, duration }
 
 /// La feuille des filtres qui remonte du bas, ouverte par le bouton flottant
-/// de la page Demandes (hors TV).
+/// de la page Demandes sur téléphone ; plus large, c'est le panneau latéral
+/// (`RequestFiltersSidePanel`, ADR du 2026-11-25).
 ///
 /// Deux niveaux, comme les réglages d'un téléphone : un index d'une ligne
 /// par filtre, qui dit sa valeur (« Tous », « Action, Drame »), puis le
@@ -450,8 +451,7 @@ class _RequestFiltersBottomSheetState extends State<RequestFiltersBottomSheet> {
         RequestFilterOptionRow(
           label: g.name,
           selected: _f.genres.contains(g.id),
-          onTap: () =>
-              _update(_f.copyWith(genres: _toggled(_f.genres, g.id))),
+          onTap: () => _update(_f.copyWith(genres: _toggled(_f.genres, g.id))),
         ),
     ]);
   }
@@ -485,7 +485,7 @@ class _RequestFiltersBottomSheetState extends State<RequestFiltersBottomSheet> {
               _update(_f.copyWith(watchRegion: value));
               _loadProviders();
             },
-            child: RequestFilterChip(
+            child: OnyxFilterChip(
               label: tr(requestCatalogRegions
                   .firstWhere((r) => r.value == _f.watchRegion,
                       orElse: () =>

@@ -6,7 +6,8 @@ import '../../../theme/app_icons.dart';
 import '../../../theme/app_motion.dart';
 import '../../../theme/app_type.dart';
 
-/// Une capsule de la rangée des filtres des demandes.
+/// Une capsule des filtres : la rangée du haut des Demandes et le panneau
+/// des filtres (`OnyxFilterPanel`).
 ///
 /// Au repos : un contour discret et un chevron, elle ouvre son menu. Active
 /// (un filtre posé) : blanche à l'encre noire, comme la ligne allumée des
@@ -15,8 +16,8 @@ import '../../../theme/app_type.dart';
 ///
 /// [onTap] est nul quand un `OnyxMenuButton` enveloppe la capsule et
 /// s'occupe d'ouvrir le menu.
-class RequestFilterChip extends StatefulWidget {
-  const RequestFilterChip({
+class OnyxFilterChip extends StatefulWidget {
+  const OnyxFilterChip({
     super.key,
     required this.label,
     this.active = false,
@@ -39,10 +40,10 @@ class RequestFilterChip extends StatefulWidget {
   static const double height = 34;
 
   @override
-  State<RequestFilterChip> createState() => _RequestFilterChipState();
+  State<OnyxFilterChip> createState() => _OnyxFilterChipState();
 }
 
-class _RequestFilterChipState extends State<RequestFilterChip> {
+class _OnyxFilterChipState extends State<OnyxFilterChip> {
   bool _hovered = false;
 
   @override
@@ -58,8 +59,10 @@ class _RequestFilterChipState extends State<RequestFilterChip> {
     final pill = AnimatedContainer(
       duration: AppMotion.fade(context, AppMotion.micro),
       curve: AppMotion.curve,
-      height: RequestFilterChip.height,
-      padding: EdgeInsets.only(left: 14, right: clear != null
+      height: OnyxFilterChip.height,
+      padding: EdgeInsets.only(
+          left: 14,
+          right: clear != null
               ? 4
               : widget.chevron
                   ? 12

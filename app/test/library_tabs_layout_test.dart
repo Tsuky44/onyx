@@ -226,7 +226,11 @@ void main() {
     expect(find.text('Kaamelott'), findsOneWidget);
 
     // Une série n'a pas de position de lecture à elle : pas de tri « En cours ».
-    await tester.tap(find.byTooltip('Trier'));
+    // Le tri est dans la feuille des filtres (visionnage replié : son
+    // « En cours » n'est pas à l'écran).
+    await tester.tap(find.byTooltip('Trier et filtrer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Trier par'));
     await tester.pumpAndSettle();
     expect(find.text('En cours'), findsNothing);
     expect(find.text('A → Z'), findsOneWidget);

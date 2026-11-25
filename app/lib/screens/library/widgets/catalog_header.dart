@@ -24,6 +24,13 @@ class CatalogHeader<T> extends StatelessWidget {
   final ValueChanged<T> onSortChanged;
   final bool compact;
 
+  /// Non nul hors téléviseur : un bouton « Filtres » prend la place du menu
+  /// de tri, qui passe dans le panneau des filtres avec le reste.
+  final VoidCallback? onFilters;
+
+  /// Le nombre de familles de filtres posées, le tri mis à part.
+  final int activeFilters;
+
   const CatalogHeader({
     super.key,
     required this.title,
@@ -32,6 +39,8 @@ class CatalogHeader<T> extends StatelessWidget {
     required this.sort,
     required this.onSortChanged,
     this.compact = false,
+    this.onFilters,
+    this.activeFilters = 0,
   });
 
   @override
@@ -77,37 +86,44 @@ class CatalogHeader<T> extends StatelessWidget {
             ],
           ),
         ),
-        OnyxMenuButton<T>(
-          tooltip: tr('Trier'),
-          onSelected: onSortChanged,
-          items: [
-            for (final entry in sortOptions.entries)
-              OnyxMenuItem<T>(
-                value: entry.key,
-                label: tr(entry.value),
-                checked: entry.key == sort,
-              ),
-          ],
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  tr(sortOptions[sort] ?? ''),
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: AppType.body,
-                    fontWeight: FontWeight.w500,
-                  ),
+        if (onFilters != null)
+          _FiltersButton(
+            onPressed: onFilters!,
+            active: activeFilters,
+            compact: compact,
+          )
+        else
+          OnyxMenuButton<T>(
+            tooltip: tr('Trier'),
+            onSelected: onSortChanged,
+            items: [
+              for (final entry in sortOptions.entries)
+                OnyxMenuItem<T>(
+                  value: entry.key,
+                  label: tr(entry.value),
+                  checked: entry.key == sort,
                 ),
-                const SizedBox(width: 4),
-                const Icon(AppIcons.sort,
-                    size: 18, color: AppColors.textSecondary),
-              ],
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    tr(sortOptions[sort] ?? ''),
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: AppType.body,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(AppIcons.sort,
+                      size: 18, color: AppColors.textSecondary),
+                ],
+              ),
             ),
           ),
-        ),
         if (PosterGridDisplayMenu.availableIn(context)) ...[
           const SizedBox(width: 12),
           // La ligne est alignée sur la ligne de base du texte, que le bouton
@@ -120,6 +136,52 @@ class CatalogHeader<T> extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Le bouton « Filtres » de l'en-tête, dans le dessin du menu de tri qu'il
+/// remplace : du texte secondaire et une icône, sans cadre. Avec un filtre
+/// posé, il passe en blanc et dit le compte.
+class _FiltersButton extends StatelessWidget {
+  const _FiltersButton({
+    required this.onPressed,
+    required this.active,
+    required this.compact,
+  });
+
+  final VoidCallback onPressed;
+  final int active;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = active > 0 ? tr('Filtres · {0}', [active]) : tr('Filtres');
+    final color = active > 0 ? AppColors.textPrimary : AppColors.textSecondary;
+    return Tooltip(
+      message: tr('Trier et filtrer'),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: AppType.body,
+                  fontWeight: active > 0 ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(AppIcons.filters, size: 18, color: color),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
