@@ -678,8 +678,8 @@
     "semantic_hash": ""
   },
   "app/lib/l10n/en.dart": {
-    "mtime": 1795611062.0160062,
-    "seen": 1795611164.5906591,
+    "mtime": 1795611176.2766483,
+    "seen": 1795612845.0560012,
     "ast_hash": "106ccdb676f5334751ad0365be999a11",
     "semantic_hash": ""
   },
@@ -1080,8 +1080,8 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/library_screen.dart": {
-    "mtime": 1795611062.0190046,
-    "seen": 1795611164.591664,
+    "mtime": 1795611176.2806656,
+    "seen": 1795612845.0560012,
     "ast_hash": "d9ac730790ceff6fe1f4a6d9f53262bc",
     "semantic_hash": ""
   },
@@ -1122,8 +1122,8 @@
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/catalog_header.dart": {
-    "mtime": 1795611062.0210042,
-    "seen": 1795611164.591664,
+    "mtime": 1795611176.2826655,
+    "seen": 1795612845.0560012,
     "ast_hash": "e98be1883e6be445f0fb57c95d929813",
     "semantic_hash": ""
   },
@@ -1884,14 +1884,14 @@
     "semantic_hash": ""
   },
   "app/lib/screens/requests/request_detail_screen.dart": {
-    "mtime": 1795611062.0245037,
-    "seen": 1795611164.5921707,
+    "mtime": 1795611176.2861652,
+    "seen": 1795612845.0565069,
     "ast_hash": "e8b71e6040309f310c518e5dd91e9cc1",
     "semantic_hash": ""
   },
   "app/lib/screens/requests/requests_screen.dart": {
-    "mtime": 1795611062.0270028,
-    "seen": 1795611164.5921707,
+    "mtime": 1795611176.2876692,
+    "seen": 1795612845.0565069,
     "ast_hash": "36f3c7dfc8d1c452edca7daedca3c93e",
     "semantic_hash": ""
   },
@@ -4122,8 +4122,8 @@
     "semantic_hash": ""
   },
   "app/test/library_tabs_layout_test.dart": {
-    "mtime": 1795611062.0425234,
-    "seen": 1795611164.5936706,
+    "mtime": 1795611176.302193,
+    "seen": 1795612845.0575054,
     "ast_hash": "cec97e5c4d3a65fea4967986ff340c47",
     "semantic_hash": ""
   },
@@ -5598,9 +5598,9 @@
     "semantic_hash": ""
   },
   "docker-compose.yml": {
-    "mtime": 1795541465.9945838,
-    "seen": 1795611164.5956705,
-    "ast_hash": "83572fab72028e5a1208373524d044d9",
+    "mtime": 1795612539.0068417,
+    "seen": 1795612845.059009,
+    "ast_hash": "b9d439b9b17579d3695f6626f7dbb132",
     "semantic_hash": ""
   },
   "docs/store/google-play/src/music.py": {
@@ -8280,8 +8280,8 @@
     "semantic_hash": ""
   },
   "server/main.go": {
-    "mtime": 1795611061.8738422,
-    "seen": 1795611164.59517,
+    "mtime": 1795611176.4802191,
+    "seen": 1795612845.0580044,
     "ast_hash": "31eb209e03d4ed30a600b817ad158e52",
     "semantic_hash": ""
   },
@@ -8604,9 +8604,9 @@
     "semantic_hash": ""
   },
   "server/streaming/encoder.go": {
-    "mtime": 1795611061.8763485,
-    "seen": 1795611164.59517,
-    "ast_hash": "b19ff412a91443c1a5eb71f262628244",
+    "mtime": 1795612255.8968606,
+    "seen": 1795612845.059009,
+    "ast_hash": "2b7d8d53f2323219ee65d68c2f6c614f",
     "semantic_hash": ""
   },
   "server/streaming/encoder_test.go": {
@@ -8616,9 +8616,9 @@
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg.go": {
-    "mtime": 1795611061.8788574,
-    "seen": 1795611164.59517,
-    "ast_hash": "3593e8778ae01758a47f1c0caec6c211",
+    "mtime": 1795612255.7057207,
+    "seen": 1795612845.059009,
+    "ast_hash": "95aa43528bf572292b5b0199e2ebf2fe",
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg_test.go": {
@@ -8628,9 +8628,9 @@
     "semantic_hash": ""
   },
   "server/streaming/handler.go": {
-    "mtime": 1795611061.8808577,
-    "seen": 1795611164.59517,
-    "ast_hash": "60a53fef4506b6c8790027584c381a76",
+    "mtime": 1795612276.6077926,
+    "seen": 1795612845.059009,
+    "ast_hash": "7cd6c78bbcdc951d0a39c52ae13d6331",
     "semantic_hash": ""
   },
   "server/streaming/handler_files_test.go": {
@@ -8688,9 +8688,9 @@
     "semantic_hash": ""
   },
   "server/streaming/manager.go": {
-    "mtime": 1791465408.3096106,
-    "seen": 1795611164.59517,
-    "ast_hash": "ad795a4a1316f421b3d4063826d8195b",
+    "mtime": 1795612364.824999,
+    "seen": 1795612845.059009,
+    "ast_hash": "1dda667a86887c7a5d94a8803f6e7252",
     "semantic_hash": ""
   },
   "server/streaming/master_playlist.go": {
@@ -8718,8 +8718,8 @@
     "semantic_hash": ""
   },
   "server/streaming/previews.go": {
-    "mtime": 1795611061.885355,
-    "seen": 1795611164.59517,
+    "mtime": 1795611176.4937294,
+    "seen": 1795612845.059009,
     "ast_hash": "d6560cd4d49d5375f2d9b16bbea1e8f8",
     "semantic_hash": ""
   },
@@ -8790,9 +8790,9 @@
     "semantic_hash": ""
   },
   "server/streaming/session.go": {
-    "mtime": 1795611061.8883548,
-    "seen": 1795611164.59517,
-    "ast_hash": "b998924ebe953830105d9b1838f76908",
+    "mtime": 1795612340.9705276,
+    "seen": 1795612845.059009,
+    "ast_hash": "a0e1d330caf85ed4ec3a3948fe0be3db",
     "semantic_hash": ""
   },
   "server/streaming/standby_test.go": {
@@ -8802,8 +8802,8 @@
     "semantic_hash": ""
   },
   "server/streaming/tonemap_dovi.go": {
-    "mtime": 1795611061.8903606,
-    "seen": 1795611164.59517,
+    "mtime": 1795611176.4987414,
+    "seen": 1795612845.059009,
     "ast_hash": "eb206b47222fa02bcbf60af958212ece",
     "semantic_hash": ""
   },
@@ -8814,9 +8814,9 @@
     "semantic_hash": ""
   },
   "server/streaming/workspace.go": {
-    "mtime": 1790176537.7541287,
-    "seen": 1795611164.59517,
-    "ast_hash": "8a13e9448763fe8042e24d32c68a9647",
+    "mtime": 1795612260.351938,
+    "seen": 1795612845.059009,
+    "ast_hash": "4b2aea0c46f9afa6bbc1fee7191fb29e",
     "semantic_hash": ""
   },
   "server/streaming/workspace_test.go": {
@@ -10164,8 +10164,8 @@
     "semantic_hash": ""
   },
   "docs/adr/0023-encodeur-materiel-optionnel.md": {
-    "mtime": 1795611061.7446768,
-    "seen": 1795611164.5961704,
+    "mtime": 1795611176.3071933,
+    "seen": 1795612845.0595136,
     "ast_hash": "87e8be7eb11380d028eb664e653acbbc",
     "semantic_hash": ""
   },
@@ -10806,9 +10806,9 @@
     "semantic_hash": ""
   },
   "server/README.md": {
-    "mtime": 1795611061.8713298,
-    "seen": 1795611164.5966702,
-    "ast_hash": "4dfa221e30fd8111b2be3d161a343b7b",
+    "mtime": 1795612548.6026747,
+    "seen": 1795612845.0595136,
+    "ast_hash": "f512dcb2772dc1c7c67faac192a8e639",
     "semantic_hash": ""
   },
   "app/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
@@ -13068,8 +13068,8 @@
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/request_filter_bar.dart": {
-    "mtime": 1795611062.029511,
-    "seen": 1795611164.5921707,
+    "mtime": 1795611176.2901642,
+    "seen": 1795612845.0565069,
     "ast_hash": "2b7161dcb482954d977d1670b6ed2455",
     "semantic_hash": ""
   },
@@ -13188,8 +13188,8 @@
     "semantic_hash": ""
   },
   "app/test/request_filter_bar_test.dart": {
-    "mtime": 1795611062.044024,
-    "seen": 1795611164.594171,
+    "mtime": 1795611176.3041928,
+    "seen": 1795612845.0575054,
     "ast_hash": "2363e864ea2dde54a3f9389fee6c9bd9",
     "semantic_hash": ""
   },
@@ -13560,8 +13560,8 @@
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/request_filters_bottom_sheet.dart": {
-    "mtime": 1795611062.031525,
-    "seen": 1795611164.5921707,
+    "mtime": 1795611176.2916658,
+    "seen": 1795612845.0565069,
     "ast_hash": "01848d5cd778db0def90b720f97caf2b",
     "semantic_hash": ""
   },
@@ -15240,117 +15240,189 @@
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters.go": {
-    "mtime": 1795611061.8818543,
-    "seen": 1795611164.59517,
+    "mtime": 1795611176.489719,
+    "seen": 1795612845.059009,
     "ast_hash": "fc744646256e983b914c04133b0d5993",
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters_test.go": {
-    "mtime": 1795611061.8828547,
-    "seen": 1795611164.59517,
+    "mtime": 1795611176.4912195,
+    "seen": 1795612845.059009,
     "ast_hash": "048dbd7abbc82247c7714f322fb9f311",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-fytroz-la-chaine-vaapi-ne-ramene-plus-le-4k-en-memoire.md": {
-    "mtime": 1795611061.746183,
-    "seen": 1795611164.5961704,
+    "mtime": 1795611176.308193,
+    "seen": 1795612845.0595136,
     "ast_hash": "ef9f13bc9fa631bca525dbbcc3768c9b",
     "semantic_hash": ""
   },
   "server/streaming/vulkan_device.go": {
-    "mtime": 1795611061.8913608,
-    "seen": 1795611164.59517,
+    "mtime": 1795611176.5002463,
+    "seen": 1795612845.059009,
     "ast_hash": "f859422933fe91cbe88907c552a81ff8",
     "semantic_hash": ""
   },
   "server/streaming/vulkan_device_test.go": {
-    "mtime": 1795611061.8923614,
-    "seen": 1795611164.59517,
+    "mtime": 1795611176.5012486,
+    "seen": 1795612845.059009,
     "ast_hash": "ff313c8f39a669a92e825bb23c4079f1",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-fytroz-libplacebo-prend-le-peripherique-vulkan-le-plus-rapide.md": {
-    "mtime": 1795611061.7471995,
-    "seen": 1795611164.5961704,
+    "mtime": 1795611176.3091931,
+    "seen": 1795612845.0595136,
     "ast_hash": "eb18aee8dcbacdd102b0f8b62a0f2e8e",
     "semantic_hash": ""
   },
   "app/lib/screens/library/library_filters.dart": {
-    "mtime": 1795611062.0170026,
-    "seen": 1795611164.591664,
+    "mtime": 1795611176.2786589,
+    "seen": 1795612845.0560012,
     "ast_hash": "2601b6aa595b71492863ec65f7a0f2c4",
     "semantic_hash": ""
   },
   "app/lib/screens/library/widgets/library_filters_panel.dart": {
-    "mtime": 1795611062.022005,
-    "seen": 1795611164.591664,
+    "mtime": 1795611176.283666,
+    "seen": 1795612845.0560012,
     "ast_hash": "a68c4fb4f65b8422c628f4ee2757431f",
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/request_filters_side_panel.dart": {
-    "mtime": 1795611062.032525,
-    "seen": 1795611164.5921707,
+    "mtime": 1795611176.2931786,
+    "seen": 1795612845.0565069,
     "ast_hash": "0831feeb582bbbb8abde8db8e6b1eecf",
     "semantic_hash": ""
   },
   "app/lib/screens/requests/widgets/request_filters_side_sections.dart": {
-    "mtime": 1795611062.0335238,
-    "seen": 1795611164.5921707,
+    "mtime": 1795611176.2946818,
+    "seen": 1795612845.0565069,
     "ast_hash": "1385d8a48e60af705d7cb428b1140969",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/filter_panel/filter_presets.dart": {
-    "mtime": 1795611062.036024,
-    "seen": 1795611164.5931735,
+    "mtime": 1795611176.2961943,
+    "seen": 1795612845.0570045,
     "ast_hash": "06287deb1598afccbd8907f541965f28",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/filter_panel/onyx_filter_chip.dart": {
-    "mtime": 1795611062.037024,
-    "seen": 1795611164.5931735,
+    "mtime": 1795611176.297194,
+    "seen": 1795612845.0570045,
     "ast_hash": "b3229f6f90edb224031c7ad135bab172",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/filter_panel/onyx_filter_dock.dart": {
-    "mtime": 1795611062.0380242,
-    "seen": 1795611164.5931735,
+    "mtime": 1795611176.2981925,
+    "seen": 1795612845.0570045,
     "ast_hash": "94bfbfc0a85c610c14f31f021ef311cb",
     "semantic_hash": ""
   },
   "app/lib/widgets/global/filter_panel/onyx_filter_panel.dart": {
-    "mtime": 1795611062.039024,
-    "seen": 1795611164.5931735,
+    "mtime": 1795611176.2991922,
+    "seen": 1795612845.0570045,
     "ast_hash": "f3c38790733154ea6bf736168a6a6657",
     "semantic_hash": ""
   },
   "app/test/library_filters_test.dart": {
-    "mtime": 1795611062.0405252,
-    "seen": 1795611164.5936706,
+    "mtime": 1795611176.3001924,
+    "seen": 1795612845.0575054,
     "ast_hash": "b2039b25353621804d9f87b32a6d811c",
     "semantic_hash": ""
   },
   "app/test/request_filters_side_panel_test.dart": {
-    "mtime": 1795611062.0450237,
-    "seen": 1795611164.594171,
+    "mtime": 1795611176.3051925,
+    "seen": 1795612845.0575054,
     "ast_hash": "841d7e08c0db7e9afb8cb3d3326ecff4",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-tsuky-notifications-instantanees-par-un-relais-aveugle.md": {
-    "mtime": 1795611062.330831,
-    "seen": 1795611164.5961704,
+    "mtime": 1795611176.3106985,
+    "seen": 1795612845.0595136,
     "ast_hash": "f80705c56bad1e9b4d72c1186b82e15c",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-tsuky-panneau-lateral-des-filtres.md": {
-    "mtime": 1795611062.046528,
-    "seen": 1795611164.5961704,
+    "mtime": 1795611176.3122046,
+    "seen": 1795612845.0595136,
     "ast_hash": "6d7768fcaad4ae4f9598e042e8c2cc6a",
     "semantic_hash": ""
   },
   "docs/transcodage-adaptatif.md": {
-    "mtime": 1795611062.3318307,
-    "seen": 1795611164.5961704,
-    "ast_hash": "4546a5798cfdd3b9ad3d88302cca14e8",
+    "mtime": 1795612564.8151066,
+    "seen": 1795612845.0595136,
+    "ast_hash": "6d816f1e93b8425e869b93c9668e0ac4",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/bench/bench_test.go": {
+    "mtime": 1795612755.7995832,
+    "seen": 1795612845.059009,
+    "ast_hash": "a0074183e7b7d986a0ad14524865e90d",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/bench/cost.go": {
+    "mtime": 1795612755.285827,
+    "seen": 1795612845.059009,
+    "ast_hash": "d7619d6f013bd1a89f3718fd2c3090e0",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/bench/measure.go": {
+    "mtime": 1795612493.5727549,
+    "seen": 1795612845.059009,
+    "ast_hash": "560b61ae96408a818a66600671dbc509",
+    "semantic_hash": ""
+  },
+  "server/streaming/capacity/bench/sources.go": {
+    "mtime": 1795612493.3431208,
+    "seen": 1795612845.059009,
+    "ast_hash": "3e2cebf9022063b9ee4857fa116338e0",
+    "semantic_hash": ""
+  },
+  "server/streaming/cores.go": {
+    "mtime": 1795612246.2919915,
+    "seen": 1795612845.059009,
+    "ast_hash": "dc4ba4bb8622a298172804acdde24964",
+    "semantic_hash": ""
+  },
+  "server/streaming/cores_test.go": {
+    "mtime": 1795612415.187171,
+    "seen": 1795612845.059009,
+    "ast_hash": "92108ccc45ca5908e1a89b511905a8dd",
+    "semantic_hash": ""
+  },
+  "server/streaming/cpu_cost.go": {
+    "mtime": 1795612341.203782,
+    "seen": 1795612845.059009,
+    "ast_hash": "e44bc93268f1074a5a4988a54e611fb1",
+    "semantic_hash": ""
+  },
+  "server/streaming/cpu_cost_test.go": {
+    "mtime": 1795612414.9624405,
+    "seen": 1795612845.059009,
+    "ast_hash": "286e54fee8647591b51be17d6808cdc1",
+    "semantic_hash": ""
+  },
+  "server/streaming/freeze_test.go": {
+    "mtime": 1795612414.7020595,
+    "seen": 1795612845.059009,
+    "ast_hash": "89e7030146e72719aedc71ba1563c74b",
+    "semantic_hash": ""
+  },
+  "server/streaming/pipeline_log.go": {
+    "mtime": 1795612276.195001,
+    "seen": 1795612845.059009,
+    "ast_hash": "bea3e8cdaa9e696285020db5df528630",
+    "semantic_hash": ""
+  },
+  "server/streaming/pipeline_log_test.go": {
+    "mtime": 1795612415.4559922,
+    "seen": 1795612845.059009,
+    "ast_hash": "81f85af4858ba83d75e788c24735a10f",
+    "semantic_hash": ""
+  },
+  "docs/adr/2026-11-25-tsuky-session-remplacee-gelee-et-threads-reels.md": {
+    "mtime": 1795612571.2721639,
+    "seen": 1795612845.0595136,
+    "ast_hash": "3b4a7ab7dd5180db423182c534fcfd2c",
     "semantic_hash": ""
   }
 }
