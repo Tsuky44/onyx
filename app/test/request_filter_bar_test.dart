@@ -5,7 +5,7 @@ import 'package:onyx/models/request_catalog_filters.dart';
 import 'package:onyx/providers/media_requests_provider.dart';
 import 'package:onyx/screens/requests/requests_screen.dart';
 import 'package:onyx/screens/requests/widgets/request_filter_bar.dart';
-import 'package:onyx/screens/requests/widgets/request_filter_chip.dart';
+import 'package:onyx/widgets/global/filter_panel/onyx_filter_chip.dart';
 import 'package:onyx/services/api_client.dart';
 import 'package:onyx/tv/tv_mode.dart';
 import 'package:provider/provider.dart';
@@ -67,10 +67,10 @@ Future<void> _settleReload(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Finder _chip(String label) => find.widgetWithText(RequestFilterChip, label);
+Finder _chip(String label) => find.widgetWithText(OnyxFilterChip, label);
 
-RequestFilterChip _chipWidget(WidgetTester tester, String label) =>
-    tester.widget<RequestFilterChip>(_chip(label));
+OnyxFilterChip _chipWidget(WidgetTester tester, String label) =>
+    tester.widget<OnyxFilterChip>(_chip(label));
 
 void main() {
   setUp(() {

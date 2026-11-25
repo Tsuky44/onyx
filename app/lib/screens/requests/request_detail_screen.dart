@@ -165,8 +165,9 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   }
 
   /// « Demander » envoie le titre entier (un film, ou toutes les saisons d'une
-  /// série encore vierge) et referme la fiche ; quand MediaHub laisse choisir
-  /// les saisons ([RequestAccess.seasonChoice]), il ouvre d'abord leur liste.
+  /// série encore vierge) et recharge la fiche, qui reste ouverte ; quand
+  /// MediaHub laisse choisir les saisons ([RequestAccess.seasonChoice]), il
+  /// ouvre d'abord leur liste.
   /// « Compléter » ouvre la liste des saisons pas encore demandées
   /// ([RequestSeasonPickerSheet]) et n'envoie que celles qu'on coche, puis
   /// recharge la fiche pour que « Lire » reste là. Une saison seule se
@@ -196,14 +197,11 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
           .read<MediaRequestsProvider>()
           .request(details, seasons: seasons);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('Demande envoyée.'))));
-      if (complete) {
-        setState(() => _submitting = false);
-        _retry();
-      } else {
-        Navigator.of(context).pop();
-      }
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(tr('Demande envoyée.'))));
+      // La fiche reste ouverte et se recharge : l'état « demandé » s'y affiche.
+      setState(() => _submitting = false);
+      _retry();
     } catch (error) {
       if (mounted) {
         // MediaHub dit pourquoi il refuse (droit, quota, déjà demandé) :

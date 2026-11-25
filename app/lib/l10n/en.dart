@@ -6,10 +6,16 @@
 const Map<String, String> kEnglish = <String, String>{
   ' supprimé':
       ' deleted',
+  '1 h 30 à 2 h':
+      '1 h 30 to 2 h',
   '1 épisode':
       '1 episode',
   '1 épisode restant':
       '1 episode left',
+  '2000 – 2009':
+      '2000 – 2009',
+  '2010 – 2019':
+      '2010 – 2019',
   '24 heures':
       '24 hours',
   '30 derniers jours':
@@ -184,6 +190,12 @@ const Map<String, String> kEnglish = <String, String>{
       'Wait for Wi-Fi',
   'Aucun genre.':
       'No genres.',
+  'Aucun titre de cette bibliothèque ne passe ces filtres.':
+      'No title in this library matches these filters.',
+  'Aucun titre ne correspond':
+      'No matching titles',
+  'Avant 2000':
+      'Before 2000',
   'Brésil':
       'Brazil',
   'Chacun la rejoint':
@@ -198,10 +210,16 @@ const Map<String, String> kEnglish = <String, String>{
       'South Korea',
   'Danemark':
       'Denmark',
+  'Dates précises':
+      'Exact dates',
+  'Depuis 2020':
+      'Since 2020',
   'Depuis ce panneau, pendant la lecture.':
       'From this panel, during playback.',
   'Dernier épisode':
       'Last episode',
+  'Durée précise':
+      'Exact runtime',
   'Dès {0}':
       'From {0}',
   'Démarrez la séance':
@@ -710,6 +728,10 @@ const Map<String, String> kEnglish = <String, String>{
       'Request',
   'Cochez les saisons à ajouter.':
       'Tick the seasons to add.',
+  'Effacer les filtres':
+      'Clear filters',
+  'Fermer les filtres':
+      'Close filters',
   'Film à venir':
       'Upcoming movie',
   'Fin à {0}':
@@ -740,10 +762,16 @@ const Map<String, String> kEnglish = <String, String>{
       'Account menu › Join a session.',
   'Mexique':
       'Mexico',
+  'Moins de 1 h 30':
+      'Under 1 h 30',
+  'Non vus':
+      'Unwatched',
   'Norvège':
       'Norway',
   'Pays-Bas':
       'Netherlands',
+  'Plus de 2 h':
+      'Over 2 h',
   'Prochain épisode':
       'Next episode',
   'Regardez à plusieurs':
@@ -756,14 +784,30 @@ const Map<String, String> kEnglish = <String, String>{
       'Streaming · {0}',
   'Suède':
       'Sweden',
+  'Tous les genres':
+      'All genres',
+  'Tous les titres':
+      'All titles',
   'Tout cocher':
       'Select all',
   'Tout décocher':
       'Clear all',
   'Tout effacer':
       'Clear all',
+  'Toutes les dates':
+      'All dates',
+  'Toutes les durées':
+      'Any runtime',
   'Trier : {0}':
       'Sort: {0}',
+  'Trier et filtrer':
+      'Sort and filter',
+  'Visionnage':
+      'Watch status',
+  'Voir 1 autre service':
+      'Show 1 more service',
+  'Voir les {0} autres services':
+      'Show {0} more services',
   'demain':
       'tomorrow',
   'diffusé le':

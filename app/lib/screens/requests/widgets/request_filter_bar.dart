@@ -5,7 +5,7 @@ import '../../../models/request_catalog_filters.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_type.dart';
 import '../../../widgets/global/onyx_menu.dart';
-import 'request_filter_chip.dart';
+import '../../../widgets/global/filter_panel/onyx_filter_chip.dart';
 import 'request_filter_panels.dart';
 import 'request_filter_popover.dart';
 
@@ -34,8 +34,7 @@ class RequestFilterBar extends StatefulWidget {
       RequestCatalogFilters.defaults.copyWith(sortBy: f.sortBy);
 
   /// Au moins un filtre posé, le tri mis à part.
-  static bool hasActive(RequestCatalogFilters f) =>
-      !cleared(f).equals(f);
+  static bool hasActive(RequestCatalogFilters f) => !cleared(f).equals(f);
 
   @override
   State<RequestFilterBar> createState() => _RequestFilterBarState();
@@ -91,7 +90,7 @@ class _RequestFilterBarState extends State<RequestFilterBar> {
     final hasLanguage = f.language != RequestCatalogFilters.defaults.language;
 
     final chips = <Widget>[
-      RequestFilterChip(
+      OnyxFilterChip(
         key: _genresKey,
         label: f.genres.isEmpty
             ? tr('Genres')
@@ -108,7 +107,7 @@ class _RequestFilterBarState extends State<RequestFilterBar> {
         ),
         onClear: () => _update((c) => c.copyWith(genres: const [])),
       ),
-      RequestFilterChip(
+      OnyxFilterChip(
         key: _periodKey,
         label: hasPeriod ? _range(f.startDate, f.endDate, '') : tr('Période'),
         active: hasPeriod,
@@ -135,14 +134,14 @@ class _RequestFilterBarState extends State<RequestFilterBar> {
             ),
         ],
         onSelected: (code) => _update((c) => c.copyWith(language: code)),
-        child: RequestFilterChip(
+        child: OnyxFilterChip(
           label: hasLanguage ? _languageLabel(f.language) : tr('Langue'),
           active: hasLanguage,
-          onClear: () => _update((c) => c.copyWith(
-              language: RequestCatalogFilters.defaults.language)),
+          onClear: () => _update((c) =>
+              c.copyWith(language: RequestCatalogFilters.defaults.language)),
         ),
       ),
-      RequestFilterChip(
+      OnyxFilterChip(
         key: _streamingKey,
         label: f.watchProviders.isEmpty
             ? tr('Streaming')
@@ -164,7 +163,7 @@ class _RequestFilterBarState extends State<RequestFilterBar> {
               watchRegion: RequestCatalogFilters.defaults.watchRegion,
             )),
       ),
-      RequestFilterChip(
+      OnyxFilterChip(
         key: _durationKey,
         label: hasDuration
             ? _range(f.minDuration, f.maxDuration, 'min')
@@ -208,7 +207,7 @@ class _RequestFilterBarState extends State<RequestFilterBar> {
           ),
       ],
       onSelected: (value) => _update((c) => c.copyWith(sortBy: value)),
-      child: RequestFilterChip(
+      child: OnyxFilterChip(
         label: tr('Trier : {0}', [_sortLabel(f.sortBy)]),
       ),
     );
