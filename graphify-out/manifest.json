@@ -8280,9 +8280,9 @@
     "semantic_hash": ""
   },
   "server/main.go": {
-    "mtime": 1795596560.085515,
-    "seen": 1795596840.2146297,
-    "ast_hash": "7efb1c74cce2a22154e6f5da01ec828e",
+    "mtime": 1795600568.3952398,
+    "seen": 1795600767.7082832,
+    "ast_hash": "6e826856742f0d4b686eee516534dc1f",
     "semantic_hash": ""
   },
   "server/mediahub/availability.go": {
@@ -8616,9 +8616,9 @@
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg.go": {
-    "mtime": 1795596480.264701,
-    "seen": 1795596840.2146964,
-    "ast_hash": "e039a9aec058ab44f4e0afa777418868",
+    "mtime": 1795600523.620968,
+    "seen": 1795600767.708339,
+    "ast_hash": "9ce61cf410577bc590d16ce237f9fb52",
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg_test.go": {
@@ -8628,9 +8628,9 @@
     "semantic_hash": ""
   },
   "server/streaming/handler.go": {
-    "mtime": 1795596560.1951864,
-    "seen": 1795596840.2146983,
-    "ast_hash": "8b0c0590f7df65ce374aa9f2716aa561",
+    "mtime": 1795600523.622237,
+    "seen": 1795600767.7083404,
+    "ast_hash": "2805c4acec568c9b58da6f5992f3883b",
     "semantic_hash": ""
   },
   "server/streaming/handler_files_test.go": {
@@ -8718,9 +8718,9 @@
     "semantic_hash": ""
   },
   "server/streaming/previews.go": {
-    "mtime": 1795559679.6291597,
-    "seen": 1795596840.2147188,
-    "ast_hash": "600b760c3cfc1c81a3f1053347ba6256",
+    "mtime": 1795600523.6213846,
+    "seen": 1795600767.7083564,
+    "ast_hash": "21140ad73c1ec274f17bbdb18868cc49",
     "semantic_hash": ""
   },
   "server/streaming/previews_priority_other.go": {
@@ -8790,9 +8790,9 @@
     "semantic_hash": ""
   },
   "server/streaming/session.go": {
-    "mtime": 1795596560.084916,
-    "seen": 1795596840.2147298,
-    "ast_hash": "e1ab26748acf8826d0911eb1567231f9",
+    "mtime": 1795600523.6218321,
+    "seen": 1795600767.7083669,
+    "ast_hash": "e8f9c0464ddffab8b40a1e5b1e254d8b",
     "semantic_hash": ""
   },
   "server/streaming/standby_test.go": {
@@ -8802,9 +8802,9 @@
     "semantic_hash": ""
   },
   "server/streaming/tonemap_dovi.go": {
-    "mtime": 1795559679.6291597,
-    "seen": 1795596840.2147315,
-    "ast_hash": "dfe5c68bce56c479cf83668c8741daeb",
+    "mtime": 1795600568.3954964,
+    "seen": 1795600767.7083683,
+    "ast_hash": "4c91c1f10546b9eac227408f732f2529",
     "semantic_hash": ""
   },
   "server/streaming/tonemap_dovi_test.go": {
@@ -10806,9 +10806,9 @@
     "semantic_hash": ""
   },
   "server/README.md": {
-    "mtime": 1795596769.381333,
-    "seen": 1795596840.2152646,
-    "ast_hash": "0e6a76869d7a57ac46d61033b687eba2",
+    "mtime": 1795600726.5307145,
+    "seen": 1795600767.708936,
+    "ast_hash": "ed962ae9d8505de0ef43de755486a8fd",
     "semantic_hash": ""
   },
   "app/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
@@ -15246,9 +15246,9 @@
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters.go": {
-    "mtime": 1795598423.6916811,
-    "seen": 1795598474.8023095,
-    "ast_hash": "c5d0e3eb08c39d35bd6b4392a4b80bbd",
+    "mtime": 1795600622.8340228,
+    "seen": 1795600767.7083437,
+    "ast_hash": "07f928e05403cb9fade00a11ce5724c2",
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters_test.go": {
@@ -15258,9 +15258,27 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-fytroz-la-chaine-vaapi-ne-ramene-plus-le-4k-en-memoire.md": {
-    "mtime": 1795598458.5054843,
-    "seen": 1795598474.8028865,
-    "ast_hash": "3f62e88b53ee8d556c2d377ea19e60d2",
+    "mtime": 1795600747.6362793,
+    "seen": 1795600767.708874,
+    "ast_hash": "8877e843944e71d779fc018a97ba3150",
+    "semantic_hash": ""
+  },
+  "server/streaming/vulkan_device.go": {
+    "mtime": 1795600671.1226807,
+    "seen": 1795600767.7083707,
+    "ast_hash": "400fc251b903e752d87077bdb084f415",
+    "semantic_hash": ""
+  },
+  "server/streaming/vulkan_device_test.go": {
+    "mtime": 1795600701.95505,
+    "seen": 1795600767.7083716,
+    "ast_hash": "cedf27095560d6c034fcd0a6f0fec2a8",
+    "semantic_hash": ""
+  },
+  "docs/adr/2026-11-25-fytroz-libplacebo-prend-le-peripherique-vulkan-le-plus-rapide.md": {
+    "mtime": 1795600726.3891625,
+    "seen": 1795600767.7088752,
+    "ast_hash": "aecb8c155bf7f5d251d8b64c087f4bde",
     "semantic_hash": ""
   }
 }
