@@ -23,6 +23,7 @@
 3. **Le lot de fytroz** (HDR10 par libplacebo sur le circuit) reste à fytroz : il a la machine pour le mesurer.
 4. **Pistes audio :** une petite machine en publie 2 (la piste choisie et la VO), une grosse jusqu'à 8.
 5. **Auto ou manuel, vu par le serveur :** c'est le client qui dit `auto=1` quand l'Auto choisit. Sans ce paramètre (clients actuels, choix manuel), le barreau demandé est servi tel quel, avec un `capacity_warning` s'il est trop lourd. Un client déjà installé ne voit donc jamais sa qualité baisser. Ce point remplace le `manual=1` des phases 3 et 4.
+6. **La meilleure image d'abord, même avec un circuit** (Tsuky, 2026-11-25). Au repos, x264 garde la main. Le circuit ne prend le relais que quand le processeur ne suit plus, c'est-à-dire quand la recette x264 ne tient plus 1,5× avec la charge du moment. Le critère 4 se lit donc « sous charge ».
 
 ## 1. Pourquoi
 
@@ -62,7 +63,7 @@ Le serveur ne baisse jamais de lui-même une qualité choisie à la main.
 1. Aucune session n'est acceptée si le serveur prévoit qu'elle tiendra moins de 1,3× la vitesse de lecture.
 2. Une session qui passe sous 1× plus de 20 s déclenche une action. Selon le cas : un preset plus rapide à la reprise suivante, un barreau plus bas en Auto, un avertissement en manuel. Un serveur ne reste jamais saturé jusqu'à la fin sans que personne le sache.
 3. Sans aucune variable posée, un serveur avec `/dev/dri` encode sur le GPU s'il y est plus rapide, et sur le CPU sinon. C'est ce que fait déjà le Vulkan de fytroz, étendu à tout le pipeline.
-4. Avec un iGPU Intel : un transcodage SDR coûte moins de 0,2 cœur, et un HDR10 ou un DV5 4K → 1080p moins de 0,3 cœur.
+4. Avec un iGPU Intel, **quand le processeur ne suit plus** (décision §0.6) : un transcodage SDR coûte moins de 0,2 cœur, et un HDR10 ou un DV5 4K → 1080p moins de 0,3 cœur. Au repos, x264 garde la meilleure image.
 5. Sans GPU, sur 4 cœurs : un 4K HDR10 → 1080p tient au moins 1,3×. Sinon, l'Auto ouvre plus bas, et le barreau est marqué dans le menu avant d'être lancé.
 6. La mesure du premier démarrage dure moins de 20 s et ne bloque pas l'ouverture du serveur. Les démarrages suivants ne relancent aucun essai, y compris ceux qui tournent aujourd'hui à chaque démarrage (VAAPI, Vulkan).
 7. Un barreau choisi dans le menu est toujours celui qui est livré.
@@ -429,7 +430,7 @@ Le serveur donne les faits ; rien côté app ne s'en sert encore. Sans ces point
    `/tracks` doit recevoir les mêmes capacités que `/start` pour que `fit` dise la recopie. Une ADR côté client prolonge l'ADR-0056 et l'ADR Apple TV de fytroz.
 3. **Lecture de `suggested_quality`** (`HlsSessionHealth.suggestedQuality`) : en Auto, passer au barreau suggéré par une session préparée, sans accuser la ligne (y compris quand il vaut le barreau en cours : rouvrir) ; en manuel, un message seulement (FR/EN). L'Auto ne monte jamais au-dessus de ce que la ligne porte.
 
-**Question ouverte pour Tsuky** (relevée en phase 2, inchangée) : le critère 4 (moins de 0,2 cœur par session sur un iGPU) contredit la règle « la meilleure image quand il y a de la marge ». Au repos, un i7 garde x264 `veryfast` et plusieurs cœurs par session ; le circuit ne gagne que faute de marge. Épargner le processeur même au repos, au prix de l'image, ou lire le critère 4 « sous charge » ?
+**Question tranchée** (Tsuky, 2026-11-25, §0.6) : la meilleure image d'abord. Le circuit ne prend le relais que quand le processeur ne suit plus. Le critère 4 se lit « sous charge ».
 
 ### Phase 6 — Les chemins GPU qui manquent
 
