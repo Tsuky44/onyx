@@ -1,0 +1,733 @@
+<title>Rétro, la suite</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Mise en page : une section par écran du Rétro (5 à 9), chacune en scène 16:10 avec
+   ses variantes en onglets ; puis les images de récap au format story 9:16.
+   Look unique sombre, celui d'Onyx. */
+:root {
+  --page: #0c0d10;
+  --panel: #15171c;
+  --line: #262a33;
+  --text: #eceef2;
+  --text-2: #9aa1ae;
+  --accent: #0a84ff;
+  --body: 'Manrope', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --display: 'Manrope', system-ui, sans-serif;
+  --out: cubic-bezier(.16, 1, .3, 1);
+  --back: cubic-bezier(.34, 1.56, .64, 1);
+  color-scheme: dark;
+}
+body { background: var(--page); color: var(--text); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 80px; display: grid; gap: 56px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); }
+.head h1 { font-weight: 800; font-size: clamp(30px, 5vw, 46px); line-height: 1.02; letter-spacing: -.025em; margin: 6px 0 14px; text-wrap: balance; }
+.head p { color: var(--text-2); max-width: 68ch; margin: 0 0 10px; }
+.head p b { color: var(--text); }
+.done { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.done span { font-size: 13px; padding: 5px 12px; border-radius: 99px; background: var(--panel); border: 1px solid var(--line); color: var(--text-2); }
+.done span b { color: var(--text); font-weight: 700; }
+.done span.cut { text-decoration: line-through; opacity: .7; }
+
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.seg button { font: inherit; font-size: 13px; font-weight: 600; color: var(--text-2); background: none; border: 0; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--text); color: var(--page); }
+.seg button:focus-visible, .replay:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg .rec::after { content: " ★"; color: var(--accent); }
+
+.sec { display: grid; gap: 14px; }
+.sec-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.sec-head .n { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.sec-head h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.replay { font: inherit; font-size: 13px; font-weight: 600; color: var(--text); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; margin-left: auto; }
+.cap { color: var(--text-2); max-width: 74ch; margin: 0; min-height: 3em; }
+.cap b { color: var(--text); }
+
+/* ---------- La scène : un écran de PC 16:10 ---------- */
+.stage {
+  --bg: #0b1b3a; --ink: #9fd3ff; --acc: #3a6ea5;
+  position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 10; container-type: size;
+  border-radius: 14px; overflow: hidden; background: var(--bg); color: var(--ink);
+  box-shadow: 0 0 0 1px var(--line), 0 30px 60px -30px #000; font-family: var(--body);
+}
+.stage > .v { position: absolute; inset: 0; display: none; overflow: hidden; }
+.stage[data-v="now"] > .v.now, .stage[data-v="a"] > .v.a, .stage[data-v="b"] > .v.b { display: block; }
+.v.now img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.chrome { position: absolute; z-index: 5; top: 2.6cqh; left: 3cqw; right: 3cqw; display: flex; gap: .45cqw; pointer-events: none; }
+.chrome i { flex: 1; height: max(3px, .55cqh); border-radius: 9px; background: color-mix(in srgb, var(--ink) 25%, transparent); }
+.chrome i.on { background: var(--ink); }
+.kick { font-family: var(--mono); font-weight: 500; text-transform: uppercase; letter-spacing: .14em; font-size: 2.3cqh; opacity: .8; }
+.disp { font-family: var(--display); font-weight: 800; letter-spacing: -.035em; line-height: .92; margin: 0; font-variant-numeric: tabular-nums; text-wrap: balance; }
+.note { font-size: 2.7cqh; line-height: 1.4; opacity: .85; }
+.abs { position: absolute; }
+.glow { position: absolute; border-radius: 50%; pointer-events: none; animation: drift 18s ease-in-out infinite alternate; }
+@keyframes drift { to { transform: translate(6cqw, -8cqh); } }
+.poster { position: relative; aspect-ratio: 2 / 3; border-radius: 7% / 4.7%; overflow: hidden;
+  background: radial-gradient(130% 130% at 20% 10%, hsl(var(--h) 85% 60%), hsl(calc(var(--h) + 30) 50% 14%));
+  box-shadow: 0 1.2cqh 3cqh -1cqh rgb(0 0 0 / .55); }
+.poster span { position: absolute; left: 8%; right: 8%; bottom: 7%; color: #fff; font-family: var(--display); font-weight: 800; line-height: 1; letter-spacing: -.02em; font-size: var(--pt, 2.4cqh); }
+
+/* Mouvement */
+.wd { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .1em; margin-bottom: -.1em; }
+.wd > span { display: inline-block; transform-origin: 0 100%; }
+.play .wd > span { animation: wd .9s var(--out) both; animation-delay: var(--d, 0ms); }
+.play .r { animation: rise .9s var(--out) both; animation-delay: var(--d, 0ms); }
+.play .pop { animation: pop .8s var(--back) both; animation-delay: var(--d, 0ms); }
+.play .fade { animation: fade 1.2s ease-out both; animation-delay: var(--d, 0ms); }
+.play .grow { animation: grow 1.1s var(--out) both; animation-delay: var(--d, 0ms); transform-box: fill-box; transform-origin: 50% 100%; }
+.play .growx { animation: growx 1.4s var(--out) both; animation-delay: var(--d, 0ms); transform-origin: 0 50%; }
+@keyframes wd { from { transform: translateY(110%) rotate(6deg); } }
+@keyframes rise { from { opacity: 0; transform: translateY(3cqh); } }
+@keyframes pop { from { opacity: 0; transform: scale(.6) rotate(-6deg); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes grow { from { transform: scaleY(0); } }
+@keyframes growx { from { transform: scaleX(0); } }
+
+/* 5 — ton heure */
+.stage[data-slide="5"] { --bg: #120a05; --ink: #ffb86b; --acc: #ff7a1a; }
+.s5 .glow { width: 80cqw; aspect-ratio: 1; background: radial-gradient(closest-side, rgb(255 122 26 / .35), transparent); }
+.s5a .clock { overflow: visible; position: absolute; right: -14cqw; top: 50%; width: 100cqh; height: 100cqh; transform: translateY(-50%); }
+.s5a .txt { left: 6cqw; top: 0; bottom: 0; width: 46cqw; display: grid; align-content: center; gap: 3cqh; }
+.s5a .peak { font-size: 26cqh; line-height: .8; }
+.s5a .disp.h { font-size: 8.5cqh; }
+.s5b .txt { left: 6cqw; top: 12cqh; width: 70cqw; display: grid; gap: 2.4cqh; }
+.s5b .disp.h { font-size: 10cqh; }
+.s5b .day { position: absolute; left: 6cqw; right: 6cqw; bottom: 9cqh; height: 44cqh; display: flex; align-items: flex-end; gap: .8cqw; }
+.s5b .day i { flex: 1; border-radius: .8cqh .8cqh .3cqh .3cqh; background: color-mix(in srgb, var(--ink) 28%, transparent); position: relative; }
+.s5b .day i.pk { background: var(--ink); }
+.s5b .day i.pk::after { content: attr(data-l); position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -1.4cqh); white-space: nowrap; font-family: var(--display); font-weight: 800; font-size: 4.4cqh; color: var(--ink); }
+.s5b .hours { position: absolute; left: 6cqw; right: 6cqw; bottom: 4cqh; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 1.9cqh; opacity: .65; }
+.s5b .sky { position: absolute; left: 0; right: 0; bottom: 0; height: 70cqh; background: linear-gradient(90deg, #0c0716 0%, #0c0716 20%, #3a1d0b 30%, #2a1708 50%, #5a2a0c 75%, #2a0c1c 88%, #0c0716 100%); opacity: .55; -webkit-mask-image: linear-gradient(0deg, #000, transparent); mask-image: linear-gradient(0deg, #000, transparent); }
+
+/* 6 — mois par mois */
+.stage[data-slide="6"] { --bg: #06201f; --ink: #7ff0dc; }
+.s6 .glow { width: 70cqw; aspect-ratio: 1; right: -20cqw; top: -30cqh; background: radial-gradient(closest-side, rgb(127 240 220 / .16), transparent); }
+.s6a .txt { left: 6cqw; top: 11cqh; display: grid; gap: 2cqh; width: 86cqw; }
+.s6a .disp.h { font-size: 8.4cqh; }
+.s6a .bars { position: absolute; left: 6cqw; right: 6cqw; bottom: 10cqh; height: 50cqh; display: flex; align-items: flex-end; gap: 1.4cqw; }
+.s6a .bars i { flex: 1; position: relative; border-radius: 1cqh 1cqh .4cqh .4cqh; background: color-mix(in srgb, var(--ink) 20%, transparent); }
+.s6a .bars i.best { background: var(--ink); }
+.s6a .bars i.best::after { content: attr(data-l); position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -1.2cqh); white-space: nowrap; font-family: var(--display); font-weight: 800; font-size: 4.6cqh; color: var(--ink); }
+.s6a .bars i.soon { background: none; border: 1px dashed color-mix(in srgb, var(--ink) 40%, transparent); min-height: 3cqh; }
+.s6a .lbl { position: absolute; left: 6cqw; right: 6cqw; bottom: 4.6cqh; display: flex; gap: 1.4cqw; font-family: var(--mono); font-size: 2cqh; opacity: .7; }
+.s6a .lbl span { flex: 1; text-align: center; }
+.s6b .txt { left: 6cqw; top: 0; bottom: 0; width: 38cqw; display: grid; align-content: center; gap: 3cqh; }
+.s6b .disp.h { font-size: 10cqh; }
+.s6b .grid { position: absolute; right: 6cqw; top: 14cqh; bottom: 9cqh; width: 46cqw; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4cqw; }
+.s6b .tile { position: relative; border-radius: 1.6cqh; overflow: hidden; background: color-mix(in srgb, var(--ink) 8%, transparent); padding: 1.6cqh 1.2cqw; display: flex; flex-direction: column; justify-content: space-between; }
+.s6b .tile .fill { position: absolute; left: 0; right: 0; bottom: 0; background: color-mix(in srgb, var(--ink) 24%, transparent); transform-origin: 50% 100%; }
+.play .s6b .tile .fill { animation: grow 1.2s var(--out) both; animation-delay: var(--d); }
+.s6b .tile b, .s6b .tile span { position: relative; }
+.s6b .tile b { font-family: var(--display); font-weight: 800; font-size: 2.8cqh; }
+.s6b .tile span { font-family: var(--mono); font-size: 2cqh; opacity: .8; }
+.s6b .tile.best { background: var(--ink); color: var(--bg); }
+.s6b .tile.best .fill { display: none; }
+.s6b .tile.soon { border: 1px dashed color-mix(in srgb, var(--ink) 35%, transparent); background: none; opacity: .6; }
+
+/* 7 — tes moments */
+.stage[data-slide="7"] { --bg: #2a0a14; --ink: #ff9db5; }
+.s7 .glow { width: 80cqw; aspect-ratio: 1; left: -30cqw; bottom: -40cqh; background: radial-gradient(closest-side, rgb(255 61 110 / .25), transparent); }
+.s7a .num { left: 5cqw; bottom: 30cqh; font-size: 50cqh; line-height: .78; }
+.s7a .kick { left: 6cqw; top: 12cqh; }
+.s7a .lede { left: 6cqw; bottom: 15cqh; width: 46cqw; font-family: var(--display); font-weight: 700; font-size: 5.6cqh; line-height: 1.05; letter-spacing: -.02em; }
+.s7a .date { left: 6cqw; bottom: 8.5cqh; font-size: 2.8cqh; opacity: .8; }
+.s7a .tickets { position: absolute; right: 5cqw; top: 20cqh; width: 42cqw; display: grid; gap: 5cqh; }
+.ticket { position: relative; display: grid; grid-template-columns: 1fr auto; background: color-mix(in srgb, var(--ink) 13%, var(--bg)); border-radius: 1.6cqh; color: var(--ink);
+  -webkit-mask: radial-gradient(circle 1.6cqh at calc(100% - 9.5cqw) 0, transparent 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle 1.6cqh at calc(100% - 9.5cqw) 100%, transparent 98%, #000) bottom / 100% 51% no-repeat;
+  mask: radial-gradient(circle 1.6cqh at calc(100% - 9.5cqw) 0, transparent 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle 1.6cqh at calc(100% - 9.5cqw) 100%, transparent 98%, #000) bottom / 100% 51% no-repeat; }
+.ticket .main { padding: 4.4cqh 2.6cqw; display: grid; gap: .8cqh; min-width: 0; }
+.ticket .main small { font-family: var(--mono); text-transform: uppercase; letter-spacing: .14em; font-size: 1.9cqh; opacity: .75; }
+.ticket .main b { font-family: var(--display); font-weight: 800; font-size: 6.4cqh; line-height: 1; letter-spacing: -.02em; }
+.ticket .stub { width: 9.5cqw; border-left: 2px dashed color-mix(in srgb, var(--ink) 35%, transparent); display: grid; place-content: center; text-align: center; padding: 2cqh 0; }
+.ticket .stub b { font-family: var(--display); font-weight: 800; font-size: 4.6cqh; line-height: 1; }
+.ticket .stub span { font-family: var(--mono); font-size: 1.8cqh; opacity: .8; margin-top: .6cqh; }
+.s7a .ticket:nth-child(1) { transform: rotate(-2.5deg); }
+.s7a .ticket:nth-child(2) { transform: rotate(2deg); margin-left: 3cqw; }
+.play .s7a .ticket { animation: pop .9s var(--back) both; animation-delay: var(--d); }
+.s7b .txt { left: 6cqw; top: 12cqh; display: grid; gap: 2cqh; }
+.s7b .disp.h { font-size: 9cqh; }
+.s7b .line { position: absolute; left: 6cqw; right: 6cqw; top: 60cqh; height: 2px; background: color-mix(in srgb, var(--ink) 40%, transparent); }
+.s7b .months { position: absolute; left: 6cqw; right: 6cqw; top: 62cqh; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 1.9cqh; opacity: .6; }
+.s7b .pin { position: absolute; top: 60cqh; width: 0; }
+.s7b .pin .dot { position: absolute; left: -1.3cqh; top: -1.3cqh; width: 2.6cqh; height: 2.6cqh; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 1cqh color-mix(in srgb, var(--ink) 20%, transparent); }
+.s7b .pin.big .dot { left: -2cqh; top: -2cqh; width: 4cqh; height: 4cqh; }
+.s7b .pin .card { position: absolute; left: -2cqw; width: 26cqw; display: grid; gap: .6cqh; }
+.s7b .pin.up .card { bottom: 4cqh; }
+.s7b .pin.down .card { top: 7cqh; }
+.s7b .pin .card small { font-family: var(--mono); text-transform: uppercase; letter-spacing: .12em; font-size: 1.8cqh; opacity: .75; }
+.s7b .pin .card b { font-family: var(--display); font-weight: 800; font-size: 3.8cqh; line-height: 1.05; }
+.s7b .pin.big .card b { font-size: 5.4cqh; }
+.s7b .pin .card span { font-size: 2.2cqh; opacity: .8; }
+.s7b .stem { position: absolute; left: -1px; width: 2px; background: color-mix(in srgb, var(--ink) 40%, transparent); }
+.s7b .pin.up .stem { bottom: 1.3cqh; height: 3cqh; }
+.s7b .pin.down .stem { top: 1.3cqh; height: 5.4cqh; }
+
+/* 8 — le serveur */
+.stage[data-slide="8"] { --bg: #07090f; --ink: #9fc9ff; }
+.s8 .glow { width: 90cqh; aspect-ratio: 1; right: 0; top: 5cqh; background: radial-gradient(closest-side, rgb(10 132 255 / .22), transparent); }
+.s8 .txt { left: 6cqw; top: 0; bottom: 0; width: 46cqw; display: grid; align-content: center; gap: 2cqh; }
+.s8 .lede { font-family: var(--display); font-weight: 700; font-size: 5cqh; letter-spacing: -.02em; line-height: 1.05; }
+.s8 .big { font-size: 22cqh; line-height: .85; }
+.s8 .shared { display: flex; gap: 1.6cqw; align-items: center; margin-top: 3cqh; padding: 1.6cqh 1.4cqw; border-radius: 1.6cqh; background: color-mix(in srgb, var(--ink) 9%, transparent); width: max-content; max-width: 100%; }
+.s8 .shared .poster { height: 10cqh; box-shadow: none; }
+.s8 .shared .poster span { display: none; }
+.s8 .shared small { display: block; font-family: var(--mono); text-transform: uppercase; letter-spacing: .12em; font-size: 1.7cqh; opacity: .75; }
+.s8 .shared b { font-family: var(--display); font-weight: 800; font-size: 3.2cqh; }
+.s8 .shared span.v { display: block; font-size: 2.1cqh; opacity: .8; }
+.s8a .ring { position: absolute; right: 7cqw; top: 50%; width: 70cqh; height: 70cqh; transform: translateY(-50%); }
+.s8a .ring .m { position: absolute; left: 50%; top: 50%; width: 3.4cqh; height: 3.4cqh; margin: -1.7cqh; border-radius: 50%; background: color-mix(in srgb, var(--ink) 32%, transparent); transform: rotate(var(--a)) translateY(-31cqh) rotate(calc(-1 * var(--a))); }
+.s8a .ring .m.me { width: 7cqh; height: 7cqh; margin: -3.5cqh; background: var(--ink); box-shadow: 0 0 0 1.4cqh color-mix(in srgb, var(--ink) 22%, transparent), 0 0 6cqh var(--ink); }
+.s8a .ring .m.me::after { content: "toi"; position: absolute; left: 50%; top: 100%; transform: translate(-50%, 1.8cqh); font-family: var(--mono); font-size: 2cqh; color: var(--ink); }
+.play .s8a .ring .m { animation: fade .6s ease-out both; animation-delay: var(--d); }
+.s8a .ring .mid { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.s8a .ring .mid b { font-family: var(--display); font-weight: 800; font-size: 17cqh; line-height: .85; letter-spacing: -.04em; }
+.s8a .ring .mid span { font-size: 2.6cqh; opacity: .8; margin-top: 1cqh; }
+.s8b .rank { position: absolute; right: 6cqw; bottom: 9cqh; text-align: right; }
+.s8b .rank b { display: block; font-family: var(--display); font-weight: 800; font-size: 46cqh; line-height: .78; letter-spacing: -.05em; }
+.s8b .rank span { font-size: 3cqh; opacity: .85; }
+.s8b .rank small { display: block; font-family: var(--mono); text-transform: uppercase; letter-spacing: .14em; font-size: 2.2cqh; opacity: .75; margin-bottom: 2cqh; }
+
+/* 9 — la carte de fin */
+.stage[data-slide="9"] { --bg: #0b1b3a; --ink: #9fd3ff; --acc: #3a6ea5; }
+.s9 .glow { width: 80cqw; aspect-ratio: 1; left: -20cqw; top: -20cqh; background: radial-gradient(closest-side, rgb(58 110 165 / .6), transparent); }
+.s9a .txt { left: 6cqw; top: 0; bottom: 0; width: 44cqw; display: grid; align-content: center; gap: 3cqh; }
+.s9a .disp.h { font-size: 13cqh; }
+.s9a .btns { display: flex; gap: 1cqw; margin-top: 2cqh; flex-wrap: wrap; }
+.s9a .btns span { font-weight: 700; font-size: 2.4cqh; padding: 1.4cqh 1.8cqw; border-radius: 99px; background: color-mix(in srgb, var(--ink) 14%, transparent); }
+.s9a .btns span:first-child { background: var(--ink); color: var(--bg); }
+.s9a .holder { position: absolute; right: 9cqw; top: 9cqh; height: 82cqh; aspect-ratio: 9 / 16; transform: rotate(3deg); }
+.play .s9a .holder { animation: deal 1.3s var(--back) both; animation-delay: 400ms; }
+@keyframes deal { from { opacity: 0; transform: rotate(-14deg) translateY(30cqh) scale(.8); } }
+.s9a .holder .rc { width: 100%; height: 100%; box-shadow: 0 4cqh 8cqh -2cqh rgb(0 0 0 / .7); border-radius: 2cqh; }
+.s9b .bento { position: absolute; left: 6cqw; right: 6cqw; top: 11cqh; bottom: 8cqh; display: grid; grid-template-columns: 1.4fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 1.4cqw; }
+.s9b .cell { border-radius: 2cqh; background: color-mix(in srgb, var(--ink) 9%, transparent); padding: 2.6cqh 2cqw; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; overflow: hidden; position: relative; }
+.s9b .cell small { font-family: var(--mono); text-transform: uppercase; letter-spacing: .14em; font-size: 1.9cqh; opacity: .75; }
+.s9b .cell b { font-family: var(--display); font-weight: 800; font-size: 8cqh; line-height: .9; letter-spacing: -.03em; }
+.s9b .cell.pro { grid-row: span 2; background: var(--ink); color: var(--bg); }
+.s9b .cell.pro b { font-size: 11cqh; }
+.s9b .cell.pro p { margin: 0; font-size: 2.6cqh; line-height: 1.35; }
+.s9b .cell.top { flex-direction: row; gap: 1.4cqw; align-items: flex-end; }
+.s9b .cell.top .poster { height: 100%; flex-shrink: 0; }
+.s9b .cell.top div { display: grid; gap: 1cqh; }
+.s9b .cell.top b { font-size: 4.4cqh; }
+
+/* ---------- Images de récap : format story 9:16 ---------- */
+.recaps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.recap { display: grid; gap: 10px; }
+.recap h3 { margin: 0; font-size: 16px; }
+.recap p { margin: 0; color: var(--text-2); font-size: 13.5px; }
+.rc { position: relative; width: 100%; max-width: 100%; aspect-ratio: 9 / 16; container-type: size; overflow: hidden; border-radius: 14px; font-family: var(--body); box-shadow: 0 0 0 1px var(--line); }
+.rc .m { font-family: var(--mono); text-transform: uppercase; letter-spacing: .14em; }
+.rc .d { font-family: var(--display); font-weight: 800; letter-spacing: -.03em; line-height: .92; }
+.rc .poster { box-shadow: 0 1cqh 3cqh -1cqh rgb(0 0 0 / .6); }
+
+/* R1 — l'affiche */
+.r1 { background: #0b1b3a; color: #fff; }
+.r1 .art { position: absolute; inset: 0 0 38% 0; background: radial-gradient(120% 90% at 30% 15%, hsl(330 80% 55%), hsl(350 60% 18%) 70%); }
+.r1 .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, #0b1b3a 98%); }
+.r1 .top { position: absolute; left: 7cqw; right: 7cqw; top: 6cqh; display: flex; justify-content: space-between; font-size: 2.6cqw; opacity: .9; }
+.r1 .pres { position: absolute; left: 7cqw; right: 7cqw; top: 40cqh; font-size: 3cqw; opacity: .85; }
+.r1 .title { position: absolute; left: 7cqw; right: 7cqw; top: 44cqh; font-size: 15cqw; color: #9fd3ff; text-wrap: balance; }
+.r1 .tag { position: absolute; left: 7cqw; right: 7cqw; top: 62cqh; font-size: 3.6cqw; line-height: 1.35; opacity: .9; }
+.r1 .credits { position: absolute; left: 7cqw; right: 7cqw; bottom: 9cqh; text-align: center; font-family: var(--display); font-weight: 600; font-size: 2.7cqw; line-height: 1.6; letter-spacing: .04em; text-transform: uppercase; opacity: .85; }
+.r1 .credits b { font-weight: 800; color: #9fd3ff; }
+.r1 .foot { position: absolute; left: 7cqw; right: 7cqw; bottom: 4cqh; text-align: center; font-size: 2.2cqw; opacity: .6; }
+
+/* R2 — le ticket */
+.r2 { background: #ffb86b; color: #1d1209; }
+.r2 .tk { position: absolute; left: 8cqw; right: 8cqw; top: 7cqh; bottom: 7cqh; background: #fff3e4; border-radius: 4cqw; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+  -webkit-mask: radial-gradient(circle 4.5cqw at 0 72%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 4.5cqw at 100% 72%, transparent 98%, #000) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle 4.5cqw at 0 72%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 4.5cqw at 100% 72%, transparent 98%, #000) right / 51% 100% no-repeat; }
+.r2 .band { background: #1d1209; color: #ffb86b; padding: 3cqh 7cqw; display: flex; justify-content: space-between; align-items: baseline; font-size: 2.8cqw; }
+.r2 .band b { font-family: var(--display); font-weight: 800; font-size: 5cqw; letter-spacing: -.02em; text-transform: none; }
+.r2 .body { padding: 4cqh 7cqw 0; display: grid; align-content: start; gap: 2.4cqh; }
+.r2 .body .adm { font-size: 2.6cqw; opacity: .7; }
+.r2 .body .d { font-size: 12.5cqw; }
+.r2 .rows { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4cqh 4cqw; margin-top: 1cqh; }
+.r2 .rows small { display: block; font-family: var(--mono); text-transform: uppercase; letter-spacing: .12em; font-size: 2.3cqw; opacity: .6; }
+.r2 .rows b { font-family: var(--display); font-weight: 800; font-size: 5.4cqw; letter-spacing: -.02em; }
+.r2 .stubz { border-top: .5cqw dashed rgb(29 18 9 / .35); margin-top: 0; padding: 3cqh 7cqw 3.6cqh; display: grid; gap: 1.6cqh; }
+.r2 .code { height: 6cqh; background: repeating-linear-gradient(90deg, #1d1209 0 .6cqw, transparent .6cqw 1.2cqw, #1d1209 1.2cqw 1.5cqw, transparent 1.5cqw 2.4cqw, #1d1209 2.4cqw 3.4cqw, transparent 3.4cqw 3.9cqw); opacity: .85; }
+.r2 .stubz span { font-size: 2.4cqw; display: flex; justify-content: space-between; opacity: .75; }
+
+/* R3 — le bento */
+.r3 { background: #0b1b3a; color: #9fd3ff; }
+.r3 .in { position: absolute; inset: 0; padding: 6cqh 6cqw; display: grid; grid-template-rows: auto auto 1fr auto; gap: 2.4cqh; }
+.r3 .hd { display: flex; justify-content: space-between; font-size: 2.6cqw; opacity: .85; }
+.r3 .who { font-size: 11cqw; color: #fff; }
+.r3 .who span { display: block; font-size: 4.4cqw; color: #9fd3ff; font-weight: 700; letter-spacing: -.01em; margin-top: 1.2cqh; }
+.r3 .g { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr 1fr; gap: 2.4cqw; min-height: 0; }
+.r3 .row5 { grid-column: span 2; display: flex; gap: 2cqw; }
+.r3 .row5 .poster { flex: 1; }
+.r3 .row5 .poster span { display: none; }
+.r3 .t { border-radius: 3cqw; background: rgb(159 211 255 / .1); padding: 2.6cqh 4cqw; display: flex; flex-direction: column; justify-content: space-between; }
+.r3 .t small { font-family: var(--mono); text-transform: uppercase; letter-spacing: .12em; font-size: 2.3cqw; opacity: .75; }
+.r3 .t b { font-family: var(--display); font-weight: 800; font-size: 9cqw; line-height: .9; letter-spacing: -.03em; color: #fff; }
+.r3 .t.hl { background: #9fd3ff; color: #0b1b3a; }
+.r3 .t.hl b { color: #0b1b3a; }
+.r3 .ft { display: flex; justify-content: space-between; font-size: 2.4cqw; opacity: .6; }
+
+.reco { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; display: grid; gap: 10px; }
+.reco h2 { margin: 0; font-size: 20px; }
+.reco ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.reco p { margin: 0; color: var(--text-2); max-width: 76ch; }
+.reco b { color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) { .stage *, .rc * { animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="eyebrow">Onyx · Rétro 2026 · propositions, suite</div>
+    <h1>Les autres écrans, et l'image à partager</h1>
+    <p>Même principe que pour les quatre premiers : l'onglet <b>Actuel</b> est le vrai rendu de l'app sur PC, <b>A</b> et <b>B</b> sont deux pistes animées. Tout en bas, trois idées d'<b>image de récap</b> que chacun pourra partager à la fin.</p>
+    <div class="done">
+      <span><b>1–4</b> faits (mur, chiffre géant, logo, podium)</span>
+      <span class="cut">Tes écrans</span>
+      <span>L'écran des appareils est retiré de l'app : la story passe à <b>9 écrans</b></span>
+    </div>
+  </header>
+
+  <!-- 5. Ton heure -->
+  <section class="sec" data-sec>
+    <div class="sec-head"><span class="n">ÉCRAN 5</span><h2>Quand tu regardes</h2></div>
+    <div class="controls">
+      <div class="seg" data-tabs>
+        <button type="button" data-v="now" aria-pressed="false">Actuel</button>
+        <button type="button" data-v="a" aria-pressed="true">A · Horloge géante</button>
+        <button type="button" data-v="b" aria-pressed="false" class="rec">B · La journée</button>
+      </div>
+      <button type="button" class="replay">Rejouer</button>
+    </div>
+    <div class="stage play" data-slide="5" data-v="a" data-n="4">
+      <div class="v now"><img src="retro-pc/actuel-5.png" alt="Rendu actuel de « Quand tu regardes » sur PC"></div>
+      <div class="v a s5 s5a">
+        <div class="glow" style="right:-20cqw;top:-10cqh"></div>
+        <svg class="clock" data-clock viewBox="-50 -50 100 100" aria-hidden="true"></svg>
+        <div class="abs txt">
+          <div class="kick r">Quand tu regardes</div>
+          <div class="disp peak r" style="--d:200ms">21 h</div>
+          <h3 class="disp h kin" data-d="500">Le soir, après la journée.</h3>
+          <div class="note r" style="--d:1100ms">17 % de ton temps entre 22 h et 4 h.</div>
+        </div>
+      </div>
+      <div class="v b s5 s5b">
+        <div class="sky fade"></div>
+        <div class="abs txt">
+          <div class="kick r">Quand tu regardes</div>
+          <h3 class="disp h kin" data-d="200">Le soir, après la journée.</h3>
+          <div class="note r" style="--d:800ms">Ton heure : 21 h. 17 % de ton temps entre 22 h et 4 h.</div>
+        </div>
+        <div class="day" data-day></div>
+        <div class="hours"><span>0 h</span><span>6 h</span><span>12 h</span><span>18 h</span><span>23 h</span></div>
+      </div>
+    </div>
+    <p class="cap" data-caps
+       data-now="L'horloge est petite et loin du texte ; l'écran est presque vide."
+       data-a="&lt;b&gt;L'horloge des 24 heures en très grand&lt;/b&gt;, qui sort du cadre à droite ; ses barres poussent depuis le centre. À gauche, « 21 h » en chiffre géant, puis la phrase."
+       data-b="&lt;b&gt;La journée à plat, de minuit à minuit&lt;/b&gt;, sur toute la largeur : 24 barres sur un ciel qui passe de la nuit au soir. Ton heure se détache, étiquetée. Se lit d'un coup d'œil sur un écran large ; sur téléphone, on garderait l'horloge."></p>
+  </section>
+
+  <!-- 6. Mois par mois -->
+  <section class="sec" data-sec>
+    <div class="sec-head"><span class="n">ÉCRAN 6</span><h2>Mois par mois</h2></div>
+    <div class="controls">
+      <div class="seg" data-tabs>
+        <button type="button" data-v="now" aria-pressed="false">Actuel</button>
+        <button type="button" data-v="a" aria-pressed="true" class="rec">A · Barres pleine largeur</button>
+        <button type="button" data-v="b" aria-pressed="false">B · Calendrier</button>
+      </div>
+      <button type="button" class="replay">Rejouer</button>
+    </div>
+    <div class="stage play" data-slide="6" data-v="a" data-n="5">
+      <div class="v now"><img src="retro-pc/actuel-6.png" alt="Rendu actuel de « Mois par mois » sur PC"></div>
+      <div class="v a s6 s6a">
+        <div class="glow"></div>
+        <div class="abs txt">
+          <div class="kick r">Mois par mois</div>
+          <h3 class="disp h kin" data-d="200">Mars, ton mois record.</h3>
+        </div>
+        <div class="bars" data-bars></div>
+        <div class="lbl"><span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span></div>
+      </div>
+      <div class="v b s6 s6b">
+        <div class="glow"></div>
+        <div class="abs txt">
+          <div class="kick r">Mois par mois</div>
+          <h3 class="disp h kin" data-d="200">Mars, ton mois record.</h3>
+          <div class="note r" style="--d:900ms">44 heures en mars.</div>
+        </div>
+        <div class="grid" data-cal></div>
+      </div>
+    </div>
+    <p class="cap" data-caps
+       data-now="Le graphique est bien, mais il flotte au milieu à droite ; la moitié de l'écran reste vide."
+       data-a="&lt;b&gt;Les douze barres sur toute la largeur&lt;/b&gt;, sous le titre. Le mois record porte ses heures ; décembre reste en pointillés, l'année n'étant comptée que jusqu'au 30 novembre."
+       data-b="&lt;b&gt;Un calendrier de douze cases&lt;/b&gt; qui se remplissent comme des verres : le mois record est plein, en couleur. Plus original, mais les écarts entre mois se lisent moins bien que des barres."></p>
+  </section>
+
+  <!-- 7. Tes moments -->
+  <section class="sec" data-sec>
+    <div class="sec-head"><span class="n">ÉCRAN 7</span><h2>Tes moments</h2></div>
+    <div class="controls">
+      <div class="seg" data-tabs>
+        <button type="button" data-v="now" aria-pressed="false">Actuel</button>
+        <button type="button" data-v="a" aria-pressed="true">A · Chiffre et tickets</button>
+        <button type="button" data-v="b" aria-pressed="false" class="rec">B · La frise</button>
+      </div>
+      <button type="button" class="replay">Rejouer</button>
+    </div>
+    <div class="stage play" data-slide="7" data-v="a" data-n="6">
+      <div class="v now"><img src="retro-pc/actuel-7.png" alt="Rendu actuel de « Tes moments » sur PC"></div>
+      <div class="v a s7 s7a">
+        <div class="glow"></div>
+        <div class="abs kick r">Ton plus gros marathon</div>
+        <div class="abs disp num r" style="--d:200ms" data-count="9">9</div>
+        <div class="abs lede r" style="--d:700ms">épisodes de Severance le même jour.</div>
+        <div class="abs date r" style="--d:900ms">samedi 14 mars</div>
+        <div class="tickets">
+          <div class="ticket" style="--d:1300ms"><div class="main"><small>Première séance</small><b>Slow Horses</b></div><div class="stub"><b>1 janv.</b><span>11:02</span></div></div>
+          <div class="ticket" style="--d:1500ms"><div class="main"><small>La plus tardive</small><b>The Bear</b></div><div class="stub"><b>10 juin</b><span>03:47</span></div></div>
+        </div>
+      </div>
+      <div class="v b s7 s7b">
+        <div class="glow"></div>
+        <div class="abs txt">
+          <div class="kick r">Tes moments</div>
+          <h3 class="disp h kin" data-d="200">Ton année en trois séances.</h3>
+        </div>
+        <div class="line growx" style="--d:500ms"></div>
+        <div class="months"><span>janv.</span><span>févr.</span><span>mars</span><span>avr.</span><span>mai</span><span>juin</span><span>juil.</span><span>août</span><span>sept.</span><span>oct.</span><span>nov.</span></div>
+        <div class="pin up r" style="left:7cqw;--d:900ms"><i class="stem"></i><i class="dot"></i><div class="card"><small>Première séance · 1 janv. 11:02</small><b>Slow Horses</b></div></div>
+        <div class="pin big down r" style="left:23cqw;--d:1100ms"><i class="stem"></i><i class="dot"></i><div class="card"><small>Ton plus gros marathon · sam. 14 mars</small><b>9 épisodes de Severance</b><span>le même jour</span></div></div>
+        <div class="pin up r" style="left:44cqw;--d:1300ms"><i class="stem"></i><i class="dot"></i><div class="card"><small>La plus tardive · 10 juin 03:47</small><b>The Bear</b></div></div>
+      </div>
+    </div>
+    <p class="cap" data-caps
+       data-now="Les bandeaux « SEVERANCE » passent derrière le texte et les cartes, qui se lisent mal ; les deux séances ressemblent à des notifications."
+       data-a="&lt;b&gt;Le « 9 » en chiffre géant&lt;/b&gt;, comme le temps passé, et les deux séances en vrais tickets de cinéma, avec talon et date, posés de biais. Sans bandeaux."
+       data-b="&lt;b&gt;Une frise de janvier à novembre&lt;/b&gt; qui se trace, et les trois moments épinglés à leur date : la première séance, le marathon (en grand), la plus tardive. On voit l'année passer ; c'est la forme d'un écran large."></p>
+  </section>
+
+  <!-- 8. Le serveur -->
+  <section class="sec" data-sec>
+    <div class="sec-head"><span class="n">ÉCRAN 8</span><h2>Ton serveur, ensemble</h2></div>
+    <div class="controls">
+      <div class="seg" data-tabs>
+        <button type="button" data-v="now" aria-pressed="false">Actuel</button>
+        <button type="button" data-v="a" aria-pressed="true" class="rec">A · Le cercle des membres</button>
+        <button type="button" data-v="b" aria-pressed="false">B · Ta place en grand</button>
+      </div>
+      <button type="button" class="replay">Rejouer</button>
+    </div>
+    <div class="stage play" data-slide="8" data-v="a" data-n="7">
+      <div class="v now"><img src="retro-pc/actuel-8.png" alt="Rendu actuel du serveur sur PC"></div>
+      <div class="v a s8 s8a">
+        <div class="glow"></div>
+        <div class="abs txt">
+          <div class="kick r">Ton serveur, ensemble</div>
+          <div class="lede r" style="--d:150ms">14 membres ont regardé</div>
+          <div class="disp big r" style="--d:400ms"><span data-count="4820" data-fmt="space">4 820</span> h</div>
+          <div class="lede r" style="--d:800ms">sur ton serveur cette année.</div>
+          <div class="shared r" style="--d:1600ms"><div class="poster" data-p="Severance:330"></div><div><small>Le titre le plus partagé</small><b>Severance</b><span class="v">vu par 9 membres</span></div></div>
+        </div>
+        <div class="ring" data-ring><div class="mid"><b>n°2</b><span>ta place sur 14</span></div></div>
+      </div>
+      <div class="v b s8 s8b">
+        <div class="glow"></div>
+        <div class="abs txt" style="width:44cqw">
+          <div class="kick r">Ton serveur, ensemble</div>
+          <div class="lede r" style="--d:150ms">14 membres ont regardé</div>
+          <div class="disp big r" style="--d:400ms;font-size:16cqh"><span data-count="4820" data-fmt="space">4 820</span> h</div>
+          <div class="lede r" style="--d:800ms">sur ton serveur cette année.</div>
+          <div class="shared r" style="--d:1600ms"><div class="poster" data-p="Severance:330"></div><div><small>Le titre le plus partagé</small><b>Severance</b><span class="v">vu par 9 membres</span></div></div>
+        </div>
+        <div class="rank r" style="--d:1000ms"><small>Ta place</small><b>n°<span data-count="2" data-from="14">2</span></b><span>sur 14 membres</span></div>
+      </div>
+    </div>
+    <p class="cap" data-caps
+       data-now="Le total est grand mais la place tient dans une petite carte ; le titre partagé est une ligne de texte."
+       data-a="&lt;b&gt;Les 14 membres en cercle&lt;/b&gt;, sans nom ni chiffre, rangés par temps de lecture : ton point s'allume à ta place. Au centre, « n°2 ». Le titre le plus partagé avec son affiche. Rien d'autre que ce que le serveur envoie déjà."
+       data-b="&lt;b&gt;Ta place en chiffre géant&lt;/b&gt;, qui descend du dernier rang au tien. Plus direct, moins de mise en scène."></p>
+  </section>
+
+  <!-- 9. Carte de fin -->
+  <section class="sec" data-sec>
+    <div class="sec-head"><span class="n">ÉCRAN 9</span><h2>Ton profil, et la fin</h2></div>
+    <div class="controls">
+      <div class="seg" data-tabs>
+        <button type="button" data-v="now" aria-pressed="false">Actuel</button>
+        <button type="button" data-v="a" aria-pressed="true" class="rec">A · L'image à partager</button>
+        <button type="button" data-v="b" aria-pressed="false">B · Mosaïque</button>
+      </div>
+      <button type="button" class="replay">Rejouer</button>
+    </div>
+    <div class="stage play" data-slide="9" data-v="a" data-n="8">
+      <div class="v now"><img src="retro-pc/actuel-9.png" alt="Rendu actuel de la carte de fin sur PC"></div>
+      <div class="v a s9 s9a">
+        <div class="glow"></div>
+        <div class="abs txt">
+          <div class="kick r">Ton profil 2026</div>
+          <h3 class="disp h kin" data-d="200">Accro aux marathons</h3>
+          <div class="note r" style="--d:900ms">9 épisodes de Severance en une seule journée.</div>
+          <div class="btns r" style="--d:1300ms"><span>Partager l'image</span><span>Revoir</span></div>
+        </div>
+        <div class="holder"><div class="rc r1" data-recap="r1"></div></div>
+      </div>
+      <div class="v b s9 s9b">
+        <div class="glow"></div>
+        <div class="bento">
+          <div class="cell pro pop" style="--d:200ms"><small>Ton profil 2026</small><div><b>Accro aux marathons</b><p>9 épisodes de Severance en une seule journée.</p></div></div>
+          <div class="cell r" style="--d:400ms"><small>Heures</small><b>312 h</b></div>
+          <div class="cell r" style="--d:500ms"><small>Titres</small><b>27</b></div>
+          <div class="cell top r" style="--d:600ms"><div class="poster" data-p="Severance:330" style="--pt:1.8cqh"></div><div><small>N°1</small><b>Severance</b></div></div>
+          <div class="cell r" style="--d:700ms"><small>Ton heure · mois record</small><b>21 h · mars</b></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap" data-caps
+       data-now="Le profil est petit à gauche ; la carte de chiffres est une liste ; rien ne se partage."
+       data-a="&lt;b&gt;Le profil en grand, et à droite l'image de récap elle-même&lt;/b&gt;, posée comme une carte qu'on vient de recevoir. Un bouton « Partager l'image » juste à côté. Ce qu'on voit est exactement ce qui partira."
+       data-b="&lt;b&gt;Une mosaïque qui remplit l'écran&lt;/b&gt; : le profil sur une grande case, les chiffres autour. Plus riche, mais l'image partagée serait un autre dessin."></p>
+  </section>
+
+  <!-- Images de récap -->
+  <section class="sec">
+    <div class="sec-head"><span class="n">IMAGE DE RÉCAP</span><h2>Ce qu'on partage à la fin</h2></div>
+    <p class="cap" style="min-height:0">Une image au format story (1080 × 1920), générée par l'app depuis le rapport. Sur téléphone, elle part par le menu de partage ; sur PC, elle s'enregistre dans Téléchargements ; sur TV, pas de partage. Trois pistes, toutes aux couleurs du profil, avec les vrais chiffres de l'année.</p>
+    <div class="recaps">
+      <div class="recap">
+        <div class="rc r1" data-recap="r1"></div>
+        <h3>R1 · L'affiche ★</h3>
+        <p>L'année comme une affiche de film : l'affiche du n°1 en haut, le profil comme titre, les chiffres en générique. Dans le monde du cinéma, et différente pour chaque membre.</p>
+      </div>
+      <div class="recap">
+        <div class="rc r2" data-recap="r2"></div>
+        <h3>R2 · Le ticket</h3>
+        <p>Un ticket de séance au nom du membre : le profil en grand, quatre chiffres, un talon. Reprend les tickets de l'écran 7.</p>
+      </div>
+      <div class="recap">
+        <div class="rc r3" data-recap="r3"></div>
+        <h3>R3 · La mosaïque</h3>
+        <p>Nom et profil, le top 5 en vignettes, quatre cases de chiffres. La plus complète, la moins surprenante.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reco">
+    <h2>Ce que je ferais</h2>
+    <ul>
+      <li><b>Écran 5 :</b> B, la journée à plat sur PC ; l'horloge reste sur téléphone, où elle tient mieux.</li>
+      <li><b>Écran 6 :</b> A, les barres sur toute la largeur.</li>
+      <li><b>Écran 7 :</b> B, la frise : c'est le seul écran qui raconte l'année dans le temps.</li>
+      <li><b>Écran 8 :</b> A, le cercle des membres, sans rien de plus que ce que le serveur envoie déjà.</li>
+      <li><b>Écran 9 et image :</b> A avec R1, l'affiche : le dernier écran montre l'image telle qu'elle partira, avec le bouton pour la partager.</li>
+    </ul>
+    <p>L'image de récap, c'est la phase 5 du plan : l'app dessine l'image hors écran et la donne au menu de partage du téléphone, ou l'enregistre sur PC. Rien ne passe par un service externe.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var NS = 'http://www.w3.org/2000/svg';
+  var hours = [6, 3, 1, 1, 0, 0, 1, 2, 3, 4, 5, 6, 8, 7, 6, 6, 8, 12, 18, 26, 34, 40, 30, 16];
+  var months = [22, 31, 44, 26, 18, 12, 9, 14, 29, 38, 41, 0];
+  var monthNames = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+  function fillPoster(el, spec) {
+    var i = spec.lastIndexOf(':');
+    el.style.setProperty('--h', spec.slice(i + 1));
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', spec.slice(0, i));
+    var s = document.createElement('span');
+    s.textContent = spec.slice(0, i);
+    el.appendChild(s);
+  }
+  function poster(spec, extra) {
+    var d = document.createElement('div');
+    d.className = 'poster';
+    if (extra) d.setAttribute('style', extra);
+    fillPoster(d, spec);
+    return d;
+  }
+
+  // Les images de récap, dessinées une fois pour toutes leurs places.
+  var recaps = {
+    r1: '<div class="art"></div>' +
+      '<div class="top m"><span>Onyx</span><span>Rétro 2026</span></div>' +
+      '<div class="pres m">Léa présente</div>' +
+      '<div class="title d">Accro aux marathons</div>' +
+      '<div class="tag">9 épisodes de Severance en une seule journée.</div>' +
+      '<div class="credits">Avec <b>312 heures</b> de lecture · <b>27 titres</b><br>N°1 <b>Severance</b> · Ton heure <b>21 h</b><br>Mois record <b>mars</b> · <b>410 séances</b></div>' +
+      '<div class="foot m">Rétro 2026 · sur Onyx</div>',
+    r2: '<div class="tk"><div class="band m"><b>Onyx</b><span>Rétro 2026</span></div>' +
+      '<div class="body"><div class="adm m">Membre · Léa</div><div class="d">Accro aux marathons</div>' +
+      '<div class="rows"><div><small>Heures</small><b>312 h</b></div><div><small>Titres</small><b>27</b></div><div><small>N°1</small><b>Severance</b></div><div><small>Ton heure</small><b>21 h</b></div></div></div>' +
+      '<div class="stubz"><div class="code"></div><span class="m"><span>Séance 410</span><span>1 janv. → 30 nov.</span></span></div></div>',
+    r3: '<div class="in"><div class="hd m"><span>Onyx</span><span>Rétro 2026</span></div>' +
+      '<div class="d who">Léa<span>Accro aux marathons</span></div>' +
+      '<div class="g"><div class="row5" data-row5></div>' +
+      '<div class="t hl"><small>Heures</small><b>312</b></div><div class="t"><small>Titres</small><b>27</b></div>' +
+      '<div class="t"><small>Ton heure</small><b>21 h</b></div><div class="t"><small>Mois record</small><b>Mars</b></div></div>' +
+      '<div class="ft m"><span>9 épisodes en un jour</span><span>onyx</span></div></div>'
+  };
+  document.querySelectorAll('[data-recap]').forEach(function (el) {
+    el.innerHTML = recaps[el.dataset.recap];
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', 'Image de récap du Rétro 2026 de Léa : Accro aux marathons, 312 heures, 27 titres.');
+    var row = el.querySelector('[data-row5]');
+    if (row) ['Severance:330', 'The Bear:270', 'Shōgun:130', 'Slow Horses:80', 'Dune:30'].forEach(function (s) { row.appendChild(poster(s)); });
+  });
+  document.querySelectorAll('[data-p]').forEach(function (el) { fillPoster(el, el.dataset.p); });
+
+  // 5A — l'horloge : 24 barres qui partent du centre, la 21 h en plein.
+  document.querySelectorAll('[data-clock]').forEach(function (svg) {
+    var max = Math.max.apply(null, hours), inner = 12, reach = 28;
+    var ring = document.createElementNS(NS, 'circle');
+    ring.setAttribute('r', inner - 2); ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', 'currentColor'); ring.setAttribute('stroke-opacity', '.35');
+    ring.setAttribute('stroke-width', '.5'); ring.setAttribute('stroke-dasharray', '1.2 1.2');
+    svg.appendChild(ring);
+    hours.forEach(function (h, i) {
+      var g = document.createElementNS(NS, 'g');
+      g.setAttribute('transform', 'rotate(' + (i * 15) + ')');
+      var len = Math.max(.8, reach * h / max);
+      var r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', -1.5); r.setAttribute('width', 3); r.setAttribute('rx', 1);
+      r.setAttribute('y', -(inner + len)); r.setAttribute('height', len);
+      r.setAttribute('fill', 'currentColor');
+      r.setAttribute('fill-opacity', i === 21 ? '1' : '.38');
+      r.setAttribute('class', 'grow');
+      r.style.setProperty('--d', (300 + i * 40) + 'ms');
+      g.appendChild(r);
+      svg.appendChild(g);
+    });
+    [[0, '0 h'], [6, '6 h'], [12, '12 h'], [18, '18 h']].forEach(function (t) {
+      var a = t[0] * 15 * Math.PI / 180, rr = inner + reach + 4.5;
+      var tx = document.createElementNS(NS, 'text');
+      tx.setAttribute('x', (Math.sin(a) * rr).toFixed(2)); tx.setAttribute('y', (-Math.cos(a) * rr + 1.2).toFixed(2));
+      tx.setAttribute('text-anchor', 'middle'); tx.setAttribute('font-size', '3.2');
+      tx.setAttribute('font-family', 'JetBrains Mono, monospace'); tx.setAttribute('fill', 'currentColor'); tx.setAttribute('fill-opacity', '.6');
+      tx.textContent = t[1];
+      svg.appendChild(tx);
+    });
+  });
+  // 5B — la journée à plat.
+  document.querySelectorAll('[data-day]').forEach(function (el) {
+    var max = Math.max.apply(null, hours);
+    hours.forEach(function (h, i) {
+      var b = document.createElement('i');
+      b.className = 'grow' + (i === 21 ? ' pk' : '');
+      if (i === 21) b.dataset.l = '21 h · ton heure';
+      b.style.height = Math.max(1.5, 100 * h / max) + '%';
+      b.style.setProperty('--d', (400 + i * 35) + 'ms');
+      el.appendChild(b);
+    });
+  });
+  // 6A — les barres.
+  document.querySelectorAll('[data-bars]').forEach(function (el) {
+    var max = Math.max.apply(null, months);
+    months.forEach(function (h, i) {
+      var b = document.createElement('i');
+      if (i === 11) { b.className = 'soon'; b.title = 'Décembre n’est pas compté'; }
+      else {
+        b.className = 'grow' + (i === 2 ? ' best' : '');
+        b.style.height = (100 * h / max) + '%';
+        if (i === 2) b.dataset.l = '44 h';
+      }
+      b.style.setProperty('--d', (400 + i * 60) + 'ms');
+      el.appendChild(b);
+    });
+  });
+  // 6B — le calendrier.
+  document.querySelectorAll('[data-cal]').forEach(function (el) {
+    var max = Math.max.apply(null, months);
+    months.forEach(function (h, i) {
+      var t = document.createElement('div');
+      t.className = 'tile r' + (i === 2 ? ' best' : '') + (i === 11 ? ' soon' : '');
+      t.style.setProperty('--d', (300 + i * 50) + 'ms');
+      var f = document.createElement('div');
+      f.className = 'fill';
+      f.style.height = (100 * h / max) + '%';
+      f.style.setProperty('--d', (500 + i * 50) + 'ms');
+      t.appendChild(f);
+      var b = document.createElement('b'); b.textContent = monthNames[i];
+      var s = document.createElement('span'); s.textContent = i === 11 ? 'à venir' : h + ' h';
+      t.appendChild(b); t.appendChild(s);
+      el.appendChild(t);
+    });
+  });
+  // 8A — les membres en cercle, ton point à ta place (n°2 sur 14).
+  document.querySelectorAll('[data-ring]').forEach(function (el) {
+    for (var i = 0; i < 14; i++) {
+      var m = document.createElement('i');
+      m.className = 'm' + (i === 1 ? ' me' : '');
+      m.style.setProperty('--a', (i * 360 / 14) + 'deg');
+      m.style.setProperty('--d', (900 + i * 70) + 'ms');
+      el.appendChild(m);
+    }
+  });
+
+  // Les mots des grands titres montent un à un.
+  document.querySelectorAll('.kin').forEach(function (el) {
+    var base = +(el.dataset.d || 0), n = 0;
+    el.innerHTML = el.innerHTML.split(/<br\s*\/?>/i).map(function (line) {
+      return line.trim().split(/\s+/).map(function (w) {
+        return '<span class="wd"><span style="--d:' + (base + 70 * n++) + 'ms">' + w + '</span></span>';
+      }).join(' ');
+    }).join('<br>');
+  });
+
+  // La barre de progression : neuf écrans maintenant.
+  document.querySelectorAll('.stage').forEach(function (stage) {
+    var c = document.createElement('div');
+    c.className = 'chrome';
+    for (var i = 0; i < 9; i++) {
+      var b = document.createElement('i');
+      if (i <= +stage.dataset.n) b.className = 'on';
+      c.appendChild(b);
+    }
+    stage.appendChild(c);
+  });
+
+  function fmt(v, how) { return how === 'space' ? String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : String(v); }
+  function count(el) {
+    var target = +el.dataset.count, from = +(el.dataset.from || 0), how = el.dataset.fmt;
+    if (reduce) { el.textContent = fmt(target, how); return; }
+    var t0 = null, dur = 1500, delay = 400;
+    function step(ts) {
+      if (t0 === null) t0 = ts;
+      var t = Math.min(1, Math.max(0, (ts - t0 - delay) / dur));
+      var e = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+      el.textContent = fmt(Math.round(from + (target - from) * e), how);
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  function replay(stage) {
+    stage.classList.remove('play');
+    void stage.offsetWidth;
+    stage.classList.add('play');
+    var v = stage.querySelector('.v.' + stage.dataset.v);
+    if (v) v.querySelectorAll('[data-count]').forEach(count);
+  }
+  document.querySelectorAll('[data-sec]').forEach(function (sec) {
+    var stage = sec.querySelector('.stage');
+    var cap = sec.querySelector('[data-caps]');
+    function setCap() { cap.innerHTML = cap.dataset[stage.dataset.v]; }
+    var tabs = sec.querySelector('[data-tabs]');
+    tabs.addEventListener('click', function (e) {
+      var btn = e.target.closest('button'); if (!btn) return;
+      tabs.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+      stage.dataset.v = btn.dataset.v; setCap(); replay(stage);
+    });
+    sec.querySelector('.replay').addEventListener('click', function () { replay(stage); });
+    setCap();
+    replay(stage);
+  });
+})();
+</script>

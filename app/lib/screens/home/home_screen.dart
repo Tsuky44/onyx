@@ -28,6 +28,9 @@ import '../../widgets/global/hero_banner.dart' show HeroBanner;
 import '../library/movie_detail_screen.dart';
 import '../library/show_detail_screen.dart';
 import '../player/player_screen.dart';
+import '../retro/home/retro_hero_slide.dart';
+import '../retro/home/retro_home_card.dart';
+import '../retro/retro_screen.dart';
 import '../setup/setup_launcher.dart';
 import '../setup/widgets/setup_home_card.dart';
 import 'home_empty_view.dart';
@@ -220,6 +223,32 @@ class _HomeScreenState extends State<HomeScreen>
           )
         : <HeroSlide>[];
 
+    // Le Rétro de fin d'année (ADR 2026-11-26-tsuky-retro-annuel) : la
+    // première diapo du carrousel tant qu'il n'a pas été ouvert, puis une
+    // carte au-dessus de « Reprendre la lecture ». Rien hors saison, sous le
+    // seuil, ou sur un serveur qui ne le connaît pas.
+    final retro = Provider.of<RetroProvider?>(context);
+    final retroStatus = retro?.status;
+    final userName = authProvider.currentUser?.username ?? '';
+    void openRetro() {
+      final year = retroStatus?.year;
+      if (year != null) RetroScreen.open(context, year);
+    }
+
+    final retroHero = retro != null && retroStatus != null && retro.showsHero
+        ? (BuildContext context, bool autofocus) => RetroHeroSlide(
+              status: retroStatus,
+              report: retro.report,
+              name: userName,
+              serverBaseUrl: authProvider.apiClient.baseUrl,
+              extendTop: heroExtend,
+              autofocus: autofocus,
+              onOpen: openRetro,
+              onLater: retro.later,
+            )
+        : null;
+    final hasHero = heroSlides.isNotEmpty || retroHero != null;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: homeProvider.isLoading
@@ -250,14 +279,14 @@ class _HomeScreenState extends State<HomeScreen>
                           // barre : il garde sa marge.
                           SliverToBoxAdapter(
                             child: SizedBox(
-                              height:
-                                  heroSlides.isEmpty ? headerInset : heroTop,
+                              height: hasHero ? heroTop : headerInset,
                             ),
                           ),
-                          if (heroSlides.isNotEmpty)
+                          if (hasHero)
                             SliverToBoxAdapter(
                               child: HeroCarousel(
                                 slides: heroSlides,
+                                leading: retroHero,
                                 onPlay: (slide) => _onHeroPlay(context, slide),
                                 onInfo: (slide) => _onHeroInfo(context, slide),
                                 extendTop: heroExtend,
@@ -305,6 +334,18 @@ class _HomeScreenState extends State<HomeScreen>
                                     authProvider.permissions.manageSettings,
                               ),
                             ),
+                            if (retro != null &&
+                                retroStatus != null &&
+                                retro.showsCard)
+                              SliverToBoxAdapter(
+                                child: RetroHomeCard(
+                                  status: retroStatus,
+                                  report: retro.report,
+                                  name: userName,
+                                  serverBaseUrl: authProvider.apiClient.baseUrl,
+                                  onOpen: openRetro,
+                                ),
+                              ),
                             if (data != null &&
                                 data.continueWatching.isNotEmpty)
                               SliverToBoxAdapter(

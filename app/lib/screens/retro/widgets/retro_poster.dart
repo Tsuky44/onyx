@@ -2,6 +2,9 @@ import 'package:flutter/widgets.dart';
 
 import '../../../utils/poster_url.dart';
 import '../../../widgets/global/app_network_image.dart';
+import '../../../widgets/global/media_logo_display.dart';
+import 'retro_entrance.dart';
+import 'retro_type.dart';
 
 /// Une affiche du Rétro. Sans image (un titre que TMDB n'a pas trouvé), un
 /// dégradé dont la teinte vient du titre, pour que chaque titre garde sa
@@ -66,7 +69,7 @@ class _Fallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hue = (title.hashCode % 360).abs().toDouble();
+    final hue = _hueOf(title);
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: RadialGradient(
@@ -97,6 +100,97 @@ class _Fallback extends StatelessWidget {
               ),
             )
           : const SizedBox.expand(),
+    );
+  }
+}
+
+/// La teinte d'un titre sans affiche : la même d'un écran à l'autre.
+double _hueOf(String title) => (title.hashCode % 360).abs().toDouble();
+
+/// Tout l'écran teinté par une affiche : l'affiche décodée sur une dizaine de
+/// pixels, puis étirée. L'étirement lisse les couleurs comme un flou, sans en
+/// calculer un à chaque image (ce qu'un téléviseur ne tient pas). Sans
+/// affiche, la teinte du dégradé de secours.
+class RetroPosterTint extends StatelessWidget {
+  const RetroPosterTint({
+    super.key,
+    required this.posterUrl,
+    required this.title,
+    required this.serverBaseUrl,
+  });
+
+  final String posterUrl;
+  final String title;
+  final String? serverBaseUrl;
+
+  /// La largeur de décodage : assez peu pour qu'il ne reste que des couleurs.
+  static const int _pixels = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = cardPosterUrl(posterUrl, serverBaseUrl: serverBaseUrl);
+    final hue = _hueOf(title);
+    final fallback = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: const Alignment(0.5, -0.2),
+          radius: 1.1,
+          colors: [
+            HSLColor.fromAHSL(1, hue, 0.7, 0.45).toColor(),
+            HSLColor.fromAHSL(1, (hue + 30) % 360, 0.5, 0.12).toColor(),
+          ],
+        ),
+      ),
+      child: const SizedBox.expand(),
+    );
+    if (url == null || url.isEmpty) return fallback;
+    return Image(
+      image: AppNetworkImage.providerFor(url, memCacheWidth: _pixels),
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.medium,
+      gaplessPlayback: true,
+      frameBuilder: (context, child, frame, _) =>
+          frame == null ? fallback : child,
+      errorBuilder: (context, _, __) => fallback,
+    );
+  }
+}
+
+/// Le logo du titre (TMDB) à la place de son nom, qui ne revient que quand le
+/// logo manque. Il arrive comme un grand titre : il monte et apparaît.
+class RetroTitleLogo extends StatelessWidget {
+  const RetroTitleLogo({
+    super.key,
+    required this.title,
+    required this.logoUrl,
+    required this.height,
+    required this.width,
+    required this.size,
+    this.delay = const Duration(milliseconds: 250),
+  });
+
+  final String title;
+  final String? logoUrl;
+  final double height;
+  final double width;
+
+  /// La taille du titre écrit, en unités du Rétro.
+  final double size;
+  final Duration delay;
+
+  @override
+  Widget build(BuildContext context) {
+    return RetroReveal.rise(
+      delay: delay,
+      child: MediaLogoDisplay(
+        title: title,
+        logoUrl: logoUrl,
+        maxHeight: height,
+        maxWidth: width,
+        textStyle: RetroBig.styleOf(context, size).copyWith(
+          color: DefaultTextStyle.of(context).style.color,
+        ),
+      ),
     );
   }
 }

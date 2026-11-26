@@ -23,6 +23,10 @@ class RetroProvider extends ChangeNotifier {
   int _request = 0;
   bool _disposed = false;
 
+  /// « Plus tard » : la diapo de l'accueil est rangée jusqu'au prochain
+  /// lancement. Seule l'ouverture de la story pose « vu » sur le serveur.
+  bool _later = false;
+
   RetroStatus? get status => _status;
 
   /// Le Rétro déjà chargé, s'il l'est.
@@ -30,6 +34,26 @@ class RetroProvider extends ChangeNotifier {
 
   /// Vrai quand le Rétro peut s'ouvrir : en saison, au-dessus du seuil.
   bool get available => _status?.available ?? false;
+
+  bool get _seen => _status?.seen ?? false;
+
+  /// La première diapo du carrousel de l'accueil : tant que la story n'a pas
+  /// été ouverte, et sauf « Plus tard ».
+  bool get showsHero => available && !_seen && !_later;
+
+  /// La carte de l'accueil, au-dessus de « Reprendre la lecture » : une fois
+  /// la story vue, ou la diapo rangée.
+  bool get showsCard => available && (_seen || _later);
+
+  /// L'anneau autour de l'avatar : tant que la story n'a pas été ouverte.
+  bool get showsRing => available && !_seen;
+
+  /// Range la diapo pour la session.
+  void later() {
+    if (_later) return;
+    _later = true;
+    notifyListeners();
+  }
 
   /// Relit l'état. Un échec garde ce qu'on avait : une coupure réseau ne doit
   /// pas faire apparaître ni disparaître la diapo de l'accueil.
@@ -42,6 +66,16 @@ class RetroProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('RetroProvider: état du Rétro indisponible: $e');
+      return;
+    }
+    // La diapo et la carte de l'accueil disent les heures, les titres et les
+    // affiches de l'année : le Rétro se charge dès qu'il est disponible.
+    final status = _status;
+    if (status == null || !status.available) return;
+    try {
+      await loadReport(status.year);
+    } catch (e) {
+      debugPrint('RetroProvider: Rétro indisponible pour l’accueil: $e');
     }
   }
 
@@ -80,6 +114,7 @@ class RetroProvider extends ChangeNotifier {
     _request++;
     _status = null;
     _report = null;
+    _later = false;
     notifyListeners();
     unawaited(load());
   }

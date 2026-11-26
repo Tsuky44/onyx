@@ -206,6 +206,11 @@ dependencies:
   # NSMotionUsageDescription dans ios/Runner/Info.plist : sans cette clé,
   # l'app plante au premier accès.
   sensors_plus: ^7.1.1
+  # Le partage de l'image de récap du Rétro par le menu du système : Android,
+  # iPhone, iPad, Mac et navigateur (ADR 2026-11-26-tsuky-retro-annuel,
+  # décision 14). Windows et Linux enregistrent l'image à la place. Ne déclare
+  # pas tvOS : flutter-tvos ne l'embarque pas.
+  share_plus: ^13.3.1
 
 # Les bibliothèques natives de media_kit, avec un FFmpeg complet. Les versions
 # publiées embarquent un FFmpeg réduit à une liste blanche de décodeurs sans

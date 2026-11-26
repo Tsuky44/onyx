@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 import '../../../l10n/locale_formats.dart';
@@ -8,7 +10,8 @@ import '../widgets/retro_slide_layout.dart';
 import '../widgets/retro_type.dart';
 import 'retro_slide.dart';
 
-/// 6. L'année mois par mois, et le mois record.
+/// 6. L'année mois par mois, et le mois record. Sur un écran large, les
+/// douze barres courent sur toute la largeur, sous le titre.
 class RetroMonthsSlide extends RetroSlide {
   const RetroMonthsSlide();
 
@@ -51,4 +54,40 @@ class RetroMonthsSlide extends RetroSlide {
         year: data.report.year,
         best: data.report.bestMonth,
       );
+
+  @override
+  Widget? compose(BuildContext context, RetroStoryData data) {
+    final units = RetroUnits.of(context);
+    if (!units.landscape) return null;
+    final u = units.u;
+    final size = units.size;
+    final padding = units.padding;
+    return Stack(
+      children: [
+        Positioned(
+          left: padding.left,
+          right: padding.right,
+          top: padding.top,
+          child: RetroText(children: [
+            RetroKicker(tr('Mois par mois')),
+            RetroBig(_headline(data), size: 13.5),
+          ]),
+        ),
+        Positioned(
+          left: padding.left,
+          right: padding.right,
+          bottom: padding.bottom,
+          height: size.height * 0.58,
+          child: RetroMonthsChart(
+            months: data.report.months,
+            year: data.report.year,
+            best: data.report.bestMonth,
+            fill: true,
+            labelSize: math.max(11, u * 3.2),
+            valueSize: math.max(16, u * 7.4),
+          ),
+        ),
+      ],
+    );
+  }
 }

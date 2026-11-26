@@ -23,15 +23,25 @@ class RetroColors {
 }
 
 abstract final class RetroPalette {
-  /// Le temps passé : le bleu de la marque, plein cadre.
-  static const hours = RetroColors(AppColors.primary, Color(0xFFFFFFFF));
+  /// Le temps passé : un bleu nuit qu'éclaire le bleu de la marque, en halo.
+  /// Le bleu de la marque en plein cadre éblouissait sur un grand écran.
+  static const hours = RetroColors(Color(0xFF071B45), Color(0xFFFFFFFF));
+
+  /// Les halos du temps passé : le bleu de la marque, plus ou moins profond.
+  static const hoursGlows = [
+    Color(0xCC1466D6),
+    Color(0x660A84FF),
+    Color(0x553A8BFF),
+  ];
 
   /// Ton n°1 : une nuit bleutée, que l'affiche éclaire.
   static const topTitle = RetroColors(Color(0xFF0B1220), Color(0xFFC9DAFF));
 
   /// Le top 5 : le seul écran clair, pour casser la suite de fonds sombres.
+  /// Un papier tamisé plutôt qu'un blanc : après trois écrans de nuit, un
+  /// blanc éblouissait, surtout sur un téléviseur dans une pièce sombre.
   static const topFive =
-      RetroColors(Color(0xFFF5F5F7), AppColors.background, AppColors.primary);
+      RetroColors(Color(0xFFD6D0C4), Color(0xFF1D1A15), Color(0xFF0A5BD8));
 
   /// Ton heure : une lumière de lampe.
   static const hour = RetroColors(Color(0xFF120A05), Color(0xFFFFB86B));
@@ -42,9 +52,12 @@ abstract final class RetroPalette {
   /// Tes moments.
   static const moments = RetroColors(Color(0xFF2A0A14), Color(0xFFFF9DB5));
 
-  /// Tes écrans ; l'accent vert est celui de la lecture directe.
-  static const devices =
-      RetroColors(Color(0xFF0D0F14), Color(0xFFF5F5F7), AppColors.success);
+  /// Les halos de « Tes moments » : des roses de salle de cinéma.
+  static const momentsGlows = [
+    Color(0x55FF3D6E),
+    Color(0x33FF9DB5),
+    Color(0x33A8485E),
+  ];
 
   /// Le serveur, ensemble.
   static const server = RetroColors(Color(0xFF07090F), Color(0xFF9FC9FF));
@@ -54,14 +67,6 @@ abstract final class RetroPalette {
     Color(0x66FF7A1A),
     Color(0x33FFB86B),
     Color(0x44FF3D6E),
-  ];
-
-  /// Les halos de « Tes écrans » : le bleu de la marque et le vert de la
-  /// lecture directe.
-  static const devicesGlows = [
-    Color(0x550A84FF),
-    Color(0x3330D158),
-    Color(0x3364B5FF),
   ];
 
   /// Les couleurs des confettis, en plus de l'encre et de l'accent du profil.

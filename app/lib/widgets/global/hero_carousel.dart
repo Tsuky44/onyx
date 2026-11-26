@@ -24,6 +24,12 @@ class HeroCarousel extends StatefulWidget {
   /// Voir [HeroBanner.extendTop].
   final double extendTop;
 
+  /// Une première page qui n'est pas un média : le Rétro de fin d'année
+  /// (ADR 2026-11-26-tsuky-retro-annuel). Elle défile, se tourne et prend le
+  /// focus comme les autres ; [autofocus] lui dit si son bouton doit le
+  /// prendre d'office.
+  final Widget Function(BuildContext context, bool autofocus)? leading;
+
   const HeroCarousel({
     super.key,
     required this.slides,
@@ -31,6 +37,7 @@ class HeroCarousel extends StatefulWidget {
     this.onInfo,
     this.autofocusPlay = false,
     this.extendTop = 0,
+    this.leading,
   });
 
   @override
@@ -78,6 +85,12 @@ class _HeroCarouselState extends State<HeroCarousel>
   /// (voir [_advance]).
   bool get _heldByFocus => _focused && !TvScope.of(context);
 
+  /// La page d'en tête, quand il y en a une.
+  int get _lead => widget.leading == null ? 0 : 1;
+
+  /// Toutes les pages : celle d'en tête, puis les médias.
+  int get _count => widget.slides.length + _lead;
+
   @override
   void initState() {
     super.initState();
@@ -93,7 +106,9 @@ class _HeroCarouselState extends State<HeroCarousel>
   @override
   void didUpdateWidget(covariant HeroCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.slides.length != widget.slides.length) {
+    final oldCount =
+        oldWidget.slides.length + (oldWidget.leading == null ? 0 : 1);
+    if (oldCount != _count) {
       _currentIndex = 0;
       _dwell.clear();
       _restartClock();
@@ -123,7 +138,7 @@ class _HeroCarouselState extends State<HeroCarousel>
 
   /// Rien n'arrête le défilement pour l'instant.
   bool get _advances =>
-      widget.slides.length > 1 &&
+      _count > 1 &&
       !_hovered &&
       !_heldByFocus &&
       !_touched &&
@@ -135,7 +150,7 @@ class _HeroCarouselState extends State<HeroCarousel>
   /// Plus rien ne fera défiler le bandeau tout seul : le trait reste plein
   /// au lieu de rester à moitié rempli.
   bool get _stopsForGood =>
-      widget.slides.length <= 1 || _touched || AppMotion.reduced(context);
+      _count <= 1 || _touched || AppMotion.reduced(context);
 
   Duration get _elapsed => _elapsedBefore + _clock.elapsed;
 
@@ -184,7 +199,7 @@ class _HeroCarouselState extends State<HeroCarousel>
   void _advance() {
     _autoTimer = null;
     if (!mounted || !_advances) return;
-    final next = (_currentIndex + 1) % widget.slides.length;
+    final next = (_currentIndex + 1) % _count;
     // Sous la télécommande, le bouton de la diapositive qui arrive prend le
     // focus de celle qui part : sinon il retombait sur l'en-tête.
     _refocusAfterPaging = _focused;
@@ -271,7 +286,7 @@ class _HeroCarouselState extends State<HeroCarousel>
   /// qu'en attendant que le carrousel tourne.
   void _turn(TraversalDirection direction) {
     final step = direction == TraversalDirection.right ? 1 : -1;
-    final count = widget.slides.length;
+    final count = _count;
     _refocusAfterPaging = true;
     _pageController.animateToPage(
       (_currentIndex + step + count) % count,
@@ -282,7 +297,7 @@ class _HeroCarouselState extends State<HeroCarousel>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.slides.isEmpty) return const SizedBox.shrink();
+    if (_count == 0) return const SizedBox.shrink();
 
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < 600;
@@ -322,17 +337,29 @@ class _HeroCarouselState extends State<HeroCarousel>
               children: [
                 PageView.builder(
                   controller: _pageController,
-                  itemCount: widget.slides.length,
+                  itemCount: _count,
                   onPageChanged: _onPageChanged,
                   itemBuilder: (context, index) {
-                    final slide = widget.slides[index];
+                    if (index < _lead) {
+                      return ExcludeFocus(
+                        excluding: index != _currentIndex,
+                        child: TvRegion.slide(
+                          onEdge: _count > 1 ? _turn : null,
+                          child: widget.leading!(
+                            context,
+                            widget.autofocusPlay && index == 0,
+                          ),
+                        ),
+                      );
+                    }
+                    final slide = widget.slides[index - _lead];
                     // Seule la page affichée se parcourt : le PageView garde
                     // ses voisines construites hors écran, et Bas depuis
                     // l'en-tête pouvait y poser le focus — invisible.
                     return ExcludeFocus(
                       excluding: index != _currentIndex,
                       child: TvRegion.slide(
-                        onEdge: widget.slides.length > 1 ? _turn : null,
+                        onEdge: _count > 1 ? _turn : null,
                         child: HeroBanner(
                           media: slide.media,
                           titleOverride: slide.title,
@@ -359,14 +386,14 @@ class _HeroCarouselState extends State<HeroCarousel>
                     );
                   },
                 ),
-                if (widget.slides.length > 1)
+                if (_count > 1)
                   Positioned(
                     // Alignés sur le texte du bandeau, pas centrés sous un
                     // contenu qui, lui, est calé à gauche.
                     left: isCompact ? 16 : 48,
                     bottom: isCompact ? 20 : 36,
                     child: HeroPageDashes(
-                      count: widget.slides.length,
+                      count: _count,
                       current: _currentIndex,
                       progress: _fill,
                       onTap: (index) => _pageController.animateToPage(

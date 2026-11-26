@@ -16,6 +16,7 @@ class RetroStoryData {
     required this.report,
     required this.name,
     required this.serverBaseUrl,
+    this.topLogoUrl,
   });
 
   final RetroReport report;
@@ -25,6 +26,10 @@ class RetroStoryData {
 
   /// Pour résoudre les affiches servies par le serveur.
   final String? serverBaseUrl;
+
+  /// Le logo du n°1 (TMDB), déjà résolu ; null quand il n'en a pas ou qu'il
+  /// n'est pas arrivé à temps : l'écran du n°1 écrit alors le titre.
+  final String? topLogoUrl;
 }
 
 /// Un écran de la story : ses couleurs, son texte, son visuel, et ce qu'un
@@ -48,6 +53,16 @@ abstract class RetroSlide {
   /// Le fond animé de l'écran, s'il en a un.
   RetroAmbient? ambient(RetroStoryData data) => null;
 
+  /// Ce qui se pose sous le fond animé, sur tout l'écran : le mur d'affiches
+  /// de l'ouverture, la teinte de l'affiche du n°1. Lit [RetroUnits].
+  Widget? backdrop(BuildContext context, RetroStoryData data) => null;
+
+  /// Toute la scène, posée par l'écran lui-même, quand la mise en page
+  /// commune (texte, puis visuel) ne lui va pas — en général en paysage, où
+  /// l'écran large demande ses propres places. Lit [RetroUnits] ; null garde
+  /// la mise en page commune.
+  Widget? compose(BuildContext context, RetroStoryData data) => null;
+
   /// Une gerbe de confettis : la carte de fin seulement.
   bool get confetti => false;
 
@@ -67,21 +82,23 @@ abstract class RetroSlide {
           child: RetroSlideLayout(
             colors: palette,
             centered: centered,
-            background: ambient == null && !confetti
-                ? null
-                : Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (ambient != null)
-                        RetroAmbientLayer(ambient: ambient, ink: palette.ink),
-                      if (confetti)
-                        RetroConfetti(colors: [
-                          palette.ink,
-                          palette.accent,
-                          ...RetroPalette.confetti,
-                        ]),
-                    ],
-                  ),
+            background: Builder(
+              builder: (context) => Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (backdrop(context, data) case final backdrop?) backdrop,
+                  if (ambient != null)
+                    RetroAmbientLayer(ambient: ambient, ink: palette.ink),
+                  if (confetti)
+                    RetroConfetti(colors: [
+                      palette.ink,
+                      palette.accent,
+                      ...RetroPalette.confetti,
+                    ]),
+                ],
+              ),
+            ),
+            compose: (context) => compose(context, data),
             text: Builder(builder: (context) => text(context, data)),
             visual: Builder(
               builder: (context) =>

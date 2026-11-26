@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import '../../../theme/retro_palette.dart';
 import 'retro_type.dart';
 
-/// La mise en page commune aux dix écrans du Rétro.
+/// La mise en page commune aux écrans du Rétro.
 ///
 /// Une seule bascule : plus large que haut, le texte passe à gauche et le
 /// visuel à droite (PC, tablette couchée, téléviseur) ; sinon, l'un sous
@@ -18,6 +18,7 @@ class RetroSlideLayout extends StatelessWidget {
     required this.text,
     this.visual,
     this.background,
+    this.compose,
     this.centered = false,
   });
 
@@ -27,6 +28,11 @@ class RetroSlideLayout extends StatelessWidget {
 
   /// Ce qui vit derrière le texte, sur tout l'écran : fond animé, confettis.
   final Widget? background;
+
+  /// Une scène posée à la main, à la place du texte et du visuel : l'écran
+  /// place ses éléments contre les bords au lieu de les centrer dans leur
+  /// colonne. Lit [RetroUnits] ; null garde la mise en page commune.
+  final Widget? Function(BuildContext context)? compose;
 
   /// Le texte porte l'écran (un grand chiffre) : en portrait, il prend la
   /// hauteur et le visuel se range dessous, à sa taille.
@@ -86,9 +92,12 @@ class RetroSlideLayout extends StatelessWidget {
           ],
         );
       }
+      final compose = this.compose;
       return RetroUnits(
         u: u,
         landscape: landscape,
+        size: size,
+        padding: padding,
         child: RetroBackground(
           color: colors.background,
           child: ColoredBox(
@@ -99,7 +108,14 @@ class RetroSlideLayout extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (background case final background?) background,
-                  Padding(padding: padding, child: body),
+                  if (compose == null)
+                    Padding(padding: padding, child: body)
+                  else
+                    Builder(
+                      builder: (context) =>
+                          compose(context) ??
+                          Padding(padding: padding, child: body),
+                    ),
                 ],
               ),
             ),

@@ -100,6 +100,10 @@ Le rapport a son fichier de contrat (ADR-0051) : `TestAPIContract` le génère, 
 | `retro_screen.dart` | Route plein écran. Fond noir, statut et barres système masqués. |
 | `hooks/retro_story_controller.dart` | Index, progression, pause, maintien, suivant et précédent. Classe pure qui prend une horloge : testée sans monter l'écran. |
 | `widgets/retro_slide_layout.dart` | Portrait : une colonne. Paysage : texte à gauche, visuel à droite. Une seule bascule, sur `constraints.maxWidth > maxHeight`. |
+| `slides/retro_slide.dart` | `compose` : un écran pose lui-même sa scène contre les bords (en paysage surtout). `backdrop` : ce qui se pose sous le fond animé. |
+| `widgets/retro_recap_ticket.dart` | L'image de récap : un ticket de séance au nom du membre, taille fixe 360 × 640, montré par le dernier écran et capturé tel quel pour le partage (phase 5). |
+| `widgets/retro_poster_wall.dart` | Le mur d'affiches de l'ouverture : colonnes inclinées qui défilent, à droite en paysage, en haut en portrait. |
+| `widgets/retro_poster.dart` | Affiche, teinte d'affiche sur tout l'écran (`RetroPosterTint`, sans flou), logo du titre (`RetroTitleLogo`). |
 | `slides/retro_*_slide.dart` | Un fichier par écran (dix). Chacun prend le rapport et rend `(texte, visuel)`. |
 | `widgets/retro_kinetic_text.dart` | Mots qui montent un à un. |
 | `widgets/retro_count_up.dart` | Chiffre qui défile. |
@@ -123,9 +127,9 @@ Les affiches passent par `AppNetworkImage` et `poster_url.dart`. Sans affiche, o
 
 ### 3.3 Accueil
 
-- **Carrousel** : `HeroCarousel` accepte une diapo d'en tête qui n'est pas un média. `HeroSlide` devient un type à deux variantes (média, Rétro) plutôt qu'un `Media` factice. Sur TV, son bouton prend le focus d'office (`autofocusPlay`).
-- **Carte « Revoir »** : à la place de `SetupHomeCard`, au-dessus de « Reprendre la lecture », une fois la story vue.
-- **Anneau** : `ProfileDisc` gagne un paramètre d'anneau, posé par `account_menu.dart` tant que le Rétro n'est pas vu. Le menu du compte gagne « Mon Rétro 2026 » jusqu'au 15 janvier.
+- **Carrousel** : `HeroCarousel` accepte une page d'en tête qui n'est pas un média (`leading`), plutôt qu'un `Media` factice. *Fait autrement que prévu* : `HeroSlide` reste un média, la page d'en tête est un simple constructeur de widget (`RetroHeroSlide`), ce qui ne touche pas au chemin des médias. Elle défile, se tourne et prend le focus comme les autres ; sur TV, son bouton prend le focus d'office (`autofocusPlay`).
+- **Carte « Revoir »** (`RetroHomeCard`) : juste après `SetupHomeCard`, au-dessus de « Reprendre la lecture », une fois la story vue ou la diapo rangée (« Voir ton année » dans ce cas). Elle ouvre la story et partage l'image sans la rouvrir (pas au téléviseur).
+- **Anneau** (`RetroRing`) : posé par `account_menu.dart` autour du bouton du compte tant que le Rétro n'est pas vu, sans changer sa place ; immobile sous « réduire les animations ». `ProfileDisc` n'a pas eu à changer. Le menu du compte gagne « Mon Rétro 2026 » jusqu'au 15 janvier.
 - **« Plus tard »** : range la diapo pour la session de l'app. Seule l'ouverture de la story pose « vu » sur le serveur.
 
 ### 3.4 Image à partager
@@ -168,9 +172,9 @@ Ordre pensé pour l'échéance. Les phases 1 à 4 sont nécessaires le 1er déce
 |---|---|---|
 | 1. Serveur | §2 complet, tests, contrat, README, capacité. | **Fait le 2026-11-26** (non commité) : `go vet` et `go test ./...` verts. Reste l'essai sur une base réelle avec `ONYX_RETRO_PREVIEW=1`. |
 | 2. Story | Modèle, provider, écran, dix écrans en portrait et paysage, commandes, TV. Transitions simples. | **Code écrit le 2026-11-26** (non commité) : `flutter analyze` propre, tests du déroulé, du contrat et des dix écrans sur quatre formats verts. Entrée provisoire : « Mon Rétro » dans le menu du compte. Reste : la regarder tourner sur téléphone, PC et TV ; flèches du clavier sur PC (voir §3.2). |
-| 3. Mouvement | Texte animé, chiffres, graphiques, fonds, transition en cercle, confettis, mode léger. | **Code écrit le 2026-11-26** (non commité) : une horloge d'entrée par écran (`RetroEntrance`), mots qui montent, chiffres qui défilent, barres et jauges qui poussent, affiches en éventail et retournée, fonds peints sans flou (`RetroAmbientLayer`), cercle depuis le point touché, confettis ; tout s'arrête sous « réduire les animations » et en mode léger. Rendu vérifié en images (téléphone et PC). Reste : la fluidité sur Windows et sur TV. La carte qui s'incline sous la souris n'est pas faite. |
-| 4. Accueil | Diapo, carte, anneau, menu du compte, « vu ». | `retro_home_test.dart`, vérifié sur téléphone et PC. |
-| 5. Partage | Image et partage par plateforme. | Image ouverte sur chaque cible. |
+| 3. Mouvement | Texte animé, chiffres, graphiques, fonds, transition en cercle, confettis, mode léger. | **Code écrit le 2026-11-26** (non commité) : une horloge d'entrée par écran (`RetroEntrance`), mots qui montent, chiffres qui défilent, barres et jauges qui poussent, affiches en éventail et retournée, fonds peints sans flou (`RetroAmbientLayer`), cercle depuis le point touché, confettis ; tout s'arrête sous « réduire les animations » et en mode léger. Rendu vérifié en images (téléphone et PC). Reste : la fluidité sur Windows et sur TV. La carte qui s'incline sous la souris n'est pas faite. **Écran des appareils retiré le 2026-11-26** : neuf écrans. Propositions pour les écrans 5 à 9 et l'image de récap : `design-plans/onyx-retro-pc-propositions-2.html`. Retenu et codé le même jour : horloge géante, barres pleine largeur (décembre en creux), chiffre géant et vrais tickets sans bandeaux, cercle des membres, profil et ticket de récap. **Reprise PC le 2026-11-26** (non commitée) : quatre premiers écrans recomposés pour un écran large, d'après `design-plans/onyx-retro-pc-propositions.html` : mur d'affiches, chiffre géant sur bleu nuit, n°1 par son logo sur la teinte de son affiche, podium sur papier tamisé. |
+| 4. Accueil | Diapo, carte, anneau, menu du compte, « vu ». | **Code écrit le 2026-11-26** (non commité) : `screens/retro/home/` (diapo, carte, anneau, éventail), `HeroCarousel.leading`, `RetroProvider.showsHero/showsCard/showsRing/later`, le Rétro chargé dès qu'il est disponible pour donner chiffres et affiches à l'accueil. `retro_home_test.dart` (9 tests) vert, rendu vérifié en images (téléphone, PC). Reste : voir l'accueil sur TV et en vrai. |
+| 5. Partage | Image et partage par plateforme. | **Code écrit le 2026-11-26** (non commité) : le ticket rendu hors écran en 1080 × 1920 (`utils/widget_image.dart`, `services/retro_share.dart`), boutons « Partager l'image » (« Enregistrer l'image » sur PC) et « Revoir » sur le dernier écran, rien au téléviseur. `share_plus` ajouté (ADR, décision 14). Tests verts. Reste : ouvrir l'image sur chaque cible (Android, iPhone, Windows, navigateur). |
 | 6. Publication | Version de test depuis `tsuky` (Android, Android TV, webOS, Windows, serveur), puis prod avant le 30 novembre. L'Apple (iOS, tvOS) se publie par fytroz. | Serveur de prod à jour le 30 novembre. |
 
 ## 7. Encore ouvert

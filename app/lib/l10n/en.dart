@@ -4575,6 +4575,72 @@ const Map<String, String> kEnglish = <String, String>{
       'More than {0}% of the members of your server.',
   'Pas forcément beaucoup, mais bien choisies.':
       'Not necessarily many, but well chosen.',
+  'Rétro {0} · jusqu’au {1}':
+      'Recap {0} · until {1}',
+  '{0}, ton année est prête.':
+      '{0}, your year is ready.',
+  'Tes heures, tes titres et un profil rien qu’à toi.':
+      'Your hours, your titles and a profile all your own.',
+  '{0} heures, {1} titres et un profil rien qu’à toi.':
+      '{0} hours, {1} titles and a profile all your own.',
+  '{0} · {1} h':
+      '{0} · {1} h',
+  'Voir mon Rétro':
+      'See my Recap',
+  'Revoir ton année':
+      'Watch your year again',
+  'Voir ton année':
+      'See your year',
+  'Menu · ton Rétro est prêt':
+      'Menu · your Recap is ready',
+  'Partager l’image':
+      'Share image',
+  'Enregistrer l’image':
+      'Save image',
+  'Revoir':
+      'Watch again',
+  'Image enregistrée : {0}':
+      'Image saved: {0}',
+  'Impossible de préparer l’image du Rétro. Réessaie dans un instant.':
+      'Couldn’t prepare your Recap image. Try again in a moment.',
+  'Membre · {0}':
+      'Member · {0}',
+  '{0} séance':
+      '{0} session',
+  '{0} séances':
+      '{0} sessions',
+  'Du 1er janvier au 30 novembre':
+      'January 1 to November 30',
+  'toi':
+      'you',
+  'ta place sur {0}':
+      'your place out of {0}',
+  'Le titre le plus partagé':
+      'The most shared title',
+  'vu par {0} membres':
+      'watched by {0} members',
+  'jour entier, mis bout à bout':
+      'full day, back to back',
+  'jours entiers, mis bout à bout':
+      'full days, back to back',
+  'film de deux heures':
+      'two-hour movie',
+  'films de deux heures':
+      'two-hour movies',
+  '{0} %':
+      '{0}%',
+  'des membres de ton serveur en ont vu moins':
+      'of your server’s members watched less',
+  'épisode':
+      'episode',
+  'épisodes':
+      'episodes',
+  'visionnage':
+      'viewing',
+  'visionnages':
+      'viewings',
+  'de visionnage':
+      'watched',
   'Vu {0} fois':
       'Watched {0} times',
   'Ton n°1 : {0}, {1}.':
@@ -4637,20 +4703,6 @@ const Map<String, String> kEnglish = <String, String>{
       'First session',
   'La plus tardive':
       'The latest one',
-  'Un appareil sans nom':
-      'An unnamed device',
-  'Tes écrans':
-      'Your screens',
-  '{0}, ton fauteuil attitré.':
-      '{0}, your usual seat.',
-  'Presque tout lu tel quel, sans conversion. Ton serveur a eu une année tranquille.':
-      'Almost everything played as is, with no conversion. Your server had a quiet year.',
-  'Une partie a été convertie à la volée pour tes appareils. Le serveur a fait le travail.':
-      'Some of it was converted on the fly for your devices. The server did the work.',
-  'Lecture directe : {0} %.':
-      'Direct play: {0}%.',
-  'Lecture directe · {0} %':
-      'Direct play · {0}%',
   '{0} membre a regardé':
       '{0} member watched',
   '{0} membres ont regardé':
@@ -4667,8 +4719,6 @@ const Map<String, String> kEnglish = <String, String>{
       'on your server this year.',
   'Tu es la seule personne à regarder ici cette année. Le serveur est à toi.':
       'You are the only one watching here this year. The server is all yours.',
-  'Ta place':
-      'Your rank',
   'n°{0}':
       '#{0}',
   'Ton profil {0} : {1}. {2}':
@@ -4681,12 +4731,6 @@ const Map<String, String> kEnglish = <String, String>{
       'Titles',
   'N°1':
       '#1',
-  'Mois record':
-      'Biggest month',
-  'Écran':
-      'Screen',
-  'Onyx · Rétro {0}':
-      'Onyx · Recap {0}',
   'Impossible de charger ton Rétro. Vérifie la connexion au serveur, puis réessaie.':
       'Couldn’t load your Recap. Check the connection to the server, then try again.',
   'Rendez-vous l’an prochain':

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 import '../../../l10n/tr.dart';
@@ -8,7 +10,9 @@ import '../widgets/retro_slide_layout.dart';
 import '../widgets/retro_type.dart';
 import 'retro_slide.dart';
 
-/// 5. Quand on regarde : l'horloge des 24 heures.
+/// 5. Quand on regarde : l'horloge des 24 heures. Sur un écran large,
+/// l'horloge en très grand sort du cadre à droite, et l'heure de pointe
+/// s'écrit en chiffre géant à gauche.
 class RetroHourSlide extends RetroSlide {
   const RetroHourSlide();
 
@@ -52,4 +56,54 @@ class RetroHourSlide extends RetroSlide {
   @override
   Widget? visual(BuildContext context, RetroStoryData data) =>
       RetroClockChart(hours: data.report.hours, peak: data.report.peakHour);
+
+  @override
+  Widget? compose(BuildContext context, RetroStoryData data) {
+    final units = RetroUnits.of(context);
+    if (!units.landscape) return null;
+    final size = units.size;
+    final padding = units.padding;
+    final report = data.report;
+    // Le cadran garde la moitié droite : il déborde du bord, jamais sur le
+    // texte.
+    final diameter = math.min(size.height, size.width * 0.55);
+    final textWidth = size.width * 0.46 - padding.left;
+    return Stack(
+      children: [
+        Positioned(
+          right: -size.width * 0.12,
+          top: (size.height - diameter) / 2,
+          width: diameter,
+          height: diameter,
+          child: RetroClockChart(
+            hours: report.hours,
+            peak: report.peakHour,
+            size: diameter,
+            showPeak: false,
+          ),
+        ),
+        Positioned(
+          left: padding.left,
+          top: padding.top,
+          bottom: padding.bottom,
+          width: textWidth,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: textWidth,
+              child: RetroText(children: [
+                RetroKicker(tr('Quand tu regardes')),
+                RetroBig(tr('{0} h', [report.peakHour]), size: 40),
+                RetroBig(headline(report),
+                    size: 13.5, delay: const Duration(milliseconds: 500)),
+                RetroNote(_night(report),
+                    delay: const Duration(milliseconds: 1100)),
+              ]),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

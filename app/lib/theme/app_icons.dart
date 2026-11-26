@@ -189,6 +189,12 @@ abstract final class AppIcons {
       IconData(0xe288, fontFamily: _regular); // globe
   static const IconData copy = IconData(0xe1ca, fontFamily: _regular); // copy
 
+  // Le Rétro : partager l'image de récap, revoir la story depuis le début.
+  static const IconData share =
+      IconData(0xeaf0, fontFamily: _regular); // export
+  static const IconData replay =
+      IconData(0xe014, fontFamily: _regular); // arrowCounterClockwise
+
   // Listes (ADR-0070) : le signet creux propose d'ajouter, plein il dit que
   // le titre est déjà dans une liste.
   static const IconData addToList =

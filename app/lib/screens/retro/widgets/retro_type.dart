@@ -15,6 +15,8 @@ class RetroUnits extends InheritedWidget {
     super.key,
     required this.u,
     required this.landscape,
+    this.size = Size.zero,
+    this.padding = EdgeInsets.zero,
     required super.child,
   });
 
@@ -22,6 +24,14 @@ class RetroUnits extends InheritedWidget {
 
   /// Plus large que haut : texte à gauche, visuel à droite.
   final bool landscape;
+
+  /// La taille de l'écran, pour ce qui se place en part de l'écran.
+  final Size size;
+
+  /// Les marges de l'écran : sous la barre de progression en haut, à distance
+  /// des bords ailleurs. Une scène posée à la main ([RetroSlide.compose]) s'y
+  /// tient.
+  final EdgeInsets padding;
 
   /// Le même calcul que la maquette : en portrait, la largeur décide ; en
   /// paysage, la hauteur, sans quoi un écran 16:9 aurait des chiffres plus
@@ -39,7 +49,10 @@ class RetroUnits extends InheritedWidget {
 
   @override
   bool updateShouldNotify(RetroUnits oldWidget) =>
-      u != oldWidget.u || landscape != oldWidget.landscape;
+      u != oldWidget.u ||
+      landscape != oldWidget.landscape ||
+      size != oldWidget.size ||
+      padding != oldWidget.padding;
 }
 
 /// Ligne de petites capitales au-dessus d'un écran : « Ton top 5 ».
@@ -94,6 +107,11 @@ class RetroBig extends StatelessWidget {
   final double size;
   final int? maxLines;
   final Duration delay;
+
+  /// Le style du très grand texte à [size] unités, pour ce qui l'écrit
+  /// ailleurs (le titre qui remplace un logo absent).
+  static TextStyle styleOf(BuildContext context, double size) =>
+      _bigStyle(context, size);
 
   @override
   Widget build(BuildContext context) {

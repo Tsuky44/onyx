@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/tr.dart';
 import '../../../theme/app_icons.dart';
+import '../../../theme/app_theme.dart';
 import '../../../theme/app_type.dart';
 import '../../../tv/tv_mode.dart';
 import '../hooks/retro_story_controller.dart';
@@ -10,7 +11,11 @@ import '../hooks/retro_story_controller.dart';
 /// bouton pour fermer, les zones à toucher et, à la souris, les flèches.
 ///
 /// Toucher à gauche revient, à droite avance ; maintenir met en pause tant
-/// que le doigt reste. Un téléviseur passe par la télécommande (`RetroScreen`).
+/// que le doigt reste, et le bouton pause garde l'écran affiché jusqu'à ce
+/// qu'on le relance. Un téléviseur passe par la télécommande (`RetroScreen`).
+///
+/// Sur le dernier écran, deux boutons en bas : partager l'image de récap (ou
+/// l'enregistrer, sur un PC) et revoir depuis le début. Pas au téléviseur.
 class RetroStoryChrome extends StatelessWidget {
   const RetroStoryChrome({
     super.key,
@@ -18,6 +23,10 @@ class RetroStoryChrome extends StatelessWidget {
     required this.ink,
     required this.year,
     required this.onClose,
+    this.background,
+    this.onShare,
+    this.sharing = false,
+    this.shareSaves = false,
   });
 
   final RetroStoryController story;
@@ -26,6 +35,19 @@ class RetroStoryChrome extends StatelessWidget {
   final Color ink;
   final int year;
   final VoidCallback onClose;
+
+  /// Le fond de l'écran en cours, pour écrire sur un bouton plein d'encre.
+  final Color? background;
+
+  /// Partage l'image de récap ; reçoit le bouton touché, en coordonnées de
+  /// l'écran. Null : pas de bouton.
+  final void Function(Rect origin)? onShare;
+
+  /// L'image se prépare : le bouton attend.
+  final bool sharing;
+
+  /// Le bouton enregistre au lieu de partager (PC Windows ou Linux).
+  final bool shareSaves;
 
   /// Un point touché, en part de l'écran : c'est de là que s'ouvre le cercle
   /// de l'écran suivant.
@@ -39,6 +61,7 @@ class RetroStoryChrome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tv = TvScope.of(context);
+    final onShare = this.onShare;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -84,7 +107,21 @@ class RetroStoryChrome extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (story.paused)
+                    // Au doigt et à la souris, un bouton pour rester sur un
+                    // écran le temps qu'on veut ; au téléviseur, la touche OK
+                    // fait la même chose et seul le témoin s'affiche.
+                    if (!tv)
+                      IconButton(
+                        onPressed: story.togglePause,
+                        tooltip: story.paused
+                            ? tr('Reprendre')
+                            : tr('Mettre en pause'),
+                        icon: Icon(
+                          story.paused ? AppIcons.play : AppIcons.pause,
+                          color: ink,
+                        ),
+                      )
+                    else if (story.paused)
                       Padding(
                         padding: const EdgeInsets.only(right: 4),
                         child: Icon(AppIcons.pause,
@@ -104,6 +141,42 @@ class RetroStoryChrome extends StatelessWidget {
             ),
           ),
         ),
+        if (!tv && story.isLast && onShare != null)
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    Builder(
+                      builder: (button) => _ActionPill(
+                        icon: shareSaves ? AppIcons.download : AppIcons.share,
+                        label: shareSaves
+                            ? tr('Enregistrer l’image')
+                            : tr('Partager l’image'),
+                        ink: ink,
+                        background: background,
+                        busy: sharing,
+                        solid: true,
+                        onPressed: () => onShare(_rectOf(button)),
+                      ),
+                    ),
+                    _ActionPill(
+                      icon: AppIcons.replay,
+                      label: tr('Revoir'),
+                      ink: ink,
+                      background: background,
+                      onPressed: () => story.goTo(0),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         // À la souris, des flèches au bord : sans elles, rien ne dit qu'un
         // clic sur la moitié gauche revient en arrière.
         if (!tv)
@@ -135,6 +208,65 @@ class RetroStoryChrome extends StatelessWidget {
             );
           }),
       ],
+    );
+  }
+}
+
+/// Où est un widget à l'écran : la feuille de partage d'un iPad s'y accroche.
+Rect _rectOf(BuildContext context) {
+  final box = context.findRenderObject();
+  if (box is! RenderBox || !box.hasSize) return Rect.zero;
+  return box.localToGlobal(Offset.zero) & box.size;
+}
+
+/// Un bouton du dernier écran : plein d'encre pour l'action principale,
+/// voilé pour l'autre.
+class _ActionPill extends StatelessWidget {
+  const _ActionPill({
+    required this.icon,
+    required this.label,
+    required this.ink,
+    required this.onPressed,
+    this.background,
+    this.busy = false,
+    this.solid = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color ink;
+  final Color? background;
+  final VoidCallback onPressed;
+  final bool busy;
+  final bool solid;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = solid ? (background ?? const Color(0xFF000000)) : ink;
+    return TextButton.icon(
+      onPressed: busy ? null : onPressed,
+      style: TextButton.styleFrom(
+        backgroundColor: solid ? ink : ink.withValues(alpha: 0.16),
+        foregroundColor: foreground,
+        disabledBackgroundColor:
+            (solid ? ink : ink.withValues(alpha: 0.16)).withValues(alpha: 0.6),
+        disabledForegroundColor: foreground,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            fontSize: AppType.body,
+            fontWeight: FontWeight.w700),
+      ),
+      icon: busy
+          ? SizedBox(
+              width: 18,
+              height: 18,
+              child:
+                  CircularProgressIndicator(strokeWidth: 2, color: foreground),
+            )
+          : Icon(icon, size: 18),
+      label: Text(label),
     );
   }
 }

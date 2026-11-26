@@ -12,11 +12,25 @@ import 'retro_type.dart';
 /// L'horloge de « Ton heure » : 24 barres autour d'un cadran, l'heure de pointe
 /// au centre. Peinte, sans image.
 class RetroClockChart extends StatelessWidget {
-  const RetroClockChart({super.key, required this.hours, required this.peak});
+  const RetroClockChart({
+    super.key,
+    required this.hours,
+    required this.peak,
+    this.size,
+    this.showPeak = true,
+  });
 
   /// 24 totaux, minuit d'abord.
   final List<int> hours;
   final int peak;
+
+  /// Le diamètre ; sans lui, l'horloge prend sa place à elle (74 unités au
+  /// plus).
+  final double? size;
+
+  /// L'heure de pointe écrite au centre. Un écran large l'écrit en grand à
+  /// côté, et laisse le cadran vide.
+  final bool showPeak;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +40,10 @@ class RetroClockChart extends StatelessWidget {
     return Semantics(
       label: tr('Répartition par heure, pic à {0} h', [peak]),
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: u * 74, maxHeight: u * 74),
+        constraints: BoxConstraints(
+          maxWidth: size ?? u * 74,
+          maxHeight: size ?? u * 74,
+        ),
         child: AspectRatio(
           aspectRatio: 1,
           child: Stack(
@@ -42,14 +59,15 @@ class RetroClockChart extends StatelessWidget {
                   ),
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RetroBig(tr('{0} h', [peak]), size: 9),
-                  SizedBox(height: u),
-                  RetroKicker(tr('Ton heure')),
-                ],
-              ),
+              if (showPeak)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RetroBig(tr('{0} h', [peak]), size: 9),
+                    SizedBox(height: u),
+                    RetroKicker(tr('Ton heure')),
+                  ],
+                ),
             ],
           ),
         ),
@@ -146,7 +164,19 @@ class RetroMonthsChart extends StatelessWidget {
     required this.months,
     required this.year,
     required this.best,
+    this.fill = false,
+    this.labelSize,
+    this.valueSize,
   });
+
+  /// Prend toute la place donnée au lieu de garder ses proportions : les
+  /// barres d'un écran large courent sur toute sa largeur.
+  final bool fill;
+
+  /// La taille des initiales des mois et celle des heures du mois record ;
+  /// par défaut, une petite étiquette pour les deux.
+  final double? labelSize;
+  final double? valueSize;
 
   /// 12 totaux en secondes.
   final List<int> months;
@@ -167,14 +197,14 @@ class RetroMonthsChart extends StatelessWidget {
     return Semantics(
       label: tr('Heures par mois, record en {0}',
           [LocaleFormats.month(DateTime(year, best))]),
-      child: AspectRatio(
-        aspectRatio: 300 / 170,
-        child: CustomPaint(
+      child: _sized(
+        CustomPaint(
           painter: _MonthsPainter(
             months: months,
             best: best - 1,
             ink: ink,
-            unit: u,
+            labelSize: labelSize ?? math.max(9.0, u * 2.6),
+            valueSize: valueSize ?? math.max(9.0, u * 2.6),
             initials: initials,
             entrance: RetroEntrance.of(context),
           ),
@@ -184,12 +214,19 @@ class RetroMonthsChart extends StatelessWidget {
   }
 }
 
+extension on RetroMonthsChart {
+  Widget _sized(Widget chart) => fill
+      ? SizedBox.expand(child: chart)
+      : AspectRatio(aspectRatio: 300 / 170, child: chart);
+}
+
 class _MonthsPainter extends CustomPainter {
   _MonthsPainter({
     required this.months,
     required this.best,
     required this.ink,
-    required this.unit,
+    required this.labelSize,
+    required this.valueSize,
     required this.initials,
     required this.entrance,
   }) : super(repaint: entrance);
@@ -199,26 +236,27 @@ class _MonthsPainter extends CustomPainter {
   final List<int> months;
   final int best;
   final Color ink;
-  final double unit;
+  final double labelSize;
+  final double valueSize;
   final List<String> initials;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final labelSize = math.max(9.0, unit * 2.6);
     final labelBand = labelSize * 1.8;
-    final valueBand = labelSize * 2;
+    final valueBand = valueSize * 1.6;
     final chartHeight = size.height - labelBand - valueBand;
     final top = months.fold<int>(0, math.max);
     final barWidth = size.width / 12 * 0.6;
     final gap = (size.width - barWidth * 12) / 11;
-    TextPainter label(String text, double alpha, FontWeight weight) =>
+    TextPainter label(String text, double alpha, FontWeight weight,
+            [double? fontSize]) =>
         TextPainter(
           text: TextSpan(
             text: text,
             style: TextStyle(
               fontFamily: AppTheme.fontFamily,
               color: ink.withValues(alpha: alpha),
-              fontSize: labelSize,
+              fontSize: fontSize ?? labelSize,
               fontWeight: weight,
             ),
           ),
@@ -234,12 +272,22 @@ class _MonthsPainter extends CustomPainter {
       final height = math.max(3.0, chartHeight * share) * grow;
       final left = i * (barWidth + gap);
       final bottom = valueBand + chartHeight;
+      // Décembre n'est pas compté (l'année s'arrête au 30 novembre) : une
+      // barre en creux plutôt qu'un mois vide.
+      final notCounted = i == 11 && months[i] == 0;
+      final barHeight =
+          notCounted ? math.max(3.0, chartHeight * 0.06) * grow : height;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(left, bottom - height, barWidth, height),
-          Radius.circular(barWidth * 0.28),
+          Rect.fromLTWH(left, bottom - barHeight, barWidth, barHeight),
+          Radius.circular(math.min(barWidth * 0.28, barHeight / 2)),
         ),
-        Paint()..color = ink.withValues(alpha: isBest ? 1 : 0.3),
+        notCounted
+            ? (Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.5
+              ..color = ink.withValues(alpha: 0.4))
+            : (Paint()..color = ink.withValues(alpha: isBest ? 1 : 0.3)),
       );
       final initial = label(initials[i], isBest ? 1 : 0.6, FontWeight.w600);
       initial.paint(
@@ -247,12 +295,12 @@ class _MonthsPainter extends CustomPainter {
           Offset(
               left + (barWidth - initial.width) / 2, bottom + labelSize * 0.5));
       if (isBest && top > 0 && grow >= 1) {
-        final value = label(
-            tr('{0} h', [(months[i] / 3600).round()]), 1, FontWeight.w800);
+        final value = label(tr('{0} h', [(months[i] / 3600).round()]), 1,
+            FontWeight.w800, valueSize);
         value.paint(
           canvas,
           Offset(left + (barWidth - value.width) / 2,
-              bottom - height - value.height - labelSize * 0.3),
+              bottom - height - value.height - valueSize * 0.15),
         );
       }
     }
@@ -260,5 +308,8 @@ class _MonthsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MonthsPainter old) =>
-      old.months != months || old.ink != ink || old.unit != unit;
+      old.months != months ||
+      old.ink != ink ||
+      old.labelSize != labelSize ||
+      old.valueSize != valueSize;
 }

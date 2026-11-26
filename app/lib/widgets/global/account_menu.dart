@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/retro_provider.dart';
+import '../../screens/retro/home/retro_ring.dart';
 import '../../screens/retro/retro_screen.dart';
 import '../../screens/auth/add_user_flow.dart';
 import '../../screens/auth/server_switcher_screen.dart';
@@ -68,7 +69,8 @@ class _AccountMenuState extends State<AccountMenu> {
     // Nul hors saison, sous le seuil, ou sans le provider (un test qui monte
     // le menu seul).
     final retro = Provider.of<RetroProvider?>(context, listen: false);
-    final retroYear = retro != null && retro.available ? retro.status?.year : null;
+    final retroYear =
+        retro != null && retro.available ? retro.status?.year : null;
 
     final choice = await showAccountMenu(
       context: context,
@@ -140,18 +142,25 @@ class _AccountMenuState extends State<AccountMenu> {
 
   @override
   Widget build(BuildContext context) {
+    // Tant que le Rétro n'a pas été ouvert, un anneau autour de l'avatar dit
+    // qu'il attend (ADR 2026-11-26-tsuky-retro-annuel).
+    final ringed = Provider.of<RetroProvider?>(context)?.showsRing ?? false;
     return TourTarget(
       anchor: TourAnchor.account,
       child: Tooltip(
-        message: tr('Menu'),
-        child: widget.plain
-            ? _buildPlain()
-            : GlassIconButton(
-                key: _anchorKey,
-                size: 34,
-                onTap: _open,
-                child: _avatarOrInitial(32),
-              ),
+        message: ringed ? tr('Menu · ton Rétro est prêt') : tr('Menu'),
+        child: RetroRing(
+          active: ringed,
+          diameter: (widget.plain ? AccountMenu.plainSize : 34) + 7,
+          child: widget.plain
+              ? _buildPlain()
+              : GlassIconButton(
+                  key: _anchorKey,
+                  size: 34,
+                  onTap: _open,
+                  child: _avatarOrInitial(32),
+                ),
+        ),
       ),
     );
   }

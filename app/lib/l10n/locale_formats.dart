@@ -21,9 +21,9 @@ abstract final class LocaleFormats {
   }
 
   static String _localeName(AppLanguage language) => switch (language) {
-    AppLanguage.french => 'fr',
-    AppLanguage.english => 'en_US',
-  };
+        AppLanguage.french => 'fr',
+        AppLanguage.english => 'en_US',
+      };
 
   static String _date(String skeleton, DateTime date) =>
       DateFormat(skeleton, _localeName(AppLanguage.current)).format(date);
@@ -46,15 +46,29 @@ abstract final class LocaleFormats {
   /// « mars » / « March » : un mois seul, pour le Rétro.
   static String month(DateTime date) => _date('LLLL', date);
 
+  /// « 4 820 » / « 4,820 » : un entier avec ses milliers séparés. L'espace
+  /// fine insécable du français devient une espace insécable ordinaire : la
+  /// police de l'app n'a pas la fine, et le chiffre se collait.
+  static String integer(int value) =>
+      NumberFormat.decimalPattern(_localeName(AppLanguage.current))
+          .format(value)
+          .replaceAll('\u202F', '\u00A0');
+
+  /// « 15 janvier » / « January 15 » : un jour du mois, sans l'année.
+  static String dayMonth(DateTime date) => _date('MMMMd', date);
+
+  /// « 23:47 » : une heure seule, sur 24 heures.
+  static String time(DateTime date) => _date('Hm', date);
+
   /// « 1 janv. · 23:47 » / « Jan 1 · 23:47 ».
   static String shortDateTime(DateTime date) =>
       '${_date('MMMd', date)} · ${_date('Hm', date)}';
 
   /// Sépare la partie décimale d'un nombre déjà formaté avec un point.
   static String decimal(String dotted) => switch (AppLanguage.current) {
-    AppLanguage.french => dotted.replaceAll('.', ','),
-    AppLanguage.english => dotted,
-  };
+        AppLanguage.french => dotted.replaceAll('.', ','),
+        AppLanguage.english => dotted,
+      };
 
   /// Un montant en dollars : « 1.2 Md $US », « 12 M $US », « 500 $US » en
   /// français ; « $1.2B », « $12M », « $500 » en anglais.

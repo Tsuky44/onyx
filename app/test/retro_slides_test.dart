@@ -96,7 +96,7 @@ void main() {
       ('complet', _report()),
       ('sans marathon, seul sur le serveur', _report(marathon: null, members: 1)),
     ]) {
-      testWidgets('les dix écrans tiennent en $name ($variant)', (tester) async {
+      testWidgets('tous les écrans tiennent en $name ($variant)', (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = size;
         addTearDown(tester.view.resetPhysicalSize);
