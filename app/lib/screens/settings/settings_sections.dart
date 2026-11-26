@@ -16,6 +16,9 @@ abstract final class SettingsSections {
   static const dashboard = 'dashboard';
   static const activity = 'activity';
   static const stats = 'stats';
+
+  /// « Mes stats », celles du compte ; [stats] est celle du serveur.
+  static const myStats = 'my-stats';
   static const users = 'users';
   static const devices = 'devices';
   static const library = 'library';

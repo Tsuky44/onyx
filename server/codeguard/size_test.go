@@ -20,8 +20,7 @@ var tolerated = map[string]struct {
 	ceiling int
 	why     string
 }{
-	"indexer/monitor.go":   {826, "la surveillance des dossiers et la file d'après-scan"},
-	"handlers/activity.go": {807, "au seuil : le prochain ajout commence par une extraction"},
+	"indexer/monitor.go": {826, "la surveillance des dossiers et la file d'après-scan"},
 }
 
 // exempt liste les fichiers que la limite ne concerne pas.

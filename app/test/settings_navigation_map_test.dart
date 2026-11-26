@@ -39,7 +39,8 @@ class _FakeApi extends ApiClient {
   Future<User> getMe() async => throw Exception('hors ligne');
 
   @override
-  Future<PlaybackStats> getMyPlaybackStats({int days = 30}) async =>
+  Future<PlaybackStats> getMyPlaybackStats(
+          {int days = 30, bool allTime = false}) async =>
       PlaybackStats.fromJson({
         'days': 30,
         'totals': {

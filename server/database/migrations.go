@@ -891,6 +891,40 @@ var migrations = []migration{
 				SELECT 'setup_completed', 'true' WHERE EXISTS (SELECT 1 FROM libraries);`,
 		},
 	},
+	{
+		id:   33,
+		name: "media genres",
+		// Voir l'ADR 2026-11-26-tsuky-statistiques-personnelles. Les genres TMDB
+		// d'un film ou d'une série, pour « Mes genres » dans les statistiques.
+		// On garde l'identifiant TMDB, qui ne dépend pas de la langue : l'app
+		// le traduit. genres_checked_at dit que la fiche a été lue, même sans
+		// genre, pour que la tâche de fond ne la redemande pas à chaque passe.
+		stmts: []string{
+			`CREATE TABLE IF NOT EXISTS media_genres (
+				media_id INTEGER NOT NULL,
+				genre_id INTEGER NOT NULL,
+				PRIMARY KEY (media_id, genre_id),
+				FOREIGN KEY (media_id) REFERENCES medias(id) ON DELETE CASCADE
+			);`,
+			`ALTER TABLE medias ADD COLUMN genres_checked_at TIMESTAMP;`,
+		},
+	},
+	{
+		id:   34,
+		name: "retro views",
+		// Voir l'ADR 2026-11-26-tsuky-retro-annuel. Qui a ouvert son Rétro
+		// de l'année : l'accueil retire alors la diapo et l'anneau, sur tous
+		// les appareils du compte. Une ligne par compte et par an.
+		stmts: []string{
+			`CREATE TABLE IF NOT EXISTS retro_views (
+				user_id INTEGER NOT NULL,
+				year INTEGER NOT NULL,
+				seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY (user_id, year),
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			);`,
+		},
+	},
 }
 
 // applyMigrations brings the database up to the latest schema version.

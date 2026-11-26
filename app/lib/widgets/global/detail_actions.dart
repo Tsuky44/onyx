@@ -148,7 +148,7 @@ class _DetailActionsState extends State<DetailActions> {
         : HeroPill(
             label: playLabel,
             icon: AppIcons.play,
-            style: HeroPillStyle.glass,
+            style: HeroPillStyle.primary,
             autofocus: widget.autofocusPlay,
             focusNode: _play,
             onPressed: onPlay,

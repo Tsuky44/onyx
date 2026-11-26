@@ -40,6 +40,9 @@ abstract final class LocaleFormats {
   /// « lundi 20 octobre » / « Monday, October 20 ».
   static String weekdayDate(DateTime date) => _date('MMMMEEEEd', date);
 
+  /// « septembre 2026 » / « September 2026 ».
+  static String monthYear(DateTime date) => _date('yMMMM', date);
+
   /// Sépare la partie décimale d'un nombre déjà formaté avec un point.
   static String decimal(String dotted) => switch (AppLanguage.current) {
     AppLanguage.french => dotted.replaceAll('.', ','),

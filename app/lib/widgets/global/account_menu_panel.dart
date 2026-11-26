@@ -21,16 +21,11 @@ final class AccountMenuProfile extends AccountMenuChoice {
   final ServerAccount account;
 }
 
-/// Un autre serveur de cet appareil.
-final class AccountMenuServer extends AccountMenuChoice {
-  const AccountMenuServer(this.account);
-  final ServerAccount account;
-}
-
 /// Les lignes du menu qui ne portent pas de compte.
 enum AccountMenuAction implements AccountMenuChoice {
   addProfile,
   manageProfiles,
+  manageServers,
   watchParty,
   settings,
   linkDevice,
@@ -51,7 +46,6 @@ class AccountMenuPanel extends StatelessWidget {
     required this.profiles,
     required this.current,
     required this.serverLabel,
-    required this.otherServers,
     required this.canAddProfile,
     required this.canLinkDevice,
     required this.onChoice,
@@ -64,7 +58,6 @@ class AccountMenuPanel extends StatelessWidget {
 
   /// Le serveur actif et le rôle qu'on y a, sous la rangée.
   final String? serverLabel;
-  final List<ServerAccount> otherServers;
   final bool canAddProfile;
   final bool canLinkDevice;
   final ValueChanged<AccountMenuChoice> onChoice;
@@ -152,20 +145,17 @@ class AccountMenuPanel extends StatelessWidget {
                   onSelect: () => onChoice(AccountMenuAction.manageProfiles),
                 ),
                 _MenuRow(
+                  icon: AppIcons.switchServer,
+                  label: tr('Gérer les serveurs'),
+                  scale: s,
+                  onSelect: () => onChoice(AccountMenuAction.manageServers),
+                ),
+                _MenuRow(
                   icon: AppIcons.watchParty,
                   label: tr('Rejoindre une séance'),
                   scale: s,
                   onSelect: () => onChoice(AccountMenuAction.watchParty),
                 ),
-                // Un seul serveur n'a pas besoin d'un sélecteur ; à partir
-                // de deux, chacun a sa ligne. Voir ADR-0013.
-                for (final server in otherServers)
-                  _MenuRow(
-                    icon: AppIcons.switchServer,
-                    label: tr('Passer sur {0}', [server.displayName]),
-                    scale: s,
-                    onSelect: () => onChoice(AccountMenuServer(server)),
-                  ),
                 _MenuRow(
                   icon: AppIcons.settings,
                   label: tr('Paramètres'),

@@ -4,6 +4,9 @@
 library;
 
 import '../l10n/tr.dart';
+import 'personal_stats.dart';
+
+export 'personal_stats.dart';
 
 DateTime _date(Object? raw) =>
     DateTime.tryParse(raw as String? ?? '')?.toLocal() ??
@@ -245,6 +248,9 @@ class PlaybackStats {
   final List<StatBucket> clients;
   final List<StatBucket> playMethods;
 
+  /// Le détail de « Mes stats », dans `GET /api/me/stats` seulement.
+  final PersonalStats? personal;
+
   const PlaybackStats({
     required this.days,
     required this.plays,
@@ -258,6 +264,7 @@ class PlaybackStats {
     required this.topMedia,
     required this.clients,
     required this.playMethods,
+    this.personal,
   });
 
   factory PlaybackStats.fromJson(Map<String, dynamic> json) {
@@ -283,6 +290,9 @@ class PlaybackStats {
       topMedia: buckets('top_media'),
       clients: buckets('clients'),
       playMethods: buckets('play_methods'),
+      personal: json['personal'] is Map<String, dynamic>
+          ? PersonalStats.fromJson(json['personal'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

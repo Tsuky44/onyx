@@ -28,6 +28,8 @@
     "request_services",
     "watch_party_invites",
     "setup_wizard",
-    "transcode_capacity"
+    "transcode_capacity",
+    "suggested_peers",
+    "retro"
   ]
 }

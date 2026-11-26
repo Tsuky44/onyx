@@ -216,6 +216,7 @@ var en = map[string]string{
 	"Réponse illisible de {0}":                                        "Couldn't read {0}'s response",
 	"Réponse inattendue de cette adresse (HTTP {0}).":                 "Unexpected response from this address (HTTP {0}).",
 	"Réponse incohérente de l’autre serveur":                          "Inconsistent reply from the other server",
+	"Rétro indisponible":                                              "Year in review unavailable",
 	"Saison introuvable sur TMDB":                                     "Season not found on TMDB",
 	"Serveur introuvable":                                             "Server not found",
 	"Service de demandes inconnu":                                     "Unknown request service",

@@ -184,13 +184,19 @@ abstract final class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: focusRinged(const ButtonStyle()),
       ),
-      // Un bouton plein se remplit de la couleur de l'anneau : le même bleu
-      // sur le même bleu, « Nouvelle liste » ne montrait aucun focus. Son
-      // anneau est blanc.
+      // Un bouton plein est blanc à l'encre noire comme ElevatedButton (aligné
+      // sur PROJECT_DESIGN.md §8), et passe au verre au repos sur téléviseur
+      // (ADR-0112). L'anneau de focus clavier reste blanc via `focusRinged`.
       filledButtonTheme: FilledButtonThemeData(
-        style: FocusFill.wrap(const ButtonStyle().copyWith(
-          side: _focusSide(null, color: AppColors.textPrimary),
-        )),
+        style: focusRinged(
+          restOnTv: FocusFill.glass,
+          FilledButton.styleFrom(
+            backgroundColor: AppColors.textPrimary,
+            foregroundColor: AppColors.background,
+            disabledBackgroundColor: AppColors.surfaceHover,
+            disabledForegroundColor: AppColors.textMuted,
+          ),
+        ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: focusRinged(TextButton.styleFrom(

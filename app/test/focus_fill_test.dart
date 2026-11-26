@@ -16,6 +16,7 @@ void main() {
   tearDown(() => TvMode.enabled.value = previous);
 
   ButtonStyle elevated() => AppTheme.dark.elevatedButtonTheme.style!;
+  ButtonStyle filled() => AppTheme.dark.filledButtonTheme.style!;
 
   test('sur téléviseur, le bouton focalisé se remplit de blanc, texte noir',
       () {
@@ -34,18 +35,22 @@ void main() {
 
   test('sur téléviseur, le bouton blanc au repos passe au verre', () {
     TvMode.enabled.value = true;
-    expect(elevated().backgroundColor?.resolve(_rest), FocusFill.glass);
-    expect(elevated().foregroundColor?.resolve(_rest), AppColors.textPrimary);
+    for (final style in <ButtonStyle>[elevated(), filled()]) {
+      expect(style.backgroundColor?.resolve(_rest), FocusFill.glass);
+      expect(style.foregroundColor?.resolve(_rest), AppColors.textPrimary);
+    }
   });
 
   test(
       'hors téléviseur, le bouton principal reste blanc et le focus garde '
       'son anneau', () {
     TvMode.enabled.value = false;
-    expect(elevated().backgroundColor?.resolve(_rest), AppColors.textPrimary);
-    expect(
-        elevated().backgroundColor?.resolve(_focused), AppColors.textPrimary);
-    expect(elevated().side?.resolve(_focused)?.color, AppColors.focus);
+    for (final style in <ButtonStyle>[elevated(), filled()]) {
+      expect(style.backgroundColor?.resolve(_rest), AppColors.textPrimary);
+      expect(style.foregroundColor?.resolve(_rest), AppColors.background);
+      expect(style.backgroundColor?.resolve(_focused), AppColors.textPrimary);
+      expect(style.side?.resolve(_focused)?.color, AppColors.focus);
+    }
   });
 
   test('un bouton désactivé ne prend pas le remplissage', () {

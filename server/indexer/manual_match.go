@@ -131,13 +131,15 @@ func RematchMediaByID(id int, overrideTitle string, overrideTMDBID int) bool {
 
 	// Overwrite the stored metadata unconditionally — this is an explicit fix.
 	// Sauf l'affiche choisie à la main (ADR-0068) : elle reste tant que la
-	// fiche TMDB est la même, et tombe avec elle sinon. SQLite évalue chaque
+	// fiche TMDB est la même, et tombe avec elle sinon. Les genres d'une autre
+	// fiche sont à relire (indexer/genres.go). SQLite évalue chaque
 	// expression du SET sur la ligne d'avant la mise à jour.
 	_, err = database.DB.Exec(`
 		UPDATE medias SET
 			title = CASE WHEN ? != '' THEN ? ELSE title END,
 			poster_url = CASE WHEN poster_locked = 1 AND COALESCE(tmdb_id, 0) = ? THEN poster_url ELSE ? END,
 			poster_locked = CASE WHEN COALESCE(tmdb_id, 0) = ? THEN poster_locked ELSE 0 END,
+			genres_checked_at = CASE WHEN COALESCE(tmdb_id, 0) = ? THEN genres_checked_at ELSE NULL END,
 			overview = ?,
 			release_date = ?,
 			tmdb_id = ?,
@@ -145,6 +147,7 @@ func RematchMediaByID(id int, overrideTitle string, overrideTMDBID int) bool {
 		WHERE id = ?`,
 		displayTitle, displayTitle,
 		tmdbID, posterURL,
+		tmdbID,
 		tmdbID,
 		overview,
 		releaseDate,

@@ -20,8 +20,6 @@ const _mathis = ServerAccount(
     id: 'm', url: 'http://maison.local', username: 'mathis', userId: 1);
 const _lea =
     ServerAccount(id: 'l', url: 'http://maison.local', username: 'lea');
-const _chalet =
-    ServerAccount(id: 'c', url: 'http://chalet.local', username: 'mathis');
 
 String _as(String user) => 'Regarder en tant que $user';
 
@@ -44,13 +42,11 @@ class _FakeApiClient extends ApiClient {
 Widget _panel({
   ValueChanged<AccountMenuChoice>? onChoice,
   bool canLinkDevice = false,
-  List<ServerAccount> otherServers = const [],
 }) =>
     AccountMenuPanel(
       profiles: const [_mathis, _lea],
       current: _lea,
       serverLabel: 'maison · Membre',
-      otherServers: otherServers,
       canAddProfile: true,
       canLinkDevice: canLinkDevice,
       onChoice: onChoice ?? (_) {},
@@ -104,19 +100,19 @@ void main() {
       final picked = <AccountMenuChoice>[];
       await tester.pumpWidget(MaterialApp(
         home: Center(
-          child: _panel(onChoice: picked.add, otherServers: const [_chalet]),
+          child: _panel(onChoice: picked.add),
         ),
       ));
 
       await tester.tap(find.bySemanticsLabel(_as('mathis')));
       await tester.tap(find.bySemanticsLabel('Ajouter un profil'));
-      await tester.tap(find.text('Passer sur chalet.local'));
+      await tester.tap(find.text('Gérer les serveurs'));
       await tester.tap(find.text('Se déconnecter'));
 
       expect(picked, hasLength(4));
       expect((picked[0] as AccountMenuProfile).account.id, 'm');
       expect(picked[1], AccountMenuAction.addProfile);
-      expect((picked[2] as AccountMenuServer).account.id, 'c');
+      expect(picked[2], AccountMenuAction.manageServers);
       expect(picked[3], AccountMenuAction.signOut);
     });
 
@@ -188,6 +184,64 @@ void main() {
         reason: 'un geste suffit, sans passer par « Qui regarde ? »');
   });
 
+  testWidgets('se déconnecter demande confirmation avant de fermer la session',
+      (tester) async {
+    final api = _FakeApiClient();
+    await tester.runAsync(() async {
+      await api.initialize();
+      await api.rememberSession(
+        serverUrl: 'http://maison.local',
+        username: 'mathis',
+        token: 'jeton-mathis',
+        userId: 1,
+      );
+    });
+    final auth = AuthProvider(api, startupRetryPauses: const []);
+    addTearDown(auth.dispose);
+    await tester.runAsync(() async {
+      for (var i = 0; i < 200 && auth.isInitializing; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    });
+    expect(auth.isAuthenticated, isTrue);
+
+    await tester.pumpWidget(ChangeNotifierProvider<AuthProvider>.value(
+      value: auth,
+      child: MaterialApp(
+        home: Scaffold(
+          appBar: AppBar(actions: [AccountMenu(authProvider: auth)]),
+        ),
+      ),
+    ));
+
+    await tester.tap(find.byType(AccountMenu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Se déconnecter'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Se déconnecter ?'), findsOneWidget);
+    expect(auth.isAuthenticated, isTrue,
+        reason: 'la session reste ouverte tant que le dialogue n’est pas confirmé');
+
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+    expect(find.text('Se déconnecter ?'), findsNothing);
+    expect(auth.isAuthenticated, isTrue);
+
+    await tester.tap(find.byType(AccountMenu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Se déconnecter'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Se déconnecter').last);
+    await tester.runAsync(() async {
+      for (var i = 0; i < 200 && auth.isAuthenticated; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+    });
+    await tester.pumpAndSettle();
+    expect(auth.isAuthenticated, isFalse);
+  });
+
   TvNavHarness.forEachEngine((engine) {
     group('à la télécommande', () {
       Future<TvNavHarness> pump(WidgetTester tester) => TvNavHarness.pump(
@@ -210,6 +264,7 @@ void main() {
           (TraversalDirection.right, 'lea, en cours'),
           (TraversalDirection.right, 'Ajouter un profil'),
           (TraversalDirection.down, 'Gérer les profils'),
+          (TraversalDirection.down, 'Gérer les serveurs'),
           (TraversalDirection.down, 'Rejoindre une séance'),
           (TraversalDirection.down, 'Paramètres'),
           (TraversalDirection.down, 'Se déconnecter'),

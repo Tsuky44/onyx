@@ -466,7 +466,11 @@ class _Poster extends StatelessWidget {
 
 /// Le style d'une pastille d'action de la fiche.
 enum HeroPillStyle {
-  /// Verre blanc à 15 %, arête éclairée : « Lecture », « Demander ».
+  /// Plein blanc à l'encre noire (et verre au repos sur téléviseur, ADR-0112) :
+  /// action principale « Lecture », « Reprendre », « Lire ».
+  primary,
+
+  /// Verre blanc à 15 %, arête éclairée : actions secondaires en pilule.
   glass,
 
   /// Monochrome : l'état se lit à l'icône et au mouvement plus qu'à la couleur.
@@ -475,8 +479,7 @@ enum HeroPillStyle {
   /// Teinte rouge de la bande-annonce.
   trailer,
 
-  /// Bleu plein de « Demander » sur une saison pas encore demandée, comme
-  /// MediaHub (`SeasonRequestButton`).
+  /// Plein blanc de « Demander » sur une saison pas encore demandée.
   request,
 }
 
@@ -549,8 +552,20 @@ class _HeroPillState extends State<HeroPill> {
   Widget build(BuildContext context) {
     final widget = this.widget;
     final compact = widget.dense || AppLayout.isCompact(context);
-    final filled = _focused && TvScope.of(context);
+    final tv = TvScope.of(context);
+    final filled = _focused && tv;
     var (fill, border, foreground) = switch (widget.style) {
+      HeroPillStyle.primary || HeroPillStyle.request => tv
+          ? (
+              FocusFill.glass,
+              Colors.white.withValues(alpha: 0.2),
+              AppColors.textPrimary,
+            )
+          : (
+              AppColors.textPrimary,
+              Colors.transparent,
+              AppColors.background,
+            ),
       HeroPillStyle.glass => (
           Colors.white.withValues(alpha: 0.15),
           Colors.white.withValues(alpha: 0.2),
@@ -565,11 +580,6 @@ class _HeroPillState extends State<HeroPill> {
           AppColors.error.withValues(alpha: 0.1),
           AppColors.error.withValues(alpha: 0.22),
           AppColors.error,
-        ),
-      HeroPillStyle.request => (
-          AppColors.request,
-          Colors.white.withValues(alpha: 0.25),
-          Colors.white,
         ),
     };
     if (filled) (fill, foreground) = (FocusFill.fill, FocusFill.ink);
@@ -644,37 +654,23 @@ class _HeroPillState extends State<HeroPill> {
                 right: widget.dense ? 12 : (compact ? 14 : 24),
                 bottom: widget.dense ? 4 : (compact ? 6 : 8),
                 child: widget.loading
-                    ? const _InkTrack()
+                    ? _InkTrack(color: foreground)
                     : const StatusTrack(height: 3),
               ),
           ],
         ),
       ),
     );
-    if (widget.style == HeroPillStyle.request) {
-      // La lueur bleue sous la pastille, comme `shadow-[0_6px_18px_-8px]` chez MediaHub.
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.request.withValues(alpha: 0.5),
-              blurRadius: 18,
-              spreadRadius: -8,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: pill,
-      );
-    }
     return iconOnly ? Tooltip(message: widget.label, child: pill) : pill;
   }
 }
 
-/// La barre d'envoi, à l'encre de l'app plutôt qu'à l'ambre du statut.
+/// La barre d'envoi, à l'encre du bouton pour rester lisible sur fond blanc
+/// comme sur verre.
 class _InkTrack extends StatelessWidget {
-  const _InkTrack();
+  const _InkTrack({required this.color});
+
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -684,8 +680,8 @@ class _InkTrack extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         child: LinearProgressIndicator(
           minHeight: 3,
-          color: AppColors.textPrimary,
-          backgroundColor: Colors.white.withValues(alpha: 0.08),
+          color: color,
+          backgroundColor: color.withValues(alpha: 0.18),
         ),
       ),
     );

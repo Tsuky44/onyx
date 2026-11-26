@@ -257,7 +257,7 @@ const String _dpadRootHome = 'lib/tv/nav/onyx_dpad.dart';
 /// `onSelect` part à la télécommande (constat N4 du rapport de phase 0). Un
 /// `TvFocusable` sans `onSelect` ne fait donc que montrer le focus.
 const Map<String, String> _focusOnly = {
-  'lib/screens/settings/pages/stats_page.dart':
+  'lib/screens/settings/widgets/stats_charts.dart':
       'les barres du graphique : le focus désigne le jour, OK n’a rien à faire',
 };
 

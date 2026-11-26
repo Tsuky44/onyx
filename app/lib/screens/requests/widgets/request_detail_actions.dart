@@ -149,7 +149,7 @@ class _RequestDetailActionsState extends State<RequestDetailActions> {
         widget: HeroPill(
           label: tr('Lire'),
           icon: AppIcons.play,
-          style: HeroPillStyle.glass,
+          style: HeroPillStyle.primary,
           loading: widget.launching,
           focusNode: node,
           autofocus: isEntry(node),

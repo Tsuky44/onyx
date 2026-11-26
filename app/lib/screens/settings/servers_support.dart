@@ -34,6 +34,80 @@ List<AccountLink> serversNotOnThisDevice(ApiClient api) {
   return result;
 }
 
+/// Un serveur proposé à l'ajout : soit déjà lié au compte depuis un autre
+/// appareil ([username] non nul), soit mutuellement accepté par les
+/// administrateurs des deux serveurs.
+class SuggestedServerOption {
+  const SuggestedServerOption({
+    required this.serverId,
+    required this.name,
+    required this.url,
+    this.username,
+  });
+
+  final String serverId;
+  final String name;
+  final String url;
+  final String? username;
+
+  bool get isLinkedAccount => username != null && username!.isNotEmpty;
+
+  String get prettyHost {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.host.isEmpty) return url;
+    return uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
+  }
+
+  String get displayName => name.trim().isNotEmpty ? name.trim() : prettyHost;
+}
+
+/// Rassemble les serveurs proposés à l'ajout : d'abord ceux déjà liés au
+/// compte sur un autre appareil, puis les serveurs pairs mutuellement acceptés
+/// par les administrateurs qui ne sont pas encore dans le carnet.
+Future<List<SuggestedServerOption>> loadSuggestedServers(ApiClient api) async {
+  final seenIds = <String>{};
+  final seenUrls = <String>{};
+  void markSeen(String serverId, String url) {
+    if (serverId.isNotEmpty) seenIds.add(serverId);
+    final normalized = ServerAccount.normalizeUrl(url);
+    if (normalized.isNotEmpty) seenUrls.add(normalized);
+  }
+
+  bool isSeen(String serverId, String url) {
+    if (serverId.isNotEmpty && seenIds.contains(serverId)) return true;
+    final normalized = ServerAccount.normalizeUrl(url);
+    return normalized.isNotEmpty && seenUrls.contains(normalized);
+  }
+
+  for (final existing in api.servers.accounts) {
+    markSeen(existing.serverId ?? '', existing.url);
+  }
+
+  final result = <SuggestedServerOption>[];
+  for (final link in serversNotOnThisDevice(api)) {
+    if (isSeen(link.serverId, link.url)) continue;
+    markSeen(link.serverId, link.url);
+    result.add(SuggestedServerOption(
+      serverId: link.serverId,
+      name: link.displayName,
+      url: link.url,
+      username: link.remoteUsername,
+    ));
+  }
+
+  final peers = await api.getSuggestedPeerServers();
+  for (final peer in peers) {
+    if (isSeen(peer.serverId, peer.url)) continue;
+    markSeen(peer.serverId, peer.url);
+    result.add(SuggestedServerOption(
+      serverId: peer.serverId,
+      name: peer.displayName,
+      url: peer.url,
+    ));
+  }
+  return result;
+}
+
 /// Lie deux comptes et dit où en est le lien.
 Future<void> linkAndReport(
     BuildContext context, String fromId, String toId) async {

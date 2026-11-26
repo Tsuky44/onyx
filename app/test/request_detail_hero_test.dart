@@ -5,7 +5,9 @@ import 'package:onyx/widgets/global/detail_hero.dart';
 import 'package:onyx/screens/requests/widgets/request_status_badge.dart';
 import 'package:onyx/widgets/global/status_motion.dart';
 import 'package:onyx/theme/app_colors.dart';
+import 'package:onyx/theme/focus_fill.dart';
 import 'package:onyx/theme/lite_mode.dart';
+import 'package:onyx/tv/tv_mode.dart';
 
 /// La fiche de demande reprend l'en-tête d'OnyxHub : surtitre de statut en
 /// capitales, pastilles d'action arrondies. Un statut se lit sans être une
@@ -98,5 +100,36 @@ void main() {
             of: find.byType(StatusBeam),
             matching: find.byType(SlideTransition)),
         findsNothing);
+  });
+
+  testWidgets('les pastilles primary et request sont blanches hors TV et verre sur TV',
+      (tester) async {
+    final previous = TvMode.enabled.value;
+    addTearDown(() => TvMode.enabled.value = previous);
+
+    TvMode.enabled.value = false;
+    for (final style in const [HeroPillStyle.primary, HeroPillStyle.request]) {
+      await tester.pumpWidget(host(HeroPill(
+        label: 'Action',
+        style: style,
+        onPressed: () {},
+      )));
+      final material = tester.widget<Material>(find.byType(Material).last);
+      expect(material.color, AppColors.textPrimary);
+    }
+
+    TvMode.enabled.value = true;
+    for (final style in const [HeroPillStyle.primary, HeroPillStyle.request]) {
+      await tester.pumpWidget(TvScope(
+        isTv: true,
+        child: host(HeroPill(
+          label: 'Action',
+          style: style,
+          onPressed: () {},
+        )),
+      ));
+      final material = tester.widget<Material>(find.byType(Material).last);
+      expect(material.color, FocusFill.glass);
+    }
   });
 }

@@ -11,8 +11,12 @@ import 'package:onyx/services/api_client.dart';
 import 'package:onyx/services/download_manager.dart';
 import 'package:onyx/services/media_details_cache.dart';
 import 'package:onyx/services/media_tracks_cache.dart';
+import 'package:onyx/theme/app_colors.dart';
+import 'package:onyx/theme/focus_fill.dart';
+import 'package:onyx/tv/tv_mode.dart';
 import 'package:onyx/utils/format.dart';
 import 'package:onyx/widgets/global/detail_actions.dart';
+import 'package:onyx/widgets/global/detail_hero.dart';
 
 class _Api extends ApiClient {
   _Api({required this.position});
@@ -147,6 +151,43 @@ void main() {
     test('un film : deux verbes, en casse de phrase', () {
       expect(detailPlayLabel(resuming: false), 'Lecture');
       expect(detailPlayLabel(resuming: true), 'Reprendre');
+    });
+
+    testWidgets('le bouton de lecture de la fiche est blanc hors téléviseur',
+        (tester) async {
+      await pumpMovie(tester, size: const Size(1200, 1000), position: 0);
+      final pill = find.ancestor(
+        of: find.text('Lecture'),
+        matching: find.byType(HeroPill),
+      );
+      final material = tester.widget<Material>(
+        find.descendant(of: pill, matching: find.byType(Material)),
+      );
+      expect(material.color, AppColors.textPrimary);
+      final text = tester.widget<Text>(find.text('Lecture'));
+      expect(text.style?.color, AppColors.background);
+
+      final previous = TvMode.enabled.value;
+      addTearDown(() => TvMode.enabled.value = previous);
+      TvMode.enabled.value = true;
+      await tester.pumpWidget(TvScope(
+        isTv: true,
+        child: MaterialApp(
+          home: Scaffold(
+            body: DetailActions(
+              playLabel: 'Lecture',
+              onPlay: () {},
+            ),
+          ),
+        ),
+      ));
+      final tvMaterial = tester.widget<Material>(
+        find.descendant(
+          of: find.byType(HeroPill),
+          matching: find.byType(Material),
+        ),
+      );
+      expect(tvMaterial.color, FocusFill.glass);
     });
 
     test('une série nomme l’épisode que le bouton lance', () {

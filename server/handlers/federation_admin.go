@@ -54,6 +54,37 @@ func ListPeerServers(w http.ResponseWriter, _ *http.Request, _ httprouter.Params
 	json.NewEncoder(w).Encode(peers)
 }
 
+// ListSuggestedPeerServers rend les serveurs liés mutuellement approuvés
+// (GET /api/peers/suggested) sans secret ni erreur interne, pour qu'un
+// utilisateur qui ajoute un serveur voie directement ceux validés par les
+// administrateurs.
+func ListSuggestedPeerServers(w http.ResponseWriter, _ *http.Request, _ httprouter.Params, _ int) {
+	w.Header().Set("Content-Type", "application/json")
+	rows, err := database.DB.Query(`SELECT server_id, name, url
+		FROM peer_servers
+		WHERE local_approved = 1 AND remote_approved = 1
+		ORDER BY name, id`)
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
+		return
+	}
+	defer rows.Close()
+	peers := []SuggestedPeerServer{}
+	for rows.Next() {
+		var p SuggestedPeerServer
+		if err := rows.Scan(&p.ServerID, &p.Name, &p.URL); err != nil {
+			writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
+			return
+		}
+		peers = append(peers, p)
+	}
+	if err := rows.Err(); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "Erreur interne du serveur")
+		return
+	}
+	json.NewEncoder(w).Encode(peers)
+}
+
 func writePeer(w http.ResponseWriter, id int) {
 	peers, err := loadPeerServers("WHERE p.id = ?", id)
 	if err != nil || len(peers) == 0 {

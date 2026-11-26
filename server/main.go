@@ -93,6 +93,8 @@ func main() {
 	go safego.Forever("handlers.RunEmbySync", func() { handlers.RunEmbySync(playbackContext) })
 	go safego.Forever("handlers.RunPlaybackActivity", func() { handlers.RunPlaybackActivity(playbackContext) })
 	go safego.Forever("handlers.RunWatchParties", func() { handlers.RunWatchParties(playbackContext) })
+	// Les genres des titres, lus après le scan pour « Mes stats ».
+	go safego.Forever("indexer.RunGenreFiller", func() { indexer.RunGenreFiller(playbackContext) })
 	// Les titres connus de TMDB, pour compléter la recherche des demandes (ADR-0135).
 	handlers.StartRequestTitleIndex(playbackContext, filepath.Dir(absDbPath))
 
@@ -315,6 +317,9 @@ func main() {
 	router.POST("/api/links", handlers.RequireAuth(handlers.CreateAccountLink))
 	router.POST("/api/links/code", handlers.RequireAuth(handlers.CreateLinkCode))
 	router.DELETE("/api/links/:id", handlers.RequireAuth(handlers.DeleteAccountLink))
+	// Serveurs mutuellement acceptés par les administrateurs : n'expose que
+	// nom, identifiant et adresse publique à un utilisateur déjà connecté.
+	router.GET("/api/peers/suggested", handlers.RequireAuth(handlers.ListSuggestedPeerServers))
 	// Synchronisation de la progression avec un compte Emby de l'utilisateur.
 	router.GET("/api/me/emby", handlers.RequireAuth(handlers.GetEmbyLink))
 	router.PUT("/api/me/emby", handlers.RequireAuth(handlers.LinkEmby))
@@ -380,6 +385,11 @@ func main() {
 	// La page du lien, /share#code, est l'app web elle-même (webui, plus bas) :
 	// elle ouvre le lecteur Onyx en invité. Le code reste dans le fragment.
 	router.GET("/api/me/stats", handlers.RequireAuth(handlers.GetMyPlaybackStats))
+	// Le Rétro de fin d'année : chacun ne lit que le sien. Sa place sur le
+	// serveur n'y est qu'en agrégats (total, rang, titre le plus partagé).
+	router.GET("/api/me/retro", handlers.RequireAuth(handlers.GetMyRetroStatus))
+	router.GET("/api/me/retro/:year", handlers.RequireAuth(handlers.GetMyRetro))
+	router.POST("/api/me/retro/:year/seen", handlers.RequireAuth(handlers.MarkMyRetroSeen))
 	router.GET("/api/me/devices", handlers.RequireAuth(handlers.ListMyDevices))
 	router.DELETE("/api/me/devices/:id", handlers.RequireAuth(handlers.RevokeMyDevice))
 	router.GET("/api/admin/activity", handlers.RequirePermission(models.PermManageUsers, handlers.ListNowPlaying))

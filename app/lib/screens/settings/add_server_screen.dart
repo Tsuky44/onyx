@@ -50,6 +50,7 @@ class _AddServerScreenState extends State<AddServerScreen> {
   late _AddMode _mode = widget.signIn ? _AddMode.signIn : _AddMode.request;
   bool _busy = false;
   bool _discovering = false;
+  List<SuggestedServerOption> _suggested = const [];
   String? _error;
 
   @override
@@ -57,6 +58,24 @@ class _AddServerScreenState extends State<AddServerScreen> {
     super.initState();
     _serverController.text = widget.initialUrl ?? '';
     _usernameController.text = widget.initialUsername ?? '';
+    if (widget.initialUrl == null) _loadSuggested();
+  }
+
+  Future<void> _loadSuggested() async {
+    final options = await loadSuggestedServers(context.read<ApiClient>());
+    if (!mounted || options.isEmpty) return;
+    setState(() => _suggested = options);
+  }
+
+  void _pickSuggested(SuggestedServerOption option) {
+    setState(() {
+      _serverController.text = option.url;
+      if (option.isLinkedAccount) {
+        _usernameController.text = option.username!;
+        _mode = _AddMode.signIn;
+      }
+      _error = null;
+    });
   }
 
   @override
@@ -219,6 +238,49 @@ class _AddServerScreenState extends State<AddServerScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
           children: [
+            if (_suggested.isNotEmpty) ...[
+              Text(
+                tr('Serveurs proposés'),
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: AppType.callout,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 10),
+              for (final option in _suggested)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Material(
+                    color: AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: ServerAccount.sameAddress(
+                                _serverController.text, option.url)
+                            ? AppColors.textPrimary
+                            : AppColors.glassBorder,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      enabled: !_busy,
+                      leading: const Icon(AppIcons.switchServer,
+                          color: AppColors.textPrimary),
+                      title: Text(option.displayName),
+                      subtitle: Text(
+                        option.isLinkedAccount
+                            ? tr('Compte lié · {0}', [option.username!])
+                            : '${option.prettyHost} · ${tr('Serveur partenaire')}',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => _pickSuggested(option),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+            ],
             SegmentedButton<_AddMode>(
               segments: [
                 ButtonSegment(

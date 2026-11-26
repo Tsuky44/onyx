@@ -173,9 +173,13 @@ mixin _ActivityEndpoints {
     return PlaybackStats.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<PlaybackStats> getMyPlaybackStats({int days = 30}) async {
+  /// Les statistiques du compte connecté (« Mes stats »). [allTime] couvre
+  /// tout son historique, et [days] est alors ignoré.
+  Future<PlaybackStats> getMyPlaybackStats(
+      {int days = 30, bool allTime = false}) async {
     final response = await _dio.get('/api/me/stats', queryParameters: {
       'days': days,
+      if (allTime) 'all': 1,
       'tz_offset': DateTime.now().timeZoneOffset.inMinutes,
     });
     return PlaybackStats.fromJson(response.data as Map<String, dynamic>);

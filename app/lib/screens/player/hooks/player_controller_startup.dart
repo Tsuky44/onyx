@@ -176,6 +176,15 @@ extension PlayerControllerStartup on PlayerController {
     // Sans choix transmis par l'épisode qu'on quitte, c'est celui que le
     // compte a retenu pour la série (ADR-0044). La demande part ici pour
     // courir pendant celle du ticket, et se lit juste après.
+    // Le volume de l'épisode qu'on quitte, posé avant l'ouverture : le moteur
+    // est neuf et partirait à 100 %, le temps d'un éclat de son.
+    final carriedVolume = inheritedPreferences?.volume;
+    if (carriedVolume != null) {
+      unawaited(session.setVolume(carriedVolume).catchError((Object e) {
+        debugPrint('Player: volume hérité non appliqué: $e');
+      }));
+    }
+
     _seriesMemory = SeriesTrackMemory.forMedia(apiClient, media);
     final seriesChoice = inheritedPreferences == null
         ? _seriesMemory?.load(cacheFirst: _localFilePath != null)

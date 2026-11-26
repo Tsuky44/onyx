@@ -14,6 +14,7 @@ import 'pages/emby_sync_page.dart';
 import 'pages/integrations_page.dart';
 import 'pages/library_page.dart';
 import 'pages/linked_servers_page.dart';
+import 'pages/my_stats_page.dart';
 import 'pages/playback_page.dart';
 import 'pages/security_page.dart';
 import 'pages/server_logs_page.dart';
@@ -112,6 +113,23 @@ List<SettingsCategory> settingsCategoriesFor(Permissions p) {
             label: tr('Liens de partage'),
             builder: (_) => const SharesPage(),
           ),
+      ],
+    ),
+    // Ce que le compte a regardé, pour tout le monde : une entrée à elle
+    // plutôt qu'un onglet de Mon compte, qui gère le compte (ADR
+    // 2026-11-26-tsuky-statistiques-personnelles).
+    SettingsCategory(
+      id: SettingsSections.myStats,
+      label: tr('Mes stats'),
+      icon: Icons.insights_rounded,
+      hint: tr('Temps regardé, habitudes, séries, genres'),
+      admin: false,
+      sections: [
+        SettingsSection(
+          id: SettingsSections.myStats,
+          label: tr('Mes stats'),
+          builder: (_) => const MyStatsPage(),
+        ),
       ],
     ),
     SettingsCategory(

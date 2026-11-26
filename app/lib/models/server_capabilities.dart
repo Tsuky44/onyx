@@ -75,6 +75,10 @@ class ServerCapabilities {
   /// toujours servi.
   static const transcodeCapacity = 'transcode_capacity';
 
+  /// `GET /api/peers/suggested` liste les serveurs pairs mutuellement acceptés
+  /// par les administrateurs, proposés lors de l'ajout d'un serveur.
+  static const suggestedPeers = 'suggested_peers';
+
   bool supports(String capability) => capabilities.contains(capability);
 
   /// Null quand la réponse n'est pas celle d'un serveur Onyx qui va bien.

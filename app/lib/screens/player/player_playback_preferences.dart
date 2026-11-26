@@ -28,12 +28,20 @@ class PlayerPlaybackPreferences {
   /// True when the previous episode had no active subtitles.
   final bool subtitlesOff;
 
+  /// Le volume (0 à 100) de l'épisode qu'on quitte, null quand le choix vient
+  /// de la mémoire de la série.
+  ///
+  /// Il suit la séance, pas la série : chaque épisode ouvre un moteur neuf, qui
+  /// repartait à 100 % et faisait sauter le son qu'on venait de baisser.
+  final double? volume;
+
   const PlayerPlaybackPreferences({
     required this.audioIndex,
     this.audioLang,
     this.subtitle,
     this.internalSubId,
     required this.subtitlesOff,
+    this.volume,
   });
 
   /// Ce que le compte a retenu pour la série, sous la forme que le lecteur

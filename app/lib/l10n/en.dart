@@ -3582,8 +3582,8 @@ const Map<String, String> kEnglish = <String, String>{
       'This device\'s language, display and notifications, and help if something goes wrong. These settings do not follow your account.',
   'Comment les films et les séries se lisent. Vos préférences suivent votre compte sur tous vos appareils ; seuls les réglages du lecteur restent propres à celui-ci.':
       'How movies and shows play. Your preferences follow your account on all your devices; only the player settings stay specific to this one.',
-  'Votre profil sur {0}, votre activité, et les appareils où vous êtes connecté ou que vous voulez y ajouter.':
-      'Your profile on {0}, your activity, and the devices you are signed in on or want to add.',
+  'Votre profil sur {0}, et les appareils où vous êtes connecté ou que vous voulez y ajouter.':
+      'Your profile on {0}, and the devices you are signed in on or want to add.',
   'Ce que cet appareil garde pour s’afficher plus vite. Cela ne change rien sur vos autres appareils.':
       'What this device keeps so it can display faster. This changes nothing on your other devices.',
   'Ce que cet appareil garde hors ligne, quand il a le droit de l’aller chercher, et la place que cela prend. Ces réglages ne changent rien sur vos autres appareils.':
@@ -4277,4 +4277,250 @@ const Map<String, String> kEnglish = <String, String>{
       '?',
   'à':
       'to',
+  'Se déconnecter ?':
+      'Sign out?',
+  'Vous devrez vous reconnecter pour accéder à votre bibliothèque sur cet appareil.':
+      'You will need to sign back in to access your library on this device.',
+  'Gérer les serveurs':
+      'Manage servers',
+  'Connecté à {0}':
+      'Connected to {0}',
+  'Serveur principal':
+      'Primary server',
+  'Configurer les serveurs':
+      'Configure servers',
+  '{0} demande en attente':
+      '{0} pending request',
+  '{0} demandes en attente':
+      '{0} pending requests',
+  '{0} serveur lié à connecter':
+      '{0} linked server to connect',
+  '{0} serveurs liés à connecter':
+      '{0} linked servers to connect',
+  'Gérer {0}':
+      'Manage {0}',
+  'Serveurs proposés':
+      'Suggested servers',
+  'Serveur partenaire':
+      'Partner server',
+  'Compte lié · {0}':
+      'Linked account · {0}',
+  '12 mois':
+      '12 months',
+  'Depuis le début':
+      'All time',
+  'Impossible de calculer vos statistiques.':
+      'Couldn’t work out your stats.',
+  'Mes stats':
+      'My stats',
+  'Ce que vous avez regardé : votre temps, vos habitudes, vos séries et vos genres. Vous seul les voyez.':
+      'What you’ve watched: your time, your habits, your shows and your genres. Only you can see them.',
+  'Temps regardé par jour':
+      'Watch time per day',
+  'Temps regardé par semaine':
+      'Watch time per week',
+  'Temps regardé par mois':
+      'Watch time per month',
+  'Mes titres les plus regardés':
+      'My most watched titles',
+  'Temps regardé, habitudes, séries, genres':
+      'Watch time, habits, shows, genres',
+  'Lundi':
+      'Monday',
+  'Mardi':
+      'Tuesday',
+  'Mercredi':
+      'Wednesday',
+  'Jeudi':
+      'Thursday',
+  'Vendredi':
+      'Friday',
+  'Samedi':
+      'Saturday',
+  'Dimanche':
+      'Sunday',
+  'lun.':
+      'Mon',
+  'mar.':
+      'Tue',
+  'mer.':
+      'Wed',
+  'jeu.':
+      'Thu',
+  'ven.':
+      'Fri',
+  'sam.':
+      'Sat',
+  'dim.':
+      'Sun',
+  'le matin':
+      'morning',
+  'l’après-midi':
+      'afternoon',
+  'le soir':
+      'evening',
+  'la nuit':
+      'night',
+  'Autant que la période d’avant':
+      'Same as the period before',
+  '{0} de plus que la période d’avant':
+      '{0} more than the period before',
+  '{0} de moins que la période d’avant':
+      '{0} less than the period before',
+  'Temps regardé':
+      'Watch time',
+  'Séance moyenne : {0}':
+      'Average session: {0}',
+  'Jours d’affilée':
+      'Day streak',
+  'Record : {0} jour':
+      'Best: {0} day',
+  'Record : {0} jours':
+      'Best: {0} days',
+  'Films vus':
+      'Movies watched',
+  '{0} en moyenne':
+      '{0} on average',
+  'Épisodes vus':
+      'Episodes watched',
+  'de {0} série':
+      'from {0} show',
+  'de {0} séries':
+      'from {0} shows',
+  'Séries terminées':
+      'Shows finished',
+  'Mes habitudes':
+      'My habits',
+  'Selon l’heure de début de chaque lecture.':
+      'Based on when each play started.',
+  'Créneau préféré':
+      'Favourite time',
+  '{0}, {1}':
+      '{0}, {1}',
+  'Plus longue séance':
+      'Longest session',
+  '{0} · {1}':
+      '{0} · {1}',
+  'Jour record':
+      'Biggest day',
+  'Après minuit':
+      'After midnight',
+  '{0} % de votre temps, entre minuit et 5 h':
+      '{0}% of your time, between midnight and 5 am',
+  'Grille des heures de visionnage par jour de la semaine':
+      'Grid of viewing hours by day of the week',
+  '{0}, {1} h : {2}':
+      '{0}, {1}:00: {2}',
+  'Depuis mon arrivée':
+      'Since I joined',
+  'soit {0} jour devant l’écran':
+      'that’s {0} day in front of the screen',
+  'soit {0} jours devant l’écran':
+      'that’s {0} days in front of the screen',
+  'depuis le {0}':
+      'since {0}',
+  'Le plus revu':
+      'Most rewatched',
+  '{1}, vu {0} fois':
+      '{1}, watched {0} times',
+  'Mes séries':
+      'My shows',
+  'Les {0} séries les plus regardées sur {1}.':
+      'The {0} most watched of {1} shows.',
+  'Aucune série regardée sur cette période.':
+      'No shows watched in this period.',
+  'Plus gros marathon':
+      'Biggest binge',
+  '{0} épisode de {1}':
+      '{0} episode of {1}',
+  '{0} épisodes de {1}':
+      '{0} episodes of {1}',
+  'Terminée':
+      'Finished',
+  '{0} / {1} ép.':
+      '{0} / {1} ep.',
+  '{0} regardées sur la période':
+      '{0} watched in this period',
+  'Films à finir':
+      'Movies to finish',
+  'Vos films durent {0} en moyenne.':
+      'Your movies run {0} on average.',
+  'Aucun film en cours : tout est fini.':
+      'No movies in progress: you’ve finished them all.',
+  'Vu à {0} %':
+      '{0}% watched',
+  'Mes décennies':
+      'My decades',
+  'Selon l’année de sortie des films et des séries regardés.':
+      'Based on the release year of the movies and shows you watched.',
+  'Aucune date de sortie connue sur cette période.':
+      'No known release dates in this period.',
+  '{0} titre':
+      '{0} title',
+  '{0}s':
+      '{0}s',
+  'Mes genres':
+      'My genres',
+  'Un titre compte dans chacun de ses genres.':
+      'A title counts towards each of its genres.',
+  'Les genres de vos titres arrivent : le serveur les lit peu à peu chez TMDB.':
+      'Your titles’ genres are on their way: the server is fetching them from TMDB bit by bit.',
+  'Où je regarde':
+      'Where I watch',
+  'Action':
+      'Action',
+  'Aventure':
+      'Adventure',
+  'Animation':
+      'Animation',
+  'Comédie':
+      'Comedy',
+  'Crime':
+      'Crime',
+  'Documentaire':
+      'Documentary',
+  'Drame':
+      'Drama',
+  'Familial':
+      'Family',
+  'Fantastique':
+      'Fantasy',
+  'Histoire':
+      'History',
+  'Horreur':
+      'Horror',
+  'Musique':
+      'Music',
+  'Mystère':
+      'Mystery',
+  'Romance':
+      'Romance',
+  'Science-fiction':
+      'Science fiction',
+  'Téléfilm':
+      'TV movie',
+  'Thriller':
+      'Thriller',
+  'Guerre':
+      'War',
+  'Western':
+      'Western',
+  'Action et aventure':
+      'Action and adventure',
+  'Science-fiction et fantastique':
+      'Sci-fi and fantasy',
+  'Guerre et politique':
+      'War and politics',
+  'Enfants':
+      'Kids',
+  'Actualités':
+      'News',
+  'Téléréalité':
+      'Reality',
+  'Feuilleton':
+      'Soap',
+  'Talk-show':
+      'Talk show',
+  'semaine du {0}':
+      'week of {0}',
 };

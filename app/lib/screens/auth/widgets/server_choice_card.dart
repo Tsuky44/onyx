@@ -28,6 +28,10 @@ class ServerChoiceCard extends StatefulWidget {
     required this.onSelect,
     this.status,
     this.autofocus = false,
+    this.editing = false,
+    this.isPrimary = false,
+    this.onEdit,
+    this.onTogglePrimary,
   });
 
   final ServerAccount account;
@@ -39,6 +43,10 @@ class ServerChoiceCard extends StatefulWidget {
   /// La ligne d'état ; rien quand l'information n'existe pas.
   final String? status;
   final bool autofocus;
+  final bool editing;
+  final bool isPrimary;
+  final VoidCallback? onEdit;
+  final VoidCallback? onTogglePrimary;
 
   /// Écart entre la carte et son liseré, et épaisseur de celui-ci.
   static const double ringGap = 2;
@@ -62,6 +70,9 @@ class _ServerChoiceCardState extends State<ServerChoiceCard> {
     final initial = name.isEmpty ? '?' : name.characters.first.toUpperCase();
     final size = widget.size;
     final radius = BorderRadius.circular(ServerChoiceCard.radius * size / 120);
+    final editing = widget.editing;
+    final action = editing ? (widget.onEdit ?? widget.onSelect) : widget.onSelect;
+    final showControls = editing || _hovered;
 
     return _CardFrame(
       width: ServerChoiceCard.slotWidth(size),
@@ -71,8 +82,10 @@ class _ServerChoiceCardState extends State<ServerChoiceCard> {
       child: Semantics(
         button: true,
         selected: widget.selected,
-        label: tr('Serveur {0}', [name]),
-        onTap: widget.enabled ? widget.onSelect : null,
+        label: editing
+            ? tr('Gérer {0}', [name])
+            : tr('Serveur {0}', [name]),
+        onTap: widget.enabled ? action : null,
         excludeSemantics: true,
         child: Tooltip(
           message: account.prettyHost,
@@ -80,7 +93,8 @@ class _ServerChoiceCardState extends State<ServerChoiceCard> {
           child: TvFocusable(
             autofocus: widget.autofocus,
             enabled: widget.enabled,
-            onSelect: widget.onSelect,
+            onSelect: action,
+            onContextMenu: editing ? widget.onTogglePrimary : widget.onEdit,
             borderRadius: radius,
             child: MouseRegion(
               cursor:
@@ -89,7 +103,7 @@ class _ServerChoiceCardState extends State<ServerChoiceCard> {
               onExit: (_) => setState(() => _hovered = false),
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: widget.enabled ? widget.onSelect : null,
+                onTap: widget.enabled ? action : null,
                 child: AnimatedContainer(
                   duration: AppMotion.fade(context, AppMotion.micro),
                   curve: AppMotion.curve,
@@ -99,32 +113,94 @@ class _ServerChoiceCardState extends State<ServerChoiceCard> {
                       radius.topLeft.x + ServerChoiceCard.ringGap,
                     ),
                     border: Border.all(
-                      color: widget.selected
+                      color: widget.selected && !editing
                           ? AppColors.textPrimary
                           : Colors.transparent,
                       width: ServerChoiceCard.ringWidth,
                     ),
                   ),
                   child: AnimatedOpacity(
-                    opacity: _hovered && !widget.selected ? 0.86 : 1,
+                    opacity: _hovered && !widget.selected && !editing ? 0.86 : 1,
                     duration: AppMotion.fade(context, AppMotion.micro),
                     curve: AppMotion.curve,
-                    child: Container(
+                    child: SizedBox(
                       width: size,
                       height: size,
-                      decoration: BoxDecoration(
-                        color: ProfileDisc.tintFor(account),
-                        borderRadius: radius,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        initial,
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: size / 3,
-                          fontWeight: FontWeight.w700,
-                          height: 1,
-                        ),
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: size,
+                            height: size,
+                            decoration: BoxDecoration(
+                              color: ProfileDisc.tintFor(account),
+                              borderRadius: radius,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              initial,
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: size / 3,
+                                fontWeight: FontWeight.w700,
+                                height: 1,
+                              ),
+                            ),
+                          ),
+                          if (editing)
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.glassFillStrong,
+                                    borderRadius: radius,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (widget.onTogglePrimary != null || widget.isPrimary)
+                            Positioned(
+                              left: 6,
+                              bottom: 6,
+                              child: AnimatedOpacity(
+                                opacity: (editing || widget.isPrimary) ? 1 : 0,
+                                duration: AppMotion.fade(context, AppMotion.micro),
+                                curve: AppMotion.curve,
+                                child: _CardBadgeButton(
+                                  icon: widget.isPrimary
+                                      ? AppIcons.rating
+                                      : AppIcons.ratingOutline,
+                                  color: widget.isPrimary
+                                      ? AppColors.warning
+                                      : AppColors.textPrimary,
+                                  tooltip: widget.isPrimary
+                                      ? tr('Serveur principal')
+                                      : tr('Démarrer sur ce serveur'),
+                                  onPressed: (editing || widget.isPrimary) &&
+                                          widget.enabled
+                                      ? widget.onTogglePrimary
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          if (widget.onEdit != null)
+                            Positioned(
+                              right: 6,
+                              bottom: 6,
+                              child: AnimatedOpacity(
+                                opacity: showControls ? 1 : 0,
+                                duration: AppMotion.fade(context, AppMotion.micro),
+                                curve: AppMotion.curve,
+                                child: _CardBadgeButton(
+                                  icon: AppIcons.edit,
+                                  color: AppColors.textPrimary,
+                                  tooltip: tr('Gérer {0}', [name]),
+                                  onPressed: showControls && widget.enabled
+                                      ? widget.onEdit
+                                      : null,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -132,6 +208,47 @@ class _ServerChoiceCardState extends State<ServerChoiceCard> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardBadgeButton extends StatelessWidget {
+  const _CardBadgeButton({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final badge = Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: AppColors.background.withValues(alpha: 0.72),
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      alignment: Alignment.center,
+      child: Icon(icon, size: 15, color: color),
+    );
+    if (onPressed == null) return badge;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: badge,
         ),
       ),
     );

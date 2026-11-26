@@ -278,6 +278,45 @@ Toutes les routes API (sauf l'inscription/connexion et le stream) requièrent l'
 * `GET /api/users/:id/avatar` (`RequireAuth`) — la photo d'un compte du serveur, `404` sans photo.
   Toute session du serveur la lit ; l'URL porte la version, d'où `Cache-Control: immutable`.
 
+#### ➡️ Mes statistiques (« Mes stats », ADR 2026-11-26-tsuky-statistiques-personnelles)
+* **Route :** `GET /api/me/stats` (`RequireAuth`, sans droit) — ce que le compte a regardé, à
+  lui seul. Paramètres : `days` (1 à 365, 30 par défaut), `tz_offset` (minutes, pour découper
+  les jours dans le fuseau de l'appareil), `all=1` pour tout l'historique (de la première
+  lecture à aujourd'hui, dix ans au plus ; `days` est alors ignoré).
+* **Réponse :** la forme de `GET /api/admin/stats` sans `top_users`, plus `personal` :
+  `previous` (la période d'avant, absente avec `all=1`), `streak { current, best }` (jours
+  d'affilée sur tout l'historique), `weekday_hour` (7 × 24 secondes, lundi d'abord),
+  `longest_play`, `marathon` (le plus d'épisodes d'une série en un jour, deux au moins),
+  `shows` (6 au plus : `episodes_seen` / `episodes_total` selon la progression, saison 0 exclue)
+  avec `shows_count` et `shows_finished`, `unfinished_movies` (5 au plus, `percent`),
+  `average_movie_seconds`, `decades`, `genres` (identifiants TMDB, ceux des séries repliés sur
+  ceux des films ; vides tant que la tâche de fond ne les a pas lus), `devices` (par nom
+  d'appareil, `secondary` = l'application), `lifetime { plays, watched_seconds, longest_play,
+  most_rewatched }`. Un serveur plus ancien n'envoie pas `personal`.
+* Les genres viennent d'une tâche de fond (`indexer.RunGenreFiller`) qui lit `/movie/:id` et
+  `/tv/:id` chez TMDB par lots de 40 et les garde dans `media_genres` ; une nouvelle
+  identification (`rematch`) les fait relire.
+
+#### ➡️ Rétro de fin d'année (ADR 2026-11-26-tsuky-retro-annuel, capacité `retro`)
+Compte du 1er janvier au 30 novembre (fuseau de l'appareil), visible du 1er décembre au
+15 janvier (heure du serveur). `ONYX_RETRO_PREVIEW=1` l'ouvre hors saison, pour tester.
+Toutes les routes sont en `RequireAuth`, sans droit : chacun ne lit que le sien.
+* `GET /api/me/retro?tz_offset=<minutes>` — pour l'accueil : `{ year, open, eligible, seen,
+  ends_at }`. Hors saison, `open` est faux et c'est l'année du prochain Rétro.
+* `GET /api/me/retro/:year?tz_offset=<minutes>` — le Rétro complet, `404` hors saison ou pour
+  une autre année. `eligible` est faux sous 5 h de lecture, et le reste est alors vide.
+  Sinon : `watched_seconds`, `plays`, `titles`, `movie_seconds`, `top` (5 au plus, regroupés
+  par série : `media_id`, `title`, `media_type` `show`/`movie`, `poster_url`,
+  `watched_seconds`, `episodes`, `times` = fois vu à moitié au moins), `months` (12),
+  `hours` (24), `weekdays` (7, lundi d'abord), `marathon`, `first_play` et `latest_night`
+  (`{ title, at }`, `at` en `AAAA-MM-JJTHH:MM` à l'heure de l'appareil ; la plus tardive
+  commence entre 0 h et 5 h), `devices`, `direct_percent`, `archetype` (`marathon`,
+  `night_owl`, `cinephile`, `explorer`, `weekend`, `good_audience`), `server { members,
+  watched_seconds, rank, top_title, top_title_viewers }` (agrégats, sans nom).
+  Gardé une heure en mémoire.
+* `POST /api/me/retro/:year/seen` — `204`. Le Rétro est vu : l'accueil retire sa diapo et
+  l'anneau de l'avatar sur tous les appareils du compte.
+
 #### ➡️ Changer son mot de passe
 * **Route :** `POST /api/auth/password`
 * **Corps (JSON) :** `{ "current_password": "…", "new_password": "…" }`
@@ -742,6 +781,14 @@ Côté visiteur, sans compte — le code voyage dans le corps JSON :
 
 Le ticket ouvre ensuite les routes habituelles (`/stream`, `/api/v1/stream/…`, sous-titres,
 aperçus). Un lien tient au plus quatre lectures simultanées.
+
+---
+
+### 🔗 Serveurs liés & fédération (ADR-0017)
+
+* `GET /api/peers/suggested` (authentifié) — liste les serveurs pairs mutuellement acceptés par les administrateurs (`[{"server_id", "name", "url"}]`) sans secret ni erreur interne, pour les proposer lors de l'ajout d'un serveur dans l'app.
+* `GET /api/peers`, `POST /api/peers/:id/approve`, `PUT /api/peers/:id`, `DELETE /api/peers/:id` (`manage_settings`) — administration des paires entre serveurs.
+* `GET /api/links`, `POST /api/links`, `POST /api/links/code`, `DELETE /api/links/:id` (authentifié) — liaison de comptes entre deux serveurs pour la transmission de progression.
 
 ---
 

@@ -1,0 +1,61 @@
+{
+  "year": 1,
+  "eligible": true,
+  "watched_seconds": 2,
+  "plays": 3,
+  "titles": 4,
+  "movie_seconds": 5,
+  "top": [
+    {
+      "media_id": 6,
+      "title": "title-value",
+      "media_type": "episode",
+      "poster_url": "poster_url-value",
+      "watched_seconds": 7,
+      "episodes": 8,
+      "times": 9
+    }
+  ],
+  "months": [
+    10
+  ],
+  "hours": [
+    11
+  ],
+  "weekdays": [
+    12
+  ],
+  "marathon": {
+    "title": "title-value",
+    "date": "date-value",
+    "episodes": 13
+  },
+  "first_play": {
+    "title": "title-value",
+    "at": "at-value"
+  },
+  "latest_night": {
+    "title": "title-value",
+    "at": "at-value"
+  },
+  "devices": [
+    {
+      "key": "key-value",
+      "label": "label-value",
+      "secondary": "secondary-value",
+      "poster_url": "poster_url-value",
+      "media_type": "episode",
+      "plays": 14,
+      "watched_seconds": 15
+    }
+  ],
+  "direct_percent": 16,
+  "archetype": "archetype-value",
+  "server": {
+    "members": 17,
+    "watched_seconds": 18,
+    "rank": 19,
+    "top_title": "top_title-value",
+    "top_title_viewers": 20
+  }
+}

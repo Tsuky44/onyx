@@ -22,7 +22,8 @@ class _FakeApi extends ApiClient {
   Future<User> getMe() async => throw Exception('hors ligne');
 
   @override
-  Future<PlaybackStats> getMyPlaybackStats({int days = 30}) async =>
+  Future<PlaybackStats> getMyPlaybackStats(
+          {int days = 30, bool allTime = false}) async =>
       _stats(topUsers: const []);
 
   @override
@@ -159,10 +160,27 @@ void main() {
     expect(find.text('Mon espace'), findsOneWidget);
     expect(find.text('Administration'), findsNothing);
     expect(find.text('Tableau de bord'), findsNothing);
-    // La page ouverte d'emblée est le compte : stats perso et appareils.
+    // La page ouverte d'emblée est le compte : ses appareils, sans les
+    // statistiques, qui ont leur entrée à elles.
     expect(find.text('Salon'), findsOneWidget);
     expect(find.text('Cet appareil'), findsWidgets);
-    expect(find.text('Temps de visionnage'), findsOneWidget);
+    expect(find.text('Temps regardé'), findsNothing);
+    expect(find.text('Mes stats'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  // Les statistiques d'un compte ne demandent aucun droit (ADR
+  // 2026-11-26-tsuky-statistiques-personnelles).
+  testWidgets('un membre ouvre ses statistiques depuis leur entrée',
+      (tester) async {
+    final api = await pump(tester, width: 1100, permissions: const Permissions());
+
+    await tester.tap(find.text('Mes stats'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Temps regardé'), findsOneWidget);
+    expect(find.text('Mes titres les plus regardés'), findsOneWidget);
+    expect(api.statsCalls, 0, reason: 'jamais les statistiques du serveur');
     expect(tester.takeException(), isNull);
   });
 
@@ -238,11 +256,14 @@ void main() {
   });
 
   // Dix-huit entrées faisaient chercher un réglage dans trois catégories :
-  // les pages voisines partagent une entrée, empilées ou en onglets.
-  test('la navigation d’un administrateur tient en neuf entrées', () {
+  // les pages voisines partagent une entrée, empilées ou en onglets. « Mes
+  // stats » en ajoute une à tout le monde (ADR
+  // 2026-11-26-tsuky-statistiques-personnelles, qui relève le plafond de
+  // l'ADR-0071).
+  test('la navigation d’un administrateur tient en dix entrées', () {
     final categories = settingsCategoriesFor(Permissions.all);
-    expect(categories.length, lessThanOrEqualTo(9));
-    expect(categories.where((c) => !c.admin).length, lessThanOrEqualTo(5));
+    expect(categories.length, lessThanOrEqualTo(10));
+    expect(categories.where((c) => !c.admin).length, lessThanOrEqualTo(6));
   });
 
   // L'adresse d'une page survit au regroupement : « l'historique » ouvre la

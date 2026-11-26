@@ -431,14 +431,13 @@ class PlayerController {
 
   PlayerPlaybackPreferences exportPreferences() {
     final exported = _exportCurrentSelection();
-    final audioLang = _carriedAudioLang;
-    if (audioLang == null || audioLang == exported.audioLang) return exported;
     return PlayerPlaybackPreferences(
       audioIndex: exported.audioIndex,
-      audioLang: audioLang,
+      audioLang: _carriedAudioLang ?? exported.audioLang,
       subtitle: exported.subtitle,
       internalSubId: exported.internalSubId,
       subtitlesOff: exported.subtitlesOff,
+      volume: session.volume,
     );
   }
 

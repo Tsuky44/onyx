@@ -204,6 +204,8 @@ func TestAPIContract(t *testing.T) {
 		"watch_party_invitees": filled[watchPartyInviteesResponse](),
 		"hls_start":            filled[streaming.StartResponse](),
 		"hls_health":           filled[streaming.SessionHealth](),
+		"retro_status":         filled[RetroStatus](),
+		"retro_report":         filled[RetroReport](),
 	}
 
 	update := os.Getenv("ONYX_UPDATE_CONTRACT") != ""

@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../screens/auth/add_user_flow.dart';
+import '../../screens/auth/server_switcher_screen.dart';
 import '../../screens/auth/user_choice_screen.dart';
 import '../../screens/settings/settings_screen.dart';
 import '../../screens/settings/tv_link_scanner_screen.dart';
@@ -14,6 +15,7 @@ import 'account_menu_route.dart';
 import 'glass_chrome.dart';
 import 'interface_tour/tour_anchor.dart';
 import 'join_watch_party_dialog.dart';
+import 'onyx_dialog.dart';
 import 'profile_disc.dart';
 import '../../theme/app_type.dart';
 import '../../l10n/tr.dart';
@@ -73,10 +75,6 @@ class _AccountMenuState extends State<AccountMenu> {
             ? null
             : '${active.displayName} · '
                 '${auth.permissions.isAdmin ? tr('Administrateur') : tr('Membre')}',
-        // Les autres personnes du même serveur sont dans la rangée
-        // (ADR-0078) : ce menu ne liste que les autres serveurs, une fois
-        // chacun, quel que soit le nombre de comptes qu'on y a.
-        otherServers: auth.apiClient.servers.otherServers(active),
         canAddProfile: active != null,
         canLinkDevice: canLinkTv,
         scale: scale,
@@ -99,22 +97,16 @@ class _AccountMenuState extends State<AccountMenu> {
           content: Text(auth.errorMessage ?? tr('Bascule impossible.')),
           backgroundColor: AppColors.error,
         ));
-      case AccountMenuServer(:final account):
-        // Plusieurs personnes là-bas : on arrive sur « Qui regarde ? »
-        // plutôt que dans la session de la première venue.
-        if (auth.apiClient.servers.usersOf(account.id).length > 1) {
-          navigator.push(MaterialPageRoute(
-            builder: (_) => UserChoiceScreen(serverAccountId: account.id),
-          ));
-          return;
-        }
-        await auth.switchServer(account.id);
       case AccountMenuAction.addProfile:
         final server = auth.activeServer;
         if (server != null) await addUserAndSwitch(navigator, auth, server);
       case AccountMenuAction.manageProfiles:
         navigator.push(
           MaterialPageRoute(builder: (_) => const UserChoiceScreen()),
+        );
+      case AccountMenuAction.manageServers:
+        navigator.push(
+          MaterialPageRoute(builder: (_) => const ServerSwitcherScreen()),
         );
       case AccountMenuAction.watchParty:
         await showJoinWatchPartyDialog(context, authProvider: auth);
@@ -129,7 +121,8 @@ class _AccountMenuState extends State<AccountMenu> {
           MaterialPageRoute(builder: (_) => const TvLinkScannerScreen()),
         );
       case AccountMenuAction.signOut:
-        auth.logout();
+        if (!await confirmSignOut(context) || !mounted) return;
+        await auth.logout();
     }
   }
 

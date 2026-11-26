@@ -93,6 +93,12 @@ const (
 	// barreau demandé est toujours servi (budget et admission, phase 3 de
 	// docs/transcodage-adaptatif.md).
 	CapabilityTranscodeCapacity = "transcode_capacity"
+	// GET /api/peers/suggested liste les serveurs liés mutuellement approuvés
+	// par les administrateurs (nom, identifiant, adresse) pour l'ajout client.
+	CapabilitySuggestedPeers = "suggested_peers"
+	// GET /api/me/retro, GET /api/me/retro/:year et POST
+	// /api/me/retro/:year/seen existent : le Rétro de fin d'année.
+	CapabilityRetro = "retro"
 )
 
 type pingResponse struct {
@@ -137,6 +143,8 @@ func pingPayload() pingResponse {
 			CapabilityWatchPartyInvites,
 			CapabilitySetupWizard,
 			CapabilityTranscodeCapacity,
+			CapabilitySuggestedPeers,
+			CapabilityRetro,
 		},
 	}
 }

@@ -64,6 +64,14 @@ type PeerServer struct {
 	CreatedAt      time.Time  `json:"created_at"`
 }
 
+// SuggestedPeerServer est un serveur lié mutuellement approuvé par les deux
+// administrateurs, proposé sans détail sensible lors de l'ajout d'un serveur.
+type SuggestedPeerServer struct {
+	ServerID string `json:"server_id"`
+	Name     string `json:"name"`
+	URL      string `json:"url"`
+}
+
 // AccountLink est ce que voit la personne : ses comptes sur les autres serveurs.
 type AccountLink struct {
 	ID             int    `json:"id"`

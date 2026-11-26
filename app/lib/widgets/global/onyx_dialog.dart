@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/tr.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_icons.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_type.dart';
 import '../../tv/tv_mode.dart';
@@ -391,3 +392,17 @@ Future<bool> showOnyxConfirm(
   );
   return result ?? false;
 }
+
+/// Demande confirmation avant de fermer la session de cet appareil :
+/// « Se déconnecter » voisine avec « Paramètres » dans le menu du compte,
+/// et un appui maladroit coupait la session sur-le-champ.
+Future<bool> confirmSignOut(BuildContext context) => showOnyxConfirm(
+      context,
+      title: tr('Se déconnecter ?'),
+      message: tr(
+          'Vous devrez vous reconnecter pour accéder à votre bibliothèque '
+          'sur cet appareil.'),
+      confirmLabel: tr('Se déconnecter'),
+      destructive: true,
+      icon: AppIcons.signOut,
+    );

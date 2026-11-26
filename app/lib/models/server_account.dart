@@ -391,3 +391,32 @@ class PeerServer {
         lastError: json['last_error'] as String? ?? '',
       );
 }
+
+/// Un serveur pair mutuellement accepté par les deux administrateurs
+/// (`GET /api/peers/suggested`), proposé lors de l'ajout d'un serveur.
+class SuggestedPeerServer {
+  final String serverId;
+  final String name;
+  final String url;
+
+  const SuggestedPeerServer({
+    required this.serverId,
+    required this.name,
+    required this.url,
+  });
+
+  String get prettyHost {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.host.isEmpty) return url;
+    return uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
+  }
+
+  String get displayName => name.trim().isNotEmpty ? name.trim() : prettyHost;
+
+  factory SuggestedPeerServer.fromJson(Map<String, dynamic> json) =>
+      SuggestedPeerServer(
+        serverId: json['server_id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        url: json['url'] as String? ?? '',
+      );
+}

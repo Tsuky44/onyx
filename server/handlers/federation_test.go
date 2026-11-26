@@ -329,3 +329,29 @@ func TestCreateAccountLink_ServerClaimsThenApprovalIsSent(t *testing.T) {
 		t.Fatal("approval must be sent once")
 	}
 }
+
+func TestListSuggestedPeerServers_OnlyMutuallyApproved(t *testing.T) {
+	setupAuthDB(t)
+	alice := createTestUser(t, "alice", false, models.Permissions{})
+	if _, err := database.DB.Exec(`INSERT INTO peer_servers (server_id, name, url, secret, local_approved, remote_approved) VALUES
+		('peer-active', 'Chez Paul', 'https://paul.local', 'secret-1', 1, 1),
+		('peer-local-only', 'Local Only', 'https://local.local', 'secret-2', 1, 0),
+		('peer-remote-only', 'Remote Only', 'https://remote.local', 'secret-3', 0, 1)`); err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	ListSuggestedPeerServers(rec, httptest.NewRequest(http.MethodGet, "/api/peers/suggested", nil), nil, alice)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("suggested: %d %s", rec.Code, rec.Body)
+	}
+	if strings.Contains(rec.Body.String(), "secret-") {
+		t.Fatalf("secret leaked in suggested peers response: %s", rec.Body.String())
+	}
+	var got []SuggestedPeerServer
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ServerID != "peer-active" || got[0].Name != "Chez Paul" || got[0].URL != "https://paul.local" {
+		t.Fatalf("unexpected suggested peers: %#v", got)
+	}
+}

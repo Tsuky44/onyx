@@ -12,6 +12,7 @@ import '../widgets/otp_security_group.dart';
 import '../widgets/settings_ui.dart';
 import '../../../l10n/tr.dart';
 import '../../../utils/password_policy.dart';
+import '../../../widgets/global/onyx_dialog.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -21,7 +22,6 @@ class AccountPage extends StatefulWidget {
 }
 
 class _AccountPageState extends State<AccountPage> {
-  PlaybackStats? _stats;
   List<ConnectedDevice>? _devices;
   String? _devicesError;
   int? _busyDevice;
@@ -35,11 +35,6 @@ class _AccountPageState extends State<AccountPage> {
   Future<void> _load() async {
     final api = context.read<ApiClient>();
     await Future.wait([
-      api.getMyPlaybackStats(days: 30).then((stats) {
-        if (mounted) setState(() => _stats = stats);
-      }).catchError((_) {
-        // Sans statistiques, la page s'affiche sans ce bloc.
-      }),
       api.getMyDevices().then((devices) {
         if (mounted) {
           setState(() {
@@ -169,69 +164,16 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final stats = _stats;
     final devices = _devices;
     final others = devices?.where((d) => !d.isCurrent).length ?? 0;
 
     return SettingsPage(
       title: tr('Mon compte'),
       description:
-          tr('Votre profil sur {0}, votre activité, et les appareils où vous '
-              'êtes connecté ou que vous voulez y ajouter.', [auth.activeServer?.displayName ?? tr('ce serveur')]),
+          tr('Votre profil sur {0}, et les appareils où vous êtes connecté '
+              'ou que vous voulez y ajouter.', [auth.activeServer?.displayName ?? tr('ce serveur')]),
       onRefresh: _load,
       children: [
-        if (stats != null) ...[
-          StatGrid(children: [
-            StatTile(
-              icon: Icons.schedule_rounded,
-              label: tr('Temps de visionnage'),
-              value: formatWatchTime(stats.watchedSeconds),
-              hint: tr('30 derniers jours'),
-            ),
-            StatTile(
-              icon: Icons.play_arrow_rounded,
-              label: tr('Lectures'),
-              value: '${stats.plays}',
-              hint: tr('30 derniers jours'),
-            ),
-            StatTile(
-              icon: Icons.movie_outlined,
-              label: tr('Films'),
-              value: '${stats.movies}',
-              color: AppColors.warning,
-            ),
-            StatTile(
-              icon: Icons.tv_rounded,
-              label: tr('Épisodes'),
-              value: '${stats.episodes}',
-              color: AppColors.success,
-            ),
-          ]),
-          if (stats.topMedia.isNotEmpty)
-            SettingsGroup(
-              title: tr('Vos titres du mois'),
-              children: [
-                for (final media in stats.topMedia.take(3))
-                  SettingsTile(
-                    icon: media.mediaType == 'show'
-                        ? Icons.tv_rounded
-                        : Icons.movie_outlined,
-                    title: media.label,
-                    subtitle: [
-                      if (media.secondary.isNotEmpty) media.secondary,
-                      trPlural(media.plays, '{0} lecture', '{0} lectures'),
-                    ].join(' · '),
-                    trailing: Text(
-                      formatWatchTime(media.watchedSeconds),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-        ],
         SettingsGroup(
           title: tr('Sécurité'),
           children: [
@@ -284,9 +226,11 @@ class _AccountPageState extends State<AccountPage> {
               subtitle: tr('Fermer la session de cet appareil'),
               destructive: true,
               showChevron: false,
-              onTap: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-                auth.logout();
+              onTap: () async {
+                final navigator = Navigator.of(context);
+                if (!await confirmSignOut(context) || !mounted) return;
+                navigator.popUntil((route) => route.isFirst);
+                await auth.logout();
               },
             ),
             SettingsTile(
