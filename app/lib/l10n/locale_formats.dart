@@ -43,6 +43,13 @@ abstract final class LocaleFormats {
   /// « septembre 2026 » / « September 2026 ».
   static String monthYear(DateTime date) => _date('yMMMM', date);
 
+  /// « mars » / « March » : un mois seul, pour le Rétro.
+  static String month(DateTime date) => _date('LLLL', date);
+
+  /// « 1 janv. · 23:47 » / « Jan 1 · 23:47 ».
+  static String shortDateTime(DateTime date) =>
+      '${_date('MMMd', date)} · ${_date('Hm', date)}';
+
   /// Sépare la partie décimale d'un nombre déjà formaté avec un point.
   static String decimal(String dotted) => switch (AppLanguage.current) {
     AppLanguage.french => dotted.replaceAll('.', ','),

@@ -4523,4 +4523,184 @@ const Map<String, String> kEnglish = <String, String>{
       'Talk show',
   'semaine du {0}':
       'week of {0}',
+  'Accro aux marathons':
+      'Binge-watcher',
+  'Oiseau de nuit':
+      'Night owl',
+  'Cinéphile':
+      'Film buff',
+  'Touche-à-tout':
+      'Explorer',
+  'Fidèle du dimanche':
+      'Weekend regular',
+  'Bon public':
+      'Easy to please',
+  '{0} épisodes de {1} en une seule journée.':
+      '{0} episodes of {1} in a single day.',
+  '{0} % de ton temps entre 22 h et 4 h.':
+      '{0}% of your time between 10 pm and 4 am.',
+  '{0} % de ton temps passé sur des films.':
+      '{0}% of your time spent on movies.',
+  '{0} titres différents commencés cette année.':
+      '{0} different titles started this year.',
+  '{0} % de ton temps le samedi et le dimanche.':
+      '{0}% of your time on Saturdays and Sundays.',
+  'Un peu de tout, toujours au bon moment.':
+      'A bit of everything, always at the right time.',
+  '{0}, ton année {1} sur Onyx.':
+      '{0}, your {1} on Onyx.',
+  'Rétro {0}':
+      'Recap {0}',
+  '{0},\nton année\nsur Onyx.':
+      '{0},\nyour year\non Onyx.',
+  'Une année de séances, racontée par ton propre historique.':
+      'A year of watching, told by your own history.',
+  '{0} heure de lecture.':
+      '{0} hour of watching.',
+  '{0} heures de lecture.':
+      '{0} hours of watching.',
+  'Temps passé devant Onyx':
+      'Time spent on Onyx',
+  'heure de lecture.':
+      'hour of watching.',
+  'heures de lecture.':
+      'hours of watching.',
+  '≈ {0} jours entiers':
+      '≈ {0} full days',
+  '≈ {0} film':
+      '≈ {0} movie',
+  '≈ {0} films':
+      '≈ {0} movies',
+  'Plus que {0} % des membres de ton serveur.':
+      'More than {0}% of the members of your server.',
+  'Pas forcément beaucoup, mais bien choisies.':
+      'Not necessarily many, but well chosen.',
+  'Vu {0} fois':
+      'Watched {0} times',
+  'Ton n°1 : {0}, {1}.':
+      'Your #1: {0}, {1}.',
+  'La série de ton année':
+      'Your show of the year',
+  'Le film que tu n’as pas lâché':
+      'The movie you couldn’t let go of',
+  'Ton top {0}':
+      'Your top {0}',
+  '{0} titre commencé cette année.':
+      '{0} title started this year.',
+  '{0} titres commencés cette année.':
+      '{0} titles started this year.',
+  'La nuit t’appartient.':
+      'The night is yours.',
+  'Le matin, avant tout le monde.':
+      'In the morning, before everyone else.',
+  'L’après-midi, tranquillement.':
+      'In the afternoon, taking it easy.',
+  'Le soir, après la journée.':
+      'In the evening, after the day.',
+  'Ton heure : {0} h.':
+      'Your hour: {0}:00.',
+  'Quand tu regardes':
+      'When you watch',
+  'Répartition par heure, pic à {0} h':
+      'Time by hour, peak at {0}:00',
+  '{0} h':
+      '{0} h',
+  'Ton heure':
+      'Your hour',
+  'Heures par mois, record en {0}':
+      'Hours by month, record in {0}',
+  '{0}, ton mois record.':
+      '{0}, your biggest month.',
+  '{0} heure en {1}.':
+      '{0} hour in {1}.',
+  '{0} heures en {1}.':
+      '{0} hours in {1}.',
+  'Mois par mois':
+      'Month by month',
+  '{0} séance cette année.':
+      '{0} session this year.',
+  '{0} séances cette année.':
+      '{0} sessions this year.',
+  '{0} épisodes de {1} le même jour.':
+      '{0} episodes of {1} on the same day.',
+  'Tes séances':
+      'Your sessions',
+  'séance cette année.':
+      'session this year.',
+  'séances cette année.':
+      'sessions this year.',
+  'Ton plus gros marathon':
+      'Your biggest binge',
+  'épisodes de {0} le même jour.':
+      'episodes of {0} on the same day.',
+  'Première séance':
+      'First session',
+  'La plus tardive':
+      'The latest one',
+  'Un appareil sans nom':
+      'An unnamed device',
+  'Tes écrans':
+      'Your screens',
+  '{0}, ton fauteuil attitré.':
+      '{0}, your usual seat.',
+  'Presque tout lu tel quel, sans conversion. Ton serveur a eu une année tranquille.':
+      'Almost everything played as is, with no conversion. Your server had a quiet year.',
+  'Une partie a été convertie à la volée pour tes appareils. Le serveur a fait le travail.':
+      'Some of it was converted on the fly for your devices. The server did the work.',
+  'Lecture directe : {0} %.':
+      'Direct play: {0}%.',
+  'Lecture directe · {0} %':
+      'Direct play · {0}%',
+  '{0} membre a regardé':
+      '{0} member watched',
+  '{0} membres ont regardé':
+      '{0} members watched',
+  'Le titre le plus partagé : {0}, vu par {1} membres.':
+      'The most shared title: {0}, watched by {1} members.',
+  '{0} h sur ton serveur cette année.':
+      '{0} h on your server this year.',
+  'Ta place : n°{0}.':
+      'Your rank: #{0}.',
+  'Ton serveur, ensemble':
+      'Your server, together',
+  'sur ton serveur cette année.':
+      'on your server this year.',
+  'Tu es la seule personne à regarder ici cette année. Le serveur est à toi.':
+      'You are the only one watching here this year. The server is all yours.',
+  'Ta place':
+      'Your rank',
+  'n°{0}':
+      '#{0}',
+  'Ton profil {0} : {1}. {2}':
+      'Your {0} profile: {1}. {2}',
+  'Ton profil {0}':
+      'Your {0} profile',
+  'Heures':
+      'Hours',
+  'Titres':
+      'Titles',
+  'N°1':
+      '#1',
+  'Mois record':
+      'Biggest month',
+  'Écran':
+      'Screen',
+  'Onyx · Rétro {0}':
+      'Onyx · Recap {0}',
+  'Impossible de charger ton Rétro. Vérifie la connexion au serveur, puis réessaie.':
+      'Couldn’t load your Recap. Check the connection to the server, then try again.',
+  'Rendez-vous l’an prochain':
+      'See you next year',
+  'Il faut au moins 5 heures de lecture dans l’année pour avoir un Rétro.':
+      'You need at least 5 hours of watching in the year to get a Recap.',
+  'Fermer le Rétro':
+      'Close the Recap',
+  'Écran précédent':
+      'Previous screen',
+  'Écran suivant':
+      'Next screen',
+  'Mon Rétro {0}':
+      'My Recap {0}',
+  '{0} H':
+      '{0} H',
 };

@@ -114,7 +114,7 @@ Le rapport a son fichier de contrat (ADR-0051) : `TestAPIContract` le génère, 
 Commandes :
 
 - **Tactile** : toucher à droite ou à gauche, maintenir pour la pause, glisser vers le bas pour fermer.
-- **Souris et clavier** : flèches, Espace pour la pause, Échap pour fermer, boutons ‹ › au survol.
+- **Souris et clavier** : boutons ‹ › sur les bords, clic à gauche ou à droite, bouton pour fermer. Les flèches du clavier ne sont pas branchées : le dépôt interdit un gestionnaire de touches hors de dpad (`no_parallel_focus_system_test`), et `TvFocusable.onDirection` ne répond que sur un téléviseur. À voir avec la refonte dpad.
 - **TV** : Gauche et Droite, OK pour la pause, Retour pour fermer, par `TvFocusable`, sans nouveau système de focus (ADR-0110). Test de focus sur le modèle de `tv_focus_test.dart`.
 
 Les affiches passent par `AppNetworkImage` et `poster_url.dart`. Sans affiche, on garde le dégradé de la maquette.
@@ -167,8 +167,8 @@ Ordre pensé pour l'échéance. Les phases 1 à 4 sont nécessaires le 1er déce
 | Phase | Contenu | Fin |
 |---|---|---|
 | 1. Serveur | §2 complet, tests, contrat, README, capacité. | **Fait le 2026-11-26** (non commité) : `go vet` et `go test ./...` verts. Reste l'essai sur une base réelle avec `ONYX_RETRO_PREVIEW=1`. |
-| 2. Story | Modèle, provider, écran, dix écrans en portrait et paysage, commandes, TV. Transitions simples. | Tests verts, story parcourue sur téléphone, PC et TV. |
-| 3. Mouvement | Texte animé, chiffres, graphiques, fonds, transition en cercle, confettis, mode léger. | Revue sur Windows et sur TV pour la fluidité. |
+| 2. Story | Modèle, provider, écran, dix écrans en portrait et paysage, commandes, TV. Transitions simples. | **Code écrit le 2026-11-26** (non commité) : `flutter analyze` propre, tests du déroulé, du contrat et des dix écrans sur quatre formats verts. Entrée provisoire : « Mon Rétro » dans le menu du compte. Reste : la regarder tourner sur téléphone, PC et TV ; flèches du clavier sur PC (voir §3.2). |
+| 3. Mouvement | Texte animé, chiffres, graphiques, fonds, transition en cercle, confettis, mode léger. | **Code écrit le 2026-11-26** (non commité) : une horloge d'entrée par écran (`RetroEntrance`), mots qui montent, chiffres qui défilent, barres et jauges qui poussent, affiches en éventail et retournée, fonds peints sans flou (`RetroAmbientLayer`), cercle depuis le point touché, confettis ; tout s'arrête sous « réduire les animations » et en mode léger. Rendu vérifié en images (téléphone et PC). Reste : la fluidité sur Windows et sur TV. La carte qui s'incline sous la souris n'est pas faite. |
 | 4. Accueil | Diapo, carte, anneau, menu du compte, « vu ». | `retro_home_test.dart`, vérifié sur téléphone et PC. |
 | 5. Partage | Image et partage par plateforme. | Image ouverte sur chaque cible. |
 | 6. Publication | Version de test depuis `tsuky` (Android, Android TV, webOS, Windows, serveur), puis prod avant le 30 novembre. L'Apple (iOS, tvOS) se publie par fytroz. | Serveur de prod à jour le 30 novembre. |

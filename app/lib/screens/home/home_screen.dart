@@ -5,6 +5,7 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
+import '../../providers/retro_provider.dart';
 import '../../services/hero_series_preview.dart';
 import '../../theme/app_colors.dart';
 import '../../tv/tv_mode.dart';
@@ -76,6 +77,9 @@ class _HomeScreenState extends State<HomeScreen>
       _homeProvider!.loadHome();
       Provider.of<LibraryProvider>(context, listen: false)
           .ensureCatalogLoaded();
+      // Le Rétro de fin d'année : le menu du compte l'ouvre quand il est
+      // visible (ADR 2026-11-26-tsuky-retro-annuel).
+      Provider.of<RetroProvider?>(context, listen: false)?.load();
       // Un serveur neuf ouvre l'assistant d'installation à son propriétaire
       // (ADR-0165).
       maybeOpenSetupWizard(context);

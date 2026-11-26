@@ -1,6 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
+import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
+import '../../providers/retro_provider.dart';
+import '../../screens/retro/retro_screen.dart';
 import '../../screens/auth/add_user_flow.dart';
 import '../../screens/auth/server_switcher_screen.dart';
 import '../../screens/auth/user_choice_screen.dart';
@@ -61,6 +65,10 @@ class _AccountMenuState extends State<AccountMenu> {
     // desktop app (ADR-0020) — so it belongs on the device that holds a
     // camera, which is the phone and only the phone.
     final canLinkTv = AppPlatform.isMobile && !TvScope.of(context);
+    // Nul hors saison, sous le seuil, ou sans le provider (un test qui monte
+    // le menu seul).
+    final retro = Provider.of<RetroProvider?>(context, listen: false);
+    final retroYear = retro != null && retro.available ? retro.status?.year : null;
 
     final choice = await showAccountMenu(
       context: context,
@@ -77,6 +85,7 @@ class _AccountMenuState extends State<AccountMenu> {
                 '${auth.permissions.isAdmin ? tr('Administrateur') : tr('Membre')}',
         canAddProfile: active != null,
         canLinkDevice: canLinkTv,
+        retroYear: retroYear,
         scale: scale,
         onChoice: pick,
       ),
@@ -100,6 +109,9 @@ class _AccountMenuState extends State<AccountMenu> {
       case AccountMenuAction.addProfile:
         final server = auth.activeServer;
         if (server != null) await addUserAndSwitch(navigator, auth, server);
+      case AccountMenuAction.retro:
+        final year = context.read<RetroProvider>().status?.year;
+        if (year != null) await RetroScreen.open(navigator.context, year);
       case AccountMenuAction.manageProfiles:
         navigator.push(
           MaterialPageRoute(builder: (_) => const UserChoiceScreen()),

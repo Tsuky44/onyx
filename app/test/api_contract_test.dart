@@ -9,6 +9,7 @@ import 'package:onyx/models/server_capabilities.dart';
 import 'package:onyx/models/watch_party_invite.dart';
 import 'package:onyx/models/media_request.dart';
 import 'package:onyx/models/my_request.dart';
+import 'package:onyx/models/retro.dart';
 import 'package:onyx/models/request_feed.dart';
 import 'package:onyx/models/request_release.dart';
 import 'package:onyx/services/api_types.dart';
@@ -431,5 +432,46 @@ void main() {
     expect(WatchPartyInviteStatus.parse('declined'),
         WatchPartyInviteStatus.declined);
     expect(WatchPartyInviteStatus.parse(''), WatchPartyInviteStatus.none);
+  });
+
+  test('le Rétro : l’état de l’accueil et le Rétro complet', () {
+    expect(
+        ServerCapabilities.tryParse(_contract('ping'))!
+            .supports(ServerCapabilities.retro),
+        isTrue);
+
+    final status = RetroStatus.fromJson(_contract('retro_status'));
+    expect(status.year, greaterThan(0));
+    expect(status.open && status.eligible && status.seen, isTrue);
+    expect(status.endsAt, isNull,
+        reason: 'le générateur écrit un texte, pas une date : la clé est lue');
+
+    final report = RetroReport.fromJson(_contract('retro_report'));
+    expect(report.eligible, isTrue);
+    expect(report.watchedSeconds, greaterThan(0));
+    expect(report.plays, greaterThan(0));
+    expect(report.titles, greaterThan(0));
+    expect(report.movieSeconds, greaterThan(0));
+    final top = report.top.single;
+    expect(top.mediaId, greaterThan(0));
+    expect(top.title, 'title-value');
+    expect(top.posterUrl, 'poster_url-value');
+    expect(top.watchedSeconds, greaterThan(0));
+    expect(top.episodes, greaterThan(0));
+    expect(top.times, greaterThan(0));
+    expect(report.months.first, greaterThan(0));
+    expect(report.hours.first, greaterThan(0));
+    expect(report.weekdays.first, greaterThan(0));
+    expect(report.marathon?.title, 'title-value');
+    expect(report.marathon?.episodes, greaterThan(0));
+    expect(report.firstPlay, isNull,
+        reason: 'at n’est pas une date dans le contrat : la séance est écartée');
+    expect(report.devices.single.label, 'label-value');
+    expect(report.directPercent, greaterThan(0));
+    expect(report.server.members, greaterThan(0));
+    expect(report.server.watchedSeconds, greaterThan(0));
+    expect(report.server.rank, greaterThan(0));
+    expect(report.server.topTitle, 'top_title-value');
+    expect(report.server.topTitleViewers, greaterThan(0));
   });
 }

@@ -26,6 +26,7 @@
 7. **Le mouvement du Rétro a ses propres jetons** (`theme/retro_motion.dart`) : transitions de 600 à 1 000 ms, plusieurs courbes, fonds animés en continu. C'est un moment de fête, pas une navigation. Le reste de l'app garde `AppMotion`. Le mode léger et la réduction des animations ramènent le Rétro à des fondus courts.
 8. **La part de lecture directe reste**, présentée comme une nouvelle du serveur (« ton serveur a eu une année tranquille »), pas comme une mesure technique.
 9. **Aucun texte accordé** : les profils ont des noms neutres par eux-mêmes.
+10. **Le Rétro tutoie** (« ton année », « ta place »), comme la maquette validée : c'est une story qu'on se raconte et qu'on partage. Le reste de l'app continue de vouvoyer. En anglais, la fonctionnalité s'appelle « Recap ».
 
 ## Conséquences
 

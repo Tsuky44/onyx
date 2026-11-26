@@ -24,6 +24,7 @@ final class AccountMenuProfile extends AccountMenuChoice {
 /// Les lignes du menu qui ne portent pas de compte.
 enum AccountMenuAction implements AccountMenuChoice {
   addProfile,
+  retro,
   manageProfiles,
   manageServers,
   watchParty,
@@ -49,8 +50,13 @@ class AccountMenuPanel extends StatelessWidget {
     required this.canAddProfile,
     required this.canLinkDevice,
     required this.onChoice,
+    this.retroYear,
     this.scale = 1,
   });
+
+  /// L'année du Rétro quand il est visible (du 1er décembre au 15 janvier) :
+  /// une ligne « Mon Rétro » s'ajoute en tête des actions.
+  final int? retroYear;
 
   /// Les personnes de cet appareil sur le serveur actif, l'actif compris.
   final List<ServerAccount> profiles;
@@ -137,11 +143,19 @@ class AccountMenuPanel extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (retroYear case final year?)
+                  _MenuRow(
+                    icon: AppIcons.isNew,
+                    label: tr('Mon Rétro {0}', [year]),
+                    scale: s,
+                    first: !profileFocused,
+                    onSelect: () => onChoice(AccountMenuAction.retro),
+                  ),
                 _MenuRow(
                   icon: AppIcons.switchUser,
                   label: tr('Gérer les profils'),
                   scale: s,
-                  first: !profileFocused,
+                  first: !profileFocused && retroYear == null,
                   onSelect: () => onChoice(AccountMenuAction.manageProfiles),
                 ),
                 _MenuRow(

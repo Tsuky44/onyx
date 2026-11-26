@@ -36,6 +36,7 @@ import 'providers/media_requests_provider.dart';
 import 'providers/watch_lists_provider.dart';
 import 'providers/search_provider.dart';
 import 'providers/setup_provider.dart';
+import 'providers/retro_provider.dart';
 import 'navigation/new_episode_opener.dart';
 import 'navigation/search_route_observer.dart';
 import 'screens/search/desktop/desktop_search_hotkey.dart';
@@ -385,6 +386,7 @@ void main() async {
   final mediaRequestsProvider = MediaRequestsProvider(apiClient);
   final watchListsProvider = WatchListsProvider(apiClient);
   final setupProvider = SetupProvider(apiClient);
+  final retroProvider = RetroProvider(apiClient);
   authProvider.onServerChanged = () {
     MediaDetailsCache.clear();
     MediaTracksCache.clear();
@@ -393,6 +395,7 @@ void main() async {
     mediaRequestsProvider.reset();
     watchListsProvider.reset();
     setupProvider.reset();
+    retroProvider.reset();
     unawaited(downloads.onServerChanged());
     // Les plans de réserve sont indexés par identifiant de série, et un
     // identifiant ne veut rien dire sur un autre serveur : on repart de zéro.
@@ -473,6 +476,7 @@ void main() async {
         ChangeNotifierProvider<WatchListsProvider>.value(
             value: watchListsProvider),
         ChangeNotifierProvider<SetupProvider>.value(value: setupProvider),
+        ChangeNotifierProvider<RetroProvider>.value(value: retroProvider),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
       // Changer de langue reconstruit l'app entière : les textes sont lus par

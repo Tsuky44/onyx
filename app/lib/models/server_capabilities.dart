@@ -79,6 +79,10 @@ class ServerCapabilities {
   /// par les administrateurs, proposés lors de l'ajout d'un serveur.
   static const suggestedPeers = 'suggested_peers';
 
+  /// `GET /api/me/retro`, `GET /api/me/retro/:year` et
+  /// `POST /api/me/retro/:year/seen` : le Rétro de fin d'année.
+  static const retro = 'retro';
+
   bool supports(String capability) => capabilities.contains(capability);
 
   /// Null quand la réponse n'est pas celle d'un serveur Onyx qui va bien.
