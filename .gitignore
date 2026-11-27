@@ -65,6 +65,9 @@ CLAUDE.local.md
 # graphify : le graphe se versionne, pas ses sauvegardes datées (~30 Mo par
 # jour) ni son cache, propre à chaque machine (le nom de son dossier en dépend).
 graphify-out/cache/
+# Les caches de travail de graphify : reconstruits à chaque `graphify update`.
+graphify-out/.graphify_partition_cache.json
+graphify-out/.graphify_labels.pending.json
 graphify-out/20*/
 app/graphify-out/
 
