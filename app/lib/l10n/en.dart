@@ -4565,14 +4565,6 @@ const Map<String, String> kEnglish = <String, String>{
       'hour of watching.',
   'heures de lecture.':
       'hours of watching.',
-  '≈ {0} jours entiers':
-      '≈ {0} full days',
-  '≈ {0} film':
-      '≈ {0} movie',
-  '≈ {0} films':
-      '≈ {0} movies',
-  'Plus que {0} % des membres de ton serveur.':
-      'More than {0}% of the members of your server.',
   'Pas forcément beaucoup, mais bien choisies.':
       'Not necessarily many, but well chosen.',
   'Ton titre {0}':

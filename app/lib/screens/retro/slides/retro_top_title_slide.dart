@@ -114,7 +114,9 @@ class RetroTopTitleSlide extends RetroSlide {
     if (top == null) return null;
     return LayoutBuilder(builder: (context, constraints) {
       final u = RetroUnits.of(context).u;
-      final width = (constraints.maxHeight / 1.5).clamp(u * 20, u * 48);
+      // Toute la hauteur laissée par le texte, sans dépasser les trois quarts
+      // de la largeur.
+      final width = (constraints.maxHeight / 1.5).clamp(u * 20, u * 74);
       return _FlipIn(child: _poster(data, top, width));
     });
   }

@@ -10,9 +10,9 @@ import '../widgets/retro_slide_layout.dart';
 import '../widgets/retro_type.dart';
 import 'retro_slide.dart';
 
-/// 2. Le temps passé, en heures, et ce qu'il représente. Sur un écran large,
-/// le chiffre prend plus de la moitié de la hauteur, ancré en bas à gauche, et
-/// les équivalences s'empilent à droite.
+/// 2. Le temps passé, en heures, et ce qu'il représente : le chiffre en très
+/// grand, les équivalences entre des filets (à droite sur un écran large,
+/// dessous sur un téléphone).
 class RetroHoursSlide extends RetroSlide {
   const RetroHoursSlide();
 
@@ -25,9 +25,6 @@ class RetroHoursSlide extends RetroSlide {
 
   @override
   RetroColors colors(RetroStoryData data) => RetroPalette.hours;
-
-  @override
-  bool get centered => true;
 
   int _hours(RetroStoryData data) => data.report.hoursWatched.round();
 
@@ -55,53 +52,13 @@ class RetroHoursSlide extends RetroSlide {
     ]);
   }
 
-  @override
-  Widget? visual(BuildContext context, RetroStoryData data) {
+  /// Les équivalences, la valeur en grand et ce qu'elle veut dire dessous.
+  List<(String, String)> _figures(RetroStoryData data) {
     final report = data.report;
     final days = report.hoursWatched / 24;
     final films = (report.hoursWatched / _hoursPerFilm).floor();
     final ahead = report.server.aheadOfPercent;
-    final u = RetroUnits.of(context).u;
-    return RetroText(children: [
-      Wrap(
-        spacing: u * 2,
-        runSpacing: u * 2,
-        children: [
-          if (days >= 1)
-            RetroReveal.pop(
-              delay: const Duration(milliseconds: 1300),
-              child: RetroChip(
-                tr('≈ {0} jours entiers', [_days(days)]),
-                solid: true,
-              ),
-            ),
-          if (films >= 1)
-            RetroReveal.pop(
-              delay: const Duration(milliseconds: 1450),
-              child: RetroChip(trPlural(films, '≈ {0} film', '≈ {0} films')),
-            ),
-        ],
-      ),
-      RetroNote(
-          delay: const Duration(milliseconds: 1650),
-          ahead >= 50
-              ? tr('Plus que {0} % des membres de ton serveur.', [ahead])
-              : tr('Pas forcément beaucoup, mais bien choisies.')),
-    ]);
-  }
-
-  @override
-  Widget? compose(BuildContext context, RetroStoryData data) {
-    final units = RetroUnits.of(context);
-    if (!units.landscape) return null;
-    final u = units.u;
-    final padding = units.padding;
-    final size = units.size;
-    final report = data.report;
-    final days = report.hoursWatched / 24;
-    final films = (report.hoursWatched / _hoursPerFilm).floor();
-    final ahead = report.server.aheadOfPercent;
-    final figures = [
+    return [
       if (days >= 1)
         (
           '≈ ${_days(days)}',
@@ -119,6 +76,67 @@ class RetroHoursSlide extends RetroSlide {
           tr('des membres de ton serveur en ont vu moins'),
         ),
     ];
+  }
+
+  /// Les équivalences empilées entre leurs filets, puis la note quand le
+  /// classement n'a rien de flatteur à dire.
+  Widget _figureList(RetroStoryData data, double u) {
+    final figures = _figures(data);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, (value, label)) in figures.indexed)
+          RetroReveal.rise(
+            delay: Duration(milliseconds: 1200 + 150 * i),
+            child: _Figure(value: value, label: label, last: false),
+          ),
+        if (figures.isNotEmpty) const _Figure(value: '', label: '', last: true),
+        if (data.report.server.aheadOfPercent < 50) ...[
+          SizedBox(height: u * 3),
+          RetroNote(
+            delay: const Duration(milliseconds: 1650),
+            tr('Pas forcément beaucoup, mais bien choisies.'),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Sur un écran large, le chiffre ancré en bas à gauche et les équivalences
+  /// à droite ; sur un téléphone, le chiffre sur toute la largeur et les
+  /// équivalences dessous, le tout centré dans la hauteur : de petites
+  /// pastilles sous un chiffre centré laissaient un trou au milieu de l'écran.
+  @override
+  Widget? compose(BuildContext context, RetroStoryData data) {
+    final units = RetroUnits.of(context);
+    final u = units.u;
+    final padding = units.padding;
+    final size = units.size;
+    if (!units.landscape) {
+      return Padding(
+        padding: padding,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RetroKicker(tr('Temps passé devant Onyx')),
+            SizedBox(height: u * 2),
+            // Le chiffre prend la largeur, et se réduit à quatre chiffres.
+            SizedBox(
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: RetroCount(value: _hours(data), size: 46),
+              ),
+            ),
+            _unit(data),
+            SizedBox(height: u * 8),
+            _figureList(data, u),
+          ],
+        ),
+      );
+    }
     return Stack(
       children: [
         Positioned(
@@ -148,25 +166,7 @@ class RetroHoursSlide extends RetroSlide {
           right: padding.right,
           top: size.height * 0.22,
           width: size.width * 0.29,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, (value, label)) in figures.indexed)
-                RetroReveal.rise(
-                  delay: Duration(milliseconds: 1200 + 150 * i),
-                  child: _Figure(value: value, label: label, last: false),
-                ),
-              if (figures.isNotEmpty)
-                const _Figure(value: '', label: '', last: true),
-              if (ahead < 50) ...[
-                SizedBox(height: u * 3),
-                RetroNote(
-                  delay: const Duration(milliseconds: 1650),
-                  tr('Pas forcément beaucoup, mais bien choisies.'),
-                ),
-              ],
-            ],
-          ),
+          child: _figureList(data, u),
         ),
       ],
     );

@@ -35,8 +35,11 @@ class RetroScreen extends StatefulWidget {
 
   final int year;
 
+  /// Au-dessus de toute l'app, comme le lecteur : poussée dans le navigateur
+  /// d'un onglet, la story gardait la barre de navigation du téléphone sous
+  /// elle.
   static Future<void> open(BuildContext context, int year) =>
-      Navigator.of(context).push<void>(MaterialPageRoute(
+      Navigator.of(context, rootNavigator: true).push<void>(MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => RetroScreen(year: year),
       ));

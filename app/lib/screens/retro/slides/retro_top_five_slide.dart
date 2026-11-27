@@ -12,8 +12,8 @@ import '../widgets/retro_type.dart';
 import 'retro_slide.dart';
 import 'retro_top_title_slide.dart';
 
-/// 4. Le classement de l'année, cinq titres au plus : une liste sur un
-/// téléphone, un podium en ligne sur un écran large.
+/// 4. Le classement de l'année, cinq titres au plus : une liste qui remplit
+/// l'écran d'un téléphone, un podium en ligne sur un écran large.
 class RetroTopFiveSlide extends RetroSlide {
   const RetroTopFiveSlide();
 
@@ -99,67 +99,117 @@ class RetroTopFiveSlide extends RetroSlide {
             '{0} titres commencés cette année.')),
       ]);
 
+  /// Sur un téléphone, la liste prend toute la hauteur laissée par le texte :
+  /// les lignes se la partagent, le n°1 plus haut que les autres, et
+  /// l'affiche, le rang et le titre grandissent avec leur ligne.
   @override
   Widget? visual(BuildContext context, RetroStoryData data) {
     final u = RetroUnits.of(context).u;
-    final accent = RetroPalette.topFive.accent;
     final top = data.report.top;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < top.length; i++) ...[
-          if (i > 0) SizedBox(height: u * 2.6),
-          // Les lignes arrivent de la droite, la première en premier.
-          RetroReveal.slide(
+    if (top.isEmpty) return null;
+    return LayoutBuilder(builder: (context, box) {
+      const firstWeight = 1.5;
+      final gap = u * 2.4;
+      final weights = firstWeight + top.length - 1;
+      final room = box.maxHeight - gap * (top.length - 1);
+      // Une ligne ordinaire : sa part de la hauteur, sans dépasser la taille
+      // où l'affiche mangerait la place du titre.
+      final row = math.min(room / weights, u * 30);
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < top.length; i++) ...[
+            if (i > 0) SizedBox(height: gap),
+            // Les lignes arrivent de la droite, la première en premier.
+            RetroReveal.slide(
               delay: Duration(milliseconds: 450 + 120 * i),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: u * 7,
-                    child: Text(
-                      '${i + 1}',
-                      style: TextStyle(
-                        fontSize: u * 6.5,
-                        fontWeight: FontWeight.w800,
-                        color: i == 0 ? accent : null,
-                      ),
-                    ),
-                  ),
-                  RetroPoster(
-                    posterUrl: top[i].posterUrl,
-                    title: top[i].title,
-                    serverBaseUrl: data.serverBaseUrl,
-                    width: u * 10,
-                  ),
-                  SizedBox(width: u * 3),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          top[i].title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: math.max(12, u * 3.8),
-                            fontWeight: FontWeight.w700,
-                            height: 1.2,
-                          ),
-                        ),
-                        Opacity(
-                          opacity: 0.7,
-                          child: Text(
-                            RetroTopTitleSlide.detail(top[i]),
-                            style: TextStyle(fontSize: math.max(10, u * 2.9)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              )),
+              child: _ListItem(
+                rank: i + 1,
+                title: top[i],
+                height: row * (i == 0 ? firstWeight : 1),
+                data: data,
+              ),
+            ),
+          ],
         ],
-      ],
+      );
+    });
+  }
+}
+
+/// Une ligne du classement sur un téléphone : le rang en grand, l'affiche à
+/// la hauteur de la ligne, le titre et le détail à côté.
+class _ListItem extends StatelessWidget {
+  const _ListItem({
+    required this.rank,
+    required this.title,
+    required this.height,
+    required this.data,
+  });
+
+  final int rank;
+  final RetroTitle title;
+  final double height;
+  final RetroStoryData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = RetroUnits.of(context).u;
+    final first = rank == 1;
+    final accent = RetroPalette.topFive.accent;
+    return SizedBox(
+      height: height,
+      child: Row(
+        children: [
+          SizedBox(
+            width: u * 12,
+            child: Text(
+              '$rank',
+              maxLines: 1,
+              style: RetroBig.styleOf(context, first ? 15 : 11).copyWith(
+                height: 1,
+                letterSpacing: -u * 0.4,
+                color: first ? accent : null,
+              ),
+            ),
+          ),
+          RetroPoster(
+            posterUrl: title.posterUrl,
+            title: title.title,
+            serverBaseUrl: data.serverBaseUrl,
+            width: height / 1.5,
+          ),
+          SizedBox(width: u * 4),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: math.max(13, u * (first ? 6 : 4.6)),
+                    fontWeight: FontWeight.w800,
+                    height: 1.15,
+                  ),
+                ),
+                SizedBox(height: u * 0.8),
+                Opacity(
+                  opacity: 0.7,
+                  child: Text(
+                    RetroTopTitleSlide.detail(title),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: math.max(11, u * 3.4)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

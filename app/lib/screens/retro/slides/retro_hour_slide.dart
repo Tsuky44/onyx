@@ -57,12 +57,16 @@ class RetroHourSlide extends RetroSlide {
       ]);
 
   /// Le cadran reste vide : les heures s'y écrivent, et l'heure de pointe
-  /// est déjà en grand au-dessus.
+  /// est déjà en grand au-dessus. Sur un téléphone, il prend toute la place
+  /// sous le texte plutôt qu'une taille fixe qui le laissait perdu au milieu.
   @override
-  Widget? visual(BuildContext context, RetroStoryData data) => RetroClockChart(
-        hours: data.report.hours,
-        peak: data.report.peakHour,
-        showPeak: false,
+  Widget? visual(BuildContext context, RetroStoryData data) => LayoutBuilder(
+        builder: (context, box) => RetroClockChart(
+          hours: data.report.hours,
+          peak: data.report.peakHour,
+          showPeak: false,
+          size: math.min(box.maxWidth, box.maxHeight),
+        ),
       );
 
   @override

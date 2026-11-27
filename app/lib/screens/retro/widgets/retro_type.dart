@@ -282,41 +282,8 @@ class _Word extends StatelessWidget {
   }
 }
 
-/// Une pastille : « ≈ 13 jours entiers ». Pleine, elle prend l'encre en fond.
-class RetroChip extends StatelessWidget {
-  const RetroChip(this.text, {super.key, this.solid = false});
-  final String text;
-  final bool solid;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = RetroUnits.of(context).u;
-    final ink =
-        DefaultTextStyle.of(context).style.color ?? const Color(0xFFFFFFFF);
-    final background = RetroBackground.of(context);
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: math.max(10, u * 3.2),
-        vertical: math.max(5, u * 1.6),
-      ),
-      decoration: BoxDecoration(
-        color: solid ? ink : ink.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: math.max(11, u * 3.2),
-          fontWeight: FontWeight.w700,
-          color: solid ? background : ink,
-        ),
-      ),
-    );
-  }
-}
-
 /// La couleur de fond de l'écran en cours, pour ce qui se dessine en négatif
-/// (une pastille pleine, le creux d'un graphique).
+/// (le creux d'un graphique).
 class RetroBackground extends InheritedWidget {
   const RetroBackground({super.key, required this.color, required super.child});
   final Color color;

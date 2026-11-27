@@ -35,7 +35,8 @@ class _IoRetroMusicBackend implements RetroMusicBackend {
 
       final session = createPlaybackSession();
       if (_disposed) {
-        unawaited(session.dispose().catchError((_) {}));
+        unawaited(session.dispose().catchError(
+            (Object e) => debugPrint('RetroMusic: libération impossible: $e')));
         return;
       }
       _session = session;
@@ -127,11 +128,14 @@ class _IoRetroMusicBackend implements RetroMusicBackend {
         // L'instance mpv mise en commun garde son volume d'une lecture à
         // l'autre : on rend celui d'avant pour ne pas baisser le film suivant.
         if (prev != null) await session.setVolume(prev);
-      } catch (_) {
+      } catch (e) {
+        debugPrint('RetroMusic: arrêt impossible: $e');
       } finally {
         try {
           await session.dispose();
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('RetroMusic: libération impossible: $e');
+        }
       }
     }());
   }
