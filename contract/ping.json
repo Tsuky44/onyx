@@ -30,6 +30,7 @@
     "setup_wizard",
     "transcode_capacity",
     "suggested_peers",
-    "retro"
+    "retro",
+    "calendar"
   ]
 }

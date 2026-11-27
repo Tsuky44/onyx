@@ -317,6 +317,27 @@ Toutes les routes sont en `RequireAuth`, sans droit : chacun ne lit que le sien.
 * `POST /api/me/retro/:year/seen` — `204`. Le Rétro est vu : l'accueil retire sa diapo et
   l'anneau de l'avatar sur tous les appareils du compte.
 
+#### ➡️ Calendrier « À venir » (ADR 2026-11-27-tsuky-calendrier-sorties-serveur, capacité `calendar`)
+Les sorties qui concernent le compte, jamais toutes celles du monde : les séries dont il a
+lancé un épisode dans l'année (`watching`), celles qu'il suit à la main (`followed`), ses
+demandes au compagnon, séries et films, refus exclus (`request`), et les séries de la
+bibliothèque qui ont reçu un épisode ces six derniers mois (`server`). Une série retirée
+n'y revient pas d'elle-même. Dates TMDB, gardées 3 h (séries) et 6 h (films) en mémoire.
+Toutes les routes sont en `RequireAuth`.
+* `GET /api/calendar?from=AAAA-MM-JJ&to=AAAA-MM-JJ&today=AAAA-MM-JJ` — par défaut
+  aujourd'hui −31 j à +180 j, 400 j au plus. `today` est le jour de l'appareil.
+  Réponse `{ from, to, today, entries, followed }`. `entries` triées par date : `id`
+  (`tv:<tmdb>:s<n>e<n>` ou `movie:<tmdb>`), `kind` `show`/`movie`, `source`, `tmdb_id`,
+  `media_id` (fiche de la bibliothèque, 0 sinon), `episode_media_id` (épisode présent,
+  0 sinon), `title`, `air_date`, `season_number`, `episode_number`, `episode_name`,
+  `episode_type` (`premiere`, `finale` ou vide), `release_type` (`digital`, `physical`,
+  `theatrical`, films seulement), `poster_url`, `still_url`, `ready` (déjà sur le serveur).
+  `followed` : les séries du calendrier, `{ tmdb_id, media_id, title, source, poster_url,
+  next_air_date, next_season, next_episode, next_entry_id }`. Une série dont TMDB n'a pas
+  répondu en 6 s manque à ce chargement et arrive au suivant.
+* `PUT /api/calendar/follows/:tmdbId` — `204`. Suit la série, ou la remet après un retrait.
+* `DELETE /api/calendar/follows/:tmdbId` — `204`. La retire, même regardée ou demandée.
+
 #### ➡️ Changer son mot de passe
 * **Route :** `POST /api/auth/password`
 * **Corps (JSON) :** `{ "current_password": "…", "new_password": "…" }`

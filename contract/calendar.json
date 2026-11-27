@@ -1,0 +1,38 @@
+{
+  "from": "2026-11-01",
+  "to": "2027-05-01",
+  "today": "2026-11-27",
+  "entries": [
+    {
+      "id": "id-value",
+      "kind": "show",
+      "source": "watching",
+      "tmdb_id": 1,
+      "media_id": 2,
+      "episode_media_id": 3,
+      "title": "title-value",
+      "air_date": "2026-11-27",
+      "season_number": 4,
+      "episode_number": 5,
+      "episode_name": "episode_name-value",
+      "episode_type": "finale",
+      "release_type": "",
+      "poster_url": "poster_url-value",
+      "still_url": "still_url-value",
+      "ready": true
+    }
+  ],
+  "followed": [
+    {
+      "tmdb_id": 6,
+      "media_id": 7,
+      "title": "title-value",
+      "source": "followed",
+      "poster_url": "poster_url-value",
+      "next_air_date": "2026-12-04",
+      "next_season": 8,
+      "next_episode": 9,
+      "next_entry_id": "next_entry_id-value"
+    }
+  ]
+}

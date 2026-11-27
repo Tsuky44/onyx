@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/app_download.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/calendar_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/watch_lists_provider.dart';
@@ -28,6 +29,7 @@ import '../../navigation/shell_navigator.dart';
 import '../../tv/tv_mode.dart';
 import '../../tv/tv_pairing_link.dart';
 import '../settings/tv_pairing_screen.dart';
+import '../calendar/calendar_screen.dart';
 import '../downloads/downloads_screen.dart';
 import '../home/home_screen.dart';
 import '../library/library_screen.dart';
@@ -126,6 +128,16 @@ class _MainShellState extends State<MainShell> {
   String? _tourCheckedFor;
   bool _tourOpen = false;
   late final AuthProvider _auth = context.read<AuthProvider>();
+  CalendarProvider? _calendar;
+  int _lastCalendarOpenVersion = 0;
+
+  void _onCalendarChanged() {
+    final calendar = _calendar;
+    if (!mounted || calendar == null) return;
+    if (calendar.openTabVersion == _lastCalendarOpenVersion) return;
+    _lastCalendarOpenVersion = calendar.openTabVersion;
+    _selectTab(ShellTabs.calendar);
+  }
 
   /// Joue la présentation de l'interface à la première session d'un compte sur
   /// cet appareil.
@@ -236,6 +248,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   void dispose() {
+    _calendar?.removeListener(_onCalendarChanged);
     PlayLink.pending.removeListener(_openPlayLink);
     _auth.removeListener(_onAuthChanged);
     InterfaceTourReplay.requests.removeListener(_onTourReplayRequested);
@@ -285,6 +298,11 @@ class _MainShellState extends State<MainShell> {
       );
     });
     _auth.addListener(_onAuthChanged);
+    _calendar = Provider.of<CalendarProvider?>(context, listen: false);
+    if (_calendar != null) {
+      _lastCalendarOpenVersion = _calendar!.openTabVersion;
+      _calendar!.addListener(_onCalendarChanged);
+    }
     InterfaceTourReplay.requests.addListener(_onTourReplayRequested);
     final api = context.read<ApiClient>();
     _autoUpdate = AutoUpdateService(
@@ -541,6 +559,8 @@ class _MainShellState extends State<MainShell> {
       if (canRequest)
         ShellTabs.requests:
             _trackScroll(ShellTabs.requests, RequestsScreen(embedded: isWide)),
+      ShellTabs.calendar:
+          _trackScroll(ShellTabs.calendar, CalendarScreen(embedded: isWide)),
       if (canUseLists)
         ShellTabs.lists:
             _trackScroll(ShellTabs.lists, ListsScreen(embedded: isWide)),

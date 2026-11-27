@@ -479,6 +479,12 @@ class _MobileBottomNavState extends State<MobileBottomNav>
   /// Les pages qui se rangent derrière « Plus » quand il y en a au moins
   /// deux (ADR-0146).
   List<PhoneMoreItem> _overflow() => [
+        PhoneMoreItem(
+          tab: ShellTabs.calendar,
+          icon: AppIcons.calendar,
+          selectedIcon: AppIcons.calendarSelected,
+          label: tr('À venir'),
+        ),
         if (widget.canUseLists)
           PhoneMoreItem(
             tab: ShellTabs.lists,

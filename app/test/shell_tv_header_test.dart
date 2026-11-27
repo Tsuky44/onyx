@@ -148,9 +148,9 @@ void main() {
     expect(tester.getRect(find.byType(GlassBrand)).right, lessThan(bar.left));
     expect(tester.getRect(find.byType(AccountMenu)).left,
         greaterThan(bar.right));
-    // Accueil, trois bibliothèques, Demandes, Listes, Téléchargements, et la
-    // recherche, qui est une entrée de la pilule.
-    expect(find.byType(TvTabBarItem), findsNWidgets(8));
+    // Accueil, trois bibliothèques, Demandes, À venir, Listes,
+    // Téléchargements, et la recherche, qui est une entrée de la pilule.
+    expect(find.byType(TvTabBarItem), findsNWidgets(9));
     expect(
       find.descendant(
         of: find.byType(TvTabBar),
@@ -241,7 +241,7 @@ void main() {
       expect(rect.right, lessThanOrEqualTo(1280), reason: '$type');
       expect(rect.overlaps(bar), isFalse, reason: '$type');
     }
-    expect(find.byType(TvTabBarItem), findsNWidgets(1 + 12 + 3 + 1));
+    expect(find.byType(TvTabBarItem), findsNWidgets(1 + 12 + 4 + 1));
 
     // Le dernier onglet est hors de la pilule ; lui donner le focus l'amène.
     final last = nodes[ShellTabs.downloads]!;

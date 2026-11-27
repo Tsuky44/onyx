@@ -390,6 +390,13 @@ func main() {
 	router.GET("/api/me/retro", handlers.RequireAuth(handlers.GetMyRetroStatus))
 	router.GET("/api/me/retro/:year", handlers.RequireAuth(handlers.GetMyRetro))
 	router.POST("/api/me/retro/:year/seen", handlers.RequireAuth(handlers.MarkMyRetroSeen))
+	// Le calendrier « À venir » : chacun ne lit que ses séries (regardées,
+	// suivies, demandées) et celles que la bibliothèque reçoit. Pas de
+	// permission dédiée : il ne montre rien que le compte ne voie déjà, et
+	// ses demandes ne remontent que s'il en a faites.
+	router.GET("/api/calendar", handlers.RequireAuth(handlers.GetCalendar))
+	router.PUT("/api/calendar/follows/:tmdbId", handlers.RequireAuth(handlers.FollowCalendarShow))
+	router.DELETE("/api/calendar/follows/:tmdbId", handlers.RequireAuth(handlers.UnfollowCalendarShow))
 	router.GET("/api/me/devices", handlers.RequireAuth(handlers.ListMyDevices))
 	router.DELETE("/api/me/devices/:id", handlers.RequireAuth(handlers.RevokeMyDevice))
 	router.GET("/api/admin/activity", handlers.RequirePermission(models.PermManageUsers, handlers.ListNowPlaying))

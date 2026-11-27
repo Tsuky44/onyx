@@ -1,0 +1,653 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Onyx · Calendrier des sorties</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout : une page de planches, chacune = un écran Onyx dans son cadre (téléphone / bureau / TV), avec la note de design à côté.
+   Couleurs = tokens AppColors d'Onyx (Quiet Premium, OLED). Page volontairement sombre uniquement, comme l'app. */
+:root{
+  color-scheme: dark;
+  --bg:#0A0A0A; --surface:#141414; --elev:#1C1C1C; --hover:#252525; --border:#2C2C2E;
+  --accent:#0A84FF; --accent-muted:#64B5FF; --request:#2F6FE4; --success:#30D158; --warning:#FF9F0A;
+  --rating:#F5C518; --focus:#F5F5F7;
+  --t1:#F5F5F7; --t2:#A1A1A6; --t3:#6E6E73;
+  --glass:rgba(255,255,255,.06); --glass-b:rgba(255,255,255,.08); --veil:rgba(0,0,0,.45);
+  --page:#060606; --note:#101012;
+  --font:'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r-poster:10px;
+}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--t1);font-family:var(--font);font-size:14px;line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+button{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:8px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- En-tête de la page de maquettes ---------- */
+.intro{padding-block:48px 28px;display:grid;gap:18px;border-bottom:1px solid var(--border)}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);font-weight:700}
+.intro h1{font-size:clamp(28px,4.5vw,40px);font-weight:800;letter-spacing:-.02em}
+.intro .lede{color:var(--t2);font-size:15px;max-width:68ch}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:6px}
+.rule{background:var(--note);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:grid;gap:6px}
+.rule b{font-size:13px}
+.rule span{color:var(--t2);font-size:13px}
+.rule.no b{color:var(--t2)}
+.toc{display:flex;flex-wrap:wrap;gap:8px}
+.toc a{color:var(--t2);text-decoration:none;font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:999px}
+.toc a:hover{color:var(--t1);background:var(--surface)}
+
+section.block{padding-block:44px 8px;display:grid;gap:22px}
+.block-head{display:grid;gap:6px;max-width:75ch}
+.block-head h2{font-size:24px;font-weight:800;letter-spacing:-.01em}
+.block-head p{color:var(--t2)}
+
+.plate{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start;
+  background:var(--note);border:1px solid var(--border);border-radius:20px;padding:22px}
+.plate.wide{grid-template-columns:minmax(0,1fr)}
+@media (max-width:900px){.plate{grid-template-columns:minmax(0,1fr)}}
+.plate-note{display:grid;gap:12px;align-content:start;min-width:0}
+.plate-note h3{font-size:17px;font-weight:700}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 9px;border-radius:999px;border:1px solid var(--border);color:var(--t2);width:max-content}
+.tag.reco{color:var(--t1);border-color:rgba(10,132,255,.5);background:rgba(10,132,255,.12)}
+.plate-note ul{margin:0;padding-left:18px;color:var(--t2);font-size:13px;display:grid;gap:4px}
+.plate-note .pc{display:grid;gap:4px}
+.plate-note .pc b{font-size:12px;color:var(--t1)}
+.stage{min-width:0;display:flex;justify-content:center;overflow-x:auto;padding:4px}
+
+/* ---------- Cadres d'appareils ---------- */
+.phone{width:340px;flex:none;height:700px;border-radius:44px;border:10px solid #1a1a1c;background:var(--bg);
+  position:relative;overflow:hidden;box-shadow:0 0 0 1px #2a2a2d, 0 30px 60px rgba(0,0,0,.6)}
+.phone .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:96px;height:26px;border-radius:20px;background:#000;z-index:5}
+.phone .scroll{position:absolute;inset:0;overflow-y:auto;padding:46px 0 84px;scrollbar-width:none}
+.phone .scroll::-webkit-scrollbar{display:none}
+.desk{width:880px;flex:none;border-radius:14px;border:1px solid #2a2a2d;background:var(--bg);overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.6)}
+.desk .chrome{height:30px;display:flex;align-items:center;gap:6px;padding:0 12px;background:#111;border-bottom:1px solid var(--border)}
+.desk .chrome i{width:10px;height:10px;border-radius:50%;background:#2c2c2e;display:block}
+.tv{width:900px;flex:none;aspect-ratio:16/9;border-radius:8px;border:12px solid #111;background:var(--bg);overflow:hidden;position:relative;box-shadow:0 0 0 1px #2a2a2d,0 30px 60px rgba(0,0,0,.6)}
+
+/* ---------- Briques d'UI Onyx ---------- */
+.poster{border-radius:var(--r-poster);position:relative;overflow:hidden;flex:none;background:var(--elev)}
+.poster .pt{position:absolute;left:8px;right:8px;bottom:8px;font-size:11px;font-weight:800;line-height:1.15;letter-spacing:.02em;text-transform:uppercase;color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.poster.p23{aspect-ratio:2/3}
+.poster.p169{aspect-ratio:16/9}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;
+  background:var(--glass);border:1px solid var(--glass-b);color:var(--t2)}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.server{color:var(--success)}
+.pill.request{color:#8DB4FF;background:rgba(47,111,228,.16);border-color:rgba(47,111,228,.35)}
+.pill.watching{color:var(--t1)}
+.pill.followed{color:var(--t2)}
+.chip{font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--t2);cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--t1);color:#0A0A0A;border-color:var(--t1)}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 16px}
+.chips::-webkit-scrollbar{display:none}
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;border-radius:999px;padding:9px 16px;border:1px solid transparent;cursor:pointer}
+.btn.primary{background:var(--t1);color:#0A0A0A}
+.btn.glass{background:var(--glass);border-color:var(--glass-b);color:var(--t1);backdrop-filter:blur(12px)}
+.btn.on{background:rgba(255,255,255,.12)}
+.btn svg,.ico{width:16px;height:16px;flex:none}
+.round{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--glass);border:1px solid var(--glass-b);cursor:pointer}
+.round.on{background:var(--t1);color:#0A0A0A}
+.muted{color:var(--t2)}
+.faint{color:var(--t3)}
+.tab-row{display:flex;gap:4px}
+
+/* App bars */
+.ph-top{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 12px}
+.ph-top h4{margin:0;font-size:24px;font-weight:800;letter-spacing:-.01em}
+.ph-nav{position:absolute;left:0;right:0;bottom:0;height:76px;background:rgba(20,20,20,.9);backdrop-filter:blur(20px);border-top:1px solid var(--glass-b);
+  display:grid;grid-template-columns:repeat(5,1fr);padding:8px 4px 18px;z-index:4}
+.ph-nav div{display:grid;justify-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--t3)}
+.ph-nav div.on{color:var(--t1)}
+.ph-nav div.new{position:relative}
+.ph-nav div.new::after{content:"";position:absolute;top:-2px;right:22px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.ph-nav svg{width:22px;height:22px}
+.dk-head{display:flex;align-items:center;gap:22px;padding:14px 24px;border-bottom:1px solid rgba(255,255,255,.04)}
+.dk-head .logo{font-weight:800;letter-spacing:.18em;font-size:13px}
+.dk-head nav{display:flex;gap:4px}
+.dk-head nav span{font-size:13px;font-weight:600;color:var(--t2);padding:6px 12px;border-radius:999px}
+.dk-head nav span.on{color:var(--t1);background:var(--glass)}
+.dk-head nav span.hl{outline:1.5px dashed rgba(10,132,255,.7);outline-offset:2px}
+.dk-head .search{margin-left:auto;width:220px;height:30px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-b);display:flex;align-items:center;gap:8px;padding:0 12px;font-size:12px;color:var(--t3)}
+
+/* ---------- Proposition A : Agenda ---------- */
+.ag-day{position:sticky;top:-46px;z-index:2;background:linear-gradient(var(--bg) 70%, rgba(10,10,10,0));padding:14px 16px 8px;display:flex;align-items:baseline;gap:8px}
+.ag-day b{font-size:17px;font-weight:800}
+.ag-day span{font-size:12px;color:var(--t3);font-weight:600}
+.ag-row{display:grid;grid-template-columns:108px minmax(0,1fr);gap:12px;padding:6px 16px;align-items:center}
+.ag-row .meta{display:grid;gap:3px;min-width:0}
+.ag-row .ttl{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag-row .sub{font-size:12px;color:var(--t2)}
+.ag-row .line{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ag-row .why{font-size:11px;color:var(--t3)}
+.ag-row .play{position:absolute;inset:auto 6px 6px auto;width:24px;height:24px;border-radius:50%;background:var(--t1);color:#0A0A0A;display:grid;place-items:center}
+.ag-row .play svg{width:12px;height:12px}
+.ag-empty{padding:30px 16px;text-align:center;color:var(--t3);font-size:13px}
+.seg{margin:0 16px 4px;display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border-radius:999px;padding:3px;border:1px solid var(--border)}
+.seg button{border:0;background:transparent;font-size:12px;font-weight:700;padding:7px;border-radius:999px;color:var(--t2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--hover);color:var(--t1)}
+
+/* ---------- Proposition B : Semaine ---------- */
+.wk{padding:20px 24px 26px;display:grid;gap:16px}
+.wk-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.wk-top h4{margin:0;font-size:24px;font-weight:800;margin-right:auto}
+.wk-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+.wk-col{display:grid;gap:8px;align-content:start;min-height:330px;border-radius:14px;padding:8px;background:var(--surface);border:1px solid transparent}
+.wk-col.today{border-color:rgba(245,245,247,.22);background:#171717}
+.wk-col .dh{display:flex;justify-content:space-between;align-items:baseline;padding:2px 2px 4px}
+.wk-col .dh b{font-size:12px;font-weight:700;text-transform:capitalize}
+.wk-col .dh span{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.wk-col.today .dh span{color:var(--t1)}
+.wk-col .dh.dim{color:var(--t3)}
+.wk-card{display:grid;gap:4px}
+.wk-card .e{font-size:11px;color:var(--t2);font-weight:600}
+.wk-card .t{font-size:12px;font-weight:700;line-height:1.25}
+.wk-free{font-size:11px;color:var(--t3);text-align:center;padding-top:30px}
+
+/* ---------- Proposition C : Mois ---------- */
+.mo{display:grid;grid-template-columns:minmax(0,1fr) 260px;min-height:520px}
+.mo-main{padding:20px 22px;display:grid;gap:12px;align-content:start}
+.mo-top{display:flex;align-items:center;gap:10px}
+.mo-top h4{margin:0;font-size:22px;font-weight:800;margin-right:auto}
+.mo-wd{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:0 4px}
+.mo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.mo-cell{height:74px;border-radius:10px;background:var(--surface);padding:6px;display:grid;grid-template-rows:auto 1fr;gap:4px;cursor:pointer;border:1px solid transparent;text-align:left}
+.mo-cell:hover{background:var(--elev)}
+.mo-cell.out{opacity:.35}
+.mo-cell.sel{border-color:var(--focus)}
+.mo-cell .n{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--t2)}
+.mo-cell.today .n{color:#0A0A0A;background:var(--t1);border-radius:999px;width:22px;height:22px;display:grid;place-items:center}
+.mo-thumbs{display:flex;gap:3px;align-items:end}
+.mo-thumbs .poster{width:22px}
+.mo-thumbs .more{font-size:10px;color:var(--t2);font-weight:700;padding-bottom:2px}
+.mo-side{border-left:1px solid var(--border);background:#0d0d0d;padding:20px 16px;display:grid;gap:12px;align-content:start}
+.mo-side h5{margin:0;font-size:15px;font-weight:800}
+.mo-item{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;align-items:center}
+.mo-item .t{font-size:13px;font-weight:700}
+.mo-item .e{font-size:11px;color:var(--t2)}
+
+/* ---------- Proposition D : Affiche ---------- */
+.af-hero{position:relative;height:300px;overflow:hidden}
+.af-hero .bd{position:absolute;inset:0}
+.af-hero .fade{position:absolute;inset:0;background:linear-gradient(180deg, rgba(10,10,10,0) 30%, var(--bg) 96%), linear-gradient(90deg, rgba(10,10,10,.85), rgba(10,10,10,0) 70%)}
+.af-hero .in{position:absolute;left:44px;bottom:28px;right:44px;display:grid;gap:10px;max-width:460px}
+.af-hero .lbl{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t2)}
+.af-hero h4{margin:0;font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.af-count{display:flex;align-items:end;gap:14px}
+.af-count .big{font-size:64px;font-weight:300;letter-spacing:-.04em;line-height:.85;font-variant-numeric:tabular-nums}
+.af-count .cap{display:grid;gap:6px;font-size:13px;color:var(--t2);padding-bottom:4px}
+.af-bar{height:3px;width:180px;border-radius:2px;background:rgba(255,255,255,.15);overflow:hidden}
+.af-bar i{display:block;height:100%;width:84%;background:var(--t1)}
+.af-rows{padding:4px 44px 24px;display:grid;gap:18px}
+.af-row h5{margin:0 0 10px;font-size:17px;font-weight:700;display:flex;gap:8px;align-items:baseline}
+.af-row h5 span{font-size:12px;color:var(--t3);font-weight:600}
+.af-strip{display:flex;gap:12px}
+.af-card{width:118px;display:grid;gap:5px;flex:none}
+.af-card.focus .poster{outline:3px solid var(--focus);outline-offset:3px;transform:scale(1.04)}
+.af-card .d{font-size:11px;color:var(--t2);font-weight:700;text-transform:capitalize}
+
+/* ---------- Placements ---------- */
+.place-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:1000px){.place-grid{grid-template-columns:minmax(0,1fr)}}
+.place{background:var(--note);border:1px solid var(--border);border-radius:20px;padding:18px;display:grid;gap:14px;align-content:start;min-width:0}
+.place h3{font-size:16px;font-weight:700}
+.place p{color:var(--t2);font-size:13px}
+.mini{background:var(--bg);border:1px solid #232325;border-radius:14px;overflow:hidden;position:relative}
+.mini-row{padding:12px 14px;display:grid;gap:10px}
+.mini-row .rh{display:flex;justify-content:space-between;align-items:baseline}
+.mini-row .rh b{font-size:14px}
+.mini-row .rh a{font-size:11px;color:var(--t2);text-decoration:none;font-weight:700}
+.mini-strip{display:flex;gap:8px;overflow:hidden}
+.mini-card{width:72px;display:grid;gap:4px;flex:none}
+.mini-card .d{font-size:10px;font-weight:700;color:var(--t2)}
+.mini-card.hl .d{color:var(--t1)}
+.ghost{opacity:.35;filter:saturate(.3)}
+.hl-box{outline:1.5px dashed rgba(10,132,255,.75);outline-offset:-1px;border-radius:12px;background:rgba(10,132,255,.04)}
+
+/* ---------- Fiche série + boutons Suivre ---------- */
+.detail{position:relative;height:360px;overflow:hidden}
+.detail .bd{position:absolute;inset:0}
+.detail .fade{position:absolute;inset:0;background:linear-gradient(180deg, rgba(10,10,10,.1), var(--bg) 92%),linear-gradient(90deg, rgba(10,10,10,.9) 10%, rgba(10,10,10,0) 70%)}
+.detail .in{position:absolute;left:36px;bottom:26px;right:36px;display:grid;gap:12px;max-width:520px}
+.detail h4{margin:0;font-size:28px;font-weight:800}
+.detail .facts{font-size:12px;color:var(--t2);display:flex;gap:10px;flex-wrap:wrap}
+.detail .facts .star{color:var(--rating)}
+.detail .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.detail .cd{display:flex;gap:14px;align-items:end;margin-top:4px}
+.detail .cd .big{font-size:52px;font-weight:300;letter-spacing:-.04em;line-height:.85}
+.detail .cd .cap{font-size:12px;color:var(--t2);display:grid;gap:3px;padding-bottom:3px}
+.follow-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--t1);background:none;border:0;padding:4px 0;cursor:pointer}
+.follow-link .ico{width:14px;height:14px}
+.toast{position:absolute;left:50%;bottom:18px;transform:translate(-50%,20px);opacity:0;transition:.25s;background:var(--elev);border:1px solid var(--border);
+  padding:9px 14px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;z-index:6}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.auto-note{font-size:11px;color:var(--t3);display:flex;gap:6px;align-items:center}
+.variants{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:1000px){.variants{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- Tableau FR / EN ---------- */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:14px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:13px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);background:var(--note)}
+td:first-child{color:var(--t3);font-size:12px}
+tr:last-child td{border-bottom:0}
+
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:800px){.flow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.flow div{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;display:grid;gap:6px;font-size:12px;color:var(--t2)}
+.flow div b{color:var(--t1);font-size:13px}
+</style>
+
+<div class="wrap">
+
+<header class="intro">
+  <span class="eyebrow">Onyx · maquettes · 27 nov. 2026</span>
+  <h1>Calendrier des sorties</h1>
+  <p class="lede">Un calendrier qui ne montre que <em>vos</em> sorties : les séries que vous regardez ou suivez, et ce que vous avez demandé ou que le serveur possède déjà. Quatre designs de page, trois façons d'y accéder, trois variantes du bouton « Suivre ». Tout reprend les tokens d'Onyx : fond OLED, Manrope, focus blanc, bleu réservé à « Demander ».</p>
+  <div class="rules">
+    <div class="rule"><b>Suivies automatiquement</b><span>Séries demandées et séries dont vous avez lancé au moins un épisode.</span></div>
+    <div class="rule"><b>Suivies à la main</b><span>Le bouton « Suivre » sur la fiche d'une série, même jamais regardée.</span></div>
+    <div class="rule"><b>Films</b><span>Sortie d'un film que vous avez demandé, ou qui est dans la bibliothèque du serveur.</span></div>
+    <div class="rule no"><b>Jamais affiché</b><span>Les sorties du monde entier. Rien qui ne soit pas lié à vous ou au serveur.</span></div>
+  </div>
+  <nav class="toc" aria-label="Sommaire">
+    <a href="#acces">Où l'intégrer</a><a href="#agenda">A · Agenda</a><a href="#semaine">B · Semaine</a><a href="#mois">C · Mois</a><a href="#affiche">D · Affiche</a><a href="#suivre">Bouton Suivre</a><a href="#textes">Textes FR / EN</a>
+  </nav>
+</header>
+
+<!-- ================= ACCÈS ================= -->
+<section class="block" id="acces">
+  <div class="block-head">
+    <span class="eyebrow">1 · Intégration</span>
+    <h2>Où le trouver dans l'app</h2>
+    <p>Trois points d'entrée qui se complètent. Ma recommandation : les trois ensemble. L'onglet donne une adresse fixe, la rangée de l'accueil le fait découvrir sans effort, et la fiche série est l'endroit où l'on décide de suivre.</p>
+  </div>
+  <div class="place-grid">
+    <div class="place">
+      <span class="tag reco">Recommandé</span>
+      <h3>1. Rangée « Cette semaine » sur l'accueil</h3>
+      <div class="mini">
+        <div class="mini-row ghost"><div class="rh"><b>Reprendre la lecture</b></div><div class="mini-strip" id="ghost1"></div></div>
+        <div class="mini-row hl-box" style="margin:0 8px"><div class="rh"><b>Cette semaine</b><a href="#agenda">Tout voir ›</a></div><div class="mini-strip" id="homeRow"></div></div>
+        <div class="mini-row ghost"><div class="rh"><b>À découvrir</b></div><div class="mini-strip" id="ghost2"></div></div>
+      </div>
+      <p>Placée juste sous « Reprendre la lecture ». Libellé du jour au-dessus de chaque affiche (« Ce soir », « Demain », « Mer. »). Masquée s'il n'y a rien dans les 7 jours. « Tout voir » ouvre la page complète.</p>
+    </div>
+    <div class="place">
+      <span class="tag reco">Recommandé</span>
+      <h3>2. Onglet « À venir » dans la navigation</h3>
+      <div class="mini" style="padding:12px 0 0">
+        <div style="display:flex;gap:4px;padding:0 12px 12px;flex-wrap:wrap;font-size:11px;font-weight:600">
+          <span style="padding:5px 9px;color:var(--t2)">Accueil</span><span style="padding:5px 9px;color:var(--t2)">Films</span><span style="padding:5px 9px;color:var(--t2)">Séries</span><span style="padding:5px 9px;color:var(--t2)">Demandes</span><span class="hl-box" style="padding:5px 9px;color:var(--t1);background:var(--glass)">À venir</span><span style="padding:5px 9px;color:var(--t2)">Listes</span>
+        </div>
+        <div style="border-top:1px solid #232325;display:grid;grid-template-columns:repeat(5,1fr);padding:10px 0 12px;font-size:9px;font-weight:600;color:var(--t3);text-align:center">
+          <span>Accueil</span><span>Bibliothèques</span><span class="hl-box" style="color:var(--t1);padding:2px 0">À venir</span><span>Demandes</span><span>Plus</span>
+        </div>
+      </div>
+      <p>Bureau et TV : un onglet entre « Demandes » et « Listes ». Téléphone : 3ᵉ case de la barre du bas ; Listes et Hors ligne restent dans « Plus » comme aujourd'hui. Un point bleu signale une sortie disponible du jour.</p>
+    </div>
+    <div class="place">
+      <span class="tag">Complément</span>
+      <h3>3. Depuis la fiche et le compte à rebours</h3>
+      <div class="mini" style="padding:14px;display:grid;gap:10px">
+        <div style="display:flex;gap:12px;align-items:end"><span style="font-size:38px;font-weight:300;letter-spacing:-.04em;line-height:.85">J-6</span><span class="muted" style="font-size:11px">Prochain épisode<br>Saison 2 · Épisode 10</span></div>
+        <div class="hl-box" style="padding:8px 10px;display:flex;gap:8px;align-items:center;font-size:12px;font-weight:700"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Voir dans le calendrier ›</div>
+      </div>
+      <p>Le compte à rebours existant (« J-6 ») devient cliquable et mène au jour concerné. Sur une affiche en bibliothèque, l'appui long propose « Suivre » / « Ne plus suivre ».</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= A AGENDA ================= -->
+<section class="block" id="agenda">
+  <div class="block-head">
+    <span class="eyebrow">2 · Designs de la page</span>
+    <h2>A · Agenda</h2>
+    <p>Une liste continue groupée par jour, la plus naturelle sur téléphone. Les filtres fonctionnent : essayez-les.</p>
+  </div>
+  <div class="plate">
+    <div class="stage">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="scroll" id="agScroll">
+          <div class="ph-top"><h4>À venir</h4><div class="round" title="Gérer les séries suivies"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h6"/></svg></div></div>
+          <div class="seg" role="group" aria-label="Type"><button data-kind="all" aria-pressed="true">Tout</button><button data-kind="serie" aria-pressed="false">Séries</button></div>
+          <div class="chips" id="agChips" style="margin-top:10px"></div>
+          <div id="agList" style="margin-top:4px"></div>
+        </div>
+        <div class="ph-nav">
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Accueil</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>Bibliothèques</div>
+          <div class="on new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>À venir</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>Demandes</div>
+          <div><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>Plus</div>
+        </div>
+      </div>
+    </div>
+    <div class="plate-note">
+      <span class="tag reco">Recommandé sur téléphone</span>
+      <h3>Lisible d'un coup de pouce</h3>
+      <ul>
+        <li>Jours collants en tête (« Aujourd'hui », « Demain », « Mer. 2 déc. »).</li>
+        <li>Vignette 16:9 de l'épisode, numéro, puis une pastille qui dit <b>pourquoi</b> c'est là : En cours, Suivie, Demandé, Sur le serveur.</li>
+        <li>Déjà sur le serveur : bouton lecture blanc sur la vignette, on lance sans passer par la fiche.</li>
+        <li>Le bouton en haut à droite ouvre la liste des séries suivies (pour en retirer).</li>
+      </ul>
+      <div class="pc"><b>Limite</b><span class="muted" style="font-size:13px">Peu de vue d'ensemble sur un mois chargé.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= B SEMAINE ================= -->
+<section class="block" id="semaine">
+  <div class="block-head">
+    <h2>B · Semaine</h2>
+    <p>Sept colonnes, une par jour, avec les affiches empilées. Pensé pour le bureau et la tablette : on voit la semaine d'un regard.</p>
+  </div>
+  <div class="plate wide">
+    <div class="stage">
+      <div class="desk">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <div class="dk-head"><span class="logo">ONYX</span><nav><span>Accueil</span><span>Films</span><span>Séries</span><span>Demandes</span><span class="on">À venir</span><span>Listes</span></nav><div class="search"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Rechercher</div></div>
+        <div class="wk">
+          <div class="wk-top">
+            <h4>Les 7 prochains jours</h4>
+            <div class="tab-row"><button class="chip" aria-pressed="true">Semaine</button><button class="chip" aria-pressed="false">Mois</button></div>
+            <div class="round" style="width:32px;height:32px" aria-label="Semaine précédente"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg></div>
+            <div class="round" style="width:32px;height:32px" aria-label="Semaine suivante"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>
+          </div>
+          <div class="wk-grid" id="wkGrid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="plate-note" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px">
+      <div class="pc"><b>Points forts</b><span class="muted" style="font-size:13px">Les affiches font le travail, comme dans les bibliothèques. La colonne du jour est cerclée de blanc, sans couleur ajoutée. Un jour vide reste visible (« Rien ce jour-là »).</span></div>
+      <div class="pc"><b>Bascule Semaine / Mois</b><span class="muted" style="font-size:13px">Même page, deux zooms. La vue Mois est la proposition C.</span></div>
+      <div class="pc"><b>Limite</b><span class="muted" style="font-size:13px">Trop étroit sur téléphone : l'agenda A prend le relais en dessous de 700 px.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= C MOIS ================= -->
+<section class="block" id="mois">
+  <div class="block-head">
+    <h2>C · Mois</h2>
+    <p>Une grille mensuelle classique avec des mini-affiches dans chaque case, et le détail du jour choisi dans un panneau latéral. Cliquez sur un jour.</p>
+  </div>
+  <div class="plate wide">
+    <div class="stage">
+      <div class="desk">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <div class="mo">
+          <div class="mo-main">
+            <div class="mo-top"><h4>Décembre 2026</h4>
+              <div class="round" style="width:32px;height:32px"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg></div>
+              <div class="round" style="width:32px;height:32px"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>
+            </div>
+            <div class="mo-wd"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
+            <div class="mo-grid" id="moGrid"></div>
+          </div>
+          <aside class="mo-side" id="moSide"></aside>
+        </div>
+      </div>
+    </div>
+    <div class="plate-note" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px">
+      <div class="pc"><b>Points forts</b><span class="muted" style="font-size:13px">Planifier : « la finale d'Halcyon tombe quand ? ». Le panneau reprend les lignes de l'agenda, donc un seul composant à coder.</span></div>
+      <div class="pc"><b>Limite</b><span class="muted" style="font-size:13px">Les mini-affiches sont petites ; à la télécommande, naviguer case par case est lent.</span></div>
+      <div class="pc"><b>Usage conseillé</b><span class="muted" style="font-size:13px">Seconde vue sur bureau, pas la vue par défaut.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= D AFFICHE ================= -->
+<section class="block" id="affiche">
+  <div class="block-head">
+    <h2>D · Affiche</h2>
+    <p>La prochaine sortie en grand, avec le chiffre géant du compte à rebours déjà présent sur les fiches, puis des rangées d'affiches par période. Le langage de l'accueil, fait pour la TV.</p>
+  </div>
+  <div class="plate wide">
+    <div class="stage">
+      <div class="tv" id="tv">
+        <div class="af-hero">
+          <div class="bd" id="afBd"></div>
+          <div class="fade"></div>
+          <div class="in">
+            <span class="lbl">Prochaine sortie · Demandé</span>
+            <h4>Cendres</h4>
+            <div class="af-count"><span class="big">J-1</span><div class="cap"><span>Saison 3 · Épisode 1 · retour de la série</span><div class="af-bar"><i></i></div></div></div>
+            <div style="display:flex;gap:8px"><button class="btn primary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>Revoir la saison 2</button><button class="btn glass">Fiche</button></div>
+          </div>
+        </div>
+        <div class="af-rows" id="afRows"></div>
+      </div>
+    </div>
+    <div class="plate-note" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px">
+      <div class="pc"><span class="tag reco">Recommandé sur TV et bureau</span></div>
+      <div class="pc"><b>Points forts</b><span class="muted" style="font-size:13px">Zéro nouveau concept : hero, rangées, focus blanc qui grossit l'affiche. Navigation télécommande gratuite (rangée = ligne de focus). Le hero met en avant la sortie la plus attendue, pas forcément la plus proche.</span></div>
+      <div class="pc"><b>Limite</b><span class="muted" style="font-size:13px">Moins précis sur les dates que A ou B : le jour est sous l'affiche, pas en colonne.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SUIVRE ================= -->
+<section class="block" id="suivre">
+  <div class="block-head">
+    <span class="eyebrow">3 · Action</span>
+    <h2>Le bouton « Suivre » sur une série</h2>
+    <p>Trois variantes sur la fiche. Cliquez dessus pour voir l'état « suivie ». Une série demandée ou commencée affiche directement l'état suivi, avec la raison en petit, et reste retirable.</p>
+  </div>
+  <div class="variants">
+    <div class="place">
+      <span class="tag reco">Recommandé</span>
+      <h3>1. Pilule à côté de Lecture</h3>
+      <div class="mini"><div class="detail" data-variant="pill"></div></div>
+      <p>Toujours visible, sur la même ligne que les actions existantes. « + Suivre » devient « ✓ Suivie ». Le plus découvrable.</p>
+    </div>
+    <div class="place">
+      <span class="tag">Discret</span>
+      <h3>2. Cloche ronde</h3>
+      <div class="mini"><div class="detail" data-variant="bell"></div></div>
+      <p>Bouton rond en verre comme Liste / Favori. Prend peu de place, mais une cloche évoque des notifications qu'on n'envoie pas forcément.</p>
+    </div>
+    <div class="place">
+      <span class="tag">Contextuel</span>
+      <h3>3. Sous le compte à rebours</h3>
+      <div class="mini"><div class="detail" data-variant="link"></div></div>
+      <p>Le lien vit là où l'on lit la date. Très clair, mais absent pour une série terminée sans prochain épisode : à combiner avec la variante 1.</p>
+    </div>
+  </div>
+  <div class="flow">
+    <div><b>Je demande une série</b>Suivie automatiquement · « Demandée par vous »</div>
+    <div><b>Je lance un épisode</b>Suivie automatiquement · « Vous regardez »</div>
+    <div><b>Je touche « Suivre »</b>Suivie · aucune raison affichée</div>
+    <div><b>Je touche « Suivie »</b>Retirée du calendrier, même si elle était automatique ; ne revient pas toute seule</div>
+  </div>
+</section>
+
+<!-- ================= TEXTES ================= -->
+<section class="block" id="textes">
+  <div class="block-head">
+    <span class="eyebrow">4 · i18n</span>
+    <h2>Textes FR / EN</h2>
+    <p>Les libellés introduits par la fonctionnalité, en formulations neutres.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Où</th><th>Français</th><th>English</th></tr></thead>
+      <tbody>
+        <tr><td>Onglet</td><td>À venir</td><td>Upcoming</td></tr>
+        <tr><td>Rangée accueil</td><td>Cette semaine · Tout voir</td><td>This week · See all</td></tr>
+        <tr><td>Jours</td><td>Aujourd'hui · Ce soir · Demain</td><td>Today · Tonight · Tomorrow</td></tr>
+        <tr><td>Filtres</td><td>Tout · Séries · Films · Mes séries · Demandés · Sur le serveur</td><td>All · Shows · Movies · My shows · Requested · On the server</td></tr>
+        <tr><td>Pastilles</td><td>En cours · Suivie · Demandé · Sur le serveur · Disponible</td><td>Watching · Following · Requested · On the server · Available</td></tr>
+        <tr><td>Bouton</td><td>Suivre · Suivie · Ne plus suivre</td><td>Follow · Following · Unfollow</td></tr>
+        <tr><td>Raison auto</td><td>Suivie car vous l'avez demandée · Suivie car vous la regardez</td><td>Followed because you requested it · Followed because you're watching it</td></tr>
+        <tr><td>Toast</td><td>Ajoutée au calendrier · Retirée du calendrier</td><td>Added to your calendar · Removed from your calendar</td></tr>
+        <tr><td>Vide</td><td>Rien de prévu pour l'instant. Suivez une série depuis sa fiche pour voir ses prochains épisodes ici.</td><td>Nothing coming up yet. Follow a show from its page to see its next episodes here.</td></tr>
+        <tr><td>Jour vide</td><td>Rien ce jour-là</td><td>Nothing that day</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+const ICON = {
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4"/></svg>',
+  bellOn:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4" stroke="currentColor" stroke-width="2"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  calOn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m8.5 15 2.5 2.5 4.5-4.5"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'
+};
+// Exemples fictifs (titres inventés)
+const DATA = [
+  {d:'2026-11-27',t:'Les Veilleurs',k:'serie',e:'S2 · É9',src:'watching',h:205,time:'03:00',ready:true},
+  {d:'2026-11-27',t:'Orbite basse',k:'serie',e:'S1 · É4',src:'followed',h:262,time:'21:00'},
+  {d:'2026-11-28',t:'Cendres',k:'serie',e:'S3 · É1 · Retour',src:'request',h:18},
+  {d:'2026-11-30',t:'Le Dernier Phare',k:'film',e:'Film · sortie numérique',src:'request',h:38},
+  {d:'2026-12-01',t:'Nord Sombre',k:'serie',e:'S1 · É7',src:'watching',h:178},
+  {d:'2026-12-02',t:'Halcyon',k:'serie',e:'S4 · É10 · Finale',src:'followed',h:318},
+  {d:'2026-12-03',t:'Les Veilleurs',k:'serie',e:'S2 · É10',src:'watching',h:205},
+  {d:'2026-12-04',t:'La Ligue',k:'serie',e:'S5 · É2',src:'server',h:140},
+  {d:'2026-12-04',t:'Orbite basse',k:'serie',e:'S1 · É5',src:'followed',h:262},
+  {d:'2026-12-05',t:'Cendres',k:'serie',e:'S3 · É2',src:'request',h:18},
+  {d:'2026-12-08',t:'Nord Sombre',k:'serie',e:'S1 · É8',src:'watching',h:178},
+  {d:'2026-12-10',t:'Les Veilleurs',k:'serie',e:'S2 · É11',src:'watching',h:205},
+  {d:'2026-12-11',t:'Brume',k:'film',e:'Film · sortie numérique',src:'server',h:92},
+  {d:'2026-12-11',t:'La Ligue',k:'serie',e:'S5 · É3',src:'server',h:140},
+  {d:'2026-12-16',t:'Kestrel',k:'film',e:'Film · sortie numérique',src:'request',h:350},
+  {d:'2026-12-18',t:'La Ligue',k:'serie',e:'S5 · É4',src:'server',h:140},
+  {d:'2026-12-23',t:'Nord Sombre',k:'serie',e:'S1 · É9 · Finale',src:'watching',h:178},
+];
+const SRC = {watching:'En cours',followed:'Suivie',request:'Demandé',server:'Sur le serveur'};
+const WHY = {watching:'Vous regardez',followed:'Suivie par vous',request:'Demandé par vous',server:'Dans la bibliothèque'};
+const WD = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+const MO = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const TODAY = '2026-11-27';
+const parse = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const iso = dt => dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+const diff = s => Math.round((parse(s)-parse(TODAY))/864e5);
+function dayLabel(s){ const n=diff(s), dt=parse(s);
+  if(n===0) return "Aujourd'hui"; if(n===1) return 'Demain';
+  const w=WD[dt.getDay()]; return w.charAt(0).toUpperCase()+w.slice(1)+' '+dt.getDate()+' '+MO[dt.getMonth()]; }
+function shortDay(s, it){ const n=diff(s); if(n===0) return it&&it.time&&it.time>'18'?'Ce soir':"Aujourd'hui"; if(n===1) return 'Demain'; const w=WD[parse(s).getDay()]; return w.charAt(0).toUpperCase()+w.slice(1,3)+'. '+parse(s).getDate(); }
+function poster(it, cls, withTitle){
+  const g = `linear-gradient(165deg, hsl(${it.h} 42% 36%), hsl(${(it.h+28)%360} 46% 14%) 70%, hsl(${(it.h+40)%360} 40% 8%))`;
+  return `<div class="poster ${cls}" style="background:${g}">${withTitle?`<span class="pt">${it.t}</span>`:''}</div>`;
+}
+function pill(src){ return `<span class="pill ${src}"><span class="dot"></span>${SRC[src]}</span>`; }
+
+/* ---------- A · Agenda ---------- */
+let agKind='all', agSrc='all';
+const AG_SRC=[['all','Tout'],['mine','Mes séries'],['request','Demandés'],['server','Sur le serveur'],['film','Films']];
+const chipsEl=document.getElementById('agChips');
+chipsEl.innerHTML=AG_SRC.map(([v,l])=>`<button class="chip" data-src="${v}" aria-pressed="${v==='all'}">${l}</button>`).join('');
+chipsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;agSrc=b.dataset.src;chipsEl.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderAgenda();});
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{agKind=b.dataset.kind;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderAgenda();}));
+function renderAgenda(){
+  const rows=DATA.filter(it=>{
+    if(agKind==='serie'&&it.k!=='serie')return false;
+    if(agSrc==='mine')return it.src==='watching'||it.src==='followed';
+    if(agSrc==='film')return it.k==='film';
+    if(agSrc!=='all')return it.src===agSrc; return true;});
+  const byDay={}; rows.forEach(it=>(byDay[it.d]=byDay[it.d]||[]).push(it));
+  const days=Object.keys(byDay).sort();
+  document.getElementById('agList').innerHTML = days.length? days.map(d=>{
+    const n=diff(d); const sub = n>1? (n<7?'dans '+n+' jours':'') : '';
+    return `<div class="ag-day"><b>${dayLabel(d)}</b><span>${sub}</span></div>`+byDay[d].map(it=>`
+      <div class="ag-row">
+        <div style="position:relative">${poster(it,'p169',false)}${it.ready?`<span class="play">${ICON.play}</span>`:''}</div>
+        <div class="meta"><span class="ttl">${it.t}</span><span class="sub">${it.e}${it.time?' · '+it.time:''}</span>
+          <div class="line">${it.ready?'<span class="pill server"><span class="dot"></span>Disponible</span>':pill(it.src)}<span class="why">${it.ready?'':WHY[it.src]}</span></div></div>
+      </div>`).join('');
+  }).join('') : `<div class="ag-empty">Rien de prévu avec ce filtre.</div>`;
+}
+renderAgenda();
+
+/* ---------- B · Semaine ---------- */
+(function(){
+  const g=document.getElementById('wkGrid'); let html='';
+  for(let i=0;i<7;i++){ const dt=parse(TODAY); dt.setDate(dt.getDate()+i); const s=iso(dt);
+    const items=DATA.filter(x=>x.d===s);
+    html+=`<div class="wk-col ${i===0?'today':''}"><div class="dh ${items.length?'':'dim'}"><b>${i===0?"Aujourd'hui":WD[dt.getDay()]}</b><span>${dt.getDate()}</span></div>`+
+      (items.length? items.map(it=>`<div class="wk-card">${poster(it,'p23',true)}<span class="t">${it.t}</span><span class="e">${it.e.split(' · ').slice(0,2).join(' · ')}</span>${it.ready?'<span class="pill server"><span class="dot"></span>Disponible</span>':pill(it.src)}</div>`).join('') : '<div class="wk-free">Rien ce jour-là</div>')+`</div>`;
+  }
+  g.innerHTML=html;
+})();
+
+/* ---------- C · Mois ---------- */
+(function(){
+  const grid=document.getElementById('moGrid'), side=document.getElementById('moSide');
+  const start=new Date(2026,10,30); // lundi 30 nov.
+  let sel='2026-12-02';
+  function side_(s){ const items=DATA.filter(x=>x.d===s);
+    side.innerHTML=`<span class="eyebrow">${diff(s)===0?"Aujourd'hui":diff(s)===1?'Demain':'Dans '+diff(s)+' jours'}</span><h5>${dayLabel(s)}</h5>`+
+      (items.length? items.map(it=>`<div class="mo-item">${poster(it,'p23',false)}<div style="display:grid;gap:3px;min-width:0"><span class="t">${it.t}</span><span class="e">${it.e}</span>${pill(it.src)}</div></div>`).join('') : '<p class="faint" style="font-size:13px">Rien ce jour-là</p>'); }
+  function draw(){ let h='';
+    for(let i=0;i<35;i++){ const dt=new Date(start); dt.setDate(start.getDate()+i); const s=iso(dt);
+      const items=DATA.filter(x=>x.d===s); const out=dt.getMonth()!==11;
+      h+=`<button class="mo-cell ${out?'out':''} ${s===sel?'sel':''}" data-d="${s}" aria-label="${dayLabel(s)}, ${items.length} sortie(s)"><span class="n">${dt.getDate()}</span><span class="mo-thumbs">${items.slice(0,2).map(it=>poster(it,'p23',false)).join('')}${items.length>2?`<span class="more">+${items.length-2}</span>`:''}</span></button>`; }
+    grid.innerHTML=h; side_(sel); }
+  grid.addEventListener('click',e=>{const b=e.target.closest('.mo-cell'); if(!b)return; sel=b.dataset.d; draw();});
+  draw();
+})();
+
+/* ---------- D · Affiche ---------- */
+(function(){
+  const c=DATA.find(x=>x.t==='Cendres');
+  document.getElementById('afBd').style.background=`radial-gradient(120% 90% at 75% 30%, hsl(${c.h} 55% 34%), hsl(${c.h+20} 50% 12%) 55%, #0A0A0A 85%)`;
+  const groups=[['Cette semaine','27 nov. – 3 déc.',x=>diff(x.d)<7],['La semaine prochaine','4 – 10 déc.',x=>diff(x.d)>=7&&diff(x.d)<14]];
+  document.getElementById('afRows').innerHTML=groups.map(([t,r,f],gi)=>`<div class="af-row"><h5>${t}<span>${r}</span></h5><div class="af-strip">${DATA.filter(f).slice(0,7).map((it,i)=>`<div class="af-card ${gi===0&&i===1?'focus':''}"><span class="d">${shortDay(it.d,it)}</span>${poster(it,'p23',true)}</div>`).join('')}</div></div>`).join('');
+})();
+
+/* ---------- Mini accueil ---------- */
+(function(){
+  const g=x=>`<div class="mini-card">${poster(x,'p23',false)}</div>`;
+  const fake=[{h:30},{h:200},{h:120},{h:290}];
+  document.getElementById('ghost1').innerHTML=fake.map(g).join('');
+  document.getElementById('ghost2').innerHTML=fake.slice().reverse().map(g).join('');
+  document.getElementById('homeRow').innerHTML=DATA.filter(x=>diff(x.d)<7).slice(0,4).map((it,i)=>`<div class="mini-card ${i===0?'hl':''}"><span class="d">${shortDay(it.d,it)}</span>${poster(it,'p23',true)}</div>`).join('');
+})();
+
+/* ---------- Fiches + boutons Suivre ---------- */
+document.querySelectorAll('.detail').forEach((el,idx)=>{
+  const v=el.dataset.variant; let on=false;
+  const auto = v==='link'; // la 3ᵉ montre une série suivie automatiquement
+  if(auto) on=true;
+  const hue=[205,262,178][idx];
+  const title=['Orbite basse','Halcyon','Les Veilleurs'][idx];
+  function render(){
+    const play=`<button class="btn primary">${ICON.play}Lecture</button>`;
+    const listBtn=`<span class="round" title="Ajouter à une liste">${ICON.list}</span>`;
+    let acts='', below='';
+    if(v==='pill') acts = play + `<button class="btn glass ${on?'on':''}" data-t>${on?ICON.check+'Suivie':ICON.plus+'Suivre'}</button>` + listBtn;
+    if(v==='bell') acts = play + listBtn + `<button class="round ${on?'on':''}" data-t aria-label="${on?'Ne plus suivre':'Suivre'}" title="${on?'Suivie':'Suivre'}">${on?ICON.bellOn:ICON.bell}</button>`;
+    if(v==='link'){ acts = play + listBtn;
+      below = `<div class="cd"><span class="big">J-6</span><div class="cap"><span>Prochain épisode · jeu. 3 déc.</span><span>Saison 2 · Épisode 10</span></div></div>
+        <button class="follow-link" data-t>${on?ICON.calOn+'Dans votre calendrier · Retirer':ICON.cal+'Ajouter au calendrier'}</button>
+        ${on?'<span class="auto-note">Suivie car vous la regardez</span>':''}`; }
+    el.innerHTML=`<div class="bd" style="background:radial-gradient(110% 90% at 80% 20%, hsl(${hue} 50% 32%), hsl(${hue+25} 45% 11%) 60%, #0A0A0A)"></div><div class="fade"></div>
+      <div class="in"><h4>${title}</h4><div class="facts"><span class="star">★ 8,1</span><span>2025</span><span>2 saisons</span><span>Science-fiction</span></div>
+      <div class="acts">${acts}</div>${below}
+      ${v!=='link'&&on?'<span class="auto-note">Les prochains épisodes apparaîtront dans « À venir »</span>':''}</div>
+      <div class="toast" role="status"></div>`;
+    el.querySelector('[data-t]').addEventListener('click',()=>{ on=!on; render(); const t=el.querySelector('.toast'); t.textContent=on?'Ajoutée au calendrier':'Retirée du calendrier'; requestAnimationFrame(()=>t.classList.add('show')); setTimeout(()=>t.classList.remove('show'),1600); });
+  }
+  render();
+});
+})();
+</script>
+
+</body></html>

@@ -5,6 +5,8 @@
 /// domaine, ou dans un nouveau, jamais ici.
 library;
 
+export 'calendar.dart';
+export 'calendar_feed.dart';
 export 'catalog.dart';
 export 'device_video.dart';
 export 'episode_navigation.dart';

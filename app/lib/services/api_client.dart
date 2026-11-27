@@ -74,6 +74,7 @@ part 'api/avatars.dart';
 part 'api/storage_admin.dart';
 part 'api/peers.dart';
 part 'api/retro.dart';
+part 'api/calendar.dart';
 
 class _PlaybackRequestScope {
   const _PlaybackRequestScope(this.origin, this.authorization);
@@ -106,7 +107,8 @@ class ApiClient
         _AvatarEndpoints,
         _StorageAdminEndpoints,
         _PeersEndpoints,
-        _RetroEndpoints {
+        _RetroEndpoints,
+        _CalendarEndpoints {
   static String get _defaultBaseUrl {
     // On web the Go server serves this very bundle, so the page origin is
     // already the API root. Hardcoding a host here would turn every call into a

@@ -140,6 +140,7 @@ class ShellTvHeader extends StatelessWidget {
                           anchor: TourAnchor.requests,
                           child: _tab(ShellTabs.requests, tr('Demandes')),
                         ),
+                      _tab(ShellTabs.calendar, tr('À venir')),
                       if (canUseLists) _tab(ShellTabs.lists, tr('Listes')),
                       if (canDownload)
                         TourTarget(

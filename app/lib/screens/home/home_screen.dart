@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../desktop_window.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/calendar_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/retro_provider.dart';
@@ -33,6 +34,7 @@ import '../retro/home/retro_home_card.dart';
 import '../retro/retro_screen.dart';
 import '../setup/setup_launcher.dart';
 import '../setup/widgets/setup_home_card.dart';
+import 'home_calendar_row.dart';
 import 'home_empty_view.dart';
 import 'home_recent_rows.dart';
 import '../../l10n/tr.dart';
@@ -83,6 +85,9 @@ class _HomeScreenState extends State<HomeScreen>
       // Le Rétro de fin d'année : le menu du compte l'ouvre quand il est
       // visible (ADR 2026-11-26-tsuky-retro-annuel).
       Provider.of<RetroProvider?>(context, listen: false)?.load();
+      // La rangée « Cette semaine » et l'onglet « À venir » (ADR
+      // 2026-11-27-tsuky-calendrier-sorties-serveur).
+      Provider.of<CalendarProvider?>(context, listen: false)?.ensureLoaded();
       // Un serveur neuf ouvre l'assistant d'installation à son propriétaire
       // (ADR-0165).
       maybeOpenSetupWizard(context);
@@ -384,6 +389,9 @@ class _HomeScreenState extends State<HomeScreen>
                                   ),
                                 ),
                               ),
+                            const SliverToBoxAdapter(
+                              child: HomeCalendarRow(),
+                            ),
                             if (data != null)
                               ...homeRecentSlivers(
                                 data: data,

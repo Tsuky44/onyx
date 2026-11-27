@@ -63,6 +63,9 @@ type TMDBEpisodeSummary struct {
 	AirDate   string
 	Runtime   int
 	Rating    float64
+	// Type est l'episode_type de TMDB (« finale », « mid_season »,
+	// « standard ») : le calendrier y lit les finales.
+	Type string
 }
 
 var (
@@ -173,6 +176,7 @@ func FetchTMDBSeasonEpisodes(tmdbID, seasonNumber int, lang mediaLanguage) []TMD
 			AirDate       string  `json:"air_date"`
 			VoteAverage   float64 `json:"vote_average"`
 			Runtime       *int    `json:"runtime"`
+			EpisodeType   string  `json:"episode_type"`
 		} `json:"episodes"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
@@ -201,6 +205,7 @@ func FetchTMDBSeasonEpisodes(tmdbID, seasonNumber int, lang mediaLanguage) []TMD
 			AirDate:   ep.AirDate,
 			Runtime:   runtime,
 			Rating:    ep.VoteAverage,
+			Type:      ep.EpisodeType,
 		})
 	}
 	tmdbEpisodesCache.Put(key, episodes)

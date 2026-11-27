@@ -164,6 +164,8 @@ abstract final class AppIcons {
       IconData(0xe444, fontFamily: _regular); // sortAscending
   static const IconData calendar =
       IconData(0xe10a, fontFamily: _regular); // calendarBlank
+  static const IconData calendarSelected =
+      IconData(0xe10a, fontFamily: _fill); // calendarBlank
   static const IconData language =
       IconData(0xe288, fontFamily: _regular); // globe
   static const IconData duration =

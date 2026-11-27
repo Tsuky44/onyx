@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"project-player/server/calendar"
 	"project-player/server/libraries"
 	"project-player/server/mediahub"
 	"project-player/server/models"
@@ -153,6 +154,19 @@ func TestAPIContract(t *testing.T) {
 	watchListItem := filled[models.WatchListItem]()
 	watchListItem.MediaType = string(models.TypeMovie)
 
+	// Le calendrier « À venir » : ses énumérations prennent des valeurs que
+	// l'app connaît (calendar.Kind, calendar.Source, episode_type,
+	// release_type).
+	calendarResp := filled[CalendarResponse]()
+	calendarResp.From, calendarResp.To, calendarResp.Today = "2026-11-01", "2027-05-01", "2026-11-27"
+	calendarResp.Entries[0].Kind = calendar.KindShow
+	calendarResp.Entries[0].Source = calendar.SourceWatching
+	calendarResp.Entries[0].AirDate = "2026-11-27"
+	calendarResp.Entries[0].EpisodeType = "finale"
+	calendarResp.Entries[0].ReleaseType = ""
+	calendarResp.Followed[0].Source = calendar.SourceFollowed
+	calendarResp.Followed[0].NextAirDate = "2026-12-04"
+
 	// Les demandes viennent de MediaHub en lots (ADR-0089) : leurs statuts
 	// sont ceux que l'app connaît.
 	myRequests := filled[myRequestsResponse]()
@@ -206,6 +220,7 @@ func TestAPIContract(t *testing.T) {
 		"hls_health":           filled[streaming.SessionHealth](),
 		"retro_status":         filled[RetroStatus](),
 		"retro_report":         filled[RetroReport](),
+		"calendar":             calendarResp,
 	}
 
 	update := os.Getenv("ONYX_UPDATE_CONTRACT") != ""

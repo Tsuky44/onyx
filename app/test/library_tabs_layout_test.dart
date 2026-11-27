@@ -127,7 +127,7 @@ void main() {
       expect(rect.right, lessThanOrEqualTo(1100), reason: '$type');
     }
     // Chaque bibliothèque a son onglet, sous son nom, et il se choisit.
-    expect(find.byType(GlassNavTab), findsNWidgets(1 + 12 + 2));
+    expect(find.byType(GlassNavTab), findsNWidgets(1 + 12 + 3));
     await tester.tap(find.text('Bibliothèque numéro 1'));
     expect(selected, [ShellTabs.library(libraries[0])]);
   });

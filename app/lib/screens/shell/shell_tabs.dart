@@ -10,6 +10,7 @@ import '../../models/models.dart';
 /// sélectionné, son nœud de focus.
 abstract final class ShellTabs {
   static const String home = 'home';
+  static const String calendar = 'calendar';
   static const String requests = 'requests';
   static const String lists = 'lists';
   static const String downloads = 'downloads';

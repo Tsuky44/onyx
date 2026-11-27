@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../navigation/catalog_navigation.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/calendar_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../services/api_client.dart';
@@ -496,6 +497,12 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
       }
     }
 
+    final nextEp = _details?.nextEpisodeToAir ?? fallbackNext;
+    final calendar = Provider.of<CalendarProvider?>(context);
+    final nextAirDate = nextEp?.airDate;
+    final nextAirCaption =
+        nextEp == null ? null : CountdownModel.episodeCaption(nextEp);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: TvRegion.sections(
@@ -516,13 +523,26 @@ class _ShowDetailScreenState extends State<ShowDetailScreen>
                       : tr('Synopsis indisponible pour cette série.'),
                   trailing: MediaCountdown.fromDetails(
                     isTv: true,
-                    nextEpisode: _details?.nextEpisodeToAir ?? fallbackNext,
+                    nextEpisode: nextEp,
                     lastEpisode: _details?.lastEpisodeToAir ?? fallbackLast,
                     status: _details?.status,
                     releaseDate: _details?.releaseDate ?? _show.releaseDate,
+                    onOpenCalendar: calendar == null
+                        ? null
+                        : () {
+                            Navigator.of(context).popUntil((r) => r.isFirst);
+                            calendar.openCalendar(
+                              date: nextAirDate != null
+                                  ? DateTime.tryParse(nextAirDate)
+                                  : null,
+                            );
+                          },
+                    calendarNote: calendar?.followReasonFor(_show),
                   ),
                   actions: ShowHeroActions(
                     show: _show,
+                    nextAirDate: nextAirDate,
+                    nextAirCaption: nextAirCaption,
                     playLabel: resumeEp != null
                         ? detailPlayLabel(
                             resuming: resumeInProgress,

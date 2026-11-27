@@ -99,6 +99,10 @@ const (
 	// GET /api/me/retro, GET /api/me/retro/:year et POST
 	// /api/me/retro/:year/seen existent : le Rétro de fin d'année.
 	CapabilityRetro = "retro"
+	// GET /api/calendar et PUT/DELETE /api/calendar/follows/:tmdbId
+	// existent : le calendrier « À venir » (ADR
+	// 2026-11-27-tsuky-calendrier-sorties-serveur).
+	CapabilityCalendar = "calendar"
 )
 
 type pingResponse struct {
@@ -145,6 +149,7 @@ func pingPayload() pingResponse {
 			CapabilityTranscodeCapacity,
 			CapabilitySuggestedPeers,
 			CapabilityRetro,
+			CapabilityCalendar,
 		},
 	}
 }

@@ -925,6 +925,25 @@ var migrations = []migration{
 			);`,
 		},
 	},
+	{
+		id:   35,
+		name: "calendar follows",
+		// Voir l'ADR 2026-11-27-tsuky-calendrier-sorties-serveur. Les choix
+		// explicites d'un compte sur une série du calendrier « À venir » :
+		// followed = 1 la suit à la main, followed = 0 la retire même si on la
+		// regarde ou l'a demandée. Clé TMDB : une série demandée n'est pas
+		// encore dans la bibliothèque.
+		stmts: []string{
+			`CREATE TABLE IF NOT EXISTS calendar_follows (
+				user_id INTEGER NOT NULL,
+				tmdb_id INTEGER NOT NULL,
+				followed BOOLEAN NOT NULL,
+				updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY (user_id, tmdb_id),
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			);`,
+		},
+	},
 }
 
 // applyMigrations brings the database up to the latest schema version.

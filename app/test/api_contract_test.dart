@@ -434,6 +434,43 @@ void main() {
     expect(WatchPartyInviteStatus.parse(''), WatchPartyInviteStatus.none);
   });
 
+  test('le calendrier « À venir » : sorties et séries suivies', () {
+    expect(
+        ServerCapabilities.tryParse(_contract('ping'))!
+            .supports(ServerCapabilities.calendar),
+        isTrue);
+
+    final feed = CalendarFeed.fromJson(_contract('calendar'));
+    expect(feed.from, '2026-11-01');
+    expect(feed.today, '2026-11-27');
+    final entry = feed.entries.single;
+    expect(entry.id, isNotEmpty);
+    expect(entry.kind, 'show');
+    expect(entry.source, 'watching');
+    expect(entry.tmdbId, greaterThan(0));
+    expect(entry.mediaId, greaterThan(0));
+    expect(entry.episodeMediaId, greaterThan(0));
+    expect(entry.title, isNotEmpty);
+    expect(entry.airDate, '2026-11-27');
+    expect(entry.seasonNumber, greaterThan(0));
+    expect(entry.episodeNumber, greaterThan(0));
+    expect(entry.episodeName, isNotEmpty);
+    expect(entry.episodeType, 'finale');
+    expect(entry.posterUrl, isNotEmpty);
+    expect(entry.stillUrl, isNotEmpty);
+    expect(entry.ready, isTrue);
+
+    final show = feed.followed.single;
+    expect(show.tmdbId, greaterThan(0));
+    expect(show.mediaId, greaterThan(0));
+    expect(show.title, isNotEmpty);
+    expect(show.source, 'followed');
+    expect(show.posterUrl, isNotEmpty);
+    expect(show.nextAirDate, '2026-12-04');
+    expect(show.nextSeason, greaterThan(0));
+    expect(show.nextEpisode, greaterThan(0));
+  });
+
   test('le Rétro : l’état de l’accueil et le Rétro complet', () {
     expect(
         ServerCapabilities.tryParse(_contract('ping'))!

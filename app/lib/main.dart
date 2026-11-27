@@ -30,6 +30,7 @@ import 'services/new_episodes/new_episode_alerts.dart';
 import 'services/notifications/onyx_notifications.dart';
 import 'services/server_reachability.dart';
 import 'providers/auth_provider.dart';
+import 'providers/calendar_provider.dart';
 import 'providers/home_provider.dart';
 import 'providers/library_provider.dart';
 import 'providers/media_requests_provider.dart';
@@ -387,6 +388,7 @@ void main() async {
   final watchListsProvider = WatchListsProvider(apiClient);
   final setupProvider = SetupProvider(apiClient);
   final retroProvider = RetroProvider(apiClient);
+  final calendarProvider = CalendarProvider(apiClient);
   authProvider.onServerChanged = () {
     MediaDetailsCache.clear();
     MediaTracksCache.clear();
@@ -396,6 +398,7 @@ void main() async {
     watchListsProvider.reset();
     setupProvider.reset();
     retroProvider.reset();
+    calendarProvider.reset();
     unawaited(downloads.onServerChanged());
     // Les plans de réserve sont indexés par identifiant de série, et un
     // identifiant ne veut rien dire sur un autre serveur : on repart de zéro.
@@ -413,6 +416,7 @@ void main() async {
     libraryProvider.reset();
     mediaRequestsProvider.reset();
     watchListsProvider.reset();
+    calendarProvider.reset();
   });
 
   // Le retour du serveur est le seul moment qui compte pour les deux : la
@@ -435,6 +439,9 @@ void main() async {
     // Un réglage changé hors ligne part maintenant, et ceux changés depuis un
     // autre appareil arrivent.
     unawaited(PlaybackPreferencesStorage.syncWithAccount());
+    // Le calendrier relu au retour du serveur : un épisode est peut-être
+    // arrivé pendant la coupure.
+    if (authProvider.isAuthenticated) unawaited(calendarProvider.load());
   });
   reachability.start();
   unawaited(apiClient.refreshAccountLinks());
@@ -477,6 +484,8 @@ void main() async {
             value: watchListsProvider),
         ChangeNotifierProvider<SetupProvider>.value(value: setupProvider),
         ChangeNotifierProvider<RetroProvider>.value(value: retroProvider),
+        ChangeNotifierProvider<CalendarProvider>.value(
+            value: calendarProvider),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
       // Changer de langue reconstruit l'app entière : les textes sont lus par

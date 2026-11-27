@@ -2,8 +2,12 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/tr.dart';
 import '../../models/media_details.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_icons.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_type.dart';
+import '../../tv/nav/tv_focusable.dart';
+import '../../tv/tv_mode.dart';
 import '../../utils/responsive.dart';
 
 /// Type de compte à rebours d'un média (prochain épisode, dernier épisode d'une
@@ -169,11 +173,19 @@ class MediaCountdown extends StatefulWidget {
   /// Force l'alignement à droite (sur grand écran) ou à gauche (sur mobile).
   final bool? alignEnd;
 
+  /// Action déclenchée pour ouvrir le calendrier sur ce jour.
+  final VoidCallback? onOpenCalendar;
+
+  /// Mention discrète sous le lien (ex. « Suivie car vous la regardez »).
+  final String? calendarNote;
+
   const MediaCountdown({
     super.key,
     required this.model,
     this.now,
     this.alignEnd,
+    this.onOpenCalendar,
+    this.calendarNote,
   });
 
   /// Factory pratique retournant directement le widget ou `null` s'il n'y a
@@ -186,6 +198,8 @@ class MediaCountdown extends StatefulWidget {
     String? releaseDate,
     DateTime? now,
     bool? alignEnd,
+    VoidCallback? onOpenCalendar,
+    String? calendarNote,
   }) {
     final model = CountdownModel.fromDetails(
       isTv: isTv,
@@ -196,7 +210,13 @@ class MediaCountdown extends StatefulWidget {
       now: now,
     );
     if (model == null) return null;
-    return MediaCountdown(model: model, now: now, alignEnd: alignEnd);
+    return MediaCountdown(
+      model: model,
+      now: now,
+      alignEnd: alignEnd,
+      onOpenCalendar: onOpenCalendar,
+      calendarNote: calendarNote,
+    );
   }
 
   @override
@@ -546,10 +566,96 @@ class _MediaCountdownState extends State<MediaCountdown>
                   color: Colors.white,
                 ),
               ),
+              if (widget.onOpenCalendar != null) ...[
+                const SizedBox(height: 10),
+                _CalendarJumpLink(
+                  onTap: widget.onOpenCalendar!,
+                  note: widget.calendarNote,
+                  alignEnd: alignEnd,
+                ),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CalendarJumpLink extends StatelessWidget {
+  const _CalendarJumpLink({
+    required this.onTap,
+    required this.note,
+    required this.alignEnd,
+  });
+
+  final VoidCallback onTap;
+  final String? note;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final link = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(
+          AppIcons.calendar,
+          size: 14,
+          color: AppColors.textPrimary,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          tr('Voir dans le calendrier'),
+          style: const TextStyle(
+            fontSize: AppType.footnote,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(width: 2),
+        const Icon(
+          AppIcons.chevronRight,
+          size: 14,
+          color: AppColors.textSecondary,
+        ),
+      ],
+    );
+
+    final interactive = TvScope.of(context)
+        ? TvFocusable(
+            borderRadius: BorderRadius.circular(8),
+            onSelect: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: link,
+            ),
+          )
+        : InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: link,
+            ),
+          );
+
+    return Column(
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        interactive,
+        if (note != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            note!,
+            style: const TextStyle(
+              fontSize: AppType.caption,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -12,6 +12,7 @@ import '../../widgets/global/add_to_list_button.dart';
 import '../../widgets/global/detail_actions.dart';
 import '../../widgets/global/detail_more_button.dart';
 import '../../widgets/global/detail_more_items.dart';
+import '../../widgets/global/follow_show_button.dart';
 import '../../widgets/global/onyx_menu.dart';
 import '../../widgets/global/season_download_target.dart';
 import '../../widgets/global/share_media_dialog.dart';
@@ -40,6 +41,8 @@ class ShowHeroActions extends StatelessWidget {
     required this.onRedetect,
     required this.onPickOnTmdb,
     required this.onChangePoster,
+    this.nextAirDate,
+    this.nextAirCaption,
   });
 
   final Media show;
@@ -60,6 +63,8 @@ class ShowHeroActions extends StatelessWidget {
   final VoidCallback onRedetect;
   final VoidCallback onPickOnTmdb;
   final VoidCallback onChangePoster;
+  final String? nextAirDate;
+  final String? nextAirCaption;
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +78,11 @@ class ShowHeroActions extends StatelessWidget {
       progressLabel: progressLabel,
       secondary: isTv
           ? [
+              FollowShowButton(
+                show: show,
+                nextAirDate: nextAirDate,
+                nextAirCaption: nextAirCaption,
+              ),
               AddToListButton(title: ListableTitle.server(show)),
               ShareCollectionButton(
                 mediaId: show.id,
@@ -87,6 +97,11 @@ class ShowHeroActions extends StatelessWidget {
               ),
             ]
           : [
+              FollowShowButton(
+                show: show,
+                nextAirDate: nextAirDate,
+                nextAirCaption: nextAirCaption,
+              ),
               AddToListButton(title: ListableTitle.server(show), named: true),
               _ShowMoreButton(actions: this),
             ],

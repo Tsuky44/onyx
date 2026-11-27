@@ -425,18 +425,18 @@ void main() {
 
   testWidgets('sur l’une des deux pages, « Plus » passe à l’autre sans menu',
       (tester) async {
-    final selected = ValueNotifier(ShellTabs.lists);
+    final selected = ValueNotifier(ShellTabs.calendar);
     addTearDown(selected.dispose);
-    await _pump(tester, selected: selected, lists: true);
+    await _pump(tester, selected: selected, lists: false);
 
-    await tester.tap(find.text('Listes'));
+    await tester.tap(find.text('À venir'));
     await tester.pumpAndSettle();
     expect(find.byType(PhoneMoreMenu), findsNothing);
     expect(selected.value, ShellTabs.downloads);
 
     await tester.tap(find.text('Hors ligne'));
     await tester.pumpAndSettle();
-    expect(selected.value, ShellTabs.lists);
+    expect(selected.value, ShellTabs.calendar);
   });
 
   testWidgets('toucher à côté du menu le referme sans changer de page',
@@ -453,10 +453,11 @@ void main() {
     expect(selected.value, ShellTabs.home);
   });
 
-  testWidgets('une seule de ces pages : son onglet, sans « Plus »',
+  testWidgets('à venir et hors ligne se rangent ensemble dans « Plus »',
       (tester) async {
     await _pump(tester);
-    expect(find.text('Plus'), findsNothing);
-    expect(find.text('Hors ligne'), findsOneWidget);
+    expect(find.text('Plus'), findsOneWidget);
+    expect(find.text('À venir'), findsNothing);
+    expect(find.text('Hors ligne'), findsNothing);
   });
 }
