@@ -8604,9 +8604,9 @@
     "semantic_hash": ""
   },
   "server/streaming/encoder.go": {
-    "mtime": 1795821244.824062,
-    "seen": 1795821283.403502,
-    "ast_hash": "0302ecccbe698d168f39188a071e56ef",
+    "mtime": 1795822839.6045086,
+    "seen": 1795822866.6228838,
+    "ast_hash": "311419ab1838f119717b95cdfc05aaa3",
     "semantic_hash": ""
   },
   "server/streaming/encoder_test.go": {
@@ -15366,9 +15366,9 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-27-fytroz-image-nvidia.md": {
-    "mtime": 1795821244.8252597,
-    "seen": 1795821283.404995,
-    "ast_hash": "8421be6695d1cd54a8d3d548b7d5180f",
+    "mtime": 1795822839.6041496,
+    "seen": 1795822866.6241543,
+    "ast_hash": "581b5c15bd416d798cef1f552ac2ffc3",
     "semantic_hash": ""
   }
 }

@@ -1,7 +1,7 @@
 # Graph Report - onyx  (2026-11-27)
 
 ## Corpus Check
-- 2395 files · ~2,103,948 words
+- 2395 files · ~2,104,069 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 167 file(s) not represented in the graph (top: (none) 33, .csv 24, .xml 20)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ecc19d92`
+- Built from commit: `f98693f7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -4382,7 +4382,7 @@ Cohesion: 0.67
 Nodes (3): Download, Import, Progress
 
 ## Knowledge Gaps
-- **15069 isolated node(s):** `build`, `count`, `createState`, `_hovered`, `label` (+15064 more)
+- **15069 isolated node(s):** `build`, `builder`, `createState`, `didUpdateWidget`, `_focused` (+15064 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 21776 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **263 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -4390,13 +4390,13 @@ Nodes (3): Download, Import, Progress
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Lot C : messages du serveur (§ 2.3)` connect `traduction-anglais.md` to `seedRequestUser`?**
-  _High betweenness centrality (0.214) - this node is a cross-community bridge._
-- **What connects `build`, `count`, `createState` to the rest of the system?**
+  _High betweenness centrality (0.210) - this node is a cross-community bridge._
+- **What connects `build`, `builder`, `createState` to the rest of the system?**
   _15069 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `settings_category_body.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.08666666666666667 - nodes in this community are weakly interconnected._
 - **Why does `writeMediaHubError()` connect `seedRequestUser` to `go_pkg_strings`, `traduction-anglais.md`, `main`, `net/http.ResponseWriter`?**
-  _High betweenness centrality (0.214) - this node is a cross-community bridge._
+  _High betweenness centrality (0.210) - this node is a cross-community bridge._
 - **Should `settings_navigation_map_test.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.03263403263403263 - nodes in this community are weakly interconnected._
 - **Should `detail_unified_design_test.dart` be split into smaller, more focused modules?**

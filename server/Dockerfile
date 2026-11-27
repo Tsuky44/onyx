@@ -68,10 +68,16 @@ FROM ubuntu:24.04 AS nvidia
 # essaie VAAPI dès que CUDA ne répond pas, donc sur toute session d'un hôte où
 # la carte n'est pas visible. Présentes, l'essai échoue et le décodage reste
 # logiciel, comme sur l'image Alpine.
+#
+# libegl1 : le pilote Vulkan de NVIDIA (libGLX_nvidia, que le Toolkit monte)
+# charge libEGL.so.1 à la demande. Sans elle il refuse de s'initialiser
+# (« Could not get 'vkCreateInstance' via 'vk_icdGetInstanceProcAddr' »), la
+# carte n'apparaît pas dans Vulkan et libplacebo garde le rendu logiciel. Vu
+# sur une P2200, pilote 580, le 2026-11-27.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
          ca-certificates tzdata wget gosu \
-         libvulkan1 mesa-vulkan-drivers \
+         libvulkan1 mesa-vulkan-drivers libegl1 \
          libva2 libva-drm2 libva-x11-2 libdrm2 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=ffmpeg-nvidia /out/ /usr/local/

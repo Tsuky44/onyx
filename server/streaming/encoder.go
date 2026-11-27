@@ -130,12 +130,13 @@ var hardwareEncoders = []VideoEncoder{
 		// thread de décodage, plus -extra_hw_frames. Vu sur une P2200 le
 		// 2026-11-27 : « cuvidCreateDecoder failed -> CUDA_ERROR_INVALID_VALUE »
 		// dès la source d'essai en 720p, et tout était décodé sur le
-		// processeur. La cause est lue dans les sources, pas mesurée : 16
-		// threads (le défaut de FFmpeg sur un processeur qui en a autant) et
-		// huit images de marge font 29 surfaces avant même le DPB. D'où
-		// -threads 4 : c'est la carte qui décode, les threads ne servent
-		// qu'au repli logiciel d'un codec qu'elle ne connaît pas. Au pire, un
-		// DPB HEVC de 17 : 17+5+4+4 = 30.
+		// processeur. La cause est lue dans les sources : 16 threads (le
+		// défaut de FFmpeg sur un processeur qui en a autant) et huit images
+		// de marge font 29 surfaces avant même le DPB. D'où -threads 4 :
+		// c'est la carte qui décode, les threads ne servent qu'au repli
+		// logiciel d'un codec qu'elle ne connaît pas. Au pire, un DPB HEVC de
+		// 17 : 17+5+4+4 = 30. Avec ces réglages, la même carte a décodé la
+		// source d'essai.
 		//
 		// -extra_hw_frames 4 : quand la source est déjà à la taille et au
 		// format du barreau, scale_cuda laisse passer les images du décodeur,

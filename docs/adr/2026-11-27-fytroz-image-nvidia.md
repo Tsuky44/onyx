@@ -1,11 +1,11 @@
 # Une image `-nvidia` pour les cartes NVIDIA, et l'image y reste sur la carte
 
 - **Statut :** accepté, à la demande de l'utilisateur (2026-11-27 : « fais en sorte de prendre en
-  compte les cartes graphiques, j'ai une P2200 dans mon serveur »). **Vu en partie sur une Quadro
-  P2200** le soir même (Unraid, image `:fytroz`) : `video encoder h264_nvenc (hardware=true)` et
-  `hardware filters on (cuda)` au journal. NVDEC, lui, refusait de s'ouvrir (§10, corrigé, **pas
-  encore revu sur la carte**), et libplacebo ne voyait que le Vulkan logiciel (voir « Ouvert »).
-  Aucune lecture réelle n'a encore été mesurée.
+  compte les cartes graphiques, j'ai une P2200 dans mon serveur »). **Vu sur une Quadro P2200** le
+  soir même (Unraid, pilote 580.196.07, image `:fytroz`) : `video encoder h264_nvenc
+  (hardware=true)`, `cuda decodes HEVC 10-bit` et `hardware filters on (cuda)` au journal. Le
+  Vulkan de la carte n'y était pas vu ; sa cause est trouvée et corrigée (§3 bis), **pas encore
+  revue sur la carte**. Aucune lecture réelle n'a encore été mesurée.
 - **Date :** 2026-11-27
 - **Portée :** `server/Dockerfile` (étapes `ffmpeg-nvidia` et `nvidia`),
   `server/docker-entrypoint.sh` (`su-exec` ou `gosu`), `server/streaming/encoder.go` (`-forced-idr`,
@@ -54,6 +54,12 @@ mise à l'échelle logicielle : le défaut que l'ADR du 2026-11-25 a retiré à 
    bibliothèques, toute session d'un hôte où la carte n'est pas visible mourait sur
    `libva-drm.so.2: cannot open shared object file`. Avec elles, l'essai échoue proprement et le
    décodage reste logiciel.
+   **3 bis. `libegl1` est installée pour le Vulkan de la carte.** Le pilote Vulkan de NVIDIA
+   (`libGLX_nvidia.so.0`, que le Toolkit monte avec son manifeste) charge `libEGL.so.1` à la
+   demande. Sans elle : `Could not get 'vkCreateInstance' via 'vk_icdGetInstanceProcAddr' for ICD
+   libGLX_nvidia.so.0`, aucun périphérique NVIDIA dans la liste, et libplacebo sur le rendu
+   logiciel. Lu sur la P2200 avec `LD_DEBUG=files` : c'est la seule bibliothèque que le pilote
+   demande ainsi, ses dépendances directes étaient toutes là.
 4. **L'image règle `VIDEO_ENCODER=auto`.** L'ADR-0023 veut que le matériel soit un choix de
    l'opérateur : prendre l'image `-nvidia` est ce choix. Sans carte visible, l'essai du démarrage
    échoue et le journal dit que libx264 est pris.
@@ -84,7 +90,8 @@ mise à l'échelle logicielle : le défaut que l'ADR du 2026-11-25 a retiré à 
     décodage, plus `-extra_hw_frames` (`nvdec.c`, `decode.c`). La première version passait
     `-extra_hw_frames 8` seul : sur la P2200, `cuvidCreateDecoder failed ->
     CUDA_ERROR_INVALID_VALUE` dès la source d'essai, et le journal disait à tort que la carte ne
-    décode pas le HEVC 10 bits. Cause lue dans les sources, pas mesurée : 16 threads de décodage
+    décode pas le HEVC 10 bits. Avec ces deux réglages, la même carte l'a décodé. Cause lue dans
+    les sources : 16 threads de décodage
     par défaut et 8 images de marge font 29 surfaces avant le DPB. Quatre threads suffisent,
     puisque la carte décode et qu'ils ne servent qu'au repli logiciel ; au pire, un DPB HEVC de
     17 donne 17+5+4+4 = 30. La marge reste nécessaire : quand la source est déjà à la taille et au
@@ -129,13 +136,16 @@ Dans une réplique locale de l'étape `nvidia` (mêmes paquets, même FFmpeg, n8
 
 ## Ouvert
 
-- **Le Vulkan de la carte n'est pas vu dans le conteneur.** Sur la P2200,
-  `libplacebo renders on llvmpipe` : un seul périphérique listé, ni la carte ni le circuit Intel
-  qui gagnait la course sur l'image Alpine. Un Dolby Vision profil 5 y retrouve donc le rendu
-  logiciel. Le serveur écrit maintenant `Streaming: Vulkan devices seen: …` ; la cause (manifeste
-  ICD non monté par le Toolkit, bibliothèques absentes, `/dev/dri`) reste à lire dans le conteneur.
+- **Le Vulkan de la carte reste à voir fonctionner** avec `libegl1` : attendu au journal,
+  `Streaming: Vulkan devices seen:` avec la carte, puis la course de libplacebo. Écarté en
+  chemin : `NVIDIA_DRIVER_CAPABILITIES=all` ne change rien, la capacité `graphics` suffisait à
+  monter le manifeste et les bibliothèques.
+- **Un circuit Intel n'est plus visible une fois la carte en place** sur cette machine :
+  `/dev/dri` n'y montre qu'une carte, celle de NVIDIA. C'est le réglage de l'hôte, pas de l'image.
+  Tant que le Vulkan de la carte ne marche pas, un Dolby Vision profil 5 y retrouve donc le rendu
+  logiciel.
 - **`ERROR: driverInitFileInfo 599 result=11`** en tête du journal, avant la première ligne du
-  serveur : pas écrit par ce code, origine non identifiée, sans effet sur NVENC.
+  serveur : pas écrit par ce code, origine non identifiée, sans effet sur NVENC ni NVDEC.
 - Les sessions à filtres logiciels gardent `-hwaccel auto` et les threads par défaut : sur un
   processeur à 16 threads, NVDEC peut y refuser un flux à grand DPB et laisser le décodage aux
   cœurs.
