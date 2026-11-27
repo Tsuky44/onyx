@@ -185,6 +185,32 @@ func TestQuickSyncAsksForNV12(t *testing.T) {
 	}
 }
 
+// NVENC ne fait d'une image clé forcée une IDR que sur demande : sans
+// -forced-idr, un segment HLS commencerait sur une image I qui dépend des
+// précédentes. Vrai pour le H.264 comme pour son HEVC, qui prend les mêmes
+// réglages de débit.
+func TestNVENCForcesIDRAtSegmentBoundaries(t *testing.T) {
+	var nvenc VideoEncoder
+	for _, encoder := range hardwareEncoders {
+		if encoder.Name == "h264_nvenc" {
+			nvenc = encoder
+		}
+	}
+	if nvenc.Name == "" {
+		t.Fatal("h264_nvenc is not among the hardware encoders")
+	}
+	if !hasFlag(argsFor(nvenc, "1080p"), "-forced-idr", "1") {
+		t.Error("h264_nvenc does not force IDR keyframes")
+	}
+	hevc, ok := hevcEncoderFor(nvenc, func(VideoEncoder) bool { return true })
+	if !ok || hevc.Name != "hevc_nvenc" {
+		t.Fatalf("hevcEncoderFor(h264_nvenc) = %q, %v; want hevc_nvenc", hevc.Name, ok)
+	}
+	if !hasFlag(hevc.rateControl(presetFor("1080p")), "-forced-idr", "1") {
+		t.Error("hevc_nvenc does not force IDR keyframes")
+	}
+}
+
 func vaapiEncoder(t *testing.T) VideoEncoder {
 	t.Helper()
 	for _, encoder := range hardwareEncoders {

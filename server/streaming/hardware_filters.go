@@ -36,12 +36,30 @@ import (
 // qu'une session ; HARDWARE_FILTERS=off ; et le retrait de la chaîne pour
 // tout le serveur dès qu'une session meurt avec elle avant son premier
 // segment. Voir l'ADR « la chaîne VAAPI ne ramène plus le 4K en mémoire ».
+//
+// La même chaîne sert une carte NVIDIA : h264_nvenc a la surface `cuda`
+// (NVDEC, scale_cuda), ouverte par ses surfaceArgs. Écrite sans la carte,
+// elle aussi, derrière les mêmes gardes. Voir l'ADR « une image -nvidia pour
+// les cartes NVIDIA ».
 
 // hardwareDecodeArgs demande le décodage sur le circuit de l'encodeur, images
 // laissées sur le périphérique. Si le circuit ne décode pas ce flux, FFmpeg
 // décode en logiciel et la tête de la chaîne envoie l'image elle-même.
 func hardwareDecodeArgs(encoder VideoEncoder) []string {
-	return []string{"-hwaccel", encoder.surface, "-hwaccel_output_format", encoder.surface}
+	args := append([]string{}, encoder.surfaceArgs...)
+	return append(args, "-hwaccel", encoder.surface, "-hwaccel_output_format", encoder.surface)
+}
+
+// hardwareUploadFilter renvoie l'image au périphérique après un filtre
+// logiciel. Un encodeur qui ne prend que des images du périphérique a déjà le
+// sien ; un encodeur qui prend aussi des images logicielles (NVENC) n'en a
+// pas, et reçoit ici la même fin de chaîne, pour que la sortie des filtres
+// matériels soit toujours une image du périphérique.
+func hardwareUploadFilter(encoder VideoEncoder) string {
+	if encoder.uploadFilter != "" {
+		return encoder.uploadFilter
+	}
+	return "format=nv12,hwupload"
 }
 
 // usesHardwareFilters dit si cette session garde son image sur le circuit.
@@ -64,7 +82,12 @@ func (o TranscodeOptions) usesHardwareFilters() bool {
 	if !o.Video.Tonemap {
 		return true
 	}
-	if sessionToneMapper(o).Filter == "" {
+	// libplacebo (Dolby Vision profil 5) veut Vulkan comme périphérique des
+	// filtres, et une commande n'en a qu'un. Avec VAAPI l'encodeur de cette
+	// session est déjà redevenu logiciel (encoder()) ; NVENC, lui, reste, et
+	// c'est ici que la chaîne matérielle s'efface.
+	mapper := sessionToneMapper(o)
+	if mapper.Filter == "" || mapper.Vulkan {
 		return false
 	}
 	return buildScaleFilter(o.Probe, presetFor(o.Quality)) != ""
@@ -101,7 +124,7 @@ func hardwareFilterChain(opt TranscodeOptions, preset qualityPreset) string {
 		"hwdownload",
 		"format=p010le",
 		tonemap,
-		encoder.uploadFilter,
+		hardwareUploadFilter(encoder),
 	}, ",")
 }
 

@@ -97,7 +97,7 @@ func TestHardwareFiltersStepAside(t *testing.T) {
 	}{
 		{"essai du démarrage non passé", func(o *TranscodeOptions) { o.HardwareFilters = false }},
 		{"encodeur logiciel", func(o *TranscodeOptions) { o.Encoder = softwareEncoder }},
-		{"encodeur matériel sans surface", func(o *TranscodeOptions) { o.Encoder = hardwareEncoders[1] }},
+		{"encodeur matériel sans surface", func(o *TranscodeOptions) { o.Encoder = encoderNamed(t, "h264_qsv") }},
 		{"sous-titre incrusté", func(o *TranscodeOptions) { o.BurnSubtitle = true }},
 		{"désentrelacement", func(o *TranscodeOptions) { o.Video.Deinterlace = true }},
 		{"image recopiée", func(o *TranscodeOptions) { o.Video.Copy = true }},

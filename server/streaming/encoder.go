@@ -54,6 +54,11 @@ type VideoEncoder struct {
 	// de bout en bout. Vide : les filtres sont logiciels. Voir
 	// hardware_filters.go.
 	surface string
+	// surfaceArgs est ce que le décodage sur la surface demande en plus,
+	// avant l'entrée, quand deviceArgs n'ouvre pas déjà le périphérique des
+	// filtres : c'est le cas d'un encodeur qui prend aussi des images
+	// logicielles et n'a donc besoin d'aucun périphérique pour encoder.
+	surfaceArgs []string
 	// rateControl builds the flags that set quality and bitrate, which is where
 	// the encoders differ most: libx264 targets a quality and caps the result,
 	// while the hardware encoders take a bitrate and hold it.
@@ -113,6 +118,23 @@ var hardwareEncoders = []VideoEncoder{
 		Name:        "h264_nvenc",
 		Hardware:    true,
 		PixelFormat: "yuv420p",
+		// La carte décode (NVDEC) et met à l'échelle (scale_cuda) : l'image
+		// peut y rester jusqu'à l'encodeur, qui prend les images CUDA telles
+		// quelles. Le périphérique n'est ouvert que pour ces sessions : nommé
+		// dans deviceArgs, il deviendrait le périphérique des filtres de
+		// toutes, y compris de celles où libplacebo veut Vulkan (ADR-0060).
+		//
+		// -extra_hw_frames : quand la source est déjà à la taille et au
+		// format du barreau, scale_cuda laisse passer les images du décodeur,
+		// et NVENC en garde plusieurs le temps de les encoder (quatre au
+		// moins, nb_surfaces dans nvenc.c). Le décodeur n'en prévoit que trois
+		// de marge et s'arrête sur « No decoder surfaces left ». Huit est une
+		// marge raisonnée, pas mesurée.
+		surface: "cuda",
+		surfaceArgs: []string{
+			"-init_hw_device", "cuda=gpu", "-filter_hw_device", "gpu",
+			"-extra_hw_frames", "8",
+		},
 		rateControl: func(preset qualityPreset) []string {
 			return []string{
 				"-rc", "vbr",
@@ -123,6 +145,12 @@ var hardwareEncoders = []VideoEncoder{
 				// ones costs wall-clock this path does not have to spare.
 				"-preset", "p4",
 				"-no-scenecut", "1",
+				// Sans lui, NVENC rend une image I ordinaire là où
+				// -force_key_frames demande une image clé : le segment qui
+				// commence dessus ne se décode pas seul, et une recherche qui
+				// y tombe montre des macroblocs jusqu'à la prochaine IDR.
+				// Repris tel quel par hevc_nvenc (hevcSiblings).
+				"-forced-idr", "1",
 			}
 		},
 	},

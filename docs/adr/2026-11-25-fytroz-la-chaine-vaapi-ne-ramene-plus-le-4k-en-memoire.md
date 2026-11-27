@@ -1,5 +1,8 @@
 # La chaîne VAAPI ne ramène plus le 4K en mémoire
 
+> Prolongé par [une image `-nvidia` pour les cartes NVIDIA](2026-11-27-fytroz-image-nvidia.md) :
+> la même chaîne sert `h264_nvenc`, surface `cuda`.
+
 - **Statut :** accepté, **écrit sans le matériel**, puis vu actif sur un i7-10700K le 2026-11-25 :
   `vaapi decodes HEVC 10-bit` et `hardware filters on (vaapi)` au journal. **Son gain n'est pas
   mesuré** : la mesure qui l'a motivé était mal attribuée (voir « Ce qui était faux »).

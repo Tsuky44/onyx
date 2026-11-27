@@ -309,9 +309,13 @@ func BuildFFmpegArgs(opt TranscodeOptions) []string {
 	// stream most clients can't decode. The pixel format comes from the encoder
 	// because Quick Sync wants NV12 and would otherwise convert every frame. Un
 	// encodeur HEVC le donne en 10 bits.
+	//
+	// Pas quand l'image reste sur le circuit (hardware_filters.go) : la chaîne
+	// sort alors une image du périphérique, déjà en NV12, et un -pix_fmt
+	// logiciel ferait insérer une conversion que FFmpeg ne sait pas faire.
 	encoder := opt.encoder()
 	args = append(args, "-c:v", encoder.Name)
-	if encoder.PixelFormat != "" {
+	if encoder.PixelFormat != "" && !opt.usesHardwareFilters() {
 		args = append(args, "-pix_fmt", encoder.PixelFormat)
 	}
 	if encoder.isHEVC() {
