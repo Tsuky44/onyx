@@ -124,16 +124,27 @@ var hardwareEncoders = []VideoEncoder{
 		// dans deviceArgs, il deviendrait le périphérique des filtres de
 		// toutes, y compris de celles où libplacebo veut Vulkan (ADR-0060).
 		//
-		// -extra_hw_frames : quand la source est déjà à la taille et au
+		// NVDEC n'ouvre pas un décodeur de plus de 32 surfaces (nvdec.c :
+		// « Using more than 32 decode surfaces might cause nvdec to fail »),
+		// et FFmpeg en demande le DPB du flux, cinq de marge fixe, une par
+		// thread de décodage, plus -extra_hw_frames. Vu sur une P2200 le
+		// 2026-11-27 : « cuvidCreateDecoder failed -> CUDA_ERROR_INVALID_VALUE »
+		// dès la source d'essai en 720p, et tout était décodé sur le
+		// processeur. La cause est lue dans les sources, pas mesurée : 16
+		// threads (le défaut de FFmpeg sur un processeur qui en a autant) et
+		// huit images de marge font 29 surfaces avant même le DPB. D'où
+		// -threads 4 : c'est la carte qui décode, les threads ne servent
+		// qu'au repli logiciel d'un codec qu'elle ne connaît pas. Au pire, un
+		// DPB HEVC de 17 : 17+5+4+4 = 30.
+		//
+		// -extra_hw_frames 4 : quand la source est déjà à la taille et au
 		// format du barreau, scale_cuda laisse passer les images du décodeur,
-		// et NVENC en garde plusieurs le temps de les encoder (quatre au
-		// moins, nb_surfaces dans nvenc.c). Le décodeur n'en prévoit que trois
-		// de marge et s'arrête sur « No decoder surfaces left ». Huit est une
-		// marge raisonnée, pas mesurée.
+		// et NVENC en retient plusieurs le temps de les encoder (quatre au
+		// moins, nb_surfaces dans nvenc.c). Marge raisonnée, pas mesurée.
 		surface: "cuda",
 		surfaceArgs: []string{
 			"-init_hw_device", "cuda=gpu", "-filter_hw_device", "gpu",
-			"-extra_hw_frames", "8",
+			"-threads", "4", "-extra_hw_frames", "4",
 		},
 		rateControl: func(preset qualityPreset) []string {
 			return []string{

@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -101,25 +102,43 @@ func TestCUDAUploadsAgainAfterTheToneMapping(t *testing.T) {
 	}
 }
 
-// Quand la source est déjà au format du barreau, scale_cuda laisse passer les
-// images du décodeur et NVENC en retient plusieurs : sans marge, NVDEC
-// s'arrête sur « No decoder surfaces left ».
-func TestCUDADecoderKeepsSpareSurfacesForTheEncoder(t *testing.T) {
+// NVDEC refuse d'ouvrir un décodeur de plus de 32 surfaces, et FFmpeg en
+// demande le DPB du flux, cinq de marge fixe, une par thread de décodage et
+// -extra_hw_frames. Vu sur une P2200 : 16 threads et 8 images de marge
+// dépassaient dès la source d'essai, et la carte ne décodait plus rien. Le
+// compte doit tenir pour le plus grand DPB d'un HEVC, 17 images.
+func TestCUDADecoderStaysUnderTheNVDECSurfaceLimit(t *testing.T) {
 	args := BuildFFmpegArgs(cudaOptions(t, uhdHEVC(), VideoPlan{}))
-	if !hasFlag(args, "-extra_hw_frames", "8") {
-		t.Errorf("no spare decoder surfaces: %v", args)
-	}
-	input, extra := -1, -1
+	input := -1
 	for i, arg := range args {
-		switch arg {
-		case "-i":
+		if arg == "-i" {
 			input = i
-		case "-extra_hw_frames":
-			extra = i
+			break
 		}
 	}
-	if extra > input {
-		t.Error("-extra_hw_frames is a decoder option: it must come before the input")
+	if input < 0 {
+		t.Fatalf("no input in %v", args)
+	}
+	// Options du décodeur : elles ne comptent que placées avant l'entrée.
+	decoder := args[:input]
+	threads, okThreads := argValue(decoder, "-threads")
+	extra, okExtra := argValue(decoder, "-extra_hw_frames")
+	if !okThreads || !okExtra {
+		t.Fatalf("decoder threads or spare surfaces are not set before the input: %v", decoder)
+	}
+	nThreads, errThreads := strconv.Atoi(threads)
+	nExtra, errExtra := strconv.Atoi(extra)
+	if errThreads != nil || errExtra != nil {
+		t.Fatalf("-threads %q, -extra_hw_frames %q", threads, extra)
+	}
+	// Quand scale_cuda laisse passer les images du décodeur, NVENC en retient
+	// plusieurs : sans marge, « No decoder surfaces left ».
+	if nExtra < 1 {
+		t.Error("no spare decoder surface for the encoder")
+	}
+	const maxHEVCDPB, fixedMargin, nvdecLimit = 17, 5, 32
+	if total := maxHEVCDPB + fixedMargin + nThreads + nExtra; total > nvdecLimit {
+		t.Errorf("%d decode surfaces for a full HEVC DPB, NVDEC refuses more than %d", total, nvdecLimit)
 	}
 }
 

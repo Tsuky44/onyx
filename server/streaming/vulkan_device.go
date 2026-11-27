@@ -203,12 +203,28 @@ func resolveVulkanDevice() bool {
 	var devices []vulkanDevice
 	if forced == "" {
 		devices = listVulkanDevices()
+		// La liste entière, pas seulement le choix : c'est elle qui dit si
+		// la carte ou le circuit que l'opérateur a passés au conteneur y
+		// sont visibles par Vulkan.
+		log.Printf("Streaming: Vulkan devices seen: %s", describeVulkanDevices(devices))
 	}
 	choice, ok := chooseVulkanDevice(devices, forced, libplaceboRunsOn, libplaceboRace)
 	if ok {
 		vulkanChosen.Store(&choice)
 	}
 	return ok
+}
+
+// describeVulkanDevices écrit la liste pour le journal.
+func describeVulkanDevices(devices []vulkanDevice) string {
+	if len(devices) == 0 {
+		return "none listed"
+	}
+	parts := make([]string, 0, len(devices))
+	for _, device := range devices {
+		parts = append(parts, fmt.Sprintf("%d: %s (%s)", device.Index, device.Name, device.Kind))
+	}
+	return strings.Join(parts, ", ")
 }
 
 // listVulkanDevices demande à FFmpeg d'ouvrir un périphérique Vulkan en

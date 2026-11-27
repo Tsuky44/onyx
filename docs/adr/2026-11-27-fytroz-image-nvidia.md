@@ -1,9 +1,11 @@
 # Une image `-nvidia` pour les cartes NVIDIA, et l'image y reste sur la carte
 
 - **Statut :** accepté, à la demande de l'utilisateur (2026-11-27 : « fais en sorte de prendre en
-  compte les cartes graphiques, j'ai une P2200 dans mon serveur »). L'étape `nvidia` a été
-  construite et lancée dans un conteneur **sans carte** (voir « Vérifié »). **Rien n'a encore tourné
-  sur une vraie carte NVIDIA** : ni NVENC, ni la chaîne CUDA, ni le Vulkan de la carte.
+  compte les cartes graphiques, j'ai une P2200 dans mon serveur »). **Vu en partie sur une Quadro
+  P2200** le soir même (Unraid, image `:fytroz`) : `video encoder h264_nvenc (hardware=true)` et
+  `hardware filters on (cuda)` au journal. NVDEC, lui, refusait de s'ouvrir (§10, corrigé, **pas
+  encore revu sur la carte**), et libplacebo ne voyait que le Vulkan logiciel (voir « Ouvert »).
+  Aucune lecture réelle n'a encore été mesurée.
 - **Date :** 2026-11-27
 - **Portée :** `server/Dockerfile` (étapes `ffmpeg-nvidia` et `nvidia`),
   `server/docker-entrypoint.sh` (`su-exec` ou `gosu`), `server/streaming/encoder.go` (`-forced-idr`,
@@ -77,10 +79,18 @@ mise à l'échelle logicielle : le défaut que l'ADR du 2026-11-25 a retiré à 
    `-init_hw_device cuda=gpu -filter_hw_device gpu`), pas dans `deviceArgs`. NVENC encode sans
    périphérique nommé ; le nommer partout en ferait le périphérique des filtres d'une session
    libplacebo, qui veut Vulkan (ADR-0060).
-10. **`-extra_hw_frames 8` sur ce décodage.** Quand la source est déjà à la taille et au format du
-    barreau, `scale_cuda` laisse passer les images du décodeur, et NVENC en retient au moins quatre
-    (`nb_surfaces`, `nvenc.c`) quand NVDEC n'en prévoit que trois de marge : « No decoder surfaces
-    left ». Huit est une marge raisonnée, **pas mesurée**.
+10. **`-threads 4 -extra_hw_frames 4` sur ce décodage.** NVDEC n'ouvre pas un décodeur de plus de
+    32 surfaces, et FFmpeg en demande le DPB du flux, cinq de marge fixe, une par thread de
+    décodage, plus `-extra_hw_frames` (`nvdec.c`, `decode.c`). La première version passait
+    `-extra_hw_frames 8` seul : sur la P2200, `cuvidCreateDecoder failed ->
+    CUDA_ERROR_INVALID_VALUE` dès la source d'essai, et le journal disait à tort que la carte ne
+    décode pas le HEVC 10 bits. Cause lue dans les sources, pas mesurée : 16 threads de décodage
+    par défaut et 8 images de marge font 29 surfaces avant le DPB. Quatre threads suffisent,
+    puisque la carte décode et qu'ils ne servent qu'au repli logiciel ; au pire, un DPB HEVC de
+    17 donne 17+5+4+4 = 30. La marge reste nécessaire : quand la source est déjà à la taille et au
+    format du barreau, `scale_cuda` laisse passer les images du décodeur, et NVENC en retient au
+    moins quatre (`nb_surfaces`, `nvenc.c`). Épinglé par
+    `TestCUDADecoderStaysUnderTheNVDECSurfaceLimit`.
 11. **La chaîne matérielle sort toujours une image du périphérique.** NVENC n'a pas de filtre
     d'envoi à lui : `hardwareUploadFilter` lui donne `format=nv12,hwupload` après le tone mapping,
     et `-pix_fmt` n'est plus passé quand la chaîne matérielle est prise (une conversion logicielle
@@ -116,6 +126,19 @@ Dans une réplique locale de l'étape `nvidia` (mêmes paquets, même FFmpeg, n8
 
 Épinglé par `server/streaming/hardware_filters_cuda_test.go` et
 `TestNVENCForcesIDRAtSegmentBoundaries`.
+
+## Ouvert
+
+- **Le Vulkan de la carte n'est pas vu dans le conteneur.** Sur la P2200,
+  `libplacebo renders on llvmpipe` : un seul périphérique listé, ni la carte ni le circuit Intel
+  qui gagnait la course sur l'image Alpine. Un Dolby Vision profil 5 y retrouve donc le rendu
+  logiciel. Le serveur écrit maintenant `Streaming: Vulkan devices seen: …` ; la cause (manifeste
+  ICD non monté par le Toolkit, bibliothèques absentes, `/dev/dri`) reste à lire dans le conteneur.
+- **`ERROR: driverInitFileInfo 599 result=11`** en tête du journal, avant la première ligne du
+  serveur : pas écrit par ce code, origine non identifiée, sans effet sur NVENC.
+- Les sessions à filtres logiciels gardent `-hwaccel auto` et les threads par défaut : sur un
+  processeur à 16 threads, NVDEC peut y refuser un flux à grand DPB et laisser le décodage aux
+  cœurs.
 
 ## À vérifier sur un serveur NVIDIA
 

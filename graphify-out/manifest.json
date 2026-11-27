@@ -8604,9 +8604,9 @@
     "semantic_hash": ""
   },
   "server/streaming/encoder.go": {
-    "mtime": 1795818289.2763033,
-    "seen": 1795818613.748949,
-    "ast_hash": "d2947ca5a1e9b191e3fd9f490c4556e6",
+    "mtime": 1795821244.824062,
+    "seen": 1795821283.403502,
+    "ast_hash": "0302ecccbe698d168f39188a071e56ef",
     "semantic_hash": ""
   },
   "server/streaming/encoder_test.go": {
@@ -15258,15 +15258,15 @@
     "semantic_hash": ""
   },
   "server/streaming/vulkan_device.go": {
-    "mtime": 1795818103.8366733,
-    "seen": 1795818613.7490306,
-    "ast_hash": "400fc251b903e752d87077bdb084f415",
+    "mtime": 1795821194.2599926,
+    "seen": 1795821283.4036257,
+    "ast_hash": "5719d4c139b1c01e49974693ac0e4b2c",
     "semantic_hash": ""
   },
   "server/streaming/vulkan_device_test.go": {
-    "mtime": 1795818103.8366733,
-    "seen": 1795818613.749033,
-    "ast_hash": "cedf27095560d6c034fcd0a6f0fec2a8",
+    "mtime": 1795821200.0336392,
+    "seen": 1795821283.4036288,
+    "ast_hash": "91360fbeede4ebfd41537ce94549185d",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-25-fytroz-libplacebo-prend-le-peripherique-vulkan-le-plus-rapide.md": {
@@ -15360,15 +15360,15 @@
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters_cuda_test.go": {
-    "mtime": 1795818354.704688,
-    "seen": 1795818613.7489686,
-    "ast_hash": "8ccc9a329f1d42c0e87bcb78a89f4642",
+    "mtime": 1795821194.2596972,
+    "seen": 1795821283.4035296,
+    "ast_hash": "dd9ca560abc50cfcbbd496571f826c7d",
     "semantic_hash": ""
   },
   "docs/adr/2026-11-27-fytroz-image-nvidia.md": {
-    "mtime": 1795819610.160482,
-    "seen": 1795819643.8619041,
-    "ast_hash": "9e31fb7f986c2432ed0d362d830c6dc1",
+    "mtime": 1795821244.8252597,
+    "seen": 1795821283.404995,
+    "ast_hash": "8421be6695d1cd54a8d3d548b7d5180f",
     "semantic_hash": ""
   }
 }

@@ -213,3 +213,19 @@ func TestVulkanChoiceWorksOnThisMachine(t *testing.T) {
 	}
 	t.Logf("%s: %s for the timed run", choice.Spec, took.Round(time.Millisecond))
 }
+
+// La ligne du journal donne toute la liste : c'est elle qui dit si la carte
+// passée au conteneur est visible par Vulkan, quel que soit le choix ensuite.
+func TestVulkanDevicesAreDescribedForTheLog(t *testing.T) {
+	if got := describeVulkanDevices(nil); got != "none listed" {
+		t.Errorf("empty listing described as %q", got)
+	}
+	got := describeVulkanDevices([]vulkanDevice{
+		{Index: 0, Name: "Quadro P2200", Kind: "discrete"},
+		{Index: 1, Name: "llvmpipe (LLVM 20.1.2, 256 bits)", Kind: "software"},
+	})
+	want := "0: Quadro P2200 (discrete), 1: llvmpipe (LLVM 20.1.2, 256 bits) (software)"
+	if got != want {
+		t.Errorf("listing described as\n %q, want\n %q", got, want)
+	}
+}
