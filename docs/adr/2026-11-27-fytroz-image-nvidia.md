@@ -1,11 +1,12 @@
 # Une image `-nvidia` pour les cartes NVIDIA, et l'image y reste sur la carte
 
 - **Statut :** accepté, à la demande de l'utilisateur (2026-11-27 : « fais en sorte de prendre en
-  compte les cartes graphiques, j'ai une P2200 dans mon serveur »). **Vu sur une Quadro P2200** le
-  soir même (Unraid, pilote 580.196.07, image `:fytroz`) : `video encoder h264_nvenc
-  (hardware=true)`, `cuda decodes HEVC 10-bit` et `hardware filters on (cuda)` au journal. Le
-  Vulkan de la carte n'y était pas vu ; sa cause est trouvée et corrigée (§3 bis), **pas encore
-  revue sur la carte**. Aucune lecture réelle n'a encore été mesurée.
+  compte les cartes graphiques, j'ai une P2200 dans mon serveur »). **Vu au démarrage sur une
+  Quadro P2200** le soir même (Unraid, pilote 580.196.07, image `:fytroz`) : `video encoder
+  h264_nvenc (hardware=true)`, `cuda decodes HEVC 10-bit`, `hardware filters on (cuda)`, puis
+  `Vulkan devices seen: 0: Quadro P2200 (discrete), 1: llvmpipe` et `libplacebo renders on Quadro
+  P2200`. Une première session a été acceptée sur cette chaîne (remux 4K HDR10 à 71,3 Mbit/s vers
+  1080p tone mappé). **Sa vitesse et son image ne sont pas encore mesurées.**
 - **Date :** 2026-11-27
 - **Portée :** `server/Dockerfile` (étapes `ffmpeg-nvidia` et `nvidia`),
   `server/docker-entrypoint.sh` (`su-exec` ou `gosu`), `server/streaming/encoder.go` (`-forced-idr`,
@@ -136,14 +137,13 @@ Dans une réplique locale de l'étape `nvidia` (mêmes paquets, même FFmpeg, n8
 
 ## Ouvert
 
-- **Le Vulkan de la carte reste à voir fonctionner** avec `libegl1` : attendu au journal,
-  `Streaming: Vulkan devices seen:` avec la carte, puis la course de libplacebo. Écarté en
-  chemin : `NVIDIA_DRIVER_CAPABILITIES=all` ne change rien, la capacité `graphics` suffisait à
-  monter le manifeste et les bibliothèques.
+- **La course de libplacebo se joue de peu** sur la P2200 : 994 ms pour la carte, 1,121 s pour le
+  rendu logiciel, sur une seconde de 720p où l'ouverture du périphérique pèse lourd. La carte est
+  retenue ; ce qu'elle rapporte sur un vrai Dolby Vision profil 5 en 4K reste à mesurer.
+  Écarté en chemin : `NVIDIA_DRIVER_CAPABILITIES=all` ne changeait rien, la capacité `graphics`
+  suffisait à monter le manifeste et les bibliothèques ; il manquait `libEGL.so.1` (§3 bis).
 - **Un circuit Intel n'est plus visible une fois la carte en place** sur cette machine :
   `/dev/dri` n'y montre qu'une carte, celle de NVIDIA. C'est le réglage de l'hôte, pas de l'image.
-  Tant que le Vulkan de la carte ne marche pas, un Dolby Vision profil 5 y retrouve donc le rendu
-  logiciel.
 - **`ERROR: driverInitFileInfo 599 result=11`** en tête du journal, avant la première ligne du
   serveur : pas écrit par ce code, origine non identifiée, sans effet sur NVENC ni NVDEC.
 - Les sessions à filtres logiciels gardent `-hwaccel auto` et les threads par défaut : sur un
@@ -152,16 +152,15 @@ Dans une réplique locale de l'étape `nvidia` (mêmes paquets, même FFmpeg, n8
 
 ## À vérifier sur un serveur NVIDIA
 
-1. Au démarrage : `Streaming: video encoder h264_nvenc (hardware=true)`, puis
-   `Streaming: cuda decodes HEVC 10-bit` et `Streaming: hardware filters on (cuda)`. Un refus dit
-   pourquoi, avec l'erreur de FFmpeg : c'est la ligne à rapporter.
-2. `Streaming: libplacebo renders on …` nomme la carte, ou le rendu logiciel si le Vulkan de la
-   carte n'est pas vu dans le conteneur.
-3. Sur une source 4K HDR10 vers 1080p : `encodé à N×` au-dessus de 1, et `nvidia-smi` qui montre
-   le décodage et l'encodage.
-4. Une source déjà en 1080p SDR, le cas du §10 : la session ne meurt pas sur
+Les lignes du démarrage sont vues (voir « Statut »). Restent, sur de vraies lectures :
+
+1. Sur une source 4K HDR10 vers 1080p : `encodé à N×` au-dessus de 1 (écrit à l'arrêt de la
+   session, après dix segments), `nvidia-smi` qui montre le décodage et l'encodage, et une image
+   tone mappée aux bonnes couleurs.
+2. Sur un Dolby Vision profil 5 : la même ligne, avec libplacebo sur la carte.
+3. Une source déjà en 1080p SDR, le cas du §10 : la session ne meurt pas sur
    `No decoder surfaces left`.
-5. Les segments font la durée demandée (`TestHardwareEncodersProduceAlignedSegments` n'a jamais vu
+4. Les segments font la durée demandée (`TestHardwareEncodersProduceAlignedSegments` n'a jamais vu
    de NVENC).
 
 ## Conséquences
