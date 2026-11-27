@@ -47,9 +47,14 @@ ARG FFMPEG_NVIDIA_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/la
 ADD ${FFMPEG_NVIDIA_URL} /tmp/ffmpeg.tar.xz
 # /out est ce qui part sous /usr/local : les deux binaires et les
 # bibliothèques versionnées, sans ffplay ni les liens de développement.
+#
+# xz décompresse, pas `tar -J` : le tar de BusyBox a son propre décodeur xz,
+# qui refuse cette archive (« tar: corrupted data ») même avec le paquet xz
+# installé.
 RUN apk --no-cache add xz \
     && mkdir -p /ffmpeg /out/bin /out/lib \
-    && tar -xJf /tmp/ffmpeg.tar.xz -C /ffmpeg --strip-components=1 \
+    && xz -d /tmp/ffmpeg.tar.xz \
+    && tar -xf /tmp/ffmpeg.tar -C /ffmpeg --strip-components=1 \
     && cp /ffmpeg/bin/ffmpeg /ffmpeg/bin/ffprobe /out/bin/ \
     && cp -P /ffmpeg/lib/*.so.* /out/lib/
 

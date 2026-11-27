@@ -588,9 +588,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/server.yml": {
-    "mtime": 1795818243.5006814,
-    "seen": 1795818613.7446835,
-    "ast_hash": "dc56c6c710789dc3e534ebad072856fb",
+    "mtime": 1795819610.1580122,
+    "seen": 1795819643.8563943,
+    "ast_hash": "03e62eae5c4568fbc291c716dddd4fed",
     "semantic_hash": ""
   },
   "app/analysis_options.yaml": {
@@ -15366,9 +15366,9 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-27-fytroz-image-nvidia.md": {
-    "mtime": 1795818504.5802982,
-    "seen": 1795818613.7501757,
-    "ast_hash": "0c928b61c3c05387ef85ecca67ed0456",
+    "mtime": 1795819610.160482,
+    "seen": 1795819643.8619041,
+    "ast_hash": "9e31fb7f986c2432ed0d362d830c6dc1",
     "semantic_hash": ""
   }
 }

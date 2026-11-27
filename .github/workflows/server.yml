@@ -14,6 +14,12 @@ name: Server
 # Publie par defaut sur :latest, le tag que suit docker-compose.yml (sans
 # ONYX_VERSION dans .env) : le serveur de test recupere le build par un simple
 # `docker compose pull`.
+#
+# Deux images sortent : l'Alpine sous le tag demande, et la variante NVIDIA
+# sous <tag>-nvidia. Avec `variant: nvidia`, seule l'image NVIDIA est
+# construite et c'est elle que porte le tag demande : pour le tag d'une branche
+# personnelle dont le serveur de test a une carte. Voir l'ADR
+# 2026-11-27-fytroz-image-nvidia.
 
 on:
   workflow_dispatch:
@@ -23,6 +29,14 @@ on:
         required: true
         default: "latest"
         type: string
+      variant:
+        description: "Image publiee sous ce tag : alpine (et <tag>-nvidia a cote), ou nvidia (le tag lui-meme porte l'image NVIDIA)"
+        required: true
+        default: "alpine"
+        type: choice
+        options:
+          - alpine
+          - nvidia
 
 permissions:
   contents: read
@@ -62,16 +76,32 @@ jobs:
       - id: meta
         env:
           TAG_INPUT: ${{ inputs.tag }}
+          VARIANT_INPUT: ${{ inputs.variant }}
         run: |
           set -euo pipefail
           OWNER_LC="$(printf '%s' "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
           IMAGE="ghcr.io/$OWNER_LC/$IMAGE_NAME"
 
           TAG="${TAG_INPUT:-latest}"
+          VARIANT="${VARIANT_INPUT:-alpine}"
+
+          # `latest` est le tag du compose de tout le monde, publie pour amd64
+          # et arm64 : l'image NVIDIA, amd64 seulement, n'a pas a le prendre.
+          if [ "$VARIANT" = "nvidia" ] && [ "$TAG" = "latest" ]; then
+            echo "::error::variant=nvidia ne publie pas sur latest : utilisez latest-nvidia (variant=alpine) ou un autre tag."
+            exit 1
+          fi
+
+          NVIDIA_TAG="$TAG-nvidia"
+          if [ "$VARIANT" = "nvidia" ]; then
+            NVIDIA_TAG="$TAG"
+          fi
 
           {
             echo "image=$IMAGE"
             echo "tag=$TAG"
+            echo "variant=$VARIANT"
+            echo "nvidia_tag=$NVIDIA_TAG"
             echo "sha_tag=main-$(git rev-parse --short HEAD)"
           } >> "$GITHUB_OUTPUT"
 
@@ -90,11 +120,13 @@ jobs:
       # L'image arm64 (NAS ARM, Raspberry Pi) installe FFmpeg sous emulation ;
       # le binaire Go, lui, est compile en croise sans elle.
       - name: QEMU (arm64)
+        if: steps.meta.outputs.variant != 'nvidia'
         uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
 
       - name: Build & push de l'image
+        if: steps.meta.outputs.variant != 'nvidia'
         uses: docker/build-push-action@v7
         with:
           context: ./server
@@ -110,7 +142,8 @@ jobs:
 
       # La variante NVIDIA (Ubuntu + FFmpeg avec NVENC), suffixe -nvidia :
       # un serveur a carte NVIDIA suit `latest-nvidia`. amd64 seulement, comme
-      # le FFmpeg qu'elle embarque. Voir l'ADR 2026-11-27-fytroz-image-nvidia.
+      # le FFmpeg qu'elle embarque. Avec `variant: nvidia`, elle prend le tag
+      # demande, sans suffixe. Voir l'ADR 2026-11-27-fytroz-image-nvidia.
       - name: Build & push de l'image NVIDIA
         uses: docker/build-push-action@v7
         with:
@@ -121,7 +154,7 @@ jobs:
             VERSION=${{ steps.meta.outputs.sha_tag }}
           push: true
           tags: |
-            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}-nvidia
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.nvidia_tag }}
             ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha_tag }}-nvidia
           cache-from: type=gha,scope=nvidia
           cache-to: type=gha,mode=max,scope=nvidia
@@ -130,6 +163,8 @@ jobs:
         env:
           IMAGE: ${{ steps.meta.outputs.image }}
           TAG: ${{ steps.meta.outputs.tag }}
+          VARIANT: ${{ steps.meta.outputs.variant }}
+          NVIDIA_TAG: ${{ steps.meta.outputs.nvidia_tag }}
           SHA_TAG: ${{ steps.meta.outputs.sha_tag }}
         run: |
           {
@@ -139,5 +174,9 @@ jobs:
             echo "docker pull $IMAGE:$TAG"
             echo '```'
             echo ""
-            echo "Egalement taguee \`$SHA_TAG\`. Variante NVIDIA : \`$TAG-nvidia\`."
+            if [ "$VARIANT" = "nvidia" ]; then
+              echo "Image NVIDIA (amd64), egalement taguee \`$SHA_TAG-nvidia\`. Pas d'image Alpine dans ce lancement."
+            else
+              echo "Egalement taguee \`$SHA_TAG\`. Variante NVIDIA : \`$NVIDIA_TAG\`."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

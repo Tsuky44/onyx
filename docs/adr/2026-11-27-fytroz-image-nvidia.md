@@ -36,8 +36,11 @@ mise à l'échelle logicielle : le défaut que l'ADR du 2026-11-25 a retiré à 
 1. **Une seconde image, pas une nouvelle base.** `docker build --target nvidia` produit une variante
    Ubuntu 24.04 ; l'image Alpine reste la dernière étape du Dockerfile, donc celle d'un `docker
    build` sans cible, et ne change pas. Les tags sont ceux de l'image Alpine suivis de `-nvidia`
-   (`latest-nvidia`, `v1.4-nvidia`, `fytroz-nvidia`), publiés par les deux workflows. amd64
-   seulement.
+   (`latest-nvidia`, `v1.4-nvidia`), publiés par les deux workflows. amd64 seulement. Le workflow
+   `Server` a une entrée `variant` : avec `nvidia`, seule cette image est construite et c'est elle
+   que porte le tag demandé, sans suffixe (`fytroz`, pour une branche dont le serveur de test a
+   une carte). `latest` y est refusé : c'est le tag du compose de tout le monde, publié aussi pour
+   arm64.
 2. **Le FFmpeg 8.1 de BtbN, en `gpl-shared`.** La même branche que celui d'Alpine 3.24, avec NVENC,
    NVDEC, `scale_cuda`, libplacebo et Vulkan, lié à la seule glibc. `gpl-shared` plutôt que la
    construction statique : `ffmpeg` et `ffprobe` y partagent leurs `libav*` (205 Mo contre 350).
