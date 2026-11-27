@@ -4523,18 +4523,18 @@ const Map<String, String> kEnglish = <String, String>{
       'Talk show',
   'semaine du {0}':
       'week of {0}',
-  'Accro aux marathons':
-      'Binge-watcher',
-  'Oiseau de nuit':
-      'Night owl',
-  'Cinéphile':
-      'Film buff',
-  'Touche-à-tout':
-      'Explorer',
-  'Fidèle du dimanche':
-      'Weekend regular',
-  'Bon public':
-      'Easy to please',
+  'Pilier de canapé':
+      'Couch Legend',
+  'Noctambule':
+      'Night Owl',
+  'Projectionniste':
+      'The Projectionist',
+  'Globe-trotter':
+      'Globe-trotter',
+  'Pro du dimanche':
+      'Sunday Pro',
+  'Fan de premier rang':
+      'Front-Row Fan',
   '{0} épisodes de {1} en une seule journée.':
       '{0} episodes of {1} in a single day.',
   '{0} % de ton temps entre 22 h et 4 h.':
@@ -4575,6 +4575,26 @@ const Map<String, String> kEnglish = <String, String>{
       'More than {0}% of the members of your server.',
   'Pas forcément beaucoup, mais bien choisies.':
       'Not necessarily many, but well chosen.',
+  'Ton titre {0}':
+      'Your {0} title',
+  'Ton titre de l’année est dans cette carte.':
+      'Your title of the year is in this card.',
+  'Ton titre':
+      'Your title',
+  'Ton ticket {0}':
+      'Your {0} ticket',
+  'Séances':
+      'Sessions',
+  'Mois record':
+      'Best month',
+  'Ta place':
+      'Your place',
+  'n°{0} sur {1}':
+      '#{0} of {1}',
+  'Marathon':
+      'Marathon',
+  'Ton ticket de l’année est prêt : il se partage tel quel.':
+      'Your ticket for the year is ready, to share as it is.',
   'Rétro {0} · jusqu’au {1}':
       'Recap {0} · until {1}',
   '{0}, ton année est prête.':

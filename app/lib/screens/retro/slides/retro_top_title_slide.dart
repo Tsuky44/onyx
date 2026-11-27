@@ -155,15 +155,7 @@ class RetroTopTitleSlide extends RetroSlide {
               (size.height - padding.top - padding.bottom - posterHeight) / 2,
           width: posterWidth,
           height: posterHeight,
-          child: _FlipIn(
-            child: Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.0008)
-                ..rotateY(-0.22),
-              child: _poster(data, top, posterWidth),
-            ),
-          ),
+          child: _FlipIn(child: _poster(data, top, posterWidth)),
         ),
         Positioned(
           left: padding.left,

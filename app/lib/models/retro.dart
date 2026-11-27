@@ -154,7 +154,7 @@ class RetroReport {
   /// Le mois le plus regardé, de 1 à 12.
   int get bestMonth => _argMax(months) + 1;
 
-  /// Part du temps entre 22 h et 4 h, comme la règle « Oiseau de nuit ».
+  /// Part du temps entre 22 h et 4 h, comme la règle du profil « Noctambule ».
   double get nightShare => _share([
         for (var h = 0; h < hours.length; h++)
           if (h >= 22 || h < 4) hours[h],

@@ -4,14 +4,17 @@ import 'tr.dart';
 /// Les noms des profils du Rétro et la phrase qui les justifie.
 ///
 /// Onyx ne connaît pas le genre de ses membres : chaque nom se lit tel quel,
-/// sans accord ni forme inclusive (ADR 2026-11-26-tsuky-retro-annuel).
+/// sans accord ni forme inclusive (ADR 2026-11-26-tsuky-retro-annuel). Des
+/// surnoms qu'on porte, chacun avec son personnage
+/// (`design-plans/onyx-retro-personnages.html`,
+/// `design-plans/onyx-retro-revelation.html`).
 String retroArchetypeName(RetroArchetype archetype) => switch (archetype) {
-      RetroArchetype.marathon => tr('Accro aux marathons'),
-      RetroArchetype.nightOwl => tr('Oiseau de nuit'),
-      RetroArchetype.cinephile => tr('Cinéphile'),
-      RetroArchetype.explorer => tr('Touche-à-tout'),
-      RetroArchetype.weekend => tr('Fidèle du dimanche'),
-      RetroArchetype.goodAudience => tr('Bon public'),
+      RetroArchetype.marathon => tr('Pilier de canapé'),
+      RetroArchetype.nightOwl => tr('Noctambule'),
+      RetroArchetype.cinephile => tr('Projectionniste'),
+      RetroArchetype.explorer => tr('Globe-trotter'),
+      RetroArchetype.weekend => tr('Pro du dimanche'),
+      RetroArchetype.goodAudience => tr('Fan de premier rang'),
     };
 
 /// La phrase sous le nom : le chiffre qui a fait le profil.

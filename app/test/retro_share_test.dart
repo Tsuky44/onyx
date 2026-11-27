@@ -87,7 +87,9 @@ void main() {
         reason: 'pas avant la fin');
 
     story.goTo(2);
-    await tester.pump();
+    // Les boutons attendent que la carte du dernier écran soit révélée.
+    story.tick(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 1));
     final share = find.byIcon(AppIcons.share);
     expect(share, findsOneWidget);
     await tester.tap(share);
@@ -101,7 +103,9 @@ void main() {
   });
 
   testWidgets('sur un PC, le bouton enregistre l’image', (tester) async {
-    final story = RetroStoryController(count: 3)..goTo(2);
+    final story = RetroStoryController(count: 3)
+      ..goTo(2)
+      ..tick(const Duration(seconds: 10));
     await tester.pumpWidget(_chrome(story, saves: true, onShare: (_) {}));
     expect(find.byIcon(AppIcons.download), findsOneWidget);
     expect(find.byIcon(AppIcons.share), findsNothing);

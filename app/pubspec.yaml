@@ -255,6 +255,8 @@ flutter:
     # Les textes légaux qu'un magasin d'applications exige dans l'app, lisibles
     # hors ligne et sur un téléviseur sans navigateur (ADR-0046).
     - assets/legal/
+    # La musique de fond du Rétro de fin d'année (ADR 2026-11-26-tsuky-retro-annuel).
+    - assets/audio/retro_theme_cinema.m4a
 
   # Le flou progressif du haut d'une page qui défile sous la barre du
   # téléphone (ADR-0144), sous Impeller.

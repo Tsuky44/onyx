@@ -5,8 +5,10 @@ import 'package:onyx/models/retro.dart';
 import 'package:onyx/screens/retro/slides/retro_card_slide.dart';
 import 'package:onyx/screens/retro/slides/retro_hours_slide.dart';
 import 'package:onyx/screens/retro/slides/retro_slide.dart';
-import 'package:onyx/screens/retro/widgets/retro_confetti.dart';
+import 'package:onyx/screens/retro/widgets/retro_card_reveal.dart';
+import 'package:onyx/screens/retro/widgets/retro_recap_ticket.dart';
 import 'package:onyx/screens/retro/widgets/retro_slide_transition.dart';
+import 'package:onyx/screens/retro/widgets/retro_title_card.dart';
 
 RetroStoryData _data() => RetroStoryData(
       report: RetroReport.fromJson({
@@ -29,15 +31,16 @@ RetroStoryData _data() => RetroStoryData(
 
 Widget _app(Widget child, {bool still = false}) => MaterialApp(
       home: MediaQuery(
-        data: MediaQueryData(size: const Size(390, 844), disableAnimations: still),
+        data: MediaQueryData(
+            size: const Size(390, 844), disableAnimations: still),
         child: Scaffold(body: child),
       ),
     );
 
 void main() {
   testWidgets('le chiffre défile jusqu’à sa valeur', (tester) async {
-    await tester.pumpWidget(_app(Builder(
-        builder: (c) => const RetroHoursSlide().build(c, _data()))));
+    await tester.pumpWidget(_app(
+        Builder(builder: (c) => const RetroHoursSlide().build(c, _data()))));
     expect(find.text('312'), findsNothing, reason: 'au départ, il est à 0');
     await tester.pump(const Duration(seconds: 3));
     expect(find.text('312'), findsOneWidget);
@@ -53,26 +56,37 @@ void main() {
     expect(find.text('312'), findsOneWidget);
   });
 
-  testWidgets('les confettis ne tombent que si l’on accepte le mouvement',
+  testWidgets('la carte ne se retourne que si l’on accepte le mouvement',
       (tester) async {
     Widget card(bool still) => _app(
           Builder(builder: (c) => const RetroCardSlide().build(c, _data())),
           still: still,
         );
+    Finder side({required bool face}) => find.byWidgetPredicate(
+        (w) => w is RetroTitleCard && w.face == face);
+
+    // Sans mouvement : la carte est déjà retournée, le ticket déjà là.
     await tester.pumpWidget(card(true));
-    expect(
-      find.descendant(of: find.byType(RetroConfetti), matching: find.byType(CustomPaint)),
-      findsNothing,
-    );
+    await tester.pump();
+    expect(side(face: true), findsOneWidget);
+    expect(side(face: false), findsNothing);
+    expect(find.byType(RetroRecapTicket), findsOneWidget);
+
+    // Avec : le dos d'abord, puis la face, et le ticket à la fin.
     await tester.pumpWidget(Container());
     await tester.pumpWidget(card(false));
-    expect(
-      find.descendant(of: find.byType(RetroConfetti), matching: find.byType(CustomPaint)),
-      findsOneWidget,
-    );
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(side(face: false), findsOneWidget);
+    expect(find.byType(RetroRecapTicket), findsNothing);
+    await tester.pump(const Duration(milliseconds: 3000));
+    expect(side(face: true), findsOneWidget);
+    expect(find.byType(RetroRecapTicket), findsNothing);
+    await tester.pump(RetroCardReveal.duration);
+    expect(find.byType(RetroRecapTicket), findsOneWidget);
   });
 
-  testWidgets('l’écran suivant s’ouvre par-dessus l’ancien, qui s’en va ensuite',
+  testWidgets(
+      'l’écran suivant s’ouvre par-dessus l’ancien, qui s’en va ensuite',
       (tester) async {
     Widget at(int index) => _app(RetroSlideTransition(
           index: index,

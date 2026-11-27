@@ -2,10 +2,13 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/tr.dart';
 import '../../../theme/app_icons.dart';
+import '../../../theme/app_motion.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/app_type.dart';
+import '../../../theme/retro_motion.dart';
 import '../../../tv/tv_mode.dart';
 import '../hooks/retro_story_controller.dart';
+import 'retro_type.dart';
 
 /// Ce qui se pose sur chaque écran du Rétro : les barres de progression, le
 /// bouton pour fermer, les zones à toucher et, à la souris, les flèches.
@@ -23,6 +26,8 @@ class RetroStoryChrome extends StatelessWidget {
     required this.ink,
     required this.year,
     required this.onClose,
+    this.muted = false,
+    this.onToggleMute,
     this.background,
     this.onShare,
     this.sharing = false,
@@ -35,6 +40,8 @@ class RetroStoryChrome extends StatelessWidget {
   final Color ink;
   final int year;
   final VoidCallback onClose;
+  final bool muted;
+  final VoidCallback? onToggleMute;
 
   /// Le fond de l'écran en cours, pour écrire sur un bouton plein d'encre.
   final Color? background;
@@ -48,6 +55,11 @@ class RetroStoryChrome extends StatelessWidget {
 
   /// Le bouton enregistre au lieu de partager (PC Windows ou Linux).
   final bool shareSaves;
+
+  /// La carte du dernier écran est révélée (ou ne se joue pas) : les
+  /// boutons de fin peuvent paraître. Elle dure le temps de l'écran.
+  bool _endReady(BuildContext context) =>
+      story.finished || story.progress >= 0.95 || RetroMotion.still(context);
 
   /// Un point touché, en part de l'écran : c'est de là que s'ouvre le cercle
   /// de l'écran suivant.
@@ -107,6 +119,17 @@ class RetroStoryChrome extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (!tv && onToggleMute != null)
+                      IconButton(
+                        onPressed: onToggleMute,
+                        tooltip: muted
+                            ? tr('Rétablir le son')
+                            : tr('Couper le son'),
+                        icon: Icon(
+                          muted ? AppIcons.volumeOff : AppIcons.volumeOn,
+                          color: ink,
+                        ),
+                      ),
                     // Au doigt et à la souris, un bouton pour rester sur un
                     // écran le temps qu'on veut ; au téléviseur, la touche OK
                     // fait la même chose et seul le témoin s'affiche.
@@ -142,39 +165,41 @@ class RetroStoryChrome extends StatelessWidget {
           ),
         ),
         if (!tv && story.isLast && onShare != null)
+          // Sous le texte du dernier écran en paysage (à la marge des écrans
+          // du Rétro), au pied de l'écran en portrait.
           SafeArea(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    Builder(
-                      builder: (button) => _ActionPill(
-                        icon: shareSaves ? AppIcons.download : AppIcons.share,
-                        label: shareSaves
-                            ? tr('Enregistrer l’image')
-                            : tr('Partager l’image'),
-                        ink: ink,
-                        background: background,
-                        busy: sharing,
-                        solid: true,
-                        onPressed: () => onShare(_rectOf(button)),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final size = constraints.biggest;
+                final landscape = size.width > size.height;
+                final u = RetroUnits.unitFor(size);
+                return Align(
+                  alignment:
+                      landscape ? Alignment.bottomLeft : Alignment.bottomCenter,
+                  child: Padding(
+                    padding: landscape
+                        ? EdgeInsets.only(left: u * 11, bottom: u * 7)
+                        : const EdgeInsets.only(bottom: 20),
+                    // Ils attendent que la carte du dernier écran soit
+                    // révélée : avant, ils passeraient sur la carte.
+                    child: AnimatedOpacity(
+                      opacity: _endReady(context) ? 1 : 0,
+                      duration: AppMotion.fade(context, AppMotion.reveal),
+                      child: IgnorePointer(
+                        ignoring: !_endReady(context),
+                        child: _EndActions(
+                          ink: ink,
+                          background: background,
+                          sharing: sharing,
+                          shareSaves: shareSaves,
+                          onShare: onShare,
+                          onReplay: () => story.goTo(0),
+                        ),
                       ),
                     ),
-                    _ActionPill(
-                      icon: AppIcons.replay,
-                      label: tr('Revoir'),
-                      ink: ink,
-                      background: background,
-                      onPressed: () => story.goTo(0),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         // À la souris, des flèches au bord : sans elles, rien ne dit qu'un
@@ -217,6 +242,55 @@ Rect _rectOf(BuildContext context) {
   final box = context.findRenderObject();
   if (box is! RenderBox || !box.hasSize) return Rect.zero;
   return box.localToGlobal(Offset.zero) & box.size;
+}
+
+/// Les deux boutons du dernier écran : partager l'image (l'enregistrer, sur
+/// un PC) et revoir depuis le début.
+class _EndActions extends StatelessWidget {
+  const _EndActions({
+    required this.ink,
+    required this.background,
+    required this.sharing,
+    required this.shareSaves,
+    required this.onShare,
+    required this.onReplay,
+  });
+
+  final Color ink;
+  final Color? background;
+  final bool sharing;
+  final bool shareSaves;
+  final void Function(Rect origin) onShare;
+  final VoidCallback onReplay;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        alignment: WrapAlignment.center,
+        children: [
+          Builder(
+            builder: (button) => _ActionPill(
+              icon: shareSaves ? AppIcons.download : AppIcons.share,
+              label: shareSaves
+                  ? tr('Enregistrer l’image')
+                  : tr('Partager l’image'),
+              ink: ink,
+              background: background,
+              busy: sharing,
+              solid: true,
+              onPressed: () => onShare(_rectOf(button)),
+            ),
+          ),
+          _ActionPill(
+            icon: AppIcons.replay,
+            label: tr('Revoir'),
+            ink: ink,
+            background: background,
+            onPressed: onReplay,
+          ),
+        ],
+      );
 }
 
 /// Un bouton du dernier écran : plein d'encre pour l'action principale,

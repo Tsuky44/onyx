@@ -194,6 +194,10 @@ abstract final class AppIcons {
       IconData(0xeaf0, fontFamily: _regular); // export
   static const IconData replay =
       IconData(0xe014, fontFamily: _regular); // arrowCounterClockwise
+  static const IconData volumeOn =
+      IconData(0xe44a, fontFamily: _regular); // speakerHigh
+  static const IconData volumeOff =
+      IconData(0xe45a, fontFamily: _regular); // speakerSlash
 
   // Listes (ADR-0070) : le signet creux propose d'ajouter, plein il dit que
   // le titre est déjà dans une liste.

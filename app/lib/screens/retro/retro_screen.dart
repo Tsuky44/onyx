@@ -16,6 +16,7 @@ import '../../tv/nav/tv_focusable.dart';
 import '../../utils/poster_url.dart';
 import '../../widgets/global/app_network_image.dart';
 import '../../widgets/global/empty_state.dart';
+import 'hooks/retro_music.dart';
 import 'hooks/retro_story_controller.dart';
 import 'services/retro_share.dart';
 import 'services/retro_share_action.dart';
@@ -131,6 +132,7 @@ class _RetroStoryState extends State<_RetroStory>
     with SingleTickerProviderStateMixin {
   late final RetroStoryController _story =
       RetroStoryController(count: kRetroSlides.length);
+  late final RetroMusic _music = RetroMusic();
   late final Ticker _ticker = createTicker(_onTick);
   Duration _last = Duration.zero;
 
@@ -155,6 +157,7 @@ class _RetroStoryState extends State<_RetroStory>
   void initState() {
     super.initState();
     _ticker.start();
+    _music.start();
   }
 
   @override
@@ -178,6 +181,7 @@ class _RetroStoryState extends State<_RetroStory>
   @override
   void dispose() {
     _ticker.dispose();
+    _music.dispose();
     _story.dispose();
     super.dispose();
   }
@@ -206,7 +210,7 @@ class _RetroStoryState extends State<_RetroStory>
       onSelect: _story.togglePause,
       onDirection: _onDirection,
       child: ListenableBuilder(
-        listenable: _story,
+        listenable: Listenable.merge([_story, _music]),
         builder: (context, _) {
           final slide = kRetroSlides[_story.index];
           final colors = slide.colors(widget.data);
@@ -222,6 +226,8 @@ class _RetroStoryState extends State<_RetroStory>
                 story: _story,
                 ink: colors.ink,
                 background: colors.background,
+                muted: _music.muted,
+                onToggleMute: _music.toggleMute,
                 onShare: _share,
                 sharing: _sharing,
                 shareSaves: RetroShare.savesFile,

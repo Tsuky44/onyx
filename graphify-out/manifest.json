@@ -678,9 +678,9 @@
     "semantic_hash": ""
   },
   "app/lib/l10n/en.dart": {
-    "mtime": 1795710722.3369844,
-    "seen": 1795711141.0086882,
-    "ast_hash": "0af615dbe4d3174062d87b5eb43754c7",
+    "mtime": 1795770173.7222404,
+    "seen": 1795770692.262825,
+    "ast_hash": "d0855a7338e3db938e55b11ff0aa37b7",
     "semantic_hash": ""
   },
   "app/lib/l10n/tr.dart": {
@@ -2934,9 +2934,9 @@
     "semantic_hash": ""
   },
   "app/lib/theme/app_icons.dart": {
-    "mtime": 1795708048.4818418,
-    "seen": 1795708543.0512404,
-    "ast_hash": "45f8be69037f435b1b07dad3ab07d71c",
+    "mtime": 1795715635.2066453,
+    "seen": 1795715976.9809282,
+    "ast_hash": "400cdb353b024c26db165c94fa3fc4ef",
     "semantic_hash": ""
   },
   "app/lib/theme/app_motion.dart": {
@@ -3684,9 +3684,9 @@
     "semantic_hash": ""
   },
   "app/pubspec.yaml": {
-    "mtime": 1795708555.9769537,
-    "seen": 1795711141.0121975,
-    "ast_hash": "cbbdf734b632b1288ba3a3521718ff88",
+    "mtime": 1795715634.5834756,
+    "seen": 1795715976.984433,
+    "ast_hash": "f4496809275db121774581410210704f",
     "semantic_hash": ""
   },
   "app/run-windows.ps1": {
@@ -15870,15 +15870,15 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-26-tsuky-retro-annuel.md": {
-    "mtime": 1795708466.7539616,
-    "seen": 1795708543.05424,
-    "ast_hash": "69b98590ce3706125f8cc52d02945279",
+    "mtime": 1795770538.1622994,
+    "seen": 1795770692.269825,
+    "ast_hash": "d44c1df621ea367983281ba5e4866ff1",
     "semantic_hash": ""
   },
   "docs/retro-annuel.md": {
-    "mtime": 1795711050.6323504,
-    "seen": 1795711141.012697,
-    "ast_hash": "b064813dad4dc3db1e7547f91160fad7",
+    "mtime": 1795770538.1628,
+    "seen": 1795770692.269825,
+    "ast_hash": "9d97f28bab01f602f859a731a7e4b994",
     "semantic_hash": ""
   },
   "contract/retro_report.json": {
@@ -15936,15 +15936,15 @@
     "semantic_hash": ""
   },
   "app/lib/l10n/retro_archetypes.dart": {
-    "mtime": 1795689834.5561361,
-    "seen": 1795690347.8129144,
-    "ast_hash": "e6150e80e6759af0607324324828f481",
+    "mtime": 1795770182.4977689,
+    "seen": 1795770692.262825,
+    "ast_hash": "ddf471aa64923ce303cd99ddbfda0791",
     "semantic_hash": ""
   },
   "app/lib/models/retro.dart": {
-    "mtime": 1795689619.163731,
-    "seen": 1795690347.8129144,
-    "ast_hash": "2718d58523237c18bb50d37d49be2e8a",
+    "mtime": 1795714424.128604,
+    "seen": 1795715358.6054893,
+    "ast_hash": "269c360b39ab56c339254af45b8f78e6",
     "semantic_hash": ""
   },
   "app/lib/providers/retro_provider.dart": {
@@ -15960,21 +15960,21 @@
     "semantic_hash": ""
   },
   "app/lib/screens/retro/retro_screen.dart": {
-    "mtime": 1795710515.8362164,
-    "seen": 1795711141.0086882,
-    "ast_hash": "8c6693c2a336c738b7870f82ffd76886",
+    "mtime": 1795715664.752661,
+    "seen": 1795715976.9804282,
+    "ast_hash": "b51d10d510e58d08be958e6ce80ae43d",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/slides/retro_card_slide.dart": {
-    "mtime": 1795707277.0635052,
-    "seen": 1795707751.7295914,
-    "ast_hash": "85d3b1bd4960ca8ad51b6f6a31f57b49",
+    "mtime": 1795770303.9992502,
+    "seen": 1795770692.2638245,
+    "ast_hash": "22a7c99e08fa2ef039dac722f6ae904e",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/slides/retro_hour_slide.dart": {
-    "mtime": 1795706964.1973832,
-    "seen": 1795707751.7295914,
-    "ast_hash": "17b4afebceb592c99f27fd61f5722170",
+    "mtime": 1795714424.130103,
+    "seen": 1795715358.6054893,
+    "ast_hash": "0c01dbba9c82d5785d56e97a972a770e",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/slides/retro_hours_slide.dart": {
@@ -16026,9 +16026,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/retro/slides/retro_top_title_slide.dart": {
-    "mtime": 1795704272.0901358,
-    "seen": 1795704967.051288,
-    "ast_hash": "4b3d7c629a5f40e32c7514d68c5b6fa5",
+    "mtime": 1795712659.3919632,
+    "seen": 1795713466.2435238,
+    "ast_hash": "fa7cc179bb56bcc09651e8c8c1e0dd8a",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/widgets/retro_blocks.dart": {
@@ -16038,9 +16038,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/retro/widgets/retro_charts.dart": {
-    "mtime": 1795706943.8528936,
-    "seen": 1795707751.7295914,
-    "ast_hash": "644dcfcf0108b655e1b74da2cb9b759c",
+    "mtime": 1795712659.391463,
+    "seen": 1795713466.2435238,
+    "ast_hash": "9f1566cbd3f696f897f8cf7b9c912b50",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/widgets/retro_poster.dart": {
@@ -16056,9 +16056,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/retro/widgets/retro_story_chrome.dart": {
-    "mtime": 1795710829.392514,
-    "seen": 1795711141.0086882,
-    "ast_hash": "60ad4763c80b01fe6ecc726d940d3376",
+    "mtime": 1795770326.2977345,
+    "seen": 1795770692.2638245,
+    "ast_hash": "0c3bcaf5e2df625637603164f085c362",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/widgets/retro_type.dart": {
@@ -16122,21 +16122,15 @@
     "semantic_hash": ""
   },
   "app/test/retro_motion_test.dart": {
-    "mtime": 1795691414.1698449,
-    "seen": 1795691823.5333424,
-    "ast_hash": "5f5c7d22ce3b171eb112c8eb8db93e4b",
+    "mtime": 1795770326.2982337,
+    "seen": 1795770692.2658253,
+    "ast_hash": "2eb01aa57d0b23adee7b116670bcdbdf",
     "semantic_hash": ""
   },
   "app/test/retro_story_chrome_test.dart": {
     "mtime": 1795702976.184284,
     "seen": 1795703091.7323017,
     "ast_hash": "f3dab4f1a1e444e958b4a04b75e27c8d",
-    "semantic_hash": ""
-  },
-  "app/assets/audio/retro_theme.wav": {
-    "mtime": 1795700195.6489253,
-    "seen": 1795703091.7353036,
-    "ast_hash": "9029860cd2487575cb3af08040685257",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/widgets/retro_poster_wall.dart": {
@@ -16212,9 +16206,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/retro/widgets/retro_recap_ticket.dart": {
-    "mtime": 1795707506.5221694,
-    "seen": 1795707751.7295914,
-    "ast_hash": "0a7309f9bc39c6d75bb583d2c79121b3",
+    "mtime": 1795714701.8763697,
+    "seen": 1795715358.606495,
+    "ast_hash": "7bee533fab237275a0f561df05ac93c9",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/services/retro_image_file.dart": {
@@ -16248,9 +16242,9 @@
     "semantic_hash": ""
   },
   "app/test/retro_share_test.dart": {
-    "mtime": 1795708293.2483282,
-    "seen": 1795708543.0522404,
-    "ast_hash": "6b1f70a83a4a7b292d04716b76bc3caf",
+    "mtime": 1795770311.8366914,
+    "seen": 1795770692.2658253,
+    "ast_hash": "5c65602e05a058344abac4088ba7521c",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/home/retro_hero_slide.dart": {
@@ -16266,9 +16260,9 @@
     "semantic_hash": ""
   },
   "app/lib/screens/retro/home/retro_home_text.dart": {
-    "mtime": 1795710567.931939,
-    "seen": 1795711141.0086882,
-    "ast_hash": "d3e86e45dd87b98ed11618e1b281f10a",
+    "mtime": 1795770182.49827,
+    "seen": 1795770692.2638245,
+    "ast_hash": "1adcad75a5444f2930b196f0aaa65982",
     "semantic_hash": ""
   },
   "app/lib/screens/retro/home/retro_poster_fan.dart": {
@@ -16290,27 +16284,81 @@
     "semantic_hash": ""
   },
   "app/test/retro_home_test.dart": {
-    "mtime": 1795710761.0973523,
-    "seen": 1795711141.0101979,
-    "ast_hash": "faa6129b942d05a977c4640ba64a9abf",
+    "mtime": 1795770182.4987707,
+    "seen": 1795770692.2658253,
+    "ast_hash": "05948f038861266ef3673a2eed6400a2",
     "semantic_hash": ""
   },
-  "app/assets/audio/retro_theme_cinema.wav": {
-    "mtime": 1795710962.170041,
-    "seen": 1795711141.012697,
-    "ast_hash": "c5b60d268ce1f7b46e85936c249b4783",
+  "app/lib/screens/retro/characters/retro_character.dart": {
+    "mtime": 1795770212.5401964,
+    "seen": 1795770692.2638245,
+    "ast_hash": "c30db90ce68b25fa0e2c8bee054e6f84",
     "semantic_hash": ""
   },
-  "app/assets/audio/retro_theme_groove.wav": {
-    "mtime": 1795710769.202021,
-    "seen": 1795711141.012697,
-    "ast_hash": "65263c32eab637e74a7262e7331b0636",
+  "app/lib/screens/retro/characters/retro_pen.dart": {
+    "mtime": 1795714553.711315,
+    "seen": 1795715358.6054893,
+    "ast_hash": "f5968be3da6a4c3db2812adc175973bd",
     "semantic_hash": ""
   },
-  "app/assets/audio/retro_theme_upbeat.wav": {
-    "mtime": 1795710650.6734257,
-    "seen": 1795711141.012697,
-    "ast_hash": "339ac7fbf62d28af238096a288aff17f",
+  "design-plans/onyx-retro-personnages.html": {
+    "mtime": 1795714399.7316315,
+    "seen": 1795715358.6101646,
+    "ast_hash": "20623e815a7838ee801d191a2bc260f3",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/retro/hooks/retro_music.dart": {
+    "mtime": 1795715638.2783818,
+    "seen": 1795715976.9804282,
+    "ast_hash": "d66a4d9f919a78bac66046b9e4307ca8",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/retro/hooks/retro_music_backend.dart": {
+    "mtime": 1795715635.8449068,
+    "seen": 1795715976.9804282,
+    "ast_hash": "8bdcbf1c5cce61ef95927c160b317913",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/retro/hooks/retro_music_backend_io.dart": {
+    "mtime": 1795715636.5154614,
+    "seen": 1795715976.9804282,
+    "ast_hash": "b853e3e396f75c5a3449e51456ce9c86",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/retro/hooks/retro_music_backend_web.dart": {
+    "mtime": 1795715637.2312849,
+    "seen": 1795715976.9804282,
+    "ast_hash": "82db10e50bff53ffbddf6f36e38c4baf",
+    "semantic_hash": ""
+  },
+  "app/test/retro_music_test.dart": {
+    "mtime": 1795715665.510625,
+    "seen": 1795715976.98193,
+    "ast_hash": "1beb7d9d2139e910618424b183271e15",
+    "semantic_hash": ""
+  },
+  "app/assets/audio/retro_theme_cinema.m4a": {
+    "mtime": 1795715516.0049195,
+    "seen": 1795715976.9854307,
+    "ast_hash": "b2f33e01ca6e0bbdd36a05505878f4f4",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/retro/widgets/retro_card_reveal.dart": {
+    "mtime": 1795770301.5755622,
+    "seen": 1795770692.2638245,
+    "ast_hash": "7013291988aba523814ee71bce25cda4",
+    "semantic_hash": ""
+  },
+  "app/lib/screens/retro/widgets/retro_title_card.dart": {
+    "mtime": 1795770737.3094378,
+    "seen": 1795770802.8472104,
+    "ast_hash": "0417e37f654f5a6af258d1b626d6e642",
+    "semantic_hash": ""
+  },
+  "design-plans/onyx-retro-revelation.html": {
+    "mtime": 1795770326.3843436,
+    "seen": 1795770692.2688243,
+    "ast_hash": "e8b694815c3198de84f8469c8925ac91",
     "semantic_hash": ""
   }
 }

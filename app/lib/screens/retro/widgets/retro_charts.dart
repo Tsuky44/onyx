@@ -96,8 +96,11 @@ class _ClockPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = size.shortestSide / 2;
-    final inner = radius * 0.36;
-    final outer = radius * 0.86;
+    // Les heures s'écrivent dans le cadran, sous les barres : le cercle
+    // intérieur s'élargit pour elles, et les barres gagnent la place que les
+    // étiquettes prenaient dehors.
+    final inner = radius * 0.42;
+    final outer = radius * 0.97;
     final top = hours.fold<int>(0, math.max);
     final step = 2 * math.pi / 24;
     for (var h = 0; h < 24; h++) {
@@ -121,16 +124,17 @@ class _ClockPainter extends CustomPainter {
               alpha: (0.22 + 0.78 * share) * grow.clamp(0.0, 1.0)),
       );
     }
+    final labelSize = math.max(9.0, radius * 0.075);
     final labelStyle = TextStyle(
       fontFamily: AppTheme.fontFamily,
       color: ink.withValues(alpha: 0.7),
-      fontSize: math.max(9, unit * 2.6),
+      fontSize: labelSize,
       fontWeight: FontWeight.w600,
     );
     for (final h in const [0, 6, 12, 18]) {
       final angle = h * step - math.pi / 2;
       final at = center +
-          Offset(math.cos(angle), math.sin(angle)) * (outer + radius * 0.09);
+          Offset(math.cos(angle), math.sin(angle)) * (inner - labelSize * 1.3);
       final painter = TextPainter(
         text: TextSpan(text: tr('{0} h', [h]), style: labelStyle),
         textDirection: TextDirection.ltr,

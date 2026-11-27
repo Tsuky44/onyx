@@ -178,7 +178,7 @@ void main() {
       onOpen: () => opened++,
     )));
     expect(find.text('Revoir ton année'), findsOneWidget);
-    expect(find.text('Accro aux marathons · 312 h'), findsOneWidget);
+    expect(find.text('Pilier de canapé · 312 h'), findsOneWidget);
     expect(find.text('Partager'), findsOneWidget);
     await tester.tap(find.text('Revoir ton année'));
     expect(opened, 1);

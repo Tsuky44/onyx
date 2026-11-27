@@ -23,7 +23,7 @@ class RetroHourSlide extends RetroSlide {
   @override
   RetroColors colors(RetroStoryData data) => RetroPalette.hour;
 
-  /// La même borne que le profil « Oiseau de nuit ».
+  /// La même borne que le profil « Noctambule ».
   static const double _nightOwlShare = 0.4;
 
   static String headline(RetroReport report) {
@@ -49,13 +49,21 @@ class RetroHourSlide extends RetroSlide {
   Widget text(BuildContext context, RetroStoryData data) =>
       RetroText(children: [
         RetroKicker(tr('Quand tu regardes')),
-        RetroBig(headline(data.report), size: 11),
-        RetroNote(_night(data.report)),
+        RetroBig(tr('{0} h', [data.report.peakHour]), size: 24),
+        RetroBig(headline(data.report),
+            size: 9, delay: const Duration(milliseconds: 500)),
+        RetroNote(_night(data.report),
+            delay: const Duration(milliseconds: 1100)),
       ]);
 
+  /// Le cadran reste vide : les heures s'y écrivent, et l'heure de pointe
+  /// est déjà en grand au-dessus.
   @override
-  Widget? visual(BuildContext context, RetroStoryData data) =>
-      RetroClockChart(hours: data.report.hours, peak: data.report.peakHour);
+  Widget? visual(BuildContext context, RetroStoryData data) => RetroClockChart(
+        hours: data.report.hours,
+        peak: data.report.peakHour,
+        showPeak: false,
+      );
 
   @override
   Widget? compose(BuildContext context, RetroStoryData data) {

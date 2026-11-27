@@ -23,7 +23,7 @@ abstract final class RetroHomeText {
           report.titles,
         ]);
 
-  /// « Accro aux marathons · 312 h ».
+  /// « Pilier de canapé · 312 h ».
   static String? profile(RetroReport? report) => report == null
       ? null
       : tr('{0} · {1} h', [

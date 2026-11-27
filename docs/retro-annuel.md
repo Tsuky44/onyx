@@ -101,7 +101,9 @@ Le rapport a son fichier de contrat (ADR-0051) : `TestAPIContract` le génère, 
 | `hooks/retro_story_controller.dart` | Index, progression, pause, maintien, suivant et précédent. Classe pure qui prend une horloge : testée sans monter l'écran. |
 | `widgets/retro_slide_layout.dart` | Portrait : une colonne. Paysage : texte à gauche, visuel à droite. Une seule bascule, sur `constraints.maxWidth > maxHeight`. |
 | `slides/retro_slide.dart` | `compose` : un écran pose lui-même sa scène contre les bords (en paysage surtout). `backdrop` : ce qui se pose sous le fond animé. |
-| `widgets/retro_recap_ticket.dart` | L'image de récap : un ticket de séance au nom du membre, taille fixe 360 × 640, montré par le dernier écran et capturé tel quel pour le partage (phase 5). |
+| `characters/` | Les six personnages (`RetroCharacter`) et le crayon qui reprend les tracés de la maquette (`RetroPen`). La carte du dernier écran est dans `widgets/` (`RetroCardReveal`, `RetroTitleCard`). |
+| `widgets/retro_ceremony.dart` | Le dernier écran : la remise du titre de l'année, puis le ticket. Les boutons de fin attendent qu'elle soit jouée. |
+| `widgets/retro_recap_ticket.dart` | L'image de récap : un ticket de séance au nom du membre, taille fixe 360 × 640, montré par le dernier écran et capturé tel quel pour le partage (phase 5). Porte le profil et sa raison, le top 5, six chiffres (heures, titres, séances, ton heure, mois record, ta place — ou le marathon, seul sur le serveur) et un talon. Le dernier écran le montre presque sur toute la hauteur ; ses boutons se posent sous le texte en paysage. |
 | `widgets/retro_poster_wall.dart` | Le mur d'affiches de l'ouverture : colonnes inclinées qui défilent, à droite en paysage, en haut en portrait. |
 | `widgets/retro_poster.dart` | Affiche, teinte d'affiche sur tout l'écran (`RetroPosterTint`, sans flou), logo du titre (`RetroTitleLogo`). |
 | `slides/retro_*_slide.dart` | Un fichier par écran (dix). Chacun prend le rapport et rend `(texte, visuel)`. |
