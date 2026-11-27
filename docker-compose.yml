@@ -10,8 +10,8 @@
 # besoin de savoir où sont vos médias : sans MEDIA_PATH, c'est le dossier
 # ./media à côté de ce fichier (Docker le crée vide, mettez-y vos médias). Pour
 # un dossier ailleurs, copiez .env.example en .env et réglez MEDIA_PATH ; les
-# autres réglages de .env sont facultatifs. Le transcodage matériel et un
-# second disque de médias se décommentent plus bas.
+# autres réglages de .env sont facultatifs. Le transcodage matériel (Intel,
+# AMD ou NVIDIA) et un second disque de médias se décommentent plus bas.
 #
 # Docker Compose 2.24 ou plus récent : c'est la version qui accepte
 # `required: false` sur env_file, donc un .env absent n'est pas une erreur.
@@ -45,6 +45,11 @@ services:
     # lignes et mettez VIDEO_ENCODER=auto dans .env.
     # devices:
     #   - /dev/dri:/dev/dri
+    # Transcodage par une carte NVIDIA (GeForce, Quadro) : mettez
+    # ONYX_VERSION=latest-nvidia dans .env (l'image Alpine n'a pas NVENC),
+    # installez le NVIDIA Container Toolkit sur l'hôte (sur Unraid, le plugin
+    # Nvidia-Driver) et décommentez la ligne. L'image règle VIDEO_ENCODER=auto.
+    # runtime: nvidia
     logging:
       driver: json-file
       options:

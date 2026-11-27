@@ -25,6 +25,79 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} go build \
     -ldflags="-w -s -X project-player/server/buildinfo.Version=${VERSION}" -o media-server .
 
+# --- Variante NVIDIA (docker build --target nvidia) -------------------------
+#
+# Le FFmpeg d'Alpine n'a ni NVENC ni NVDEC (pas de ffnvcodec dans son
+# APKBUILD), et les bibliothèques que le NVIDIA Container Toolkit injecte
+# (libcuda, libnvidia-encode) sont compilées pour la glibc : musl ne les charge
+# pas. Cette variante tourne donc sur Ubuntu, avec le FFmpeg 8.1 de BtbN, la
+# même branche que celui d'Alpine 3.24, construit avec NVENC, NVDEC, libplacebo
+# et Vulkan. Voir docs/adr/2026-11-27-fytroz-image-nvidia.md.
+#
+# Les étapes ne se construisent que demandées : `docker build` sans --target
+# produit l'image Alpine de toujours, la dernière du fichier.
+FROM --platform=$BUILDPLATFORM alpine:3.24 AS ffmpeg-nvidia
+# `latest` de la branche 8.1 : les correctifs de la 8.1 seulement, jamais une
+# 9.0. BtbN ne garde pas ses constructions datées assez longtemps pour les
+# épingler (14 jours, ou la dernière du mois).
+#
+# gpl-shared : ffmpeg et ffprobe partagent leurs libav*, là où la construction
+# statique les embarque deux fois (175 Mo chacun).
+ARG FFMPEG_NVIDIA_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-linux64-gpl-shared-8.1.tar.xz
+ADD ${FFMPEG_NVIDIA_URL} /tmp/ffmpeg.tar.xz
+# /out est ce qui part sous /usr/local : les deux binaires et les
+# bibliothèques versionnées, sans ffplay ni les liens de développement.
+RUN apk --no-cache add xz \
+    && mkdir -p /ffmpeg /out/bin /out/lib \
+    && tar -xJf /tmp/ffmpeg.tar.xz -C /ffmpeg --strip-components=1 \
+    && cp /ffmpeg/bin/ffmpeg /ffmpeg/bin/ffprobe /out/bin/ \
+    && cp -P /ffmpeg/lib/*.so.* /out/lib/
+
+FROM ubuntu:24.04 AS nvidia
+# gosu tient le rôle de su-exec (docker-entrypoint.sh prend celui qu'il
+# trouve). mesa-vulkan-drivers apporte lavapipe, le Vulkan logiciel du Dolby
+# Vision profil 5 (ADR-0060) ; wget sert la sonde de santé.
+#
+# libva et libdrm ne servent pas la carte NVIDIA, mais ce FFmpeg les ouvre à
+# la demande et s'arrête net (abort) quand elles manquent : `-hwaccel auto`
+# essaie VAAPI dès que CUDA ne répond pas, donc sur toute session d'un hôte où
+# la carte n'est pas visible. Présentes, l'essai échoue et le décodage reste
+# logiciel, comme sur l'image Alpine.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+         ca-certificates tzdata wget gosu \
+         libvulkan1 mesa-vulkan-drivers \
+         libva2 libva-drm2 libva-x11-2 libdrm2 \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=ffmpeg-nvidia /out/ /usr/local/
+RUN ldconfig
+
+WORKDIR /app
+COPY --from=builder /app/media-server .
+RUN mkdir -p /app/data /app/downloads
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
+
+# Lus par le NVIDIA Container Toolkit quand le conteneur tourne avec
+# `runtime: nvidia` (sur Unraid : --runtime=nvidia et le plugin Nvidia-Driver) :
+# toutes les cartes, et les seules bibliothèques que FFmpeg ouvre (CUDA,
+# NVENC/NVDEC, nvidia-smi). Le compose ou le modèle Unraid peut viser une carte
+# par son UUID.
+#
+# VIDEO_ENCODER=auto : choisir cette image est déjà le geste de l'opérateur que
+# l'ADR-0023 demande. Sans carte visible, l'essai du démarrage échoue et le
+# serveur reste sur libx264 en le disant. Un .env le remplace.
+ENV NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,video,utility \
+    VIDEO_ENCODER=auto
+
+EXPOSE 8080
+# Les mêmes que l'image Alpine plus bas : les garder en phase.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3     CMD if [ -n "$TLS_CERT_FILE" ]; then           wget -q --no-check-certificate -O /dev/null https://127.0.0.1:8080/api/ping;         else           wget -q -O /dev/null http://127.0.0.1:8080/api/ping;         fi || exit 1
+ENV MOVIES_DIR=/media/Films \
+    SERIES_DIR=/media/Series
+ENTRYPOINT ["/app/docker-entrypoint.sh", "-port", "8080", "-db", "/app/data/player.db"]
+
 # Stage 2: Final lightweight runtime image
 #
 # Épinglée : `latest` changeait de version d'Alpine — et donc de FFmpeg — sans

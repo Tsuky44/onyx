@@ -10,12 +10,16 @@
 # dans le serveur ou dans FFmpeg ne donne alors plus la main sur le conteneur.
 # Les dossiers de médias doivent être lisibles par ce compte ; pour un encodeur
 # matériel, il doit aussi appartenir au groupe du périphérique (/dev/dri).
+#
+# su-exec sur l'image Alpine, gosu sur l'image NVIDIA (Ubuntu) : les deux
+# prennent `uid:gid commande`.
 set -e
 
 if [ -n "$PUID" ] && [ "$(id -u)" = "0" ]; then
   PGID="${PGID:-$PUID}"
   chown -R "$PUID:$PGID" /app/data /app/downloads
-  exec su-exec "$PUID:$PGID" ./media-server "$@"
+  RUN_AS="$(command -v su-exec || command -v gosu)"
+  exec "$RUN_AS" "$PUID:$PGID" ./media-server "$@"
 fi
 
 exec ./media-server "$@"

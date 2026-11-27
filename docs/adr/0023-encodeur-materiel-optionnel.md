@@ -1,5 +1,8 @@
 # ADR-0023 — L'encodeur matériel est proposé, pas supposé
 
+> Précisé par `2026-11-27-fytroz-image-nvidia.md` : NVENC demande l'image `-nvidia`, le FFmpeg
+> d'Alpine ne l'a pas.
+
 - **Statut :** accepté. La sélection, les quatre encodeurs et le repli sont en place ; le défaut ne
   change pas. VAAPI ajouté le 2026-10-13 (voir « VAAPI ») : **ses commandes sont testées, mais
   aucune session n'a tourné sur un vrai circuit Intel ou AMD.**

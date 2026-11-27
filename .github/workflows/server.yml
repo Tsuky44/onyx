@@ -108,6 +108,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # La variante NVIDIA (Ubuntu + FFmpeg avec NVENC), suffixe -nvidia :
+      # un serveur a carte NVIDIA suit `latest-nvidia`. amd64 seulement, comme
+      # le FFmpeg qu'elle embarque. Voir l'ADR 2026-11-27-fytroz-image-nvidia.
+      - name: Build & push de l'image NVIDIA
+        uses: docker/build-push-action@v7
+        with:
+          context: ./server
+          target: nvidia
+          platforms: linux/amd64
+          build-args: |
+            VERSION=${{ steps.meta.outputs.sha_tag }}
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}-nvidia
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha_tag }}-nvidia
+          cache-from: type=gha,scope=nvidia
+          cache-to: type=gha,mode=max,scope=nvidia
+
       - name: Recapitulatif
         env:
           IMAGE: ${{ steps.meta.outputs.image }}
@@ -121,5 +139,5 @@ jobs:
             echo "docker pull $IMAGE:$TAG"
             echo '```'
             echo ""
-            echo "Egalement taguee \`$SHA_TAG\`."
+            echo "Egalement taguee \`$SHA_TAG\`. Variante NVIDIA : \`$TAG-nvidia\`."
           } >> "$GITHUB_STEP_SUMMARY"

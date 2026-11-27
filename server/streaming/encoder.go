@@ -118,6 +118,12 @@ var hardwareEncoders = []VideoEncoder{
 				// ones costs wall-clock this path does not have to spare.
 				"-preset", "p4",
 				"-no-scenecut", "1",
+				// Sans lui, NVENC rend une image I ordinaire là où
+				// -force_key_frames demande une image clé : le segment qui
+				// commence dessus ne se décode pas seul, et une recherche qui
+				// y tombe montre des macroblocs jusqu'à la prochaine IDR.
+				// Repris tel quel par hevc_nvenc (hevcSiblings).
+				"-forced-idr", "1",
 			}
 		},
 	},

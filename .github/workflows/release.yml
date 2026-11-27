@@ -902,6 +902,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # La variante NVIDIA (Ubuntu + FFmpeg avec NVENC) : les memes tags,
+      # suffixes -nvidia. Voir l'ADR 2026-11-27-fytroz-image-nvidia.
+      - name: Build & push de l'image NVIDIA
+        uses: docker/build-push-action@v7
+        with:
+          context: ./server
+          target: nvidia
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            VERSION=${{ needs.prepare.outputs.version }}
+          tags: |
+            ${{ needs.prepare.outputs.image }}:latest-nvidia
+            ${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.version_tag }}-nvidia
+            ${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.minor_tag }}-nvidia
+          cache-from: type=gha,scope=nvidia
+          cache-to: type=gha,mode=max,scope=nvidia
+
       # La Release est l'unique entrepot des installateurs : elle les sert a qui
       # n'a pas encore de serveur, et chaque serveur y prend ceux de sa version.
       - name: GitHub Release
@@ -927,7 +945,8 @@ jobs:
             docker pull ${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.version_tag }}
             ```
 
-            Tags publies : `latest`, `${{ needs.prepare.outputs.version_tag }}`, `${{ needs.prepare.outputs.minor_tag }}`
+            Tags publies : `latest`, `${{ needs.prepare.outputs.version_tag }}`, `${{ needs.prepare.outputs.minor_tag }}`,
+            et les memes suffixes `-nvidia` pour les serveurs a carte NVIDIA.
 
             Un serveur en version ${{ needs.prepare.outputs.version }} propose ces
             installateurs sur `/api/downloads` (Parametres -> Applications) : il

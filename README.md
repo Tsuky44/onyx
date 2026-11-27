@@ -122,6 +122,7 @@ Ouvrez **http://\<votre-serveur\>:8080** (http://localhost:8080 sur la machine m
 
 - **Le code d'installation.** Si vous créez le compte depuis Internet plutôt que depuis la machine ou le réseau local, l'app demande un code : le serveur l'écrit dans son journal au démarrage, `docker logs onyx-server` le montre.
 - **Vos médias.** Sans réglage, le compose monte le dossier `./media` à côté de lui ; Docker le crée **vide** au premier lancement. Mettez-y vos médias, ou pointez vers le dossier où ils sont déjà : copiez [`.env.example`](.env.example) en `.env`, puis réglez `MEDIA_PATH=/chemin/vers/vos/medias` et relancez `docker compose up -d`. `.env.example` décrit aussi les autres réglages facultatifs (port, dossier des données, `PUID`/`PGID`, transcodage matériel, HTTPS).
+- **Une carte NVIDIA.** Le transcodage par la carte (NVENC, NVDEC) demande l'image `-nvidia` : `ONYX_VERSION=latest-nvidia` dans `.env`, le NVIDIA Container Toolkit sur l'hôte (sur Unraid, le plugin Nvidia-Driver) avec un pilote 570 ou plus récent, et la ligne `runtime: nvidia` décommentée dans `docker-compose.yml`. Le journal du serveur dit l'encodeur pris au démarrage.
 
 La documentation complète de l'API est dans [`server/README.md`](server/README.md).
 
