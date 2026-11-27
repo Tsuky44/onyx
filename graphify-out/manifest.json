@@ -6516,9 +6516,9 @@
     "semantic_hash": ""
   },
   "packages/onyx_player_android/android/src/main/kotlin/com/projectplayer/onyx_player_android/PlayerHost.kt": {
-    "mtime": 1793351782.7134788,
-    "seen": 1795611164.5946698,
-    "ast_hash": "00b721919980fc6e9a3f4c4708c38be5",
+    "mtime": 1795773683.4941852,
+    "seen": 1795774000.0847802,
+    "ast_hash": "992ec243510586e08958180fd902dc82",
     "semantic_hash": ""
   },
   "packages/onyx_player_android/android/src/main/kotlin/com/projectplayer/onyx_player_android/PlayerSurfaceFactory.kt": {
@@ -16359,6 +16359,24 @@
     "mtime": 1795770326.3843436,
     "seen": 1795770692.2688243,
     "ast_hash": "e8b694815c3198de84f8469c8925ac91",
+    "semantic_hash": ""
+  },
+  "packages/onyx_player_android/android/src/main/kotlin/com/projectplayer/onyx_player_android/MatroskaResync.kt": {
+    "mtime": 1795773667.8945296,
+    "seen": 1795774000.0847802,
+    "ast_hash": "30f320992be7ebe54a7e6b78573987b6",
+    "semantic_hash": ""
+  },
+  "packages/onyx_player_android/android/src/test/kotlin/com/projectplayer/onyx_player_android/ClusterScanTest.kt": {
+    "mtime": 1795773683.7712443,
+    "seen": 1795774000.0847802,
+    "ast_hash": "75eb7afddeca1cec459d2e98992dcf1e",
+    "semantic_hash": ""
+  },
+  "docs/adr/2026-11-27-tsuky-matroska-abime-sur-android.md": {
+    "mtime": 1795773921.340051,
+    "seen": 1795774000.0862777,
+    "ast_hash": "8ecdd08a2d229c715800d9d0f873a4eb",
     "semantic_hash": ""
   }
 }

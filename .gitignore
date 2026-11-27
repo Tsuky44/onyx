@@ -78,3 +78,6 @@ prototypes/
 
 # Mesures RAM/CPU de scripts/perf/measure-windows.ps1
 perf-out/
+
+# Fichiers média de test locaux (jamais commités)
+tmp-media/

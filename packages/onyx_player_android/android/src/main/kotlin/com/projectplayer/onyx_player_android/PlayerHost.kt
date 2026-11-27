@@ -24,6 +24,7 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.SeekParameters
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.LoadEventInfo
 import androidx.media3.exoplayer.source.MediaLoadData
 import androidx.media3.common.Format
@@ -119,7 +120,15 @@ internal class PlayerInstance(
 
         override fun onPlayerError(error: PlaybackException) {
             lastErrorKind = classify(error)
-            lastErrorMessage = "${error.errorCodeName}: ${error.message ?: ""}"
+            // Le message d'ExoPlayer est générique (« Source error ») : la
+            // raison réelle — l'élément Matroska refusé, la boîte MP4 tronquée —
+            // est dans la cause, et c'est elle qui dit quoi corriger.
+            val causes = generateSequence(error.cause) { it.cause }
+                .take(3)
+                .mapNotNull { c -> c.message?.let { "${c.javaClass.simpleName}: $it" } }
+                .joinToString(" ← ")
+            lastErrorMessage = "${error.errorCodeName}: ${error.message ?: ""}" +
+                if (causes.isEmpty()) "" else " ($causes)"
             emit()
         }
 
@@ -266,6 +275,12 @@ internal class PlayerInstance(
             // cible d'octets.
             .setLoadControl(StallGuardLoadControl(load))
             .setRenderersFactory(renderers)
+            // La fabrique par défaut, à un détail près : un MKV abîmé se
+            // recale au cluster suivant au lieu d'être déclaré illisible
+            // (voir [MatroskaResyncExtractor]). Le HLS n'est pas concerné.
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(context, ResyncingExtractorsFactory()),
+            )
             .build()
         created.addListener(listener)
         created.addAnalyticsListener(analytics)
@@ -628,12 +643,19 @@ internal class PlayerInstance(
         /// Ce que Dart doit savoir de l'erreur : ce fichier est-il illisible ici
         /// — auquel cas il faut le transcoder — ou la source a-t-elle lâché,
         /// auquel cas réessayer a un sens.
+        ///
+        /// Un conteneur « malformé » est rangé avec les illisibles : c'est
+        /// l'extracteur d'ExoPlayer qui bute (Matroska aux en-têtes inhabituels,
+        /// remux approximatif), là où le démuxeur de FFmpeg côté serveur passe.
+        /// Classé `UNKNOWN`, il abandonnait le démarrage sans tenter le
+        /// transcodage, sur tous les appareils Android à la fois.
         fun classify(error: PlaybackException): OnyxPlayerErrorKind =
             when (error.errorCode) {
                 PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
                 PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
                 PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED,
                 PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
+                PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
                 PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED,
                 -> OnyxPlayerErrorKind.UNSUPPORTED
 
