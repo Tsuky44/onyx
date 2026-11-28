@@ -7,8 +7,9 @@
   `Vulkan devices seen: 0: Quadro P2200 (discrete), 1: llvmpipe` et `libplacebo renders on Quadro
   P2200`. Une première lecture (remux 4K HDR10 à 71,3 Mbit/s vers 1080p tone mappé) a donné une
   image que l'utilisateur juge très bonne, à **1,3×** la vitesse de lecture. Le tone mapping sur
-  la carte (« Le tone mapping sur la carte », 2026-11-28) est **mesuré au banc sur la même carte
-  à 3,0-3,9×, pas encore vu dans une vraie session**.
+  la carte (« Le tone mapping sur la carte », 2026-11-28) tient 3,0-3,9× au banc sur la même
+  carte, mais **0,5-0,7× dans les premières vraies sessions, avec une lecture hachée** : il est
+  désactivé par défaut (`HARDWARE_TONEMAP=on` pour l'essayer) tant que la cause n'est pas trouvée.
 - **Date :** 2026-11-27
 - **Portée :** `server/Dockerfile` (étapes `ffmpeg-nvidia` et `nvidia`),
   `server/docker-entrypoint.sh` (`su-exec` ou `gosu`), `server/streaming/encoder.go` (`-forced-idr`,
@@ -163,11 +164,21 @@ ce fichier).
     1,5× sur un passage. Un cache de shaders n'apporte rien de mesurable.
 16. **Une source HDR déjà à la taille du barreau prend maintenant la chaîne matérielle** quand ce
     tone mapping est disponible : c'est lui qui coûtait, pas la mise à l'échelle.
-17. **Trois gardes**, celles de la chaîne : l'essai du démarrage par la commande d'une session
-    (`Streaming: tone mapping on the device`), `HARDWARE_TONEMAP=off`, et le retrait pour tout le
-    serveur si une session meurt avec lui avant son premier segment. Dans les trois cas la chaîne
-    matérielle reste, avec le tone mapping zscale. Le Dolby Vision profil 5 n'est pas concerné : il
-    garde son libplacebo à lui.
+17. **Deux gardes** : l'essai du démarrage par la commande d'une session
+    (`Streaming: tone mapping on the device`), et le retrait pour tout le serveur si une session
+    meurt avec lui avant son premier segment. Dans les deux cas la chaîne matérielle reste, avec le
+    tone mapping zscale. Le Dolby Vision profil 5 n'est pas concerné : il garde son libplacebo à
+    lui.
+18. **Désactivé par défaut, `HARDWARE_TONEMAP=on` pour l'essayer.** Les premières vraies sessions
+    (même carte, même film, le 2026-11-28) n'ont pas tenu ce que le banc promettait : cinq
+    sessions de suite à 0,5-0,7×, à 1080p comme à 360p, le lecteur en automatique changeant de
+    barreau toutes les cinq secondes, et la lecture hachée même à barreau fixe. La chaîne zscale
+    tenait 1,3× sans accroc sur ce film. Vérifié depuis : la commande d'une session est bien celle
+    du banc, plus le son et le multiplexage HLS, et le flux qu'elle produit a les mêmes durées de
+    segment et les mêmes horodatages qu'avec zscale. **Ce qui la ralentit dans une session et pas
+    au banc n'est pas trouvé.** La lenteur ne dépend pas de la résolution, ce qui désigne une
+    étape de coût constant (décodage, démarrage de la commande) plutôt que le tone mapping
+    lui-même ; c'est une piste, pas un constat.
 
 Épinglé par `server/streaming/hardware_tonemap_test.go`.
 
@@ -213,9 +224,9 @@ Dans une réplique locale de l'étape `nvidia` (mêmes paquets, même FFmpeg, n8
 
 Les lignes du démarrage sont vues (voir « Statut »). Restent, sur de vraies lectures :
 
-1. Au démarrage : `Streaming: tone mapping on the device (cuda chain, libplacebo)`. Puis, sur
-   une source 4K HDR10 vers 1080p : `encodé à N×` nettement au-dessus de 1,3 (écrit à l'arrêt de
-   la session, après dix segments), et une image aux mêmes couleurs qu'avant.
+1. Pourquoi le tone mapping sur la carte tient 3× au banc et 0,7× en session (§18) : relever,
+   pendant une lecture avec `HARDWARE_TONEMAP=on`, la commande réelle de FFmpeg, son temps
+   processeur, la charge de la carte et le rythme des segments.
 2. Sur un Dolby Vision profil 5 : la même ligne, avec libplacebo sur la carte.
 3. Une source déjà en 1080p SDR, le cas du §10 : la session ne meurt pas sur
    `No decoder surfaces left`.
@@ -227,9 +238,11 @@ Les lignes du démarrage sont vues (voir « Statut »). Restent, sur de vraies l
 - **Pilote NVIDIA 570 ou plus récent sur l'hôte** : ce FFmpeg parle l'API du Video Codec SDK 13.0.
   Un pilote plus ancien fait échouer l'essai du démarrage, et le serveur reste sur libx264 en le
   disant.
-- Le tone mapping d'une source HDR10 ou HLG passe par libplacebo sur la carte ; l'image n'est
-  plus exactement celle de la chaîne zscale (hautes lumières un peu plus claires). Le Dolby Vision
-  profil 5 garde le décodage logiciel et son propre libplacebo.
+- Par défaut, le tone mapping d'une source HDR10 ou HLG reste celui du processeur, sur une image
+  déjà réduite : 1,1× à 1,5× sur un remux 4K à 71 Mbit/s. Avec `HARDWARE_TONEMAP=on` il passe par
+  libplacebo sur la carte, avec une image légèrement différente (hautes lumières un peu plus
+  claires) et le défaut de vitesse en session décrit au §18. Le Dolby Vision profil 5 garde le
+  décodage logiciel et son propre libplacebo.
 - L'image pèse environ 630 Mo : Ubuntu, Mesa (lavapipe, LLVM) et FFmpeg.
 - Deux listes de paquets à tenir, et la sonde de santé et le point d'entrée écrits deux fois dans
   le Dockerfile.

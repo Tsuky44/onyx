@@ -10806,9 +10806,9 @@
     "semantic_hash": ""
   },
   "server/README.md": {
-    "mtime": 1795828562.577711,
-    "seen": 1795828607.0260825,
-    "ast_hash": "4696de906827d87cf53c5fa38f325440",
+    "mtime": 1795830055.7249522,
+    "seen": 1795830080.7952168,
+    "ast_hash": "fa6fae0af18da795b9f6b47bdecc3f3c",
     "semantic_hash": ""
   },
   "app/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
@@ -15366,21 +15366,21 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-27-fytroz-image-nvidia.md": {
-    "mtime": 1795828580.6734214,
-    "seen": 1795828607.0260267,
-    "ast_hash": "7ecc7679c66a1d9d1e342ae5d60de3f8",
+    "mtime": 1795830055.7260637,
+    "seen": 1795830080.7951622,
+    "ast_hash": "a4a8dc8a3828eb226d643b1cf5f6fbae",
     "semantic_hash": ""
   },
   "server/streaming/hardware_tonemap.go": {
-    "mtime": 1795828580.6739295,
-    "seen": 1795828607.0252357,
-    "ast_hash": "b458edcc43f6c454acfb0f0e11875b34",
+    "mtime": 1795830015.5220208,
+    "seen": 1795830080.794389,
+    "ast_hash": "7823455535a46ed6a7c1c0a57ca9240d",
     "semantic_hash": ""
   },
   "server/streaming/hardware_tonemap_test.go": {
-    "mtime": 1795828507.2422314,
-    "seen": 1795828607.0252376,
-    "ast_hash": "58029ef5d40907e799d11677a0bed383",
+    "mtime": 1795830015.523778,
+    "seen": 1795830080.7943912,
+    "ast_hash": "06200afaf4ba77d8a5ef78b16adbda6c",
     "semantic_hash": ""
   }
 }

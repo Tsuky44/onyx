@@ -1,7 +1,7 @@
 # Graph Report - onyx  (2026-11-28)
 
 ## Corpus Check
-- 2397 files · ~2,107,151 words
+- 2397 files · ~2,107,537 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 167 file(s) not represented in the graph (top: (none) 33, .csv 24, .xml 20)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0b1e6a9b`
+- Built from commit: `76370699`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -954,8 +954,6 @@
 10. `_` - 58 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `3. Architecture` --references--> `BuildFFmpegArgs()`  [INFERRED]
-  docs/transcodage-adaptatif.md → server/streaming/ffmpeg.go
 - `Narrative mapping` --references--> `section`  [INFERRED]
   .agents/skills/impeccable/reference/document.md → server/indexer/scan_report.go
 - `Décision` --references--> `MainActivity`  [INFERRED]
@@ -964,6 +962,8 @@
   docs/traduction-anglais.md → packages/onyx_background_downloads/android/src/main/kotlin/com/projectplayer/onyx_background_downloads/DownloadKeepAliveService.kt
 - `Règles Transverses Fondamentales` --references--> `sqlPlaceholders()`  [INFERRED]
   AGENTS.md → server/handlers/media_scan.go
+- `3. Architecture` --references--> `BuildFFmpegArgs()`  [INFERRED]
+  docs/transcodage-adaptatif.md → server/streaming/ffmpeg.go
 
 ## Import Cycles
 - 2-file cycle: `.agents/skills/impeccable/scripts/live-inject.mjs -> .agents/skills/impeccable/scripts/live/tanstack-adapter.mjs -> .agents/skills/impeccable/scripts/live-inject.mjs`
@@ -4242,7 +4242,7 @@ Cohesion: 0.50
 Nodes (4): E1 — Capitales forcées sur les boutons, E2 — La dérive typographique s'aggrave, E3 — Couleurs hors tokens restantes, E. Texte d'interface et typographie
 
 ## Knowledge Gaps
-- **15069 isolated node(s):** `build`, `builder`, `createState`, `didUpdateWidget`, `_focused` (+15064 more)
+- **15069 isolated node(s):** `appPageTransitionsTheme`, `cheap`, `reverseTransitionDuration`, `rise`, `transitionDuration` (+15064 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 21777 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **264 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -4250,13 +4250,13 @@ Nodes (4): E1 — Capitales forcées sur les boutons, E2 — La dérive typograp
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Lot C : messages du serveur (§ 2.3)` connect `traduction-anglais.md` to `seedRequestUser`?**
-  _High betweenness centrality (0.234) - this node is a cross-community bridge._
-- **What connects `build`, `builder`, `createState` to the rest of the system?**
+  _High betweenness centrality (0.189) - this node is a cross-community bridge._
+- **What connects `appPageTransitionsTheme`, `cheap`, `reverseTransitionDuration` to the rest of the system?**
   _15069 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `resume_preview_anchor.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.021271929824561404 - nodes in this community are weakly interconnected._
 - **Why does `writeMediaHubError()` connect `seedRequestUser` to `main.go`, `traduction-anglais.md`, `net/http.ResponseWriter`, `main`?**
-  _High betweenness centrality (0.234) - this node is a cross-community bridge._
+  _High betweenness centrality (0.189) - this node is a cross-community bridge._
 - **Should `tv_navigation_sound_test.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.04336734693877551 - nodes in this community are weakly interconnected._
 - **Should `detail_unified_design_test.dart` be split into smaller, more focused modules?**

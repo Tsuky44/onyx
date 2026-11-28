@@ -40,11 +40,19 @@ import (
 // de 22 % plus forte que `saturation=0.85` ramène à 4 % près en moyenne
 // (39 dB). L'utilisateur a retenu ce réglage à l'œil.
 //
-// Trois gardes, comme pour la chaîne matérielle : l'essai du démarrage par la
-// commande d'une session, HARDWARE_TONEMAP=off, et le retrait pour tout le
-// serveur si une session meurt avec ce tone mapping avant son premier
-// segment. Dans les trois cas la chaîne matérielle reste, avec le tone
-// mapping du processeur.
+// Il ne s'active que sur demande, HARDWARE_TONEMAP=on. Le banc tenait 3,0× à
+// 3,9×, mais les premières vraies sessions sur la même carte (2026-11-28)
+// n'ont tenu que 0,5× à 0,7× à toutes les résolutions, 360p compris : le
+// lecteur changeait de barreau toutes les cinq secondes, là où la chaîne
+// zscale tenait 1,3× sans accroc. Le flux n'est pas en cause (mêmes durées de
+// segment et mêmes horodatages que zscale, vérifié) ; ce qui ralentit la
+// commande dans une session et pas au banc n'est pas trouvé. Tant qu'il ne
+// l'est pas, le défaut reste le tone mapping du processeur.
+//
+// Deux gardes restent quand il est demandé : l'essai du démarrage par la
+// commande d'une session, et le retrait pour tout le serveur si une session
+// meurt avec ce tone mapping avant son premier segment. Dans les deux cas la
+// chaîne matérielle reste, avec le tone mapping du processeur.
 
 // cudaToneMapFilter est le tone mapping HDR vers SDR d'une session sur une
 // carte NVIDIA. Sortie en NV12 : c'est le format que l'envoi vers la carte et
@@ -101,8 +109,8 @@ func detectHardwareToneMap(
 	if encoder.surfaceToneMap == "" {
 		return false
 	}
-	if hardwareToneMapDisabledByEnv() {
-		log.Println("Streaming: HARDWARE_TONEMAP=off, tone mapping stays on the CPU")
+	if !hardwareToneMapRequestedByEnv() {
+		log.Println("Streaming: tone mapping stays on the CPU (HARDWARE_TONEMAP=on tries it on the device)")
 		return false
 	}
 	if !hasFilter("libplacebo") {
@@ -120,12 +128,12 @@ func detectHardwareToneMap(
 	return true
 }
 
-// hardwareToneMapDisabledByEnv lit HARDWARE_TONEMAP : le moyen de garder la
-// chaîne matérielle en ramenant le tone mapping au processeur, pour qui
-// préfère son image.
-func hardwareToneMapDisabledByEnv() bool {
+// hardwareToneMapRequestedByEnv lit HARDWARE_TONEMAP. Le tone mapping sur le
+// matériel est une demande de l'opérateur, pas un défaut : voir plus haut ce
+// que les premières sessions ont donné.
+func hardwareToneMapRequestedByEnv() bool {
 	switch strings.ToLower(strings.TrimSpace(os.Getenv("HARDWARE_TONEMAP"))) {
-	case "0", "off", "false", "no":
+	case "1", "on", "true", "yes":
 		return true
 	}
 	return false

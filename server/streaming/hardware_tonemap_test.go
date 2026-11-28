@@ -170,7 +170,7 @@ func TestCUDAToneMapLeavesTheRestAlone(t *testing.T) {
 func TestHardwareToneMapProbeRunsTheSessionChain(t *testing.T) {
 	setFilterSetForTest("zscale", "tonemap", "libplacebo")
 	t.Cleanup(func() { setFilterSetForTest("zscale", "tonemap") })
-	t.Setenv("HARDWARE_TONEMAP", "")
+	t.Setenv("HARDWARE_TONEMAP", "on")
 	recorder := &probeRecorder{}
 	nvenc := encoderNamed(t, "h264_nvenc")
 	if !detectHardwareToneMap(nvenc, "sample.mkv", allFilters, recorder.run) {
@@ -198,7 +198,7 @@ func TestHardwareToneMapProbeRunsTheSessionChain(t *testing.T) {
 // Un échec ne retire que ce tone mapping : la fonction dit non, et rien
 // d'autre n'est touché.
 func TestHardwareToneMapProbeFailureKeepsTheCPU(t *testing.T) {
-	t.Setenv("HARDWARE_TONEMAP", "")
+	t.Setenv("HARDWARE_TONEMAP", "on")
 	recorder := &probeRecorder{fail: func([]string) bool { return true }}
 	if detectHardwareToneMap(encoderNamed(t, "h264_nvenc"), "sample.mkv", allFilters, recorder.run) {
 		t.Error("a failing probe still turned the device tone mapping on")
@@ -206,7 +206,7 @@ func TestHardwareToneMapProbeFailureKeepsTheCPU(t *testing.T) {
 }
 
 func TestHardwareToneMapNeedsLibplaceboAndADevice(t *testing.T) {
-	t.Setenv("HARDWARE_TONEMAP", "")
+	t.Setenv("HARDWARE_TONEMAP", "on")
 	recorder := &probeRecorder{}
 	noLibplacebo := func(name string) bool { return name != "libplacebo" }
 	if detectHardwareToneMap(encoderNamed(t, "h264_nvenc"), "sample.mkv", noLibplacebo, recorder.run) {
@@ -220,15 +220,24 @@ func TestHardwareToneMapNeedsLibplaceboAndADevice(t *testing.T) {
 	}
 }
 
-func TestHardwareToneMapCanBeSwitchedOff(t *testing.T) {
-	for _, value := range []string{"off", "0", "false", "OFF"} {
+// Le tone mapping sur le matériel ne s'active que sur demande : au banc il
+// tenait 3× et plus, dans les premières vraies sessions 0,7×. Sans la demande,
+// aucun essai n'est lancé et les sessions gardent zscale.
+func TestHardwareToneMapIsOptIn(t *testing.T) {
+	for _, value := range []string{"", "off", "0", "auto"} {
 		t.Setenv("HARDWARE_TONEMAP", value)
 		recorder := &probeRecorder{}
 		if detectHardwareToneMap(encoderNamed(t, "h264_nvenc"), "sample.mkv", allFilters, recorder.run) {
-			t.Errorf("HARDWARE_TONEMAP=%s ignored", value)
+			t.Errorf("HARDWARE_TONEMAP=%q turned the device tone mapping on", value)
 		}
 		if len(recorder.calls) != 0 {
-			t.Errorf("HARDWARE_TONEMAP=%s still ran a probe", value)
+			t.Errorf("HARDWARE_TONEMAP=%q still ran a probe", value)
+		}
+	}
+	for _, value := range []string{"on", "1", "true", "ON"} {
+		t.Setenv("HARDWARE_TONEMAP", value)
+		if !detectHardwareToneMap(encoderNamed(t, "h264_nvenc"), "sample.mkv", allFilters, (&probeRecorder{}).run) {
+			t.Errorf("HARDWARE_TONEMAP=%s ignored", value)
 		}
 	}
 }
