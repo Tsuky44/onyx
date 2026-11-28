@@ -1,7 +1,7 @@
 # Graph Report - onyx  (2026-11-28)
 
 ## Corpus Check
-- 2397 files · ~2,107,537 words
+- 2397 files · ~2,107,803 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 167 file(s) not represented in the graph (top: (none) 33, .csv 24, .xml 20)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `76370699`
+- Built from commit: `28ada304`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -4250,13 +4250,13 @@ Nodes (4): E1 — Capitales forcées sur les boutons, E2 — La dérive typograp
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Lot C : messages du serveur (§ 2.3)` connect `traduction-anglais.md` to `seedRequestUser`?**
-  _High betweenness centrality (0.189) - this node is a cross-community bridge._
+  _High betweenness centrality (0.196) - this node is a cross-community bridge._
 - **What connects `appPageTransitionsTheme`, `cheap`, `reverseTransitionDuration` to the rest of the system?**
   _15069 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `resume_preview_anchor.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.021271929824561404 - nodes in this community are weakly interconnected._
 - **Why does `writeMediaHubError()` connect `seedRequestUser` to `main.go`, `traduction-anglais.md`, `net/http.ResponseWriter`, `main`?**
-  _High betweenness centrality (0.189) - this node is a cross-community bridge._
+  _High betweenness centrality (0.196) - this node is a cross-community bridge._
 - **Should `tv_navigation_sound_test.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.04336734693877551 - nodes in this community are weakly interconnected._
 - **Should `detail_unified_design_test.dart` be split into smaller, more focused modules?**

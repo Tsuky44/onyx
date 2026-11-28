@@ -15366,15 +15366,15 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-27-fytroz-image-nvidia.md": {
-    "mtime": 1795830055.7260637,
-    "seen": 1795830080.7951622,
-    "ast_hash": "a4a8dc8a3828eb226d643b1cf5f6fbae",
+    "mtime": 1795866018.9566665,
+    "seen": 1795866071.6855145,
+    "ast_hash": "79e903f3684e9a0958d08d4cdbb6b157",
     "semantic_hash": ""
   },
   "server/streaming/hardware_tonemap.go": {
-    "mtime": 1795830015.5220208,
-    "seen": 1795830080.794389,
-    "ast_hash": "7823455535a46ed6a7c1c0a57ca9240d",
+    "mtime": 1795866018.957261,
+    "seen": 1795866071.6847107,
+    "ast_hash": "6ee33a1d83493a77f210c952b07d15f1",
     "semantic_hash": ""
   },
   "server/streaming/hardware_tonemap_test.go": {
