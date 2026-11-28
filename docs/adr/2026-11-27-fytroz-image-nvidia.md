@@ -6,7 +6,8 @@
   h264_nvenc (hardware=true)`, `cuda decodes HEVC 10-bit`, `hardware filters on (cuda)`, puis
   `Vulkan devices seen: 0: Quadro P2200 (discrete), 1: llvmpipe` et `libplacebo renders on Quadro
   P2200`. Une première lecture (remux 4K HDR10 à 71,3 Mbit/s vers 1080p tone mappé) a donné une
-  image que l'utilisateur juge très bonne, à **1,3×** la vitesse de lecture. Le tone mapping sur
+  image que l'utilisateur juge très bonne, à 1,3× puis **2,2× à 2,6×** sur les sessions suivantes
+  (§19), fluides au navigateur comme au téléphone. Le tone mapping sur
   la carte (« Le tone mapping sur la carte », 2026-11-28) tient 3,0-3,9× au banc sur la même
   carte, mais **0,5-0,7× dans les premières vraies sessions, avec une lecture hachée** : il est
   désactivé par défaut (`HARDWARE_TONEMAP=on` pour l'essayer) tant que la cause n'est pas trouvée.
@@ -179,6 +180,21 @@ ce fichier).
     au banc n'est pas trouvé.** La lenteur ne dépend pas de la résolution, ce qui désigne une
     étape de coût constant (décodage, démarrage de la commande) plutôt que le tone mapping
     lui-même ; c'est une piste, pas un constat.
+19. **Le banc sous-estimait la chaîne zscale.** Relevé ensuite sur de vraies sessions, même film,
+    serveur au calme (commande, temps processeur et charge de la carte lus pendant la lecture) :
+
+    | Session réelle, chaîne zscale | Vitesse | Processeur | Décodeur de la carte |
+    |---|---|---|---|
+    | 1080p · 10 Mbit/s (navigateur, téléphone) | 2,4× à 2,6× | 8 à 10 cœurs | 30 à 40 % |
+    | 1080p · 6 Mbit/s (Auto, navigateur) | 2,2× | 8 cœurs | 30 % |
+    | 480p | 4,0× | 2 cœurs | 75 à 100 % |
+
+    Le banc donnait 1,1× à 1,5× pour la même chaîne, avec 3 cœurs occupés seulement : l'écart
+    n'est pas expliqué. Le gain du tone mapping sur la carte n'est donc pas « 3× au lieu de 1,3× »
+    mais surtout huit à dix cœurs rendus, à vitesse voisine ; il compterait sur un serveur dont le
+    processeur est pris ailleurs. À 480p c'est le décodeur de la carte qui plafonne, vers 4× sur un
+    flux à 71 Mbit/s. Sur ces sessions la lecture est fluide au navigateur comme au téléphone, en
+    débit fixe et en Auto, qui ne change plus de barreau.
 
 Épinglé par `server/streaming/hardware_tonemap_test.go`.
 
@@ -239,7 +255,8 @@ Les lignes du démarrage sont vues (voir « Statut »). Restent, sur de vraies l
   Un pilote plus ancien fait échouer l'essai du démarrage, et le serveur reste sur libx264 en le
   disant.
 - Par défaut, le tone mapping d'une source HDR10 ou HLG reste celui du processeur, sur une image
-  déjà réduite : 1,1× à 1,5× sur un remux 4K à 71 Mbit/s. Avec `HARDWARE_TONEMAP=on` il passe par
+  déjà réduite : 2,2× à 2,6× en 1080p sur un remux 4K à 71 Mbit/s, pour huit à dix cœurs occupés
+  (§19). Avec `HARDWARE_TONEMAP=on` il passe par
   libplacebo sur la carte, avec une image légèrement différente (hautes lumières un peu plus
   claires) et le défaut de vitesse en session décrit au §18. Le Dolby Vision profil 5 garde le
   décodage logiciel et son propre libplacebo.

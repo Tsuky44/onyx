@@ -49,6 +49,11 @@ import (
 // commande dans une session et pas au banc n'est pas trouvé. Tant qu'il ne
 // l'est pas, le défaut reste le tone mapping du processeur.
 //
+// Le banc, de son côté, sous-estimait zscale : de vraies sessions, serveur au
+// calme, tiennent 2,2× à 2,6× en 1080p avec huit à dix cœurs occupés. Ce que
+// ce tone mapping rapporterait est donc surtout du processeur, pas de la
+// vitesse.
+//
 // Deux gardes restent quand il est demandé : l'essai du démarrage par la
 // commande d'une session, et le retrait pour tout le serveur si une session
 // meurt avec ce tone mapping avant son premier segment. Dans les deux cas la
