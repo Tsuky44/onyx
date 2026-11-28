@@ -8604,9 +8604,9 @@
     "semantic_hash": ""
   },
   "server/streaming/encoder.go": {
-    "mtime": 1795822839.6045086,
-    "seen": 1795822866.6228838,
-    "ast_hash": "311419ab1838f119717b95cdfc05aaa3",
+    "mtime": 1795828419.4415061,
+    "seen": 1795828607.0252168,
+    "ast_hash": "e1d25981d162126d7131021ce4f3e8da",
     "semantic_hash": ""
   },
   "server/streaming/encoder_test.go": {
@@ -8616,9 +8616,9 @@
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg.go": {
-    "mtime": 1795818289.277575,
-    "seen": 1795818613.7489552,
-    "ast_hash": "4101a4b9cd581caaa1dae9705025df7e",
+    "mtime": 1795828419.441938,
+    "seen": 1795828607.0252216,
+    "ast_hash": "77219e6d2ac8d253e9418349dd974b85",
     "semantic_hash": ""
   },
   "server/streaming/ffmpeg_test.go": {
@@ -8628,9 +8628,9 @@
     "semantic_hash": ""
   },
   "server/streaming/handler.go": {
-    "mtime": 1795818103.8366733,
-    "seen": 1795818613.748959,
-    "ast_hash": "2805c4acec568c9b58da6f5992f3883b",
+    "mtime": 1795828419.442173,
+    "seen": 1795828607.0252242,
+    "ast_hash": "972f381591f6481ea88e5922245c5b94",
     "semantic_hash": ""
   },
   "server/streaming/handler_files_test.go": {
@@ -8790,9 +8790,9 @@
     "semantic_hash": ""
   },
   "server/streaming/session.go": {
-    "mtime": 1795818103.8366733,
-    "seen": 1795818613.7490225,
-    "ast_hash": "e8f9c0464ddffab8b40a1e5b1e254d8b",
+    "mtime": 1795828419.442413,
+    "seen": 1795828607.0252786,
+    "ast_hash": "158b3bcd15515119652d48e57eccb5c6",
     "semantic_hash": ""
   },
   "server/streaming/standby_test.go": {
@@ -10806,9 +10806,9 @@
     "semantic_hash": ""
   },
   "server/README.md": {
-    "mtime": 1795818425.6817484,
-    "seen": 1795818613.750261,
-    "ast_hash": "6044b8a41a43cf9772f9bb2730f97b1e",
+    "mtime": 1795828562.577711,
+    "seen": 1795828607.0260825,
+    "ast_hash": "4696de906827d87cf53c5fa38f325440",
     "semantic_hash": ""
   },
   "app/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
@@ -15240,9 +15240,9 @@
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters.go": {
-    "mtime": 1795818476.3228893,
-    "seen": 1795818613.748965,
-    "ast_hash": "98d13d8d31c142d58b24bc23493794e3",
+    "mtime": 1795828562.575438,
+    "seen": 1795828607.0252292,
+    "ast_hash": "ceccb863750c4b04b24acd54d064c7c2",
     "semantic_hash": ""
   },
   "server/streaming/hardware_filters_test.go": {
@@ -15366,9 +15366,21 @@
     "semantic_hash": ""
   },
   "docs/adr/2026-11-27-fytroz-image-nvidia.md": {
-    "mtime": 1795822839.6041496,
-    "seen": 1795822866.6241543,
-    "ast_hash": "581b5c15bd416d798cef1f552ac2ffc3",
+    "mtime": 1795828580.6734214,
+    "seen": 1795828607.0260267,
+    "ast_hash": "7ecc7679c66a1d9d1e342ae5d60de3f8",
+    "semantic_hash": ""
+  },
+  "server/streaming/hardware_tonemap.go": {
+    "mtime": 1795828580.6739295,
+    "seen": 1795828607.0252357,
+    "ast_hash": "b458edcc43f6c454acfb0f0e11875b34",
+    "semantic_hash": ""
+  },
+  "server/streaming/hardware_tonemap_test.go": {
+    "mtime": 1795828507.2422314,
+    "seen": 1795828607.0252376,
+    "ast_hash": "58029ef5d40907e799d11677a0bed383",
     "semantic_hash": ""
   }
 }

@@ -303,6 +303,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		Quality:                quality,
 		Encoder:                SelectedVideoEncoder(),
 		HardwareFilters:        HardwareFiltersUsable(),
+		HardwareToneMap:        HardwareToneMapUsable(),
 		HEVCEncoder:            hevcEncoder,
 		StartSeconds:           startSeconds,
 		TmpDir:                 tmpDir,
@@ -359,6 +360,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request, mediaID in
 		RetainSegments: retain / segmentDuration,
 		// Une image recopiée n'a pas de chaîne : usesHardwareFilters le sait.
 		hardwareFilters: options.usesHardwareFilters(),
+		hardwareToneMap: options.usesHardwareToneMap(),
 		vulkanGPU:       sessionToneMapper(options).Vulkan && vulkanOnGPU(),
 		ctx:             ctx,
 		cancel:          cancel,

@@ -80,6 +80,8 @@ type TranscodeSession struct {
 	// vidéo (hardware_filters.go) : si FFmpeg meurt avant le premier segment,
 	// c'est cette chaîne qui est retirée.
 	hardwareFilters bool
+	// hardwareToneMap dit que son tone mapping se fait aussi sur ce matériel.
+	hardwareToneMap bool
 	// vulkanGPU dit que le tone mapping de cette session passe par libplacebo
 	// sur un vrai circuit (vulkan_device.go), avec la même conséquence.
 	vulkanGPU bool
@@ -182,7 +184,13 @@ func (s *TranscodeSession) watch() {
 	if !s.diedBeforeFirstSegment(err) {
 		return
 	}
-	if s.hardwareFilters {
+	// Le tone mapping sur la carte est le dernier arrivé et le moins éprouvé :
+	// lui d'abord. La session suivante garde la chaîne matérielle avec le tone
+	// mapping du processeur, et ne la retire que si elle meurt à son tour.
+	switch {
+	case s.hardwareToneMap:
+		noteHardwareToneMapDied(s.ID, s.stderr.String())
+	case s.hardwareFilters:
 		noteHardwareSessionDied(s.ID, s.stderr.String())
 	}
 	if s.vulkanGPU {

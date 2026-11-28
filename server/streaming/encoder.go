@@ -59,6 +59,10 @@ type VideoEncoder struct {
 	// filtres : c'est le cas d'un encodeur qui prend aussi des images
 	// logicielles et n'a donc besoin d'aucun périphérique pour encoder.
 	surfaceArgs []string
+	// surfaceToneMap est le tone mapping HDR vers SDR que le même matériel
+	// sait faire, à la place de la chaîne zscale du processeur. Vide : le
+	// tone mapping reste logiciel. Voir hardware_tonemap.go.
+	surfaceToneMap string
 	// rateControl builds the flags that set quality and bitrate, which is where
 	// the encoders differ most: libx264 targets a quality and caps the result,
 	// while the hardware encoders take a bitrate and hold it.
@@ -147,6 +151,7 @@ var hardwareEncoders = []VideoEncoder{
 			"-init_hw_device", "cuda=gpu", "-filter_hw_device", "gpu",
 			"-threads", "4", "-extra_hw_frames", "4",
 		},
+		surfaceToneMap: cudaToneMapFilter,
 		rateControl: func(preset qualityPreset) []string {
 			return []string{
 				"-rc", "vbr",

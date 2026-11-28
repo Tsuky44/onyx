@@ -121,6 +121,10 @@ type TranscodeOptions struct {
 	// l'a vu fonctionner (HardwareFiltersUsable). Faux : la chaîne logicielle
 	// de toujours.
 	HardwareFilters bool
+	// HardwareToneMap fait aussi le tone mapping d'une source HDR sur ce
+	// matériel, quand l'essai du démarrage l'a vu fonctionner
+	// (HardwareToneMapUsable). Faux : la chaîne zscale du processeur.
+	HardwareToneMap bool
 	// LiveSubtitles liste les pistes texte (0:s:N) que la session écrit en
 	// WebVTT à côté des segments, produites par LiveSubtitleTracks. Vide : pas
 	// de sous-titres écrits, la commande reste celle d'avant l'ADR-0031.

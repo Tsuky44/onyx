@@ -67,8 +67,9 @@ func hardwareUploadFilter(encoder VideoEncoder) string {
 // Tout ce qui a besoin d'images logicielles reste sur la chaîne de toujours :
 // un sous-titre incrusté et le désentrelacement, qui se font avant la mise à
 // l'échelle. Le HEVC qui garde son HDR aussi, tant que personne ne l'a vu
-// tourner. Une source HDR qui tient déjà dans le barreau n'a rien à gagner :
-// sans mise à l'échelle, l'aller-retour ne ferait que la ramener en mémoire.
+// tourner. Une source HDR qui tient déjà dans le barreau n'a rien à gagner
+// tant que son tone mapping est celui du processeur : sans mise à l'échelle,
+// l'aller-retour ne ferait que la ramener en mémoire.
 func (o TranscodeOptions) usesHardwareFilters() bool {
 	if !o.HardwareFilters || o.Video.Copy || o.Video.HEVC || o.Video.Deinterlace {
 		return false
@@ -87,7 +88,16 @@ func (o TranscodeOptions) usesHardwareFilters() bool {
 	// session est déjà redevenu logiciel (encoder()) ; NVENC, lui, reste, et
 	// c'est ici que la chaîne matérielle s'efface.
 	mapper := sessionToneMapper(o)
-	if mapper.Filter == "" || mapper.Vulkan {
+	if mapper.Vulkan {
+		return false
+	}
+	// Le tone mapping sur la carte (hardware_tonemap.go) ne demande ni zscale
+	// ni mise à l'échelle : même une source HDR déjà à la taille du barreau y
+	// gagne, puisque c'est le tone mapping logiciel qui coûtait.
+	if o.wantsHardwareToneMap() {
+		return true
+	}
+	if mapper.Filter == "" {
 		return false
 	}
 	return buildScaleFilter(o.Probe, presetFor(o.Quality)) != ""
@@ -110,6 +120,9 @@ func hardwareFilterChain(opt TranscodeOptions, preset qualityPreset) string {
 		)
 	}
 	tonemap := sessionToneMapper(opt).Filter
+	if opt.wantsHardwareToneMap() {
+		tonemap = encoder.surfaceToneMap
+	}
 	if tonemap == "" {
 		// Sortie en NV12 : une source SDR en 10 bits y est ramenée à 8 par le
 		// circuit, et l'encodeur prend l'image sans qu'elle ait quitté le
@@ -140,23 +153,29 @@ var (
 // circuit. Résolu une fois, au démarrage, par un essai réel.
 func HardwareFiltersUsable() bool {
 	hardwareFiltersOnce.Do(func() {
-		hardwareFiltersOK = resolveHardwareFilters(SelectedVideoEncoder())
+		hardwareFiltersOK, hardwareToneMapOK = resolveHardwareFilters(SelectedVideoEncoder())
 	})
 	return hardwareFiltersOK && !hardwareFiltersOff.Load()
 }
 
-// resolveHardwareFilters fabrique la source d'essai et lance l'essai.
-func resolveHardwareFilters(encoder VideoEncoder) bool {
+// resolveHardwareFilters fabrique la source d'essai et lance les essais : la
+// chaîne matérielle d'abord, puis, si elle tient, le tone mapping sur le
+// circuit (hardware_tonemap.go), sur la même source.
+func resolveHardwareFilters(encoder VideoEncoder) (filters, toneMap bool) {
 	if encoder.surface == "" {
-		return false
+		return false, false
 	}
 	dir, err := os.MkdirTemp("", "onyx-hwprobe-*")
 	if err != nil {
 		log.Printf("Streaming: hardware filters not tested, keeping software filters: %v", err)
-		return false
+		return false, false
 	}
 	defer os.RemoveAll(dir)
-	return detectHardwareFilters(encoder, filepath.Join(dir, "sample.mkv"), ffmpegHasFilter, runFFmpegProbe)
+	sample := filepath.Join(dir, "sample.mkv")
+	if !detectHardwareFilters(encoder, sample, ffmpegHasFilter, runFFmpegProbe) {
+		return false, false
+	}
+	return true, detectHardwareToneMap(encoder, sample, ffmpegHasFilter, runFFmpegProbe)
 }
 
 // detectHardwareFilters décide si la chaîne matérielle tient sur cet hôte.

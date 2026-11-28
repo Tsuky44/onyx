@@ -5,16 +5,18 @@
   Quadro P2200** le soir même (Unraid, pilote 580.196.07, image `:fytroz`) : `video encoder
   h264_nvenc (hardware=true)`, `cuda decodes HEVC 10-bit`, `hardware filters on (cuda)`, puis
   `Vulkan devices seen: 0: Quadro P2200 (discrete), 1: llvmpipe` et `libplacebo renders on Quadro
-  P2200`. Une première session a été acceptée sur cette chaîne (remux 4K HDR10 à 71,3 Mbit/s vers
-  1080p tone mappé) : l'utilisateur juge l'image très bonne, et la carte tient le processus
-  (1037 Mo de mémoire vidéo, encodeur et décodeur à 0 % une fois l'avance prise et FFmpeg en
-  pause). **Sa vitesse n'est pas encore mesurée.**
+  P2200`. Une première lecture (remux 4K HDR10 à 71,3 Mbit/s vers 1080p tone mappé) a donné une
+  image que l'utilisateur juge très bonne, à **1,3×** la vitesse de lecture. Le tone mapping sur
+  la carte (« Le tone mapping sur la carte », 2026-11-28) est **mesuré au banc sur la même carte
+  à 3,0-3,9×, pas encore vu dans une vraie session**.
 - **Date :** 2026-11-27
 - **Portée :** `server/Dockerfile` (étapes `ffmpeg-nvidia` et `nvidia`),
   `server/docker-entrypoint.sh` (`su-exec` ou `gosu`), `server/streaming/encoder.go` (`-forced-idr`,
-  `surface: "cuda"`, `surfaceArgs`), `hardware_filters.go` (`hardwareDecodeArgs`,
-  `hardwareUploadFilter`, `usesHardwareFilters`), `ffmpeg.go` (`-pix_fmt`),
-  `.github/workflows/server.yml` et `release.yml` (tags `-nvidia`), `server/README.md`, `README.md`.
+  `surface: "cuda"`, `surfaceArgs`, `surfaceToneMap`), `hardware_filters.go` (`hardwareDecodeArgs`,
+  `hardwareUploadFilter`, `usesHardwareFilters`), `hardware_tonemap.go` (nouveau), `ffmpeg.go`
+  (`-pix_fmt`, `TranscodeOptions.HardwareToneMap`), `session.go` (`watch`), `handler.go`,
+  `vulkan_device.go` (liste au journal), `.github/workflows/server.yml` et `release.yml` (tags
+  `-nvidia`, entrée `variant`), `server/README.md`, `README.md`.
 - **Précise** l'[ADR-0023](0023-encodeur-materiel-optionnel.md) et **prolonge**
   [la chaîne VAAPI ne ramène plus le 4K en mémoire](2026-11-25-fytroz-la-chaine-vaapi-ne-ramene-plus-le-4k-en-memoire.md),
   dont la chaîne matérielle sert maintenant aussi NVENC.
@@ -114,6 +116,61 @@ Les trois gardes de la chaîne VAAPI valent pour CUDA : l'essai du démarrage pa
 session, `HARDWARE_FILTERS=off`, et le retrait pour tout le serveur si une session meurt avec elle
 avant son premier segment.
 
+### Le tone mapping sur la carte (2026-11-28)
+
+La première lecture tenait 1,3×. Un banc sur la P2200 et l'i7-10700K du serveur, 30 s du même
+remux 4K HDR10 à 71 Mbit/s vers 1080p, a isolé chaque étape :
+
+| Étape | Vitesse | Processeur |
+|---|---|---|
+| Décodage logiciel, 16 threads | 1,3× | 3,6 cœurs |
+| Carte de bout en bout, sans tone mapping | **7,2×** | au repos |
+| Décodage carte + tone mapping zscale | 1,6× | 3,5 cœurs |
+| Chaîne de la session (zscale) | 1,1× à 1,5× | 3,5 cœurs |
+| Son seul, quatre pistes vers AAC | 13,6× | |
+
+Pendant la chaîne de la session, la carte attendait : décodeur à 22 %, encodeur à 10-14 %. Le
+goulot était le tone mapping logiciel, pas le réglage des quatre threads du §10 (NVDEC décode bien
+ce fichier).
+
+13. **libplacebo fait le tone mapping sur la carte, à la place de zscale**
+    (`hardware_tonemap.go`, `VideoEncoder.surfaceToneMap`). La chaîne devient : tête,
+    `scale_cuda=…:format=p010le`, `hwdownload`, `format=p010le`, libplacebo, `format=nv12,hwupload`.
+    Même banc : **3,0× à 3,9×**, et quatre secondes de processeur pour trente secondes de film au
+    lieu de soixante-sept. La carte travaille : décodeur à 69 %, encodeur à 38 %.
+14. **L'image redescend toujours une fois, à la taille du barreau.** Ce FFmpeg ne sait pas faire
+    autrement : avec CUDA comme périphérique des filtres, libplacebo n'accepte pas d'images Vulkan
+    en entrée (`vf_libplacebo.c` : sans périphérique Vulkan, `have_hwdevice` reste faux), et
+    `hwupload` vers Vulkan ne prend pas d'images CUDA (`hwcontext_vulkan.c` : CUDA n'est pas dans
+    ses formats d'entrée). Trois chaînes sans redescente ont été essayées sur la carte, les trois
+    ont échoué. En revanche, sans périphérique Vulkan nommé, libplacebo crée le sien sur la carte
+    et prend des images logicielles. Faire aussi la mise à l'échelle dans libplacebo, depuis
+    l'image 4K redescendue, ne tient que 2,0×.
+15. **La courbe est `st2094-40`, saturation 0,85**, pas le `hable` du Dolby Vision. Mesuré contre
+    l'image de la chaîne zscale, celle que l'utilisateur avait validée, sur six moments du film :
+
+    | Courbe libplacebo | Luminance moyenne | Saturation | PSNR moyen |
+    |---|---|---|---|
+    | `st2094-40`, saturation 0,85 | +3 % | +4 % | **39,0 dB** |
+    | `st2094-40` | +2,5 % | +22 % | 37,8 dB |
+    | `bt.2390` | −1,9 % | +16 % | 35,9 dB |
+    | `spline` | −9,1 % | +1 % | 34,3 dB |
+    | `hable` | −10,6 % | −4 % | 32,6 dB |
+
+    `hable` assombrit jusqu'à 35 % dans les ombres. Avec le réglage retenu les ombres sont
+    identiques à la référence et les hautes lumières un peu plus claires ; l'utilisateur ne voit
+    pas de différence et a retenu ce réglage. Sortie en `nv12` : la sortie `yuv420p` est tombée à
+    1,5× sur un passage. Un cache de shaders n'apporte rien de mesurable.
+16. **Une source HDR déjà à la taille du barreau prend maintenant la chaîne matérielle** quand ce
+    tone mapping est disponible : c'est lui qui coûtait, pas la mise à l'échelle.
+17. **Trois gardes**, celles de la chaîne : l'essai du démarrage par la commande d'une session
+    (`Streaming: tone mapping on the device`), `HARDWARE_TONEMAP=off`, et le retrait pour tout le
+    serveur si une session meurt avec lui avant son premier segment. Dans les trois cas la chaîne
+    matérielle reste, avec le tone mapping zscale. Le Dolby Vision profil 5 n'est pas concerné : il
+    garde son libplacebo à lui.
+
+Épinglé par `server/streaming/hardware_tonemap_test.go`.
+
 ### Écarté
 
 - **Passer l'image unique sous Ubuntu.** Tous les serveurs en place changeraient de FFmpeg et de
@@ -121,8 +178,8 @@ avant son premier segment.
 - **`gcompat` sous Alpine** pour charger le pilote glibc : non pris en charge par NVIDIA, et le
   FFmpeg d'Alpine n'a de toute façon pas NVENC.
 - **jellyfin-ffmpeg** : une branche 7.1 quand le serveur est écrit et testé contre la 8.1.
-- **Le tone mapping sur la carte.** Ce FFmpeg n'a pas de `tonemap_cuda` ; libplacebo sur le Vulkan de
-  la carte le ferait pour le HDR10 aussi, mais c'est un autre graphe et une autre mesure.
+- **`tonemap_cuda`** : ce FFmpeg ne l'a pas. **`tonemap_opencl`** : un troisième type de
+  périphérique à ouvrir et à faire cohabiter avec CUDA, pour une image à revalider elle aussi.
 
 ## Vérifié
 
@@ -156,8 +213,9 @@ Dans une réplique locale de l'étape `nvidia` (mêmes paquets, même FFmpeg, n8
 
 Les lignes du démarrage sont vues (voir « Statut »). Restent, sur de vraies lectures :
 
-1. Sur une source 4K HDR10 vers 1080p : `encodé à N×` au-dessus de 1 (écrit à l'arrêt de la
-   session, après dix segments). L'image tone mappée est déjà vue correcte.
+1. Au démarrage : `Streaming: tone mapping on the device (cuda chain, libplacebo)`. Puis, sur
+   une source 4K HDR10 vers 1080p : `encodé à N×` nettement au-dessus de 1,3 (écrit à l'arrêt de
+   la session, après dix segments), et une image aux mêmes couleurs qu'avant.
 2. Sur un Dolby Vision profil 5 : la même ligne, avec libplacebo sur la carte.
 3. Une source déjà en 1080p SDR, le cas du §10 : la session ne meurt pas sur
    `No decoder surfaces left`.
@@ -169,7 +227,9 @@ Les lignes du démarrage sont vues (voir « Statut »). Restent, sur de vraies l
 - **Pilote NVIDIA 570 ou plus récent sur l'hôte** : ce FFmpeg parle l'API du Video Codec SDK 13.0.
   Un pilote plus ancien fait échouer l'essai du démarrage, et le serveur reste sur libx264 en le
   disant.
-- Le tone mapping d'une source HDR10 reste sur le processeur, sur une image déjà réduite.
+- Le tone mapping d'une source HDR10 ou HLG passe par libplacebo sur la carte ; l'image n'est
+  plus exactement celle de la chaîne zscale (hautes lumières un peu plus claires). Le Dolby Vision
+  profil 5 garde le décodage logiciel et son propre libplacebo.
 - L'image pèse environ 630 Mo : Ubuntu, Mesa (lavapipe, LLVM) et FFmpeg.
 - Deux listes de paquets à tenir, et la sonde de santé et le point d'entrée écrits deux fois dans
   le Dockerfile.
