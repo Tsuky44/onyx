@@ -6,7 +6,9 @@
   h264_nvenc (hardware=true)`, `cuda decodes HEVC 10-bit`, `hardware filters on (cuda)`, puis
   `Vulkan devices seen: 0: Quadro P2200 (discrete), 1: llvmpipe` et `libplacebo renders on Quadro
   P2200`. Une première session a été acceptée sur cette chaîne (remux 4K HDR10 à 71,3 Mbit/s vers
-  1080p tone mappé). **Sa vitesse et son image ne sont pas encore mesurées.**
+  1080p tone mappé) : l'utilisateur juge l'image très bonne, et la carte tient le processus
+  (1037 Mo de mémoire vidéo, encodeur et décodeur à 0 % une fois l'avance prise et FFmpeg en
+  pause). **Sa vitesse n'est pas encore mesurée.**
 - **Date :** 2026-11-27
 - **Portée :** `server/Dockerfile` (étapes `ffmpeg-nvidia` et `nvidia`),
   `server/docker-entrypoint.sh` (`su-exec` ou `gosu`), `server/streaming/encoder.go` (`-forced-idr`,
@@ -155,8 +157,7 @@ Dans une réplique locale de l'étape `nvidia` (mêmes paquets, même FFmpeg, n8
 Les lignes du démarrage sont vues (voir « Statut »). Restent, sur de vraies lectures :
 
 1. Sur une source 4K HDR10 vers 1080p : `encodé à N×` au-dessus de 1 (écrit à l'arrêt de la
-   session, après dix segments), `nvidia-smi` qui montre le décodage et l'encodage, et une image
-   tone mappée aux bonnes couleurs.
+   session, après dix segments). L'image tone mappée est déjà vue correcte.
 2. Sur un Dolby Vision profil 5 : la même ligne, avec libplacebo sur la carte.
 3. Une source déjà en 1080p SDR, le cas du §10 : la session ne meurt pas sur
    `No decoder surfaces left`.
